@@ -19,6 +19,17 @@ public class WindowStateManager
     private IntPtr _origWndProc;
     private NativeInterop.WndProcDelegate? _wndProcDelegate; // prevent GC
     private OleDropTarget? _oleDropTarget; // prevent GC of COM drop target
+    private bool _oleInitialized;
+
+    /// <summary>
+    /// UTC ticks of the last system resume from sleep/hibernate.
+    /// Zero if no resume has been observed this session.
+    /// Read by the heartbeat timer to apply a 30s grace period after wake.
+    /// </summary>
+    internal long LastResumeUtcTicks; // read/write via Interlocked
+
+    /// <summary>Counter for unexpected WM_APP (0x8000) messages that don't match the tray icon signature.</summary>
+    private int _unexpectedWmAppCount;
 
     private static readonly string _windowSettingsPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -26,11 +37,6 @@ public class WindowStateManager
 
     // In-memory cache of window bounds (populated from file on first restore)
     private (int X, int Y, int W, int H)? _windowBounds;
-
-    // Compact-mode size locking
-    private bool _sizeLocked;
-    private bool _sizeLoggedOnce;
-    private (int W, int H) _compactSize = (1166, 840); // Fixed compact dimensions
 
     public WindowStateManager(Window window, IntPtr hwnd, DragDropHandler dragDropHandler, ICrashReporter crashReporter)
     {
@@ -44,49 +50,34 @@ public class WindowStateManager
     public IntPtr Hwnd => _hwnd;
 
     /// <summary>
-    /// Enables or disables window size locking for Compact mode.
-    /// When locked, WM_GETMINMAXINFO enforces both min and max track size
-    /// to the fixed compact dimensions, preventing user resizing.
+    /// Logs the windows owned by the UI thread: HWND, class name, IsWindow, and a WM_NULL PostMessage probe.
+    /// Call at startup and from the freeze block to detect missing or orphaned windows.
     /// </summary>
-    public void SetSizeLocked(bool locked) => _sizeLocked = locked;
-
-    /// <summary>
-    /// Captures the current window size and locks to it.
-    /// Used after WinUI's layout pass to lock to the actual rendered size
-    /// rather than a calculated size that may differ slightly.
-    /// </summary>
-    public void LockToCurrentSize()
+    public void LogWindowInventory(string context)
     {
-        if (!NativeInterop.GetWindowRect(_hwnd, out var rect)) return;
-        var w = rect.Right - rect.Left;
-        var h = rect.Bottom - rect.Top;
-        if (w < 100 || h < 100) return;
-
-        // Override the compact size with the actual window size (in physical pixels)
-        var dpi = NativeInterop.GetDpiForWindow(_hwnd);
-        var scale = dpi / 96.0;
-        _compactSize = ((int)(w / scale), (int)(h / scale));
-        _sizeLocked = true;
-        _crashReporter.Log($"[WindowStateManager.LockToCurrentSize] Locked to actual size: {w}x{h} (logical: {_compactSize.W}x{_compactSize.H}, DPI={dpi})");
-    }
-
-    /// <summary>
-    /// Resizes the window to the fixed compact dimensions, scaled for the current DPI.
-    /// Preserves the current window position (top-left corner).
-    /// </summary>
-    public void ApplyCompactSize()
-    {
-        var dpi = NativeInterop.GetDpiForWindow(_hwnd);
-        var scale = dpi / 96.0;
-        var w = (int)(_compactSize.W * scale);
-        var h = (int)(_compactSize.H * scale);
-
-        NativeInterop.GetWindowRect(_hwnd, out var rect);
-        var beforeW = rect.Right - rect.Left;
-        var beforeH = rect.Bottom - rect.Top;
-        _crashReporter.Log($"[WindowStateManager.ApplyCompactSize] DPI={dpi}, scale={scale:F2}, target={w}x{h}, before={beforeW}x{beforeH}");
-        NativeInterop.SetWindowPos(_hwnd, IntPtr.Zero,
-            rect.Left, rect.Top, w, h, 0x0040 /* SWP_NOZORDER */);
+        try
+        {
+            var threadId = NativeInterop.GetCurrentThreadId();
+            var windows = new System.Collections.Generic.List<string>();
+            NativeInterop.EnumWindowsProc callback = (hwnd, _) =>
+            {
+                var sb = new System.Text.StringBuilder(256);
+                NativeInterop.GetClassName(hwnd, sb, sb.Capacity);
+                bool isValid = NativeInterop.IsWindow(hwnd);
+                bool posted  = NativeInterop.PostMessage(hwnd, NativeInterop.WM_NULL, IntPtr.Zero, IntPtr.Zero);
+                windows.Add($"hwnd=0x{hwnd:X} class={sb} IsWindow={isValid} WM_NULL_posted={posted}");
+                return true;
+            };
+            NativeInterop.EnumThreadWindows(threadId, callback, IntPtr.Zero);
+            GC.KeepAlive(callback);
+            _crashReporter.Log(windows.Count > 0
+                ? $"[WindowStateManager.WindowInventory:{context}] {windows.Count} window(s) on UI thread: {string.Join(" | ", windows)}"
+                : $"[WindowStateManager.WindowInventory:{context}] No windows found on UI thread (threadId={threadId})");
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[WindowStateManager.WindowInventory:{context}] Failed: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -108,6 +99,7 @@ public class WindowStateManager
     /// </summary>
     public void EnableDragAccept(bool launchDropHelper = true)
     {
+        if (_oleInitialized) return;
         // Allow drag messages through UIPI when running as admin
         NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_DROPFILES, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
         NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_COPYGLOBALDATA, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
@@ -138,6 +130,7 @@ public class WindowStateManager
                 return;
             }
 
+            _oleInitialized = true;
             _oleDropTarget = new OleDropTarget(this);
             int regHr = NativeInterop.RegisterDragDrop(_hwnd, _oleDropTarget);
             if (regHr != 0)
@@ -165,7 +158,7 @@ public class WindowStateManager
         try
         {
             var helperPath = Path.Combine(
-                Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+                AppPaths.ExeDir,
                 "RHI.DropHelper.exe");
             if (!File.Exists(helperPath))
             {
@@ -179,21 +172,11 @@ public class WindowStateManager
             // Try to get the configured watch folder from settings
             try
             {
-                var settingsPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "RHI", "settings.json");
-                if (File.Exists(settingsPath))
-                {
-                    var json = File.ReadAllText(settingsPath);
-                    var doc = System.Text.Json.JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("AddonWatchFolder", out var awf))
-                    {
-                        var custom = awf.GetString();
-                        if (!string.IsNullOrWhiteSpace(custom)) watchFolder = custom;
-                    }
-                }
+                if (RenoDXCommander.Services.SettingsFile.Snapshot().TryGetValue("AddonWatchFolder", out var custom)
+                    && !string.IsNullOrWhiteSpace(custom))
+                    watchFolder = custom;
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[WindowStateManager.LaunchDropHelper] Failed to read AddonWatchFolder from settings, using default — {ex.Message}"); }
             File.WriteAllText(hwndFile, $"{_hwnd.ToInt64()}\n{watchFolder}");
 
             // Launch via explorer.exe to de-elevate (Explorer runs at medium integrity)
@@ -220,25 +203,9 @@ public class WindowStateManager
             var scale = dpi / 96.0;
             var mmi = Marshal.PtrToStructure<NativeInterop.MINMAXINFO>(lParam);
 
-            if (_sizeLocked)
-            {
-                // Lock both min and max to the compact size, preventing user resizing
-                var w = (int)(_compactSize.W * scale);
-                var h = (int)(_compactSize.H * scale);
-                if (!_sizeLoggedOnce)
-                {
-                    _crashReporter.Log($"[WindowStateManager.WndProc] WM_GETMINMAXINFO locked: DPI={dpi}, scale={scale:F2}, lock={w}x{h}");
-                    _sizeLoggedOnce = true;
-                }
-                mmi.ptMinTrackSize = new System.Drawing.Point(w, h);
-                mmi.ptMaxTrackSize = new System.Drawing.Point(w, h);
-            }
-            else
-            {
-                mmi.ptMinTrackSize = new System.Drawing.Point(
-                    (int)(NativeInterop.MinWindowWidth * scale),
-                    (int)(NativeInterop.MinWindowHeight * scale));
-            }
+            mmi.ptMinTrackSize = new System.Drawing.Point(
+                (int)(NativeInterop.MinWindowWidth * scale),
+                (int)(NativeInterop.MinWindowHeight * scale));
 
             Marshal.StructureToPtr(mmi, lParam, false);
             return IntPtr.Zero;
@@ -246,7 +213,7 @@ public class WindowStateManager
 
         // Save window position/size when the user finishes a resize or move drag.
         // This means the bounds are always up to date, surviving End Task or installer-triggered restarts.
-        if (msg == (uint)NativeInterop.WM_EXITSIZEMOVE && !_sizeLocked)
+        if (msg == (uint)NativeInterop.WM_EXITSIZEMOVE)
         {
             SaveWindowBounds();
         }
@@ -259,8 +226,31 @@ public class WindowStateManager
 
         if (msg == (uint)TrayIconService.WM_TRAYICON)
         {
-            TrayIconService.HandleTrayMessage(lParam);
-            return IntPtr.Zero;
+            // Guard: only handle genuine tray callbacks (wParam == icon ID 1, lParam low word is a mouse message).
+            // If something else sends WM_APP (0x8000) to our hwnd and we swallow it, we might drop
+            // a framework wake-up message. Forward non-tray 0x8000 messages to avoid that.
+            bool isTrayCallback = (wParam.ToInt64() == 1) && ((lParam.ToInt64() & 0xFFFF) is
+                0x0200 or 0x0201 or 0x0202 or 0x0203 or 0x0204 or 0x0205 or 0x0206 or // WM_MOUSE*
+                0x020A or 0x020E or // WM_MOUSEWHEEL, WM_MOUSEHWHEEL
+                0x007F); // NIN_BALLOONSHOW and similar tray notifications
+            if (isTrayCallback)
+            {
+                TrayIconService.HandleTrayMessage(lParam);
+                return IntPtr.Zero;
+            }
+            // Log the first few unexpected 0x8000 messages — may indicate a message ID collision.
+            int seen = System.Threading.Interlocked.Increment(ref _unexpectedWmAppCount);
+            if (seen <= 10)
+                _crashReporter.Log($"[WindowStateManager.WndProc] Unexpected 0x8000 message (not tray): wParam=0x{wParam.ToInt64():X} lParam=0x{lParam.ToInt64():X} (occurrence {seen})");
+            return NativeInterop.CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);
+        }
+
+        if (msg == NativeInterop.WM_POWERBROADCAST &&
+            ((uint)wParam == NativeInterop.PBT_APMRESUMEAUTOMATIC ||
+             (uint)wParam == NativeInterop.PBT_APMRESUMESUSPEND))
+        {
+            System.Threading.Interlocked.Exchange(ref LastResumeUtcTicks, DateTime.UtcNow.Ticks);
+            _crashReporter.Log($"[WindowStateManager.WndProc] WM_POWERBROADCAST: system resumed from sleep at {DateTime.UtcNow:HH:mm:ss.fff} UTC — freeze detection suppressed for 30s");
         }
 
         return NativeInterop.CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);
@@ -490,7 +480,7 @@ public class WindowStateManager
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[WindowStateManager.TryRestoreWindowBounds] Failed to restore window bounds — {ex.Message}"); }
     }
 
     /// <summary>Captures the current window rect into the in-memory cache.</summary>
@@ -504,20 +494,7 @@ public class WindowStateManager
             if (w < 100 || h < 100) return;
             _windowBounds = (r.Left, r.Top, w, h);
         }
-        catch { }
-    }
-
-    /// <summary>Restores the cached window bounds, if available.</summary>
-    public void RestoreWindowBounds()
-    {
-        try
-        {
-            if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
-            {
-                NativeInterop.SetWindowPos(_hwnd, IntPtr.Zero, x, y, w, h, 0x0040 /* SWP_NOZORDER */);
-            }
-        }
-        catch { }
+        catch (Exception) { /* Safe to ignore: runs from the window procedure (WM_EXITSIZEMOVE) and shutdown; keeps the previous cached bounds. */ }
     }
 
     /// <summary>
@@ -527,12 +504,9 @@ public class WindowStateManager
     /// </summary>
     public void CleanupOleDragDrop()
     {
-        if (_oleDropTarget == null)
-            return;
-
         try
         {
-            int hr = NativeInterop.RevokeDragDrop(_hwnd);
+            int hr = _oleDropTarget != null ? NativeInterop.RevokeDragDrop(_hwnd) : 0;
             if (hr != 0)
             {
                 _crashReporter.Log($"[WindowStateManager.CleanupOleDragDrop] RevokeDragDrop failed with HRESULT 0x{hr:X8} — continuing shutdown");
@@ -545,6 +519,11 @@ public class WindowStateManager
         finally
         {
             _oleDropTarget = null;
+            if (_oleInitialized)
+            {
+                _oleInitialized = false;
+                NativeInterop.OleUninitialize();
+            }
         }
     }
 
@@ -585,7 +564,7 @@ public class WindowStateManager
             var json = System.Text.Json.JsonSerializer.Serialize(data);
             System.IO.File.WriteAllText(_windowSettingsPath, json);
         }
-        catch { }
+        catch (Exception) { /* Safe to ignore: runs from the window procedure (WM_EXITSIZEMOVE) and during shutdown; bounds are saved again on the next move/resize. */ }
     }
 
     // ── OLE IDropTarget implementation ──────────────────────────────────────────

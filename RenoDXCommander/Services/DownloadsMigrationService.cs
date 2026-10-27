@@ -7,8 +7,6 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public static class DownloadsMigrationService
 {
-    private static readonly string MarkerPath = Path.Combine(DownloadPaths.Root, ".reorganised");
-
     /// <summary>
     /// Executes the one-time migration. If the marker file already exists,
     /// the migration is skipped entirely.
@@ -114,16 +112,6 @@ public static class DownloadsMigrationService
         {
             CrashReporter.Log($"[Migration] Unexpected error during migration: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Classifies a filename into the appropriate download subdirectory path
-    /// using priority-ordered pattern matching.
-    /// </summary>
-    internal static string ClassifyFile(string fileName)
-    {
-        var subfolder = ClassifySubfolder(fileName);
-        return Path.Combine(DownloadPaths.Root, subfolder);
     }
 
     /// <summary>

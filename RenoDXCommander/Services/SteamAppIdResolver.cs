@@ -121,7 +121,7 @@ public class SteamAppIdResolver : ISteamAppIdResolver
             var encodedName = Uri.EscapeDataString(gameName);
             var url = $"https://store.steampowered.com/api/storesearch/?term={encodedName}&l=english&cc=US";
 
-            var response = await _http.GetAsync(url).ConfigureAwait(false);
+            using var response = await _http.GetAsync(url).ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {

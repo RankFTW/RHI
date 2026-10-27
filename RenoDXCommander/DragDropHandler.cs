@@ -93,283 +93,290 @@ public partial class DragDropHandler
 
     public async void Grid_Drop(object sender, DragEventArgs e)
     {
-        // ── Path 1: StorageItems (files) ──────────────────────────────────────
-        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+        try
         {
-            var items = await e.DataView.GetStorageItemsAsync();
-            foreach (var item in items)
+            // ── Path 1: StorageItems (files) ──────────────────────────────────────
+            if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
             {
-                if (item is not Windows.Storage.StorageFile file) continue;
-
-                var ext = file.FileType?.ToLowerInvariant() ?? "";
-
-                // .url shortcut files — parse the URL inside and route to ProcessDroppedUrl
-                if (ext == ".url")
+                var items = await e.DataView.GetStorageItemsAsync();
+                foreach (var item in items)
                 {
-                    try
+                    if (item is not Windows.Storage.StorageFile file) continue;
+
+                    var ext = file.FileType?.ToLowerInvariant() ?? "";
+
+                    // .url shortcut files — parse the URL inside and route to ProcessDroppedUrl
+                    if (ext == ".url")
                     {
-                        var url = ParseUrlFromShortcutFile(file.Path);
-                        if (!string.IsNullOrEmpty(url))
+                        try
                         {
-                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] Parsed URL from .url file '{file.Name}': {url}");
-                            await ProcessDroppedUrl(url);
-                        }
-                        else
-                        {
-                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] No URL in .url file content for '{file.Name}' — trying Text data format");
-                            // Discord often provides the URL as Text alongside the .url StorageFile
-                            if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+                            var url = ParseUrlFromShortcutFile(file.Path);
+                            if (!string.IsNullOrEmpty(url))
                             {
-                                var text = await e.DataView.GetTextAsync();
-                                if (!string.IsNullOrWhiteSpace(text))
-                                {
-                                    var textUrl = text.Trim();
-                                    if (Uri.TryCreate(textUrl, UriKind.Absolute, out var uri)
-                                        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-                                    {
-                                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Got URL from Text data: {textUrl}");
-                                        await ProcessDroppedUrl(textUrl);
-                                        continue;
-                                    }
-                                }
+                                _crashReporter.Log($"[DragDropHandler.Grid_Drop] Parsed URL from .url file '{file.Name}': {url}");
+                                await ProcessDroppedUrl(url);
                             }
-
-                            // Last resort: if filename is like "renodx-game.addon64.url",
-                            // try reading the .url file as a WebUri
-                            if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.WebLink))
+                            else
                             {
-                                try
+                                _crashReporter.Log($"[DragDropHandler.Grid_Drop] No URL in .url file content for '{file.Name}' — trying Text data format");
+                                // Discord often provides the URL as Text alongside the .url StorageFile
+                                if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
                                 {
-                                    var webUri = await e.DataView.GetWebLinkAsync();
-                                    if (webUri != null)
+                                    var text = await e.DataView.GetTextAsync();
+                                    if (!string.IsNullOrWhiteSpace(text))
                                     {
-                                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Got URL from WebLink data: {webUri.AbsoluteUri}");
-                                        await ProcessDroppedUrl(webUri.AbsoluteUri);
-                                        continue;
-                                    }
-                                }
-                                catch { }
-                            }
-
-                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] Could not extract URL for .url file '{file.Name}' — skipping");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing .url file '{file.Name}' — {ex.Message}");
-                    }
-                    continue;
-                }
-
-                // Early validation: skip files with disallowed extensions
-                if (!IsAllowedExtension(file.Path))
-                {
-                    _crashReporter.Log($"[DragDropHandler.Grid_Drop] Skipping file with disallowed extension '{ext}' — '{file.Name}'");
-                    continue;
-                }
-
-                // Handle .ini files — install ReShade preset
-                if (ext == ".ini")
-                {
-                    try
-                    {
-                        await ProcessDroppedPreset(file.Path);
-                    }
-                    catch (Exception ex)
-                    {
-                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop preset error processing '{file.Path}' — {ex.Message}");
-                    }
-                    continue;
-                }
-
-                // Handle .addon64 / .addon32 / .addon files — route Luma files to Luma install, others to RenoDX addon install
-                if (ext is ".addon64" or ".addon32" or ".addon"
-                    && !Path.GetFileName(file.Path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
-                    && !Path.GetFileName(file.Path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        var addonName = Path.GetFileName(file.Path);
-                        bool isLumaAddonFile = addonName.Contains("Luma", StringComparison.OrdinalIgnoreCase);
-
-                        if (isLumaAddonFile)
-                        {
-                            // Luma addon — show game picker and route to Luma install flow
-                            var lumaGames = _window.ViewModel.AllCards
-                                .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
-                                .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
-                                .ToList();
-
-                            if (lumaGames.Count > 0)
-                            {
-                                var gameNames = lumaGames.Select(c => c.GameName).ToList();
-                                var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
-                                var combo = new Microsoft.UI.Xaml.Controls.ComboBox
-                                {
-                                    ItemsSource = gameNames,
-                                    SelectedIndex = preSelectIndex,
-                                    FontSize = 12,
-                                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
-                                };
-                                var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
-                                {
-                                    Title = "🌙 Install Luma Addon",
-                                    Content = new Microsoft.UI.Xaml.Controls.StackPanel
-                                    {
-                                        Spacing = 8,
-                                        Children =
+                                        var textUrl = text.Trim();
+                                        if (Uri.TryCreate(textUrl, UriKind.Absolute, out var uri)
+                                            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                                         {
-                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Install {addonName} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
-                                            combo,
+                                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] Got URL from Text data: {textUrl}");
+                                            await ProcessDroppedUrl(textUrl);
+                                            continue;
                                         }
-                                    },
-                                    PrimaryButtonText = "Install",
-                                    CloseButtonText = "Cancel",
-                                    XamlRoot = _window.Content.XamlRoot,
-                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                                };
-                                var result = await DialogService.ShowSafeAsync(pickerDialog);
-                                if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                                    }
+                                }
+
+                                // Last resort: if filename is like "renodx-game.addon64.url",
+                                // try reading the .url file as a WebUri
+                                if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.WebLink))
                                 {
-                                    var selectedName = combo.SelectedItem as string;
-                                    var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
-                                    if (card != null)
-                                        await ProcessDroppedLumaAddonAsync(file.Path, card);
+                                    try
+                                    {
+                                        var webUri = await e.DataView.GetWebLinkAsync();
+                                        if (webUri != null)
+                                        {
+                                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] Got URL from WebLink data: {webUri.AbsoluteUri}");
+                                            await ProcessDroppedUrl(webUri.AbsoluteUri);
+                                            continue;
+                                        }
+                                    }
+                                    catch (Exception ex) { CrashReporter.Log($"[DragDropHandler.Grid_Drop] GetWebLinkAsync failed — {ex.Message}"); }
+                                }
+
+                                _crashReporter.Log($"[DragDropHandler.Grid_Drop] Could not extract URL for .url file '{file.Name}' — skipping");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing .url file '{file.Name}' — {ex.Message}");
+                        }
+                        continue;
+                    }
+
+                    // Early validation: skip files with disallowed extensions
+                    if (!IsAllowedExtension(file.Path))
+                    {
+                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Skipping file with disallowed extension '{ext}' — '{file.Name}'");
+                        continue;
+                    }
+
+                    // Handle .ini files — install ReShade preset
+                    if (ext == ".ini")
+                    {
+                        try
+                        {
+                            await ProcessDroppedPreset(file.Path);
+                        }
+                        catch (Exception ex)
+                        {
+                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop preset error processing '{file.Path}' — {ex.Message}");
+                        }
+                        continue;
+                    }
+
+                    // Handle .addon64 / .addon32 / .addon files — route Luma files to Luma install, others to RenoDX addon install
+                    if (ext is ".addon64" or ".addon32" or ".addon"
+                        && !Path.GetFileName(file.Path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                        && !Path.GetFileName(file.Path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var addonName = Path.GetFileName(file.Path);
+                            bool isLumaAddonFile = addonName.Contains("Luma", StringComparison.OrdinalIgnoreCase);
+
+                            if (isLumaAddonFile)
+                            {
+                                // Luma addon — show game picker and route to Luma install flow
+                                var lumaGames = _window.ViewModel.AllCards
+                                    .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                                    .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                                    .ToList();
+
+                                if (lumaGames.Count > 0)
+                                {
+                                    var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                                    var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
+                                    var combo = new Microsoft.UI.Xaml.Controls.ComboBox
+                                    {
+                                        ItemsSource = gameNames,
+                                        SelectedIndex = preSelectIndex,
+                                        FontSize = 12,
+                                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                                    };
+                                    var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                                    {
+                                        Title = "🌙 Install Luma Addon",
+                                        Content = new Microsoft.UI.Xaml.Controls.StackPanel
+                                        {
+                                            Spacing = 8,
+                                            Children =
+                                            {
+                                                new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Install {addonName} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                                combo,
+                                            }
+                                        },
+                                        PrimaryButtonText = "Install",
+                                        CloseButtonText = "Cancel",
+                                        XamlRoot = _window.Content.XamlRoot,
+                                        RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                                    };
+                                    var result = await DialogService.ShowSafeAsync(pickerDialog);
+                                    if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                                    {
+                                        var selectedName = combo.SelectedItem as string;
+                                        var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                                        if (card != null)
+                                            await ProcessDroppedLumaAddonAsync(file.Path, card);
+                                    }
+                                }
+                                else
+                                {
+                                    // No Luma-eligible games — fall through to regular addon install
+                                    await ProcessDroppedAddon(file.Path);
                                 }
                             }
                             else
                             {
-                                // No Luma-eligible games — fall through to regular addon install
                                 await ProcessDroppedAddon(file.Path);
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            await ProcessDroppedAddon(file.Path);
+                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop addon error processing '{file.Path}' — {ex.Message}");
                         }
+                        continue;
                     }
-                    catch (Exception ex)
-                    {
-                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop addon error processing '{file.Path}' — {ex.Message}");
-                    }
-                    continue;
-                }
 
-                // Handle archive files — check for Luma mod first, then extract for addons
-                if (ArchiveExtensions.Contains(ext))
-                {
+                    // Handle archive files — check for Luma mod first, then extract for addons
+                    if (ArchiveExtensions.Contains(ext))
+                    {
+                        try
+                        {
+                            // Check if this is a Luma mod archive
+                            if ((ext == ".zip" || ext == ".7z") && IsLumaArchive(file.Path))
+                            {
+                                // Show game picker (same as file watcher path)
+                                var lumaGames = _window.ViewModel.AllCards
+                                    .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                                    .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                                    .ToList();
+
+                                if (lumaGames.Count > 0)
+                                {
+                                    var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                                    var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
+
+                                    var combo = new Microsoft.UI.Xaml.Controls.ComboBox
+                                    {
+                                        ItemsSource = gameNames,
+                                        SelectedIndex = preSelectIndex,
+                                        FontSize = 12,
+                                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                                    };
+                                    var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                                    {
+                                        Title = "Install Luma Mod",
+                                        Content = new Microsoft.UI.Xaml.Controls.StackPanel
+                                        {
+                                            Spacing = 8,
+                                            Children =
+                                            {
+                                                new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Luma mod detected: {Path.GetFileName(file.Path)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                                combo,
+                                            }
+                                        },
+                                        PrimaryButtonText = "Install",
+                                        CloseButtonText = "Cancel",
+                                        XamlRoot = _window.Content.XamlRoot,
+                                        RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                                    };
+                                    var result = await DialogService.ShowSafeAsync(pickerDialog);
+                                    if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                                    {
+                                        var selectedName = combo.SelectedItem as string;
+                                        var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                                        if (card != null)
+                                            await ProcessDroppedLumaArchiveAsync(file.Path, card);
+                                    }
+                                    continue;
+                                }
+                            }
+
+                            await ProcessDroppedArchive(file.Path);
+                        }
+                        catch (Exception ex)
+                        {
+                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop archive error processing '{file.Path}' — {ex.Message}");
+                        }
+                        continue;
+                    }
+
+                    // Handle .exe files — add game
+                    if (!ext.Equals(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    var exePath = file.Path;
+                    _crashReporter.Log($"[DragDropHandler.Grid_Drop] Received exe '{exePath}'");
+
                     try
                     {
-                        // Check if this is a Luma mod archive
-                        if ((ext == ".zip" || ext == ".7z") && IsLumaArchive(file.Path))
-                        {
-                            // Show game picker (same as file watcher path)
-                            var lumaGames = _window.ViewModel.AllCards
-                                .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
-                                .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
-                                .ToList();
-
-                            if (lumaGames.Count > 0)
-                            {
-                                var gameNames = lumaGames.Select(c => c.GameName).ToList();
-                                var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
-
-                                var combo = new Microsoft.UI.Xaml.Controls.ComboBox
-                                {
-                                    ItemsSource = gameNames,
-                                    SelectedIndex = preSelectIndex,
-                                    FontSize = 12,
-                                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
-                                };
-                                var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
-                                {
-                                    Title = "Install Luma Mod",
-                                    Content = new Microsoft.UI.Xaml.Controls.StackPanel
-                                    {
-                                        Spacing = 8,
-                                        Children =
-                                        {
-                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Luma mod detected: {Path.GetFileName(file.Path)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
-                                            combo,
-                                        }
-                                    },
-                                    PrimaryButtonText = "Install",
-                                    CloseButtonText = "Cancel",
-                                    XamlRoot = _window.Content.XamlRoot,
-                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                                };
-                                var result = await DialogService.ShowSafeAsync(pickerDialog);
-                                if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
-                                {
-                                    var selectedName = combo.SelectedItem as string;
-                                    var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
-                                    if (card != null)
-                                        await ProcessDroppedLumaArchiveAsync(file.Path, card);
-                                }
-                                continue;
-                            }
-                        }
-
-                        await ProcessDroppedArchive(file.Path);
+                        await ProcessDroppedExe(exePath);
                     }
                     catch (Exception ex)
                     {
-                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] DragDrop archive error processing '{file.Path}' — {ex.Message}");
+                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing '{exePath}' — {ex.Message}");
                     }
-                    continue;
                 }
+                return;
+            }
 
-                // Handle .exe files — add game
-                if (!ext.Equals(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-
-                var exePath = file.Path;
-                _crashReporter.Log($"[DragDropHandler.Grid_Drop] Received exe '{exePath}'");
-
+            // ── Path 2: Text/URI (URL dragged directly from browser/Discord) ──────
+            if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+            {
                 try
                 {
-                    await ProcessDroppedExe(exePath);
+                    var text = await e.DataView.GetTextAsync();
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        var url = text.Trim();
+                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] Received text drop: '{url}'");
+
+                        if (Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                        {
+                            var filename = ExtractFileNameFromUrl(url);
+                            if (filename != null)
+                            {
+                                var ext = Path.GetExtension(filename);
+                                if (ext != null && (ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                                                 || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    await ProcessDroppedUrl(url);
+                                    return;
+                                }
+                            }
+                            _crashReporter.Log($"[DragDropHandler.Grid_Drop] URL does not point to an addon file — ignored");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing '{exePath}' — {ex.Message}");
+                    _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing text drop — {ex.Message}");
                 }
             }
-            return;
         }
-
-        // ── Path 2: Text/URI (URL dragged directly from browser/Discord) ──────
-        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+        catch (Exception unhandledEx)
         {
-            try
-            {
-                var text = await e.DataView.GetTextAsync();
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    var url = text.Trim();
-                    _crashReporter.Log($"[DragDropHandler.Grid_Drop] Received text drop: '{url}'");
-
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri)
-                        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-                    {
-                        var filename = ExtractFileNameFromUrl(url);
-                        if (filename != null)
-                        {
-                            var ext = Path.GetExtension(filename);
-                            if (ext != null && (ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
-                                             || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase)))
-                            {
-                                await ProcessDroppedUrl(url);
-                                return;
-                            }
-                        }
-                        _crashReporter.Log($"[DragDropHandler.Grid_Drop] URL does not point to an addon file — ignored");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[DragDropHandler.Grid_Drop] Error processing text drop — {ex.Message}");
-            }
+            CrashReporter.Log($"[DragDropHandler.Grid_Drop] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
         }
     }
 

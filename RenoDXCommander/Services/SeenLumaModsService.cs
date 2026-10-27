@@ -72,6 +72,6 @@ public class SeenLumaModsService
                 Directory.CreateDirectory(dir);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(_seenMods.ToList(), new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[SeenLumaModsService.Save] Failed to save seen Luma mods — {ex.Message}"); }
     }
 }

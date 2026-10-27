@@ -15,11 +15,6 @@ public partial class DxvkService : IDxvkService
 {
     // ── Constants ──────────────────────────────────────────────────────
 
-    // Legacy staging folder (used for migration detection)
-    private static readonly string LegacyStagingDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "dxvk");
-
     // Separate staging directories for each variant (coexist simultaneously)
     private static readonly string StagingDirDevelopment = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -38,9 +33,6 @@ public partial class DxvkService : IDxvkService
     /// All staging operations use this property.
     /// </summary>
     private string StagingDir => GetStagingDirForVariant(_selectedVariant);
-
-    private static readonly string VersionFilePath =
-        Path.Combine(LegacyStagingDir, "version.txt");
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -320,17 +312,6 @@ public partial class DxvkService : IDxvkService
             presetIndex = 0;
         return LiliumD3d9Presets[presetIndex].Content;
     }
-
-    private const string LiliumHdrConfContent_D3d11 =
-        """
-
-        # Lilium HDR
-        dxvk.enableAsync                              = true
-        dxvk.gplAsyncCache                            = true
-        d3d11.enableSwapChainUpgrade                  = true
-        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
-        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
-        """;
 
     /// <summary>
     /// Lilium HDR DX10/DX11 dxvk.conf presets — 7 tiers from safest to fully experimental.

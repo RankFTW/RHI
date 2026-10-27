@@ -8,14 +8,6 @@ namespace RenoDXCommander.ViewModels;
 // ReShade status, install state, and computed properties
 public partial class GameCardViewModel
 {
-    // ── Testable seam for VulkanLayerService.IsLayerInstalled() ────────────────────
-    /// <summary>
-    /// Delegate used by computed properties to check Vulkan layer status.
-    /// Defaults to <see cref="VulkanLayerService.IsLayerInstalled()"/>.
-    /// Tests can replace this with a custom func to control the result.
-    /// </summary>
-    internal static Func<bool> IsLayerInstalledFunc = VulkanLayerService.IsLayerInstalled;
-
     // ── Cached Vulkan layer state (set via SetVulkanLayerInstalled from background threads) ────
     private bool _vulkanLayerInstalled;
 

@@ -8,6 +8,31 @@ namespace RenoDXCommander.Services;
 public static class FileHelper
 {
     /// <summary>
+    /// Joins <paramref name="baseDir"/> with a relative path taken from an archive entry or a
+    /// saved record, and returns the full path only if it stays inside <paramref name="baseDir"/>.
+    /// Returns null for rooted paths or paths that escape with "..", so a crafted archive
+    /// can't write (or a tampered record delete) files outside the target folder.
+    /// </summary>
+    public static string? SafeCombine(string baseDir, string? relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(baseDir) || string.IsNullOrWhiteSpace(relativePath))
+            return null;
+
+        var rel = relativePath.Replace('/', Path.DirectorySeparatorChar);
+        if (Path.IsPathRooted(rel))
+            return null;
+
+        var root = Path.GetFullPath(baseDir);
+        if (!root.EndsWith(Path.DirectorySeparatorChar))
+            root += Path.DirectorySeparatorChar;
+
+        var full = Path.GetFullPath(Path.Combine(root, rel));
+        return full.StartsWith(root, StringComparison.OrdinalIgnoreCase) && full.Length > root.Length
+            ? full
+            : null;
+    }
+
+    /// <summary>
     /// Writes <paramref name="content"/> to <paramref name="path"/> with up to 3 attempts.
     /// On transient <see cref="IOException"/>, retries immediately without blocking.
     /// On non-IOException or final failure, logs via <see cref="CrashReporter"/> using
@@ -43,6 +68,35 @@ public static class FileHelper
                 CrashReporter.Log($"[{callerTag}] Failed to write file — {ex.Message}");
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Atomically writes <paramref name="content"/> to <paramref name="path"/> by first
+    /// writing a <c>.tmp</c> file in the same directory and then renaming it over the target.
+    /// This ensures a forced kill mid-write cannot leave a corrupt (zero-length or partial)
+    /// JSON file — the final file either keeps its previous contents or gets the new ones.
+    /// On any failure the caller is notified via <see cref="CrashReporter"/> but no exception
+    /// is thrown.
+    /// </summary>
+    /// <param name="path">Destination file path.</param>
+    /// <param name="content">Text content to write.</param>
+    /// <param name="callerTag">Context string for log messages.</param>
+    public static void WriteAllTextAtomic(string path, string content, string callerTag)
+    {
+        var tmp = path + ".tmp";
+        try
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (dir != null) Directory.CreateDirectory(dir);
+            File.WriteAllText(tmp, content);
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[{callerTag}] Atomic write failed — {ex.GetType().Name}: {ex.Message}");
+            // Clean up the orphaned .tmp so it doesn't confuse future reads
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
         }
     }
 }

@@ -1,5 +1,4 @@
 .vs
-.kiro
 Logs
 Luma
 RenoDXCommander/bin
@@ -8,7 +7,6 @@ RenoDXCommander.Tests/bin
 RenoDXCommander.Tests/obj
 RHI.DropHelper/bin
 RHI.DropHelper/obj
-publish.bat
 OPTI/
 downloads_tidyup.md
 
@@ -47,3 +45,7 @@ RHI.Core/bin/
 RHI.Core/obj/
 scripts/tests/__pycache__/
 artifacts/
+
+# Claude Code personal settings (shared .claude/settings.json is committed)
+.claude/settings.local.json
+__pycache__/

@@ -13,7 +13,6 @@ public static class NvColorService
     private const uint NVAPI_DISP_GET_DISPLAYID_BY_NAME_ID  = 0xAE457190;
     private const uint NVAPI_ENUM_DISPLAY_HANDLE_ID         = 0x9ABDD40D;
     private const uint NVAPI_GET_ASSOCIATED_DISPLAY_NAME_ID = 0x22A78B05;
-    private const uint NVAPI_DISP_GET_GDI_PRIMARY_ID        = 0x1E9D8A31;
 
     // ── cmd values ────────────────────────────────────────────────────────────
     private const byte NV_COLOR_CMD_GET = 1;
@@ -108,8 +107,6 @@ public static class NvColorService
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
     }
 
-    private const uint DISPLAY_DEVICE_ACTIVE = 0x00000001;
-
     // ── CCD source name P/Invoke (for GDI device name → friendly name mapping) ─
     [DllImport("user32.dll")] private static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DEVICE_NAME info);
 
@@ -166,15 +163,47 @@ public static class NvColorService
 
     /// <summary>
     /// Enumerates active NVIDIA displays. Returns display ID + friendly name.
-    /// Uses HdrToggleService for friendly names (CCD API returns proper EDID names).
-    /// NVIDIA displayIds are obtained via NvAPI_DISP_GetDisplayIdByDisplayName.
+    /// Uses native NVAPI enumeration (NvAPI_EnumNvidiaDisplayHandle) for display discovery,
+    /// then maps to NVAPI display IDs via NvAPI_DISP_GetDisplayIdByDisplayName.
+    /// Falls back to GDI-based enumeration if NVAPI enumeration fails.
     /// </summary>
     public static List<NvDisplay> GetDisplays()
     {
         var result = new List<NvDisplay>();
-        if (!EnsureInit() || _getDisplayIdByName == null) return result;
+        if (!EnsureInit()) return result;
 
-        // Get displayIds for all active GDI displays
+        // Try native NVAPI enumeration first — enumerate display handles and get their names
+        if (_enumDisplayHandle != null && _getDisplayName != null && _getDisplayIdByName != null)
+        {
+            for (int idx = 0; idx < 12; idx++)
+            {
+                int ret = _enumDisplayHandle(idx, out IntPtr handle);
+                if (ret != 0) break; // End of list
+
+                // Get the display name (e.g., "\\.\DISPLAY1" or similar)
+                var nameBuffer = new System.Text.StringBuilder(256);
+                int nameRet = _getDisplayName(handle, nameBuffer);
+                if (nameRet != 0) continue;
+
+                string nvDisplayName = nameBuffer.ToString();
+
+                // Convert to NVAPI display ID
+                int idRet = _getDisplayIdByName(nvDisplayName, out uint displayId);
+                if (idRet == 0 && displayId != 0)
+                {
+                    // Get friendly name from HdrToggleService
+                    var gdiNameMap = HdrToggleService.GetGdiNameMap();
+                    string friendlyName = gdiNameMap.TryGetValue(nvDisplayName, out var friendly) ? friendly : nvDisplayName;
+                    result.Add(new NvDisplay(displayId, friendlyName));
+                }
+            }
+
+            if (result.Count > 0) return result;
+        }
+
+        // Fallback: try direct GDI name lookup (the old approach — may not work on all systems)
+        if (_getDisplayIdByName == null) return result;
+
         var nvDisplays = new List<(string GdiName, uint DisplayId)>();
         for (int i = 1; i <= 12; i++)
         {
@@ -186,13 +215,10 @@ public static class NvColorService
 
         if (nvDisplays.Count == 0) return result;
 
-        // Get friendly names keyed by GDI device name so we match exactly,
-        // not by index position (which is fragile when GDI and CCD orderings differ).
-        var gdiNameMap = HdrToggleService.GetGdiNameMap();
-
+        var gdiMap = HdrToggleService.GetGdiNameMap();
         foreach (var (gdiName, displayId) in nvDisplays)
         {
-            string name = gdiNameMap.TryGetValue(gdiName, out var friendly) ? friendly : gdiName;
+            string name = gdiMap.TryGetValue(gdiName, out var friendly) ? friendly : gdiName;
             result.Add(new NvDisplay(displayId, name));
         }
 

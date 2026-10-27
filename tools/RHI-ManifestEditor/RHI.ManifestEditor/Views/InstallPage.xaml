@@ -215,27 +215,6 @@
                 </StackPanel>
             </Expander>
 
-            <!-- optiScalerDllOverrides -->
-            <Expander HorizontalAlignment="Stretch">
-                <Expander.Header><TextBlock Text="optiScalerDllOverrides — force OptiScaler DLL filename" FontWeight="SemiBold"/></Expander.Header>
-                <StackPanel Spacing="4" Padding="0,8,0,0">
-                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Key = game name. Value = DLL filename (e.g. d3d12.dll). Reserved for future use — currently not consumed by the app."/>
-                    <ListView x:Name="OptiScalerDllView" MaxHeight="160" SelectionMode="None">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="e.g. d3d12.dll" FontSize="12"/>
-                                    <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveOptiScalerDll_Click" Padding="8,4"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <Button Content="+ Add" Click="AddOptiScalerDll_Click"/>
-                </StackPanel>
-            </Expander>
-
             <!-- renodxIniOverrides -->
             <Expander HorizontalAlignment="Stretch">
                 <Expander.Header><TextBlock Text="renodxIniOverrides — inject key=value pairs into renodx.ini on install" FontWeight="SemiBold"/></Expander.Header>

@@ -523,65 +523,85 @@ public static class WikiUnityScrapeService
         return entries;
     }
 
+    // "Upgrade R10G10B10A2_TYPELESS & R11G11B10_FLOAT to Output Size" (backticks optional)
+    private static readonly Regex UnityUpgradePattern = new(
+        @"Upgrade\s+`?(?<fmt>[A-Z0-9]+_[A-Z0-9_]+)`?(?:\s*(?:&|and|,)\s*`?(?<fmt>[A-Z0-9]+_[A-Z0-9_]+)`?)*(?:\s+to\s+`?(?<size>Output\s+(?:Size|Ratio)|Any\s+Size)`?)?",
+        RegexOptions.IgnoreCase);
+
+    // "Swapchain Encoding: Gamma", "Encoding: Gamma", "Swapchain encoding set to gamma"
+    private static readonly Regex UnityEncodingPattern = new(
+        @"(?:Swap\s*chain\s+)?Encoding(?:\s*:\s*|\s+(?:set\s+)?to\s+)(?<enc>Gamma|Linear)",
+        RegexOptions.IgnoreCase);
+
+    // "Enable Swapchain Proxy"
+    private static readonly Regex UnityProxyPattern = new(
+        @"Enable\s+Swap\s*chain\s+Proxy",
+        RegexOptions.IgnoreCase);
+
     /// <summary>
-    /// Parses a raw Notes string into (Upgrades string, Comments string).
-    /// Upgrades are encoded as backtick tokens matching UnrealEntry format.
-    /// Remaining text goes to Comments.
+    /// Parses a raw Unity Notes string into (Upgrades string, Comments string).
+    /// Upgrades use the Unity key/value backtick form RHI writes into [renodx]:
+    /// format upgrades as `Upgrade_FORMAT` `Size`, plus `Swapchain_Encoding` (0 = Linear,
+    /// 1 = Gamma, per the Unity addon's labels) and `Use_Swapchain_Proxy` `1`.
+    /// Recognised text is removed; whatever is left goes to Comments.
     /// </summary>
     public static (string? Upgrades, string? Comments) ParseNotes(string? rawNotes)
     {
         if (string.IsNullOrWhiteSpace(rawNotes)) return (null, null);
 
         var upgradeParts = new List<string>();
-        var commentParts = new List<string>();
-
-        // Split by sentence separators (. or ,) but preserve context
-        // Strategy: scan for "Upgrade <FORMAT>" patterns, extract them; rest → comments
-        var remaining = rawNotes;
-
-        // Match "Upgrade R11G11B10_FLOAT" patterns (with optional size suffix)
-        var upgradePattern = new Regex(
-            @"Upgrade\s+([A-Z0-9_]+)(?:\s+to\s+(Output\s+(?:Size|Ratio|ratio)|Any\s+[Ss]ize))?",
-            RegexOptions.IgnoreCase);
-
-        var matches = upgradePattern.Matches(remaining);
         var consumedRanges = new List<(int start, int end)>();
 
-        foreach (Match m in matches)
+        foreach (Match m in UnityUpgradePattern.Matches(rawNotes))
         {
-            var formatKey = m.Groups[1].Value.Trim().TrimEnd('.');
-            if (!UpgradeFormats.TryGetValue(formatKey, out var canonicalFormat))
-                continue;
-
             string? sizeToken = null;
-            if (m.Groups[2].Success)
+            if (m.Groups["size"].Success)
             {
-                var sizeRaw = m.Groups[2].Value.Trim();
-                sizeToken = sizeRaw.ToLowerInvariant() switch
-                {
-                    var s when s.Contains("output") && s.Contains("size") => "Output Size",
-                    var s when s.Contains("output") && s.Contains("ratio") => "Output Ratio",
-                    var s when s.Contains("any") => "Any Size",
-                    _ => null
-                };
+                var s = m.Groups["size"].Value.ToLowerInvariant();
+                sizeToken = s.Contains("ratio") ? "Output Ratio"
+                          : s.Contains("output") ? "Output Size"
+                          : "Any Size";
             }
 
-            upgradeParts.Add(sizeToken != null
-                ? $"`{canonicalFormat}` `{sizeToken}`"
-                : $"`{canonicalFormat}`");
-            consumedRanges.Add((m.Index, m.Index + m.Length));
+            bool any = false;
+            foreach (Capture c in m.Groups["fmt"].Captures)
+            {
+                if (!UpgradeFormats.TryGetValue(c.Value.TrimEnd('.'), out var canonicalFormat)) continue;
+                var key = "Upgrade_" + canonicalFormat;
+                upgradeParts.Add(sizeToken != null ? $"`{key}` `{sizeToken}`" : $"`{key}`");
+                any = true;
+            }
+            if (any) consumedRanges.Add((m.Index, m.Index + m.Length));
         }
 
-        // Build comment from what's left after removing upgrade mentions
-        var comment = remaining;
-        // Remove upgrade fragments in reverse order to preserve indices
+        var enc = UnityEncodingPattern.Match(rawNotes);
+        if (enc.Success)
+        {
+            var value = enc.Groups["enc"].Value.Equals("Gamma", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
+            upgradeParts.Add($"`Swapchain_Encoding` `{value}`");
+            consumedRanges.Add((enc.Index, enc.Index + enc.Length));
+        }
+
+        var proxy = UnityProxyPattern.Match(rawNotes);
+        if (proxy.Success)
+        {
+            upgradeParts.Add("`Use_Swapchain_Proxy` `1`");
+            consumedRanges.Add((proxy.Index, proxy.Index + proxy.Length));
+        }
+
+        // Build comment from what's left after removing the recognised fragments
+        var comment = rawNotes;
+        int cutFrom = int.MaxValue; // ranges are removed back to front; skip any overlap
         foreach (var (start, end) in consumedRanges.OrderByDescending(r => r.start))
         {
-            if (start < comment.Length)
-                comment = comment[..start] + comment[Math.Min(end, comment.Length)..];
+            var e = Math.Min(end, cutFrom);
+            if (start < e && start < comment.Length)
+                comment = comment[..start] + comment[Math.Min(e, comment.Length)..];
+            cutFrom = Math.Min(cutFrom, start);
         }
-        // Clean up the comment
+        // Clean up separators left behind (", ," / ". ," / leading punctuation)
         comment = Regex.Replace(comment, @"\s{2,}", " ");
+        comment = Regex.Replace(comment, @"\s*([,.])(\s*[,.])+", "$1");
         comment = comment.Trim('.', ',', ' ', '\n');
         comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
 

@@ -96,7 +96,7 @@ public partial class UltraPlusService : IUltraPlusService
                     if (File.Exists(CachePath))
                         html = File.ReadAllText(CachePath);
                 }
-                catch { }
+                catch (Exception ex2) { CrashReporter.Log($"[UltraPlusService.InitAsync] Stale cache read failed — {ex2.Message}"); }
 
                 if (html == null)
                 {

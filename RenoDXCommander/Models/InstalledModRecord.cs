@@ -38,4 +38,11 @@ public class InstalledModRecord
     /// Null for mods installed before Nexus integration or via drag-drop.
     /// </summary>
     public int? NexusFileId { get; set; }
+
+    /// <summary>
+    /// Version that was installed before this install replaced it.
+    /// Populated transiently at install time for the UpdateLog — not persisted to JSON.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? PreviousVersion { get; set; }
 }

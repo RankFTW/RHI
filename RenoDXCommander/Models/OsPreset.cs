@@ -7,6 +7,7 @@ namespace RenoDXCommander.Models;
 public class OsPreset
 {
     public string? Name                   { get; set; }  // user-editable label
+    public string? OsVariant              { get; set; }  // "Stable", "Nightly", "DlssNr" — null = don't change
     public string? FgInput                { get; set; }  // INI value e.g. "upscaler", "auto"
     public string? FgOutput               { get; set; }  // INI value e.g. "dlssg", "auto"
     public string? FgNvngxReplacement     { get; set; }  // INI value e.g. "Arturs", "None"
@@ -18,6 +19,11 @@ public class OsPreset
     public bool?   DisableFlipMetering    { get; set; }
     public string? HudFix                 { get; set; }  // "true", "false", "auto"
     public float?  FramerateLimit         { get; set; }  // fps value, 0 = Off
+    public string? UpscalerApi            { get; set; }  // "DX11", "DX12", "Vulkan"
+    public string? Upscaler               { get; set; }  // INI value e.g. "dlss", "xess", "auto"
+    public string? FgEnabled              { get; set; }  // "true", "false" (auto = not set)
+    public string? ForceReflex            { get; set; }  // "0", "1", "2"
+    public string? UseGamesReflexMarkers  { get; set; }  // "true", "false"
     // ── DLSS NR preset fields ─────────────────────────────────────────────────
     public string? NrRuntime              { get; set; }  // e.g. "310.8.2", "310.8.SF-v2"
     public string? NrEnabled              { get; set; }  // "true", "false", "auto"

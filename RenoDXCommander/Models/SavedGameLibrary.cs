@@ -52,6 +52,12 @@ public class SavedGameLibrary
 
     /// <summary>Maps game name → installed RenoDX version string. Cached from PE header reads to avoid repeat scanning on startup.</summary>
     public Dictionary<string, string>? RdxInstalledVersions { get; set; }
+
+    /// <summary>
+    /// Maps rootPath (lower) → folder fingerprint, for games whose engine was detected as Unknown.
+    /// While the fingerprint matches, the Unknown result is reused instead of re-scanning the folder.
+    /// </summary>
+    public Dictionary<string, string> EngineFolderStamps { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>

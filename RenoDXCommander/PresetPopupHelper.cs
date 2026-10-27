@@ -44,7 +44,7 @@ public static class PresetPopupHelper
             emptyLinkRun.Click += (s, ev) =>
             {
                 try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[PresetPopupHelper.ShowAsync] Failed to open presets folder — {ex.Message}"); }
             };
             emptyPathLink.Inlines.Add(emptyLinkRun);
 
@@ -84,7 +84,7 @@ public static class PresetPopupHelper
             if (emptyResult == ContentDialogResult.Primary)
             {
                 try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[PresetPopupHelper.ShowAsync] Failed to open presets folder — {ex.Message}"); }
             }
             return null;
         }
@@ -106,7 +106,7 @@ public static class PresetPopupHelper
         linkRun.Click += (s, e) =>
         {
             try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[PresetPopupHelper.ShowAsync] Failed to open presets folder — {ex.Message}"); }
         };
         pathLink.Inlines.Add(linkRun);
         panel.Children.Add(pathLink);

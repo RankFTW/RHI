@@ -180,11 +180,4 @@ public class NexusModsService : INexusModsService
         }
         return null;
     }
-
-    /// <summary>
-    /// Determines whether the cache file is still fresh (less than 24 hours old).
-    /// Exposed for testability (Property 10: Cache TTL decision).
-    /// </summary>
-    internal static bool IsCacheFresh(DateTime lastWriteUtc, DateTime currentUtc)
-        => (currentUtc - lastWriteUtc) < CacheTtl;
 }

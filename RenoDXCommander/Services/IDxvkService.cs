@@ -55,7 +55,10 @@ public interface IDxvkService
     /// </summary>
     Task InstallAsync(
         GameCardViewModel card,
-        IProgress<(string message, double percent)>? progress = null);
+        IProgress<(string message, double percent)>? progress = null,
+        string? screenshotSavePath = null,
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null);
 
     /// <summary>
     /// Uninstalls DXVK from the specified game folder.

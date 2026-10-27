@@ -737,14 +737,14 @@ public partial class AuxInstallService
                 var expandedPath = Environment.ExpandEnvironmentVariables(candidate.Trim());
                 if (Directory.Exists(expandedPath)) return expandedPath;
             }
-            // None exist yet — try creating the first one
+            // None exist yet — create the first one (CreateDirectory handles the full path chain)
             var firstExpanded = Environment.ExpandEnvironmentVariables(candidates[0].Trim());
-            var parent = Path.GetDirectoryName(firstExpanded);
-            if (parent != null && Directory.Exists(parent))
+            try
             {
                 Directory.CreateDirectory(firstExpanded);
                 return firstExpanded;
             }
+            catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.ResolveEngineIniDir] Failed to create config dir '{firstExpanded}' — {ex.Message}"); }
             return null;
         }
 
@@ -806,7 +806,7 @@ public partial class AuxInstallService
                                 if (result != null) return result;
                             }
                         }
-                        catch { }
+                        catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.ResolveEngineIniDir] Failed to scan '{gameRoot}' for Saved\\Config — {ex.Message}"); }
                     }
                     break;
                 }
@@ -1402,24 +1402,6 @@ public partial class AuxInstallService
     }
 
     /// <summary>
-    /// Removes the KeyOverlay key from the [INPUT] section of the given reshade*.ini file,
-    /// allowing the game to fall back to its template default. If no [INPUT] section or
-    /// KeyOverlay key exists, the file is left unchanged.
-    /// </summary>
-    public static void RemoveOverlayHotkey(string iniFilePath)
-    {
-        if (!File.Exists(iniFilePath)) return;
-
-        var ini = ParseIni(File.ReadAllLines(iniFilePath));
-
-        if (ini.TryGetValue("INPUT", out var inputSection) && inputSection.ContainsKey("KeyOverlay"))
-        {
-            inputSection.Remove("KeyOverlay");
-            WriteIni(iniFilePath, ini);
-        }
-    }
-
-    /// <summary>
     /// Writes or updates VariableListUseTabs in the [OVERLAY] section of the given reshade.ini file.
     /// When true, the ReShade overlay groups effect files into tabs instead of a tree.
     /// </summary>
@@ -1741,7 +1723,7 @@ public partial class AuxInstallService
             var url = EngineIniFilesBaseUrl + Uri.EscapeDataString(filename);
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            var response = await http.GetAsync(url, cts.Token).ConfigureAwait(false);
+            using var response = await http.GetAsync(url, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -1765,7 +1747,7 @@ public partial class AuxInstallService
                 var cachePath = Path.Combine(EngineIniFilesCacheDir, filename);
                 if (File.Exists(cachePath)) return await File.ReadAllTextAsync(cachePath).ConfigureAwait(false);
             }
-            catch { }
+            catch (Exception ex2) { CrashReporter.Log($"[AuxInstallService.FetchEngineIniFileAsync] Disk cache fallback failed for '{filename}' — {ex2.Message}"); }
             return null;
         }
     }
@@ -1918,7 +1900,7 @@ public partial class AuxInstallService
                                 if (Directory.Exists(subSaved)) return subDir;
                             }
                         }
-                        catch { }
+                        catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.ResolveGameConfigRoot] Failed to scan '{gameRoot}' for Saved folder — {ex.Message}"); }
                     }
                     break;
                 }

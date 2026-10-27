@@ -76,12 +76,6 @@ public class RemoteManifest
     [JsonPropertyName("snapshotOverrides")]
     public Dictionary<string, string>? SnapshotOverrides { get; set; }
 
-    /// <summary>
-    /// Games that should default to Luma mode when first detected.
-    /// If the user has never toggled Luma for the game, it will be auto-enabled.
-    /// </summary>
-    [JsonPropertyName("lumaDefaultGames")]
-    public List<string>? LumaDefaultGames { get; set; }
 
     /// <summary>
     /// Games that require dgVoodoo2 for Luma installation (DX9 games needing a DX11 translation layer).
@@ -139,15 +133,6 @@ public class RemoteManifest
     public Dictionary<string, ManifestDllNames>? DllNameOverrides { get; set; }
 
     /// <summary>
-    /// Per-game OptiScaler DLL filename overrides. When a game requires a specific
-    /// proxy DLL name for OptiScaler (e.g. games where dxgi.dll conflicts with
-    /// another tool), this provides a direct mapping.
-    /// Key = game name, Value = DLL filename string (e.g. "winmm.dll").
-    /// </summary>
-    [JsonPropertyName("optiScalerDllOverrides")]
-    public Dictionary<string, string>? OptiScalerDllOverrides { get; set; }
-
-    /// <summary>
     /// Per-game graphics API overrides. Allows the manifest to force a specific
     /// graphics API badge for games where auto-detection fails (e.g. games that
     /// load DirectX entirely at runtime with no static PE imports).
@@ -160,12 +145,38 @@ public class RemoteManifest
     public Dictionary<string, string>? GraphicsApiOverrides { get; set; }
 
     /// <summary>
+    /// Maps game name → relative path (from game root) containing DLSS/Streamline DLLs.
+    /// Used when DLLs are buried in a non-standard location that the recursive scan
+    /// would either miss or be too slow to reach.
+    /// Example: "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\...\\Win64"
+    /// The path is combined with game.InstallPath to get the absolute search folder.
+    /// </summary>
+    [JsonPropertyName("dlssPathOverrides")]
+    public Dictionary<string, string>? DlssPathOverrides { get; set; }
+
+    /// <summary>
+    /// Maps game name → relative path (from game root) containing Streamline DLLs (sl.common.dll etc.).
+    /// Companion to <see cref="DlssPathOverrides"/> for games where Streamline lives in a separate deep path.
+    /// </summary>
+    [JsonPropertyName("streamlinePathOverrides")]
+    public Dictionary<string, string>? StreamlinePathOverrides { get; set; }
+
+    /// <summary>
     /// Author donation URLs keyed by display name.
     /// Merged into the hardcoded dictionary at startup — manifest entries
     /// take priority so links can be added/updated without a new build.
     /// </summary>
     [JsonPropertyName("donationUrls")]
     public Dictionary<string, string>? DonationUrls { get; set; }
+
+    /// <summary>
+    /// What each author is known for, keyed by display name.
+    /// Shown in the Donate dialog alongside the author name and Ko-fi link.
+    /// Can be updated from the manifest without a new build.
+    /// Example: { "ShortFuse": "RenoDX, RenoDX mods" }
+    /// </summary>
+    [JsonPropertyName("authorRoles")]
+    public Dictionary<string, string>? AuthorRoles { get; set; }
 
     /// <summary>
     /// Games that require ReShade to be symlinked into a GAC (Global Assembly Cache)

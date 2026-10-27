@@ -10,15 +10,6 @@ public static class TrayIconService
 {
     private const string AppId = "RHI.ReShadeHDRInstaller";
 
-    /// <summary>
-    /// Sets the App User Model ID for the current process.
-    /// Must be called early at startup so Windows associates the jump list with this exe.
-    /// </summary>
-    public static void SetProcessAppId()
-    {
-        SetCurrentProcessExplicitAppUserModelID(AppId);
-    }
-
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
     private static IntPtr _hwnd;
@@ -185,8 +176,6 @@ public static class TrayIconService
         }
     }
 
-    private static Guid _iObjectArrayGuid = typeof(IObjectArray).GUID;
-
     // ── P/Invoke ────────────────────────────────────────────────────────────────
 
     private const int NIM_ADD = 0;
@@ -249,9 +238,6 @@ public static class TrayIconService
     private static extern void SHAddToRecentDocs(uint uFlags, string pv);
     [DllImport("shell32.dll", EntryPoint = "SHAddToRecentDocs")]
     private static extern void SHAddToRecentDocsPtr(uint uFlags, IntPtr pv);
-    private const uint SHARD_PATHW = 0x00000003;
-    private const uint SHARD_LINK = 0x00000006;
-    private const uint SHARD_PIDL = 0x00000001;
 
     // ── COM interfaces for Jump List ────────────────────────────────────────────
 

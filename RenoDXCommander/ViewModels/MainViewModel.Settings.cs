@@ -9,13 +9,6 @@ namespace RenoDXCommander.ViewModels;
 
 public partial class MainViewModel
 {
-    /// <summary>Returns the persisted Vulkan rendering path for a game, or "DirectX" if none set.</summary>
-    public string GetVulkanRenderingPath(string gameName, string store = "")
-    {
-        var key = GameKey.From(gameName, store).ToKey();
-        return _vulkanRenderingPaths.TryGetValue(key, out var path) ? path : "DirectX";
-    }
-
     /// <summary>Sets the per-game Vulkan rendering path preference. "DirectX" removes the override (default).</summary>
     public void SetVulkanRenderingPath(string gameName, string renderingPath, string store = "")
     {
@@ -126,14 +119,7 @@ public partial class MainViewModel
     }
 
     /// <summary>Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly", not "Custom").</summary>
-    public static bool IsLegacyVersion(string? channel)
-    {
-        if (string.IsNullOrEmpty(channel)) return false;
-        if (string.Equals(channel, "Stable", StringComparison.OrdinalIgnoreCase)) return false;
-        if (string.Equals(channel, "Nightly", StringComparison.OrdinalIgnoreCase)) return false;
-        if (string.Equals(channel, "Custom", StringComparison.OrdinalIgnoreCase)) return false;
-        return true;
-    }
+    public static bool IsLegacyVersion(string? channel) => AuxInstallService.IsLegacyVersion(channel);
 
     /// <summary>
     /// Resolves the effective ReShade channel for a game.
@@ -224,6 +210,38 @@ public partial class MainViewModel
             _gameNameService.OsVariantOverrides.Remove(key);
         else
             _gameNameService.OsVariantOverrides[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── OptiScaler Nightly Build ──────────────────────────────────────────────
+
+    /// <summary>Returns the pinned nightly build date for a game. Empty string = "Latest" (auto-update).</summary>
+    public string GetOsNightlyBuild(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsNightlyBuild.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.OsNightlyBuild.TryGetValue(gameName, out var v2) && !string.IsNullOrEmpty(v2)) return v2;
+        return ""; // absent = Latest
+    }
+
+    /// <summary>Sets the pinned nightly build date for a game. Null or empty = Latest (removes pin and auto-update exemption).</summary>
+    public void SetOsNightlyBuild(string gameName, string? buildDate, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(buildDate))
+        {
+            _gameNameService.OsNightlyBuild.Remove(key);
+            _gameNameService.OsNightlyBuild.Remove(gameName);
+            // Remove auto-update exemption when reverting to Latest
+            _gameNameService.UpdateAllExcludedOs.Remove(key);
+            _gameNameService.UpdateAllExcludedOs.Remove(gameName);
+        }
+        else
+        {
+            _gameNameService.OsNightlyBuild[key] = buildDate;
+            // Pin a specific build → exempt this game from OptiScaler auto-updates
+            _gameNameService.UpdateAllExcludedOs.Add(key);
+        }
         SaveNameMappings();
     }
 
@@ -425,11 +443,57 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── dgVoodoo2 Standalone ─────────────────────────────────────────────────
+
+    /// <summary>Returns whether dgVoodoo2 has been standalone-installed for this game via the Extras panel.</summary>
+    public bool GetDgVoodooStandalone(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.DgVoodooStandaloneGames.Contains(key)
+            || _gameNameService.DgVoodooStandaloneGames.Contains(gameName);
+    }
+
+    /// <summary>Sets whether dgVoodoo2 has been standalone-installed for this game.</summary>
+    public void SetDgVoodooStandalone(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.DgVoodooStandaloneGames.Add(key);
+        else
+        {
+            _gameNameService.DgVoodooStandaloneGames.Remove(key);
+            _gameNameService.DgVoodooStandaloneGames.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    /// <summary>Returns the per-game dgVoodoo2 version override, or null if using the latest.</summary>
+    public string? GetDgVoodooVersion(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.DgVoodooVersionOverride.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.DgVoodooVersionOverride.TryGetValue(gameName, out var v2) && !string.IsNullOrEmpty(v2)) return v2;
+        return null;
+    }
+
+    /// <summary>Sets the per-game dgVoodoo2 version override. Null or empty clears it (use latest).</summary>
+    public void SetDgVoodooVersion(string gameName, string? version, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+        {
+            _gameNameService.DgVoodooVersionOverride.Remove(key);
+            _gameNameService.DgVoodooVersionOverride.Remove(gameName);
+        }
+        else
+            _gameNameService.DgVoodooVersionOverride[key] = version;
+        SaveNameMappings();
+    }
+
     // ── Dilated Motion Vectors ────────────────────────────────────────────────
 
     /// <summary>Returns whether Dilated Motion Vectors is set to Off for a game.</summary>
-    public bool GetOsDilatedMotionVectorsOff(string gameName, string store = "")
-    {
+    public bool GetOsDilatedMotionVectorsOff(string gameName, string store = "")    {
         var key = GameKey.From(gameName, store).ToKey();
         return _gameNameService.OsDilatedMotionVectorsOff.Contains(key)
             || _gameNameService.OsDilatedMotionVectorsOff.Contains(gameName);
@@ -669,6 +733,29 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── ShortFuse ZZZ Mode (load order rename) ────────────────────────────────
+
+    /// <summary>Returns true when the ShortFuse addon should be deployed as zzz_renodx-dlss.addon64.</summary>
+    public bool GetSfZzzMode(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.SfZzzMode.Contains(key)
+            || _gameNameService.SfZzzMode.Contains(gameName);
+    }
+
+    /// <summary>Sets whether the ShortFuse addon should be deployed as zzz_renodx-dlss.addon64.</summary>
+    public void SetSfZzzMode(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.SfZzzMode.Add(key);
+        else
+        {
+            _gameNameService.SfZzzMode.Remove(key);
+            _gameNameService.SfZzzMode.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
     // ── RTX 40 MFG Unlock ─────────────────────────────────────────────────────
 
     public bool GetRtx40MfgInstalled(string gameName, string store = "")
@@ -684,6 +771,19 @@ public partial class MainViewModel
         if (_gameNameService.Rtx40MfgInstalledAs.TryGetValue(key, out var v)) return v;
         if (_gameNameService.Rtx40MfgInstalledAs.TryGetValue(gameName, out var v2)) return v2;
         return null;
+    }
+
+    /// <summary>(InstallPath, InstalledAs) for every game card with RTX 40 MFG installed.</summary>
+    private List<(string InstallPath, string InstalledAs)> GetRtx40MfgInstalls()
+    {
+        var installs = new List<(string, string)>();
+        foreach (var c in _allCards.ToList())
+        {
+            if (string.IsNullOrEmpty(c.InstallPath)) continue;
+            var installedAs = GetRtx40MfgInstalledAs(c.GameName, c.Source ?? "");
+            if (!string.IsNullOrEmpty(installedAs)) installs.Add((c.InstallPath, installedAs));
+        }
+        return installs;
     }
 
     public void SetRtx40MfgInstalledAs(string gameName, string? dllName, string store = "")
@@ -741,6 +841,49 @@ public partial class MainViewModel
     {
         var key = GameKey.From(gameName, store).ToKey();
         _gameNameService.Dlssg2030GpuGen[key] = gpuGen;
+        SaveNameMappings();
+    }
+
+    // ── RTX Encore ────────────────────────────────────────────────────────────
+
+    public string? GetRtxEncoreInstalledAs(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.RtxEncoreInstalledAs.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.RtxEncoreInstalledAs.TryGetValue(gameName, out var v2) && !string.IsNullOrEmpty(v2)) return v2;
+        return null;
+    }
+
+    public void SetRtxEncoreInstalledAs(string gameName, string? dllName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (!string.IsNullOrEmpty(dllName))
+            _gameNameService.RtxEncoreInstalledAs[key] = dllName;
+        else
+        {
+            _gameNameService.RtxEncoreInstalledAs.Remove(key);
+            _gameNameService.RtxEncoreInstalledAs.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    public bool GetRtxEncoreNrDllDeployed(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.RtxEncoreNrDllDeployed.Contains(key)
+            || _gameNameService.RtxEncoreNrDllDeployed.Contains(gameName);
+    }
+
+    public void SetRtxEncoreNrDllDeployed(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.RtxEncoreNrDllDeployed.Add(key);
+        else
+        {
+            _gameNameService.RtxEncoreNrDllDeployed.Remove(key);
+            _gameNameService.RtxEncoreNrDllDeployed.Remove(gameName);
+        }
         SaveNameMappings();
     }
 
@@ -985,17 +1128,6 @@ public partial class MainViewModel
         SaveNameMappings();
         SaveLibrary();
         card.NotifyAll();
-    }
-
-    public string? GetFolderOverride(string gameName, string store = "")
-    {
-        var key = GameKey.From(gameName, store).ToKey();
-        if (_folderOverrides.TryGetValue(key, out var stored))
-        {
-            var parts = stored.Split('|');
-            return parts[0]; // Return just the override path
-        }
-        return null;
     }
 
     public bool HasDllOverride(string gameName) => _dllOverrideService.HasDllOverride(gameName);
@@ -1476,10 +1608,6 @@ public partial class MainViewModel
     public bool IsUpdateAllExcludedRef(string gameName, string store = "") => 
         _updateAllExcludedRef.Contains(GameKey.From(gameName, store).ToKey());
 
-    /// <summary>Returns true if the game is configured to use normal (non-addon) ReShade.</summary>
-    public bool IsNormalReShadeGame(string gameName, string store = "") => 
-        _normalReShadeGames.Contains(GameKey.From(gameName, store).ToKey());
-
     public void ToggleUpdateAllExclusionReShade(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
@@ -1692,26 +1820,7 @@ public partial class MainViewModel
     {
         var result = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
-        var settingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "settings.json");
-
-        if (!File.Exists(settingsPath))
-            return result;
-
-        Dictionary<string, string>? settings;
-        try
-        {
-            settings = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(settingsPath));
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.BuildPackFileLists] Failed to read settings — {ex.Message}");
-            return result;
-        }
-
-        if (settings is null)
-            return result;
+        var settings = SettingsFile.Snapshot();
 
         foreach (var (packId, _, _) in _shaderPackService.AvailablePacks)
         {

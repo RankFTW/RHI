@@ -27,6 +27,12 @@ public interface IGameDetectionService
 
     void ClearEngineCache();
 
+    /// <summary>
+    /// Finds the game's exe folder without engine detection — for games whose engine is already
+    /// known to be one RHI has no special handling for (EngineType.Unknown).
+    /// </summary>
+    string DetectExeFolder(string rootPath);
+
     GameMod? MatchGame(
         DetectedGame game,
         IEnumerable<GameMod> mods,

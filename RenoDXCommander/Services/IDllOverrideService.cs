@@ -96,25 +96,6 @@ public interface IDllOverrideService
     /// </summary>
     string GetEffectiveRsName(string gameName);
 
-    /// <summary>
-    /// Returns the effective DC filename for a game — from override config if
-    /// active, otherwise the default addon name based on bitness.
-    /// </summary>
-    string GetEffectiveDcName(string gameName, bool is32Bit);
-
-    /// <summary>
-    /// Checks whether <paramref name="targetName"/> is already in use by the
-    /// other component (RS or DC) in the same game folder.
-    /// <paramref name="component"/> is <c>"RS"</c> or <c>"DC"</c> — the component
-    /// that wants to use the name. Comparison is case-insensitive.
-    /// </summary>
-    bool IsNameOccupiedByOtherComponent(
-        string gameName,
-        string targetName,
-        string component,
-        bool is32Bit,
-        string? installPath);
-
     // ── OptiScaler DLL naming ─────────────────────────────────────────────
 
     /// <summary>
@@ -134,12 +115,6 @@ public interface IDllOverrideService
     /// Sets or updates the OptiScaler DLL filename override for the specified game.
     /// </summary>
     void SetOsDllOverride(string gameName, string osFileName);
-
-    /// <summary>
-    /// Loads OptiScaler DLL overrides from the remote manifest.
-    /// Called during manifest application.
-    /// </summary>
-    void LoadManifestOsDllOverrides(Dictionary<string, string>? overrides);
 
     /// <summary>Migrates a DLL override entry when a game is renamed.</summary>
     void MigrateOverride(string oldName, string newName);

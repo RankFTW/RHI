@@ -356,7 +356,28 @@ public partial class UltrawideFixService : IUltrawideFixService
         // Fetch from network
         try
         {
-            var content = await _http.GetStringAsync(url).ConfigureAwait(false);
+            // Use a manual request so we can strip the global Authorization header for
+            // non-GitHub hosts (e.g. Codeberg). The shared HttpClient carries a
+            // "Bearer ghp_..." default header that Codeberg rejects with 401.
+            // HttpClient.DefaultRequestHeaders cannot be suppressed per-request — use a
+            // separate short-lived client for non-GitHub hosts.
+            string content;
+            var uri = new Uri(url);
+            bool isGitHub = uri.Host.EndsWith("github.com", StringComparison.OrdinalIgnoreCase) ||
+                            uri.Host.EndsWith("githubusercontent.com", StringComparison.OrdinalIgnoreCase);
+            if (isGitHub)
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                resp.EnsureSuccessStatusCode();
+                content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                using var anonClient = new HttpClient();
+                anonClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "RHI");
+                content = await anonClient.GetStringAsync(url).ConfigureAwait(false);
+            }
             CrashReporter.Log($"[UltrawideFixService] {label} fetched from network");
 
             // Persist to cache
@@ -382,7 +403,7 @@ public partial class UltrawideFixService : IUltrawideFixService
                 if (File.Exists(cachePath))
                     return File.ReadAllText(cachePath);
             }
-            catch { }
+            catch (Exception ex2) { CrashReporter.Log($"[UltrawideFixService.FetchOrLoadCache] Stale cache read failed — {ex2.Message}"); }
 
             CrashReporter.Log($"[UltrawideFixService] {label} no cache available");
             return null;

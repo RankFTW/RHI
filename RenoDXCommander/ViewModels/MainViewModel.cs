@@ -58,7 +58,6 @@ public partial class MainViewModel : ObservableObject
     /// Awaited before the post-init shader sync so packs are available.
     /// </summary>
     private Task? _shaderPackReadyTask;
-    public IShaderPackService ShaderPackServiceInstance => _shaderPackService;
     public IAddonPackService AddonPackServiceInstance => _addonPackService;
     public UltimateAsiLoaderService UalServiceInstance => _ualService;
     public SettingsViewModel Settings => _settingsViewModel;
@@ -297,9 +296,12 @@ public partial class MainViewModel : ObservableObject
         {
             try
             {
+                // Snapshot _allCards before entering background work — _allCards can be
+                // replaced by a concurrent Refresh/merge, so enumerate a stable copy.
+                var cards = _allCards.ToArray();
                 // Collect all unique pack IDs needed across all games
                 var allNeededPacks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var card in _allCards)
+                foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
                     bool rsInstalled = card.RequiresVulkanInstall
@@ -314,7 +316,7 @@ public partial class MainViewModel : ObservableObject
                 if (allNeededPacks.Count > 0)
                     await _shaderPackService.EnsurePacksAsync(allNeededPacks);
 
-                foreach (var card in _allCards)
+                foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
 
@@ -386,10 +388,6 @@ public partial class MainViewModel : ObservableObject
         if (string.Equals(shaderModeOverride, "Off", StringComparison.OrdinalIgnoreCase))
             return null;
 
-        // 0b. Global "Off" mode — overrides everything, no shaders deployed to any game
-        if (_settingsViewModel.GlobalShadersOff)
-            return null;
-
         // 1. Per-game "Custom" mode → custom shader sentinel
         if (string.Equals(shaderModeOverride, "Custom", StringComparison.OrdinalIgnoreCase))
             return new[] { ShaderPackService.CustomShaderSentinel };
@@ -402,6 +400,12 @@ public partial class MainViewModel : ObservableObject
                 || _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out perGameSel))
                 return perGameSel;
         }
+
+        // 0b. Global "Off" mode — only applies when there is no active per-game override.
+        // Per-game Custom/Select (steps 1 & 2 above) are honoured even when global is Off.
+        // A per-game mode of "Global" (null/missing) means "inherit from global", so global Off wins.
+        if (_settingsViewModel.GlobalShadersOff)
+            return null;
 
         // 3. Global UseCustomShaders enabled → custom shader sentinel
         if (_settingsViewModel.UseCustomShaders)
@@ -624,7 +628,12 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Game keys queued for ReShade auto-reinstall after BuildCards — WindowsApps games
     /// whose path changed and the DLL couldn't be copied (old folder deleted by Windows on update).</summary>
     private readonly HashSet<string> _pendingRsReinstall = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Transient — stores Control UE install options between dialog and post-install step.</summary>
+    private Services.ControlUeInstallOptions? _controlUeInstallOptions;
     private Dictionary<string, MachineType> _bitnessCache = new(StringComparer.OrdinalIgnoreCase);
+    // rootPath (lower) → folder fingerprint for games cached as EngineType.Unknown (see EngineFolderStamp).
+    private Dictionary<string, string> _engineFolderStamps = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Game names that have DXVK enabled (loaded from saved library).</summary>
     private HashSet<string> _dxvkEnabledGames = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Game names excluded from DXVK Update All (loaded from saved library).</summary>
@@ -643,6 +652,9 @@ public partial class MainViewModel : ObservableObject
     private bool _hasInitialized;
     public bool HasInitialized => _hasInitialized;
     public void MarkInitialized() => _hasInitialized = true;
+
+    /// <summary>True when this session was started by the auto-restart after a UI freeze.</summary>
+    public bool WasAutoRestarted { get; set; }
 
     /// <summary>
     /// The game name that was selected when the app last closed.
@@ -828,6 +840,33 @@ public partial class MainViewModel : ObservableObject
         LoadNameMappings();
         LoadThemeAndDensity();
         _nexusUpdateService.LoadBaselines();
+
+        // Wire InstallCompleted → UpdateLogService so batch updates (AutoUpdateService)
+        // are captured in the update log, not just user-initiated installs.
+        _installer.InstallCompleted += record =>
+        {
+            try
+            {
+                // Read the version from the installed file — it's on disk at this point
+                var version = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
+
+                // Derive a friendly mod name from the addon filename:
+                // "renodx-onimusha-wots.addon64" → "onimusha-wots"
+                var modId = System.IO.Path.GetFileNameWithoutExtension(record.AddonFileName ?? "");
+                if (modId.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+                    modId = modId.Substring(7);
+
+                App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
+                {
+                    Timestamp     = DateTime.UtcNow,
+                    Category      = "RenoDX",
+                    ComponentName = record.GameName,
+                    OldVersion    = record.PreviousVersion,
+                    NewVersion    = version ?? (string.IsNullOrEmpty(modId) ? record.AddonFileName ?? "" : modId),
+                });
+            }
+            catch { /* never let update log errors surface */ }
+        };
     }
 
     // --- persisted settings: delegated to GameNameService ---
@@ -843,7 +882,7 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, LumaGenericGameEntry> _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames => _gameNameService.LumaEnabledGames;
     /// <summary>
-    /// Games the user has explicitly disabled Luma for — prevents manifest lumaDefaultGames
+    /// Games the user has explicitly disabled Luma for — prevents automatic Luma enabling
     /// from re-enabling Luma on every refresh.
     /// </summary>
     private HashSet<string> _lumaDisabledGames => _gameNameService.LumaDisabledGames;

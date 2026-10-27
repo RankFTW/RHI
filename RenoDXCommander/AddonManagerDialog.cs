@@ -71,7 +71,7 @@ public static class AddonManagerDialog
                     UseShellExecute = true,
                 });
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[AddonManagerDialog.ShowAsync] Failed to open custom addon folder '{customFolderPath}' — {ex.Message}"); }
         };
         panel.Children.Add(folderLink);
 
@@ -288,7 +288,7 @@ public static class AddonManagerDialog
                         await addonPackService.DownloadAddonAsync(capturedEntry2);
                         toggle.DispatcherQueue?.TryEnqueue(() => capturedTick2.Visibility = Visibility.Visible);
                     }
-                    catch { }
+                    catch (Exception ex) { CrashReporter.Log($"[AddonManagerDialog.BuildAddonRow] Addon download failed for '{capturedEntry2.PackageName}' — {ex.Message}"); }
                     finally
                     {
                         toggle.DispatcherQueue?.TryEnqueue(() => toggle.IsEnabled = true);

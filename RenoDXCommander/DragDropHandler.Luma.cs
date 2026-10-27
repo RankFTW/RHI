@@ -55,7 +55,7 @@ public partial class DragDropHandler
             if (archivePath.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
             {
                 // Use 7z.exe to list contents and check for the marker
-                var sevenZipExe = Path.Combine(AppContext.BaseDirectory, "7z.exe");
+                var sevenZipExe = AppPaths.Bundled7Zip;
                 if (!File.Exists(sevenZipExe)) return false;
 
                 var psi = new System.Diagnostics.ProcessStartInfo(sevenZipExe, $"l \"{archivePath}\"")
@@ -96,7 +96,7 @@ public partial class DragDropHandler
 
             if (archivePath.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
             {
-                var sevenZipExe = Path.Combine(AppContext.BaseDirectory, "7z.exe");
+                var sevenZipExe = AppPaths.Bundled7Zip;
                 if (!File.Exists(sevenZipExe)) return false;
 
                 var psi = new System.Diagnostics.ProcessStartInfo(sevenZipExe, $"l \"{archivePath}\"")
@@ -112,7 +112,7 @@ public partial class DragDropHandler
                 return output.Contains("d3dcompiler_47_x32.dll", StringComparison.OrdinalIgnoreCase);
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DragDropHandler.IsLumaArchive32Bit] Failed to inspect '{archivePath}' — {ex.Message}"); }
         return false;
     }
 

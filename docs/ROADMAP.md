@@ -97,6 +97,33 @@ When a user updates a custom ReShade DLL in the Custom folder, automatically red
 
 ---
 
+## 🐛 Known Issues / To Fix
+
+Confirmed bugs or UX problems with a known root cause.
+
+### UI freeze on `BuildDriverProfileSectionWithData:AddToTree` (NVIDIA panel layout)
+**Symptom:** App freezes for 30 seconds to 3+ minutes when selecting a game that has DLSS SR+RR+FG+Streamline installed (e.g. Control, Resident Evil 4, God of War Ragnarök). Heartbeat logs show `*** UI FROZEN ***` with last action `BuildDriverProfileSectionWithData:AddToTree(GameName)`. Can happen during initial card selection, after background scan completes, or after Check for Updates.
+
+**Root cause:** `BuildDriverProfileSectionWithData` builds a WinUI `Grid` with ~20 rows and star-column (`GridLength.Star`) layout. `driverContainer.Children.Add(tempDriver)` triggers a full WinUI layout pass on the UI thread. On some machines/setups WinUI's star-column measurement is catastrophically slow for large grids. Pre-measuring (`Measure()` before `Children.Add`) did not help.
+
+**Partial mitigations in place (v2.8.0):** Skip `AddToTree` when Settings panel is open or any dialog is showing. This prevents the freeze after Check for Updates and during app update download, but does NOT fix the freeze when the user simply clicks on an affected game.
+
+**Real fix needed:** Replace the star-column `Grid` in `BuildDriverProfileSectionWithData` with fixed-pixel column widths, or split it into multiple smaller grids, or build the rows as `StackPanel` + `HorizontalAlignment` instead of a single monolithic grid. This eliminates the expensive star-column layout pass entirely.
+
+---
+
+### Slow first launch after install/update (Windows Defender scanning)
+**Symptom:** App takes 1–2 minutes to show the window on first launch after a fresh install or update. Black window, then eventually loads. Subsequent launches are instant.
+
+**Root cause:** `PublishSingleFile=true` causes .NET to extract bundled assemblies to `%TEMP%\.net\RHI\` on first run. Windows Defender scans every extracted DLL before .NET can load them, blocking `InitializeComponent` on the UI thread for the duration. Confirmed via session logs: the gap is always between `NexusUpdateService.LoadBaselines` and `InitializeComponent complete`, and only affects the first 1–2 sessions after install. Installing to `C:\Program Files\` (elevated Inno Setup install) triggers stricter Defender scrutiny than user folders.
+
+**Fix:** Add a Windows Defender exclusion for the install folder in the Inno Setup `[Run]` section:
+```
+Filename: "powershell.exe"; Parameters: "-Command ""Add-MpPreference -ExclusionPath 'C:\Program Files\ReShade HDR Installer'""""; Flags: runhidden
+```
+
+---
+
 ## 💡 Nice-to-Have
 
 Low priority items with no current demand.

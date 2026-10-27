@@ -15,6 +15,7 @@ public partial class GameCardViewModel
         {
             if (IsInstalling) return "Installing...";
             if (IsRtxHdrEnabled) return "Configure RTX HDR";
+            if (IsAutoHdrEnabled) return "Configure Auto HDR";
             if (!IsRsInstalled && !ExcludeFromUpdateAllReShade && Mod?.SnapshotUrl != null && !IsExternalOnly)
                 return "⚠  ReShade required";
             // No mod available and nothing manually installed
@@ -27,7 +28,7 @@ public partial class GameCardViewModel
         }
     }
 
-    public bool CanInstall => IsRtxHdrEnabled || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade));
+    public bool CanInstall => IsRtxHdrEnabled || IsAutoHdrEnabled || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade));
 
     public string GenericModLabel => IsGenericMod
         ? (EngineHint.Contains("Unity")
@@ -54,9 +55,6 @@ public partial class GameCardViewModel
             ? Visibility.Visible : Visibility.Collapsed;
 
     // ── Combined status for simplified card ──────────────────────────────────────
-    /// <summary>True when all components that are relevant are installed (or N/A).</summary>
-    private bool AllInstalled => (Mod == null || Status == GameStatus.Installed || Status == GameStatus.UpdateAvailable)
-                              && (RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable || RsStatus == GameStatus.NotInstalled);
 
     private bool AnyInstalling => IsInstalling || RsIsInstalling;
 

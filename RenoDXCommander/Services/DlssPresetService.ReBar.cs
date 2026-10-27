@@ -78,10 +78,6 @@ public partial class DlssPresetService
         ("4GB", 0x0000000100000000),
     ];
 
-    /// <summary>Returns true if ReBAR Feature is enabled for this game's NVIDIA profile.</summary>
-    public bool GetReBarEnabled(string gameName, string installPath)
-        => GetPreset(gameName, installPath, REBAR_FEATURE_ID) != 0;
-
     /// <summary>Returns the ReBAR Expr Mode value (0 = Standard, 2 = Optimized).</summary>
     public uint GetReBarMode(string gameName, string installPath)
         => GetPreset(gameName, installPath, REBAR_EXPR_MODES_ID);
@@ -106,7 +102,7 @@ public partial class DlssPresetService
                 if (raw.HasValue) return raw.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetReBarEnableMode] Read failed for '{gameName}', using Auto — {ex.Message}"); }
         return 1; // Not set = Auto
     }
 
@@ -127,17 +123,17 @@ public partial class DlssPresetService
             if (mode == 1) // Auto — remove legacy override entirely
             {
                 var profile = FindProfile(gameName, installPath);
-                if (profile != null) { try { profile.DeleteSetting(REBAR_FEATURE_ID); profile.DeleteSetting(REBAR_EXPR_MODES_ID); profile.DeleteSetting(REBAR_SIZE_LIMIT_ID); _session?.Save(); } catch { } }
+                if (profile != null) { try { profile.DeleteSetting(REBAR_FEATURE_ID); profile.DeleteSetting(REBAR_EXPR_MODES_ID); profile.DeleteSetting(REBAR_SIZE_LIMIT_ID); _session?.Save(); } catch (Exception) { /* DeleteSetting throws when the setting isn't in the profile; nothing to remove */ } }
             }
             else if (mode == 0) // Off — delete legacy settings and size limit (no Disabled entry)
             {
                 var profile = FindProfile(gameName, installPath);
-                if (profile != null) { try { profile.DeleteSetting(REBAR_FEATURE_ID); profile.DeleteSetting(REBAR_EXPR_MODES_ID); profile.DeleteSetting(REBAR_SIZE_LIMIT_ID); _session?.Save(); } catch { } }
+                if (profile != null) { try { profile.DeleteSetting(REBAR_FEATURE_ID); profile.DeleteSetting(REBAR_EXPR_MODES_ID); profile.DeleteSetting(REBAR_SIZE_LIMIT_ID); _session?.Save(); } catch (Exception) { /* DeleteSetting throws when the setting isn't in the profile; nothing to remove */ } }
             }
             else // On
                 SetReBarEnabled(gameName, installPath, true, 2u);
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.SetReBarEnableMode] Legacy ReBAR setting sync failed for '{gameName}' — {ex.Message}"); }
         return ok;
     }
 
@@ -159,7 +155,7 @@ public partial class DlssPresetService
                 if (raw.HasValue) return raw.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalReBarEnableMode] Read failed, using Auto — {ex.Message}"); }
         return 1; // Not set = Auto
     }
 
@@ -182,7 +178,7 @@ public partial class DlssPresetService
 
             // Sync legacy REBAR_FEATURE_ID + REBAR_EXPR_MODES_ID + REBAR_SIZE_LIMIT_ID via PS helper
             // (base profile writes for these require elevation on most systems)
-            var nvApiPath  = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+            var nvApiPath  = AppPaths.InExeDir("NvAPIWrapper.dll");
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_global_rebar_enable_mode.ps1");
 
             string featureBlock = mode == 2
@@ -215,7 +211,7 @@ $session.Save()
             System.Diagnostics.Process.Start(psi);
             // Pause to let the elevated PS complete — base profile writes are fast
             System.Threading.Thread.Sleep(3000);
-            try { File.Delete(scriptPath); } catch { }
+            try { File.Delete(scriptPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
             // Reload session
             try
             {
@@ -224,7 +220,7 @@ $session.Save()
                 foreach (var p in _session.Profiles) _cachedProfiles.TryAdd(p.Name, p);
                 InvalidateProfileLookupCache();
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnableMode] Driver session reload failed — {ex.Message}"); }
             CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnableMode] Set mode={mode}");
             return true;
         }
@@ -328,113 +324,8 @@ $session.Save()
         }
     }
 
-    /// <summary>Reads ReBAR Size Limit via a PowerShell helper (fallback for drivers where GetSetting throws).</summary>
-    private ulong ReadReBarSizeLimitViaPs(string gameName)
-    {
-        // If we've previously written a value for this game, use our local cache
-        if (_rebarSizeLimitCache.TryGetValue(gameName, out var cached))
-        {
-            CrashReporter.Log($"[DlssPresetService.ReadReBarSizeLimitViaPs] Using cached value 0x{cached:X16} for '{gameName}'");
-            return cached;
-        }
-        return 0;
-    }
-
     // Local cache for ReBAR size limits written during this session
     private readonly Dictionary<string, ulong> _rebarSizeLimitCache = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Writes ReBAR Size Limit via PowerShell using NvAPIWrapper (fallback when raw NVAPI returns error).</summary>
-    private bool SetReBarSizeLimitViaPs(string? profileName, ulong sizeBytes, bool useBaseProfile)
-    {
-        try
-        {
-            var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_rebar_size_ps.ps1");
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
-            var hexBytes = BitConverter.ToString(BitConverter.GetBytes(sizeBytes)).Replace("-", ",0x");
-
-            string profileBlock;
-            if (useBaseProfile)
-            {
-                profileBlock = "$profile = $session.BaseProfile";
-            }
-            else
-            {
-                profileBlock = $@"$profile = $null
-foreach ($p in $session.Profiles) {{
-    if ($p.Name -eq '{(profileName ?? "").Replace("'", "''")}') {{ $profile = $p; break }}
-}}
-if ($null -eq $profile) {{ exit 1 }}";
-            }
-
-            var doneFile = scriptPath + ".done";
-            if (File.Exists(doneFile)) try { File.Delete(doneFile); } catch { }
-
-            var script = $@"
-Add-Type -Path '{nvApiPath.Replace("'", "''")}'
-[NvAPIWrapper.NVIDIA]::Initialize()
-$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
-{profileBlock}
-[byte[]]$bytes = @(0x{hexBytes})
-try {{
-    $profile.SetSetting([uint32]0x000F00FF, $bytes)
-    $session.Save()
-    [System.IO.File]::WriteAllText('{doneFile.Replace("\\", "\\\\")}', '0')
-    exit 0
-}} catch {{
-    [System.IO.File]::WriteAllText('{doneFile.Replace("\\", "\\\\")}', '2')
-    exit 2
-}}
-";
-            File.WriteAllText(scriptPath, script);
-
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                Verb = "runas",
-                UseShellExecute = true,
-                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-            };
-            System.Diagnostics.Process.Start(psi);
-
-            // Poll for sentinel file — runas returns a ShellExecute wrapper handle, not the PS process
-            // so WaitForExit() returns immediately. The sentinel written by the script tells us when done.
-            var deadline = DateTime.UtcNow.AddSeconds(12);
-            while (!File.Exists(doneFile) && DateTime.UtcNow < deadline)
-                System.Threading.Thread.Sleep(100);
-
-            int exitCode = 2;
-            if (File.Exists(doneFile))
-            {
-                var content = File.ReadAllText(doneFile).Trim();
-                exitCode = content == "0" ? 0 : 2;
-                try { File.Delete(doneFile); } catch { }
-            }
-            try { File.Delete(scriptPath); } catch { }
-
-            // Reload session
-            try
-            {
-                _session = DriverSettingsSession.CreateAndLoad();
-                _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
-                foreach (var p in _session.Profiles)
-                    _cachedProfiles.TryAdd(p.Name, p);
-                InvalidateProfileLookupCache();
-            }
-            catch { }
-
-            if (profileName != null)
-                _rebarSizeLimitCache[profileName] = sizeBytes;
-
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitViaPs] Set 0x{sizeBytes:X16} via PS helper (profile='{profileName ?? "BaseProfile"}', exitCode={exitCode})");
-            return exitCode == 0;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitViaPs] Failed — {ex.Message}");
-            return false;
-        }
-    }
 
     /// <summary>Enables or disables ReBAR for a game. When enabling, also sets Mode to the specified value.</summary>
     public bool SetReBarEnabled(string gameName, string installPath, bool enabled, uint mode = 0x00000000)
@@ -512,7 +403,7 @@ try {{
             // Write a temporary script that sets the NVAPI values
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_rebar_set.ps1");
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+            var nvApiPath = AppPaths.InExeDir("NvAPIWrapper.dll");
 
             var script = $@"
 Add-Type -Path '{nvApiPath.Replace("'", "''")}'
@@ -555,7 +446,7 @@ if ($null -ne $profile) {{
             process.WaitForExit(10000);
 
             // Clean up
-            try { File.Delete(scriptPath); } catch { }
+            try { File.Delete(scriptPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
 
             // Reload session to reflect changes made by the elevated process
             _session = DriverSettingsSession.CreateAndLoad();

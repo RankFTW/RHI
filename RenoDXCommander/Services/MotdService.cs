@@ -22,7 +22,7 @@ public static class MotdService
     {
         try
         {
-            var response = await http.GetAsync(MotdUrl).ConfigureAwait(false);
+            using var response = await http.GetAsync(MotdUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
 
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -56,7 +56,7 @@ public static class MotdService
     {
         try
         {
-            var response = await http.GetAsync(MotdUrl).ConfigureAwait(false);
+            using var response = await http.GetAsync(MotdUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return string.IsNullOrWhiteSpace(content) ? null : content.Trim();

@@ -11,7 +11,8 @@ public interface IUpdateService
 
     Task<string?> DownloadInstallerAsync(
         string downloadUrl,
-        IProgress<(string msg, double pct)>? progress = null);
+        IProgress<(string msg, double pct)>? progress = null,
+        CancellationToken cancellationToken = default);
 
     void LaunchInstallerAndExit(string installerPath, Action closeApp);
 }

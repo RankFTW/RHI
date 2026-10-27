@@ -43,10 +43,6 @@ public class RenoDXDbService : IRenoDXDbService
     private Dictionary<string, RenoDXDbUnityEntry> _cachedUnity =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public IReadOnlyList<GameMod> CachedMods => _cachedMods;
-    public IReadOnlyDictionary<string, RenoDXDbUnrealEntry> CachedUnrealEntries => _cachedUnreal;
-    public IReadOnlyDictionary<string, RenoDXDbUnityEntry> CachedUnityEntries => _cachedUnity;
-
     public RenoDXDbService(HttpClient http, GitHubETagCache etagCache)
     {
         _http = http;

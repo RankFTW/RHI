@@ -40,19 +40,6 @@ public partial class DialogService
     private static SolidColorBrush Brush(string key) =>
         (SolidColorBrush)Application.Current.Resources[key];
 
-    /// <summary>Parses a hex colour string like "#1C2848" into a Windows.UI.Color.</summary>
-    private static Windows.UI.Color ParseColor(string hex)
-    {
-        hex = hex.TrimStart('#');
-        byte a = 255;
-        int offset = 0;
-        if (hex.Length == 8) { a = Convert.ToByte(hex[..2], 16); offset = 2; }
-        byte r = Convert.ToByte(hex.Substring(offset, 2), 16);
-        byte g = Convert.ToByte(hex.Substring(offset + 2, 2), 16);
-        byte b = Convert.ToByte(hex.Substring(offset + 4, 2), 16);
-        return Windows.UI.Color.FromArgb(a, r, g, b);
-    }
-
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private static GameCardViewModel? GetCardFromSender(object sender) => sender switch
@@ -65,70 +52,53 @@ public partial class DialogService
     // ── Safe dialog guard ────────────────────────────────────────────────────────
     // WinUI3 only allows one ContentDialog open at a time. A second ShowAsync()
     // throws a COMException, and if that's in an async-void handler the exception
-    // goes unobserved, leaving an invisible modal overlay that blocks all input.
-    // This guard serialises all dialog opens so that can never happen.
+    // can leave callers with inconsistent modal state. Ownership includes the
+    // closing animation, not just the calls to ShowAsync and Hide.
 
-    private static readonly SemaphoreSlim _dialogGate = new(1, 1);
+    private static readonly DialogCoordinator _dialogs = new();
 
     /// <summary>
-    /// Shows a <see cref="ContentDialog"/> safely. If another dialog is already
-    /// open, the call is skipped and <see cref="ContentDialogResult.None"/> is
-    /// returned (treated as "cancelled" by callers).
+    /// Shows a <see cref="ContentDialog"/> safely. Waits up to ten seconds for
+    /// another dialog to finish, then returns <see cref="ContentDialogResult.None"/>
+    /// on timeout or shutdown (treated as "cancelled" by callers).
     /// Every <c>ContentDialog.ShowAsync()</c> in the app should go through this.
     /// </summary>
     public static async Task<ContentDialogResult> ShowSafeAsync(ContentDialog dialog)
     {
-        // Wait up to 10 seconds for any existing dialog to close before giving up.
-        // This prevents drag-and-drop and other user-initiated dialogs from being
-        // silently swallowed when a background dialog (e.g. update check) is open.
-        if (!await _dialogGate.WaitAsync(TimeSpan.FromSeconds(10)))
-        {
-            CrashReporter.Log("[DialogService.ShowSafeAsync] Skipped — another dialog is still open after 10s");
-            return ContentDialogResult.None;
-        }
         try
         {
-            return await dialog.ShowAsync();
+            Task<ContentDialogResult>? result = null;
+            await using var session = await _dialogs.OpenAsync(
+                () => result = dialog.ShowAsync().AsTask(), dialog.Hide, TimeSpan.FromSeconds(10));
+            if (session == null) return ContentDialogResult.None;
+            await session.Completion;
+            return await result!;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[DialogService.ShowSafeAsync] Dialog failed — {ex.Message}");
             return ContentDialogResult.None;
         }
-        finally
+    }
+
+    /// <summary>
+    /// Opens a progress dialog. Dispose the returned session with await using;
+    /// disposal hides the dialog and waits for WinUI to remove its modal overlay.
+    /// </summary>
+    internal static async Task<DialogSession?> ShowProgressAsync(ContentDialog dialog, int timeoutSeconds = 15)
+    {
+        try
         {
-            _dialogGate.Release();
+            return await _dialogs.OpenAsync(() => dialog.ShowAsync().AsTask(), dialog.Hide,
+                TimeSpan.FromSeconds(timeoutSeconds));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DialogService.ShowProgressAsync] Dialog failed — {ex.Message}");
+            return null;
         }
     }
 
-    /// <summary>
-    /// Acquires the dialog gate for non-blocking dialog patterns (progress dialogs
-    /// that are shown with ShowAsync() but closed programmatically via Hide()).
-    /// Must be paired with <see cref="ReleaseDialogGate"/>.
-    /// </summary>
-    public static bool TryAcquireDialogGate()
-    {
-        return _dialogGate.Wait(0);
-    }
-
-    /// <summary>
-    /// Waits up to <paramref name="timeoutSeconds"/> for the dialog gate to become
-    /// available. Use this instead of <see cref="TryAcquireDialogGate"/> when the
-    /// action is critical (e.g. app update download) and should not be silently
-    /// skipped if another dialog (e.g. MOTD) is currently showing.
-    /// Must be paired with <see cref="ReleaseDialogGate"/> on success.
-    /// </summary>
-    public static async Task<bool> WaitDialogGateAsync(int timeoutSeconds = 15)
-    {
-        return await _dialogGate.WaitAsync(TimeSpan.FromSeconds(timeoutSeconds));
-    }
-
-    /// <summary>
-    /// Releases the dialog gate after a non-blocking dialog is closed.
-    /// </summary>
-    public static void ReleaseDialogGate()
-    {
-        try { _dialogGate.Release(); }
-        catch (SemaphoreFullException) { }
-    }
+    public static bool IsDialogOpen => _dialogs.IsOpen;
+    internal static void Stop() => _dialogs.Stop();
 }

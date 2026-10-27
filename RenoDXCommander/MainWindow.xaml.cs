@@ -40,12 +40,22 @@ public sealed partial class MainWindow : Window
     private readonly DragDropHandler _dragDropHandler;
     private readonly AddonFileWatcher _addonFileWatcher;
 
+    private UpdateLogWindow? _updateLogWindow;
+
     /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
 
     private string? _pendingReselect;
     private bool _forceClose;
+
+    /// <summary>Set during Settings panel init to suppress SelectionChanged side-effects on tray combos.</summary>
+    internal bool TrayComboInitializing;
     private DispatcherTimer? _shutdownSignalTimer;
+    private DispatcherTimer? _launchTimer;
+    private readonly CancellationTokenSource _lifetime = new();
+    private ForegroundActivationTarget? _foregroundTarget;
+    internal CancellationToken LifetimeToken => _lifetime.Token;
+    internal bool IsShuttingDown => _lifetime.IsCancellationRequested;
 
     public MainWindow(MainViewModel viewModel, ICrashReporter crashReporter)
     {
@@ -100,13 +110,15 @@ public sealed partial class MainWindow : Window
             crashReporter.Log("[MainWindow] CacheAllShaders=false — skipping bulk shader download");
         }
         ViewModel.SetShaderPackReadyTask(shaderTask);
-        // Fire-and-forget: fetch addon list and check for updates in the background
+        // Fire-and-forget: fetch the addon list early so the Addons UI has it.
+        // The update check (CheckAndUpdateAllAsync) is NOT run here: the manifest isn't loaded
+        // yet, so manifest-driven addons would be skipped, and the init path runs a full check
+        // once the manifest is applied (background scan, or the first-launch full scan).
         Task.Run(async () =>
         {
             try
             {
                 await _addonPackService.EnsureLatestAsync();
-                await _addonPackService.CheckAndUpdateAllAsync();
             }
             catch (Exception ex) { crashReporter.Log($"[MainWindow] Addon pack init failed — {ex.Message}"); }
         }).SafeFireAndForget("MainWindow.AddonPack");
@@ -123,6 +135,7 @@ public sealed partial class MainWindow : Window
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
         _windowStateManager.EnableDragAccept(ViewModel.Settings.DropHelperEnabled);
+        _windowStateManager.LogWindowInventory("startup");
 
         // Initialize system tray
         if (ViewModel.Settings.CloseToTray || ViewModel.Settings.RecentGamesMenu)
@@ -158,7 +171,7 @@ public sealed partial class MainWindow : Window
         // There may be a tiny WinUI layout adjustment on first render, but the lock
         // prevents the user from resizing the window freely.
         // Set the title bar icon (unpackaged apps need this explicitly)
-        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+        var exeDir = AppPaths.ExeDir;
         AppWindow.SetIcon(Path.Combine(exeDir, "icon.ico"));
 
         // Dark title bar — match our theme
@@ -181,13 +194,19 @@ public sealed partial class MainWindow : Window
         // Restore window size & position after activation (ensure HWND is ready)
         this.Activated += MainWindow_Activated;
         ViewModel.SetDispatcher(DispatcherQueue);
+        ViewModel.UiThreadNativeId = NativeInterop.GetCurrentThreadId(); // capture UI thread ID for freeze diagnostics
+        ViewModel.MainWindowHwnd   = WinRT.Interop.WindowNative.GetWindowHandle(this); // for pump-responsiveness probe
+        ViewModel.WindowStateManagerRef = _windowStateManager; // for sleep-resume grace period
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>
             DispatcherQueue.TryEnqueue(() => { BuildOverridesPanel(card); _detailPanelBuilder.ApplySectionOrder(); });
         ViewModel.RequestDetailPanelRebuild = card =>
+        {
+            CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Enqueue] N T{System.Threading.Thread.CurrentThread.ManagedThreadId}(bg) RequestDetailPanelRebuild({card.GameName})");
             DispatcherQueue.TryEnqueue(() =>
             {
+                CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:Start] N UI RequestDetailPanelRebuild({card.GameName})");
                 try
                 {
                     // Re-find the card by name+store in case BuildCards replaced it concurrently
@@ -201,15 +220,24 @@ public sealed partial class MainWindow : Window
                 {
                     _crashReporter?.Log($"[RequestDetailPanelRebuild] Exception: {ex.Message}");
                 }
+                finally { CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:End] N UI RequestDetailPanelRebuild({card.GameName})"); }
             });
+        };
         ViewModel.RequestCardRebuild = card =>
+        {
+            CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Enqueue] N T{System.Threading.Thread.CurrentThread.ManagedThreadId}(bg) RequestCardRebuild({card.GameName})");
             DispatcherQueue.TryEnqueue(() =>
             {
-                // Re-evaluate Luma injection for this card after an API override change.
-                // This updates LumaMod/LumaRenodxCompatible without a full Refresh.
-                ViewModel.ReevaluateLumaForCard(card);
-                PopulateDetailPanel(card);
+                CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:Start] N UI RequestCardRebuild({card.GameName})");
+                try
+                {
+                    // Re-evaluate Luma injection for this card after an API override change.
+                    ViewModel.ReevaluateLumaForCard(card);
+                    PopulateDetailPanel(card);
+                }
+                finally { CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:End] N UI RequestCardRebuild({card.GameName})"); }
             });
+        };
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
@@ -245,12 +273,8 @@ public sealed partial class MainWindow : Window
         // Rebuild custom filter chips when the collection changes
         ViewModel.Filter.CustomFilters.CollectionChanged += (_, _) =>
             DispatcherQueue.TryEnqueue(RebuildCustomFilterChips);
-        // Silent update check — runs in background, shows dialog only if update found
-        CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.UpdateCheck");
-        // Show patch notes on first launch after update
-        ShowPatchNotesIfNewVersionAsync().SafeFireAndForget("MainWindow.PatchNotes");
-        // Show MOTD if there's a new message
-        ShowMotdIfNewAsync().SafeFireAndForget("MainWindow.Motd");
+        // Startup prompts must not race for the same modal slot after an update.
+        _dialogService.ShowStartupDialogsAsync().SafeFireAndForget("MainWindow.StartupDialogs");
         // Register .addon64/.addon32 file associations (per-user, no admin)
         FileAssociationService.Register(crashReporter);
         // Watch Downloads folder for addon files
@@ -273,7 +297,7 @@ public sealed partial class MainWindow : Window
             var name = App._pendingLaunchGame;
             App._pendingLaunchGame = null;
             // Use a DispatcherTimer to wait for cards to be built (avoids TryEnqueue + async + Task.Delay deadlock risk)
-            var launchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            var launchTimer = _launchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             launchTimer.Tick += (_, _) =>
             {
                 launchTimer.Stop();
@@ -294,11 +318,10 @@ public sealed partial class MainWindow : Window
                 "RHI", "rhi_shutdown_requested");
             if (File.Exists(signalPath))
             {
-                try { File.Delete(signalPath); } catch { }
+                try { File.Delete(signalPath); } catch (Exception) { /* Safe to ignore: timer tick; failing to delete the signal file is harmless because the app exits immediately after. */ }
                 _shutdownSignalTimer?.Stop();
                 _crashReporter.Log("[MainWindow] Shutdown signal received from installer — exiting");
-                _forceClose = true;
-                this.Close();
+                RequestExit();
             }
         };
         _shutdownSignalTimer.Start();
@@ -311,6 +334,17 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
                 AppWindow.Hide();
+            });
+        }
+        else
+        {
+            // Publish after construction/initial presentation. The installer discovers
+            // the final window's PID, including when Admin Mode relaunches via a task.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                if (!IsShuttingDown)
+                    _foregroundTarget = new ForegroundActivationTarget(_windowStateManager.Hwnd,
+                        action => DispatcherQueue.TryEnqueue(() => action()), BringToFront);
             });
         }
     }
@@ -361,8 +395,7 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            // Bring to front now that WinUI has presented the window — Activate() alone
-            // doesn't steal focus from whichever app was foreground when RHI launched.
+            // Request focus without attaching to another process's input queue.
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             NativeInterop.ForceToForeground(hwnd);
 
@@ -372,7 +405,7 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
                 try { _windowStateManager.TryRestoreWindowBounds(); }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[MainWindow.MainWindow_Activated] Deferred window bounds restore failed — {ex.Message}"); }
             });
         }
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
@@ -380,6 +413,7 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, WindowEventArgs e)
     {
+        if (IsShuttingDown) return;
         if (ViewModel.Settings.CloseToTray && !_forceClose)
         {
             e.Handled = true;
@@ -387,32 +421,66 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        // Normal close cleanup
+        _foregroundTarget?.Dispose();
+        _lifetime.Cancel();
+        _shutdownSignalTimer?.Stop();
+        _launchTimer?.Stop();
+        _selectionDebounceTimer?.Stop();
+        _crashReporter.Log("[Shutdown] Sequence started");
+        RunShutdownStep("dialogs", DialogService.Stop);
+        RunShutdownStep("background timers", ViewModel.StopBackgroundWork);
+        RunShutdownStep("panel scans", _detailPanelBuilder.StopBackgroundWork);
+
+        // An auxiliary Window keeps WinUI alive even after the main Window closes.
+        RunShutdownStep("update log window", () => _updateLogWindow?.Close());
         ViewModel.PropertyChanged -= OnViewModelChanged;
         if (_detailPanelBuilder.CurrentDetailCard != null)
             _detailPanelBuilder.CurrentDetailCard.PropertyChanged -= _detailPanelBuilder.DetailCard_PropertyChanged;
-        _addonFileWatcher.Dispose();
-        _windowStateManager.CleanupOleDragDrop();
-        TrayIconService.Dispose();
-        SingleInstanceService.Stop();
-        ViewModel.FlushPendingSaves(); // Flush any debounced saves before final save
-        ViewModel.SaveSettingsPublic();
-        ViewModel.SaveLibraryPublic();
-        _windowStateManager.SaveWindowBounds();
+        RunShutdownStep("file watcher", _addonFileWatcher.Dispose);
+        RunShutdownStep("drag and drop", _windowStateManager.CleanupOleDragDrop);
+        RunShutdownStep("tray", TrayIconService.Dispose);
+        // Save first, then flush: SaveSettingsPublic schedules a debounced write.
+        RunShutdownStep("settings", () => { ViewModel.SaveSettingsPublic(); ViewModel.FlushPendingSaves(); });
+        // During initialization the card list can be empty/partial. Preserve the last good library.
+        if (!ViewModel.IsLoading)
+            RunShutdownStep("library", ViewModel.SaveLibraryPublic);
+        RunShutdownStep("window bounds", _windowStateManager.SaveWindowBounds);
+        RunShutdownStep("single instance", SingleInstanceService.Stop);
+        _crashReporter.Log("[Shutdown] All steps complete — exiting");
+        CrashReporter.Shutdown(); // flush async log channel (waits up to 2s for drain)
+        Application.Current.Exit();
+        // Hard fallback: if WinUI message loop doesn't terminate (e.g. fire-and-forget tasks
+        // keeping thread pool alive), force process exit after a short grace period.
+        // 5s > CrashReporter.Shutdown's 2s drain wait, so the log is flushed before this fires.
+        _ = Task.Delay(5000).ContinueWith(_ => Environment.Exit(0));
+    }
+
+    internal void RequestExit()
+    {
+        if (IsShuttingDown) return;
+        _forceClose = true;
+        Close();
+    }
+
+    private void RunShutdownStep(string name, Action cleanup)
+    {
+        try { cleanup(); }
+        catch (Exception ex) { _crashReporter.Log($"[Shutdown] {name} failed — {ex.Message}"); }
     }
 
     // ── Addon file handling (Downloads watcher + file association) ───────────────
 
     /// <summary>
-    /// Reliably brings the window to the foreground from any state (hidden, behind other windows).
+    /// Shows/restores the window and requests foreground activation, flashing the taskbar if refused.
     /// Must be called on the UI thread.
     /// </summary>
     internal void BringToFront()
     {
+        if (IsShuttingDown) return;
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         AppWindow.Show();                               // unhide if hidden (CloseToTray / start-minimized)
-        NativeInterop.ForceToForeground(hwnd);          // AttachThreadInput trick — bypasses foreground lock
         this.Activate();                                // update WinUI internal state
+        NativeInterop.ForceToForeground(hwnd);
     }
 
     /// <summary>
@@ -426,7 +494,8 @@ public sealed partial class MainWindow : Window
 
             // Wait for game list to be populated before showing the picker
             while (ViewModel.IsLoading)
-                await Task.Delay(200);
+                await Task.Delay(200, LifetimeToken);
+            if (IsShuttingDown) return;
 
             // Bring window to front
             NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
@@ -471,11 +540,19 @@ public sealed partial class MainWindow : Window
         // Wait for initialization to complete before processing — same pattern as HandleAddonFile
         _ = Task.Run(async () =>
         {
-            while (ViewModel.IsLoading)
-                await Task.Delay(200);
-
-            DispatcherQueue?.TryEnqueue(() => NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)));
-            DispatcherQueue?.TryEnqueue(() => _ = ViewModel.HandleNxmLinkAsync(link));
+            try
+            {
+                while (ViewModel.IsLoading)
+                    await Task.Delay(200, LifetimeToken);
+                if (IsShuttingDown) return;
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    if (IsShuttingDown) return;
+                    BringToFront();
+                    _ = ViewModel.HandleNxmLinkAsync(link);
+                });
+            }
+            catch (OperationCanceledException) when (IsShuttingDown) { /* Expected: the wait is cancelled because the app is shutting down. */ }
         });
     }
 
@@ -486,8 +563,8 @@ public sealed partial class MainWindow : Window
             _crashReporter.Log($"[MainWindow.HandleArchiveFile] Processing '{Path.GetFileName(filePath)}'");
 
             while (ViewModel.IsLoading)
-                await Task.Delay(200);
-
+                await Task.Delay(200, LifetimeToken);
+            if (IsShuttingDown) return;
             NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
 
             // Check if this is a Luma mod archive
@@ -555,8 +632,8 @@ public sealed partial class MainWindow : Window
 
             await _dragDropHandler.ProcessDroppedArchive(filePath);
 
-            // Delete source archive from watch folder after successful processing
-            DeleteFromWatchFolder(filePath);
+            // Archives are not auto-deleted — the user may want to keep them
+            // (they are large files, and cancelling the dialog should never delete them).
         }
         catch (Exception ex)
         {
@@ -590,6 +667,7 @@ public sealed partial class MainWindow : Window
 
     private DispatcherTimer? _selectionDebounceTimer;
     private GameCardViewModel? _pendingSelectionCard;
+    private GameCardViewModel? _lastBuiltCard; // tracks which card the panel was last fully built for
 
     private void GameList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -608,6 +686,17 @@ public sealed partial class MainWindow : Window
                             var target = _pendingSelectionCard;
                             if (target != null && target == ViewModel.SelectedGame)
                             {
+                                // Skip full rebuild when the same card is selected again (e.g. background
+                                // merge re-fires SelectionChanged for the already-selected game). This prevents
+                                // duplicate TryEnqueue(Low) callbacks from accumulating and causing WinUI
+                                // layout hangs in the NeuralRendering / DriverProfile sections.
+                                if (target == _lastBuiltCard)
+                                {
+                                    _crashReporter?.Log($"[SelectionDebounce] Skipping rebuild — same card already built: '{target.GameName}'");
+                                    return;
+                                }
+                                _lastBuiltCard = target;
+                                CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:Start] N UI SelectionDebounce({target.GameName})");
                                 _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
                                 PopulateDetailPanel(target);
                                 _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
@@ -616,7 +705,8 @@ public sealed partial class MainWindow : Window
                                 _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
                                 if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
                                 if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
-                                if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
+                                if (NvidiaProfileDlssContainer.Visibility != Visibility.Visible)   NvidiaProfileDlssContainer.Visibility = Visibility.Visible;
+                                if (NvidiaProfileDriverContainer.Visibility != Visibility.Visible) NvidiaProfileDriverContainer.Visibility = Visibility.Visible;
                                 if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
                                 _detailPanelBuilder.ApplySectionOrder();
                                 _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
@@ -634,8 +724,10 @@ public sealed partial class MainWindow : Window
             OverridesContainer.Visibility = Visibility.Collapsed;
             NeuralRenderingPanel.Children.Clear();
             NeuralRenderingContainer.Visibility = Visibility.Collapsed;
-            NvidiaProfilePanel.Children.Clear();
-            NvidiaProfileContainer.Visibility = Visibility.Collapsed;
+            NvidiaProfileDlssPanel.Children.Clear();
+            NvidiaProfileDlssContainer.Visibility = Visibility.Collapsed;
+            NvidiaProfileDriverPanel.Children.Clear();
+            NvidiaProfileDriverContainer.Visibility = Visibility.Collapsed;
             ManagementPanel.Children.Clear();
             ManagementContainer.Visibility = Visibility.Collapsed;
             ExtrasPanel.Children.Clear();

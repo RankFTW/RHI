@@ -129,7 +129,7 @@ public class NexusDownloadService
             if (!response.IsSuccessStatusCode)
             {
                 var body = "";
-                try { body = await response.Content.ReadAsStringAsync().ConfigureAwait(false); } catch { }
+                try { body = await response.Content.ReadAsStringAsync().ConfigureAwait(false); } catch (Exception) { /* error body is diagnostic only; the status code is logged below */ }
                 CrashReporter.Log($"[NexusDownloadService.GetDownloadUriAsync] HTTP {(int)response.StatusCode} — {(body.Length > 200 ? body[..200] : body)}");
                 return null;
             }
@@ -172,7 +172,7 @@ public class NexusDownloadService
             if (!response.IsSuccessStatusCode)
             {
                 var body = "";
-                try { body = await response.Content.ReadAsStringAsync().ConfigureAwait(false); } catch { }
+                try { body = await response.Content.ReadAsStringAsync().ConfigureAwait(false); } catch (Exception) { /* error body is diagnostic only; the status code is logged below */ }
                 CrashReporter.Log($"[NexusDownloadService.GetDownloadUriWithNxmKeyAsync] HTTP {(int)response.StatusCode} — {(body.Length > 200 ? body[..200] : body)}");
                 return null;
             }
@@ -297,6 +297,7 @@ public class NexusDownloadService
             if (request.Content != null)
                 retry.Content = request.Content;
 
+            response.Dispose();
             response = await _http.SendAsync(retry, cancellationToken).ConfigureAwait(false);
         }
 
@@ -320,7 +321,7 @@ public class NexusDownloadService
                     return Uri.UnescapeDataString(seg);
             }
         }
-        catch { }
+        catch (Exception) { /* malformed header/URI; null makes the caller fall back to its own file name */ }
         return null;
     }
 }

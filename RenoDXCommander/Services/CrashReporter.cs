@@ -40,21 +40,36 @@ public static class CrashReporter
     private static volatile bool _verboseLogging;
     private static readonly object _verboseLogLock = new();
 
-    /// <summary>Channel for async log writes - entries are written on a background thread.</summary>
-    private static readonly Channel<string> _logChannel = Channel.CreateUnbounded<string>(
-        new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+    /// <summary>Channel for async log writes. Bounded at 5000 entries — oldest dropped on overflow
+    /// so a log flood (e.g. during a freeze) can't exhaust memory or take the process down.</summary>
+    private static readonly Channel<string> _logChannel = Channel.CreateBounded<string>(
+        new BoundedChannelOptions(5000)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.DropOldest,
+        },
+        _ => Interlocked.Increment(ref _droppedEntries));
+
+    /// <summary>Entries dropped because the channel was full; reported in the log once writing catches up.</summary>
+    private static int _droppedEntries;
 
     /// <summary>Background task that drains the log channel and writes to disk.</summary>
     private static Task? _drainTask;
 
     /// <summary>Session log file path, created fresh each time the app starts.</summary>
-    private static readonly string SessionLogPath;
+    private static string SessionLogPath = string.Empty;
 
     /// <summary>Gets the current session log file path (for cleanup on early exit).</summary>
     public static string CurrentSessionLogPath => SessionLogPath;
 
     /// <summary>Maximum number of session log files kept on disk.</summary>
     private const int MaxSessionLogs = 10;
+
+    /// <summary>Maximum session log file size before rolling to a new file (20 MB).</summary>
+    private const long MaxSessionLogBytes = 20 * 1024 * 1024;
+
+    private static long _sessionLogBytes = 0; // approximate bytes written to current file
 
     static CrashReporter()
     {
@@ -81,13 +96,38 @@ public static class CrashReporter
     {
         try
         {
-            await foreach (var entry in _logChannel.Reader.ReadAllAsync())
+            // Write everything that's queued in one file append instead of opening the file per line.
+            var batch = new StringBuilder();
+            while (await _logChannel.Reader.WaitToReadAsync().ConfigureAwait(false))
             {
+                batch.Clear();
+                var dropped = Interlocked.Exchange(ref _droppedEntries, 0);
+                if (dropped > 0)
+                    batch.Append($"[{DateTime.Now:HH:mm:ss.fff}] [CrashReporter] {dropped} log line(s) dropped (queue full)").Append(Environment.NewLine);
+                while (batch.Length < 256 * 1024 && _logChannel.Reader.TryRead(out var entry))
+                    batch.Append(entry).Append(Environment.NewLine);
+                if (batch.Length == 0) continue;
+
                 try
                 {
                     lock (_verboseLogLock)
                     {
-                        File.AppendAllText(SessionLogPath, entry + Environment.NewLine, Encoding.UTF8);
+                        // Roll to a new file when the current one exceeds 20 MB.
+                        // Prevents unbounded growth during long freezes.
+                        var text = batch.ToString();
+                        var bytes = Encoding.UTF8.GetByteCount(text);
+                        if (_sessionLogBytes + bytes > MaxSessionLogBytes)
+                        {
+                            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                            SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
+                            File.WriteAllText(SessionLogPath,
+                                $"═══ RHI v{AppVersion} — Log rolled at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                                Encoding.UTF8);
+                            _sessionLogBytes = 0;
+                            PruneSessionLogs();
+                        }
+                        File.AppendAllText(SessionLogPath, text, Encoding.UTF8);
+                        _sessionLogBytes += bytes;
                     }
                 }
                 catch { /* Never let logging crash the app */ }
@@ -128,6 +168,59 @@ public static class CrashReporter
 
     private static readonly ConcurrentQueue<string> _breadcrumbs = new();
 
+    // ── UIAction ring buffer — fed only by SetLastUiAction ───────────────────────
+    // Kept separate from the main breadcrumb buffer so diagnostic output can never
+    // be read back into a later diagnostic (the feedback loop that caused the 1.7 GB log).
+    private const int MaxUiActions = 20;
+    private static readonly ConcurrentQueue<string> _uiActionRing = new();
+
+    // ── Dispatcher enqueue ring buffer ────────────────────────────────────────────
+    // Records every TryEnqueue call: priority, calling thread name/id, timestamp, label.
+    // Dumped in the freeze block alongside UIAction history.
+    // Format: "[HH:mm:ss.fff] [Enqueue|CallbackStart|CallbackEnd] priority thread label"
+    private const int MaxEnqueueActions = 50;
+    private static readonly ConcurrentQueue<string> _enqueueRing = new();
+
+    internal static void RecordEnqueueAction(string timestampedEntry)
+    {
+        _enqueueRing.Enqueue(timestampedEntry);
+        while (_enqueueRing.Count > MaxEnqueueActions)
+            _enqueueRing.TryDequeue(out _);
+    }
+
+    public static List<string> GetRecentEnqueueActions(int count)
+    {
+        var all = _enqueueRing.ToArray();
+        var result = new List<string>(Math.Min(count, all.Length));
+        int start = Math.Max(0, all.Length - count);
+        for (int i = start; i < all.Length; i++)
+            result.Add(all[i]);
+        return result;
+    }
+
+    internal static void RecordUiAction(string timestampedEntry)
+    {
+        _uiActionRing.Enqueue(timestampedEntry);
+        while (_uiActionRing.Count > MaxUiActions)
+            _uiActionRing.TryDequeue(out _);
+    }
+
+    /// <summary>
+    /// Returns the last <paramref name="count"/> UI action entries from the dedicated
+    /// UIAction ring buffer. This buffer is written only by <c>SetLastUiAction</c> and
+    /// never contains diagnostic output, so it cannot feed back into itself.
+    /// Summary lines are capped at 4 KB to prevent unbounded growth even if this changes.
+    /// </summary>
+    public static List<string> GetRecentUiActions(int count)
+    {
+        var all = _uiActionRing.ToArray();
+        var result = new List<string>(Math.Min(count, all.Length));
+        int start = Math.Max(0, all.Length - count);
+        for (int i = start; i < all.Length; i++)
+            result.Add(all[i]);
+        return result;
+    }
+
     /// <summary>
     /// Log a short message describing what the app is currently doing.
     /// These entries are included in crash reports to show the sequence of events
@@ -136,7 +229,7 @@ public static class CrashReporter
     /// </summary>
     public static void Log(string message)
     {
-        var entry = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+        var entry = $"[{DateTime.Now:HH:mm:ss.fff}] {SanitisePath(message)}";
         _breadcrumbs.Enqueue(entry);
 
         // Keep the buffer bounded
@@ -145,6 +238,69 @@ public static class CrashReporter
 
         // Always write to the session log file
         AppendSessionLog(entry);
+    }
+
+    /// <summary>
+    /// Writes a log entry synchronously, bypassing the async channel and flushing directly
+    /// to disk. Use for freeze diagnostics only — the process may be killed immediately after
+    /// and the async drain may not complete in time to flush queued entries.
+    /// </summary>
+    public static void LogSync(string message)
+    {
+        var entry = $"[{DateTime.Now:HH:mm:ss.fff}] {SanitisePath(message)}";
+        _breadcrumbs.Enqueue(entry);
+        while (_breadcrumbs.Count > MaxBreadcrumbs)
+            _breadcrumbs.TryDequeue(out _);
+        try
+        {
+            lock (_verboseLogLock)
+            {
+                var entryBytes = Encoding.UTF8.GetByteCount(entry) + 2;
+                if (_sessionLogBytes + entryBytes > MaxSessionLogBytes)
+                {
+                    var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                    SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
+                    File.WriteAllText(SessionLogPath,
+                        $"═══ RHI v{AppVersion} — Log rolled at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                        Encoding.UTF8);
+                    _sessionLogBytes = 0;
+                    PruneSessionLogs();
+                }
+                File.AppendAllText(SessionLogPath, entry + Environment.NewLine, Encoding.UTF8);
+                _sessionLogBytes += entryBytes;
+            }
+        }
+        catch { /* Never let logging crash the app */ }
+    }
+
+    /// <summary>
+    /// Removes personally identifiable information from log entries before writing to disk.
+    /// Replaces Windows usernames, Steam user IDs, and Xbox AUMIDs with safe placeholders.
+    /// </summary>
+    private static string SanitisePath(string message)
+    {
+        // Replace C:\Users\{username}\ with %USERPROFILE%\
+        message = System.Text.RegularExpressions.Regex.Replace(
+            message,
+            @"C:\\Users\\[^\\]+\\",
+            "%USERPROFILE%\\",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Replace Steam userdata\{numericId}\ with userdata\[userid]\
+        message = System.Text.RegularExpressions.Regex.Replace(
+            message,
+            @"(userdata\\)\d+(\\)",
+            "$1[userid]$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Truncate Xbox AUMIDs — keep only up to the last underscore segment (package family)
+        // e.g. Microsoft.ForteBaseGame_3.440.853.0_x64__8wekyb3d8bbwe → Microsoft.ForteBaseGame_[ver]
+        message = System.Text.RegularExpressions.Regex.Replace(
+            message,
+            @"(\\WindowsApps\\[^_]+)_[\d.]+_x64__\w+",
+            "$1_[ver]");
+
+        return message;
     }
 
     private static void AppendSessionLog(string entry)
@@ -199,6 +355,10 @@ public static class CrashReporter
         // 3. WinUI / XAML dispatcher exceptions
         app.UnhandledException += (_, e) =>
         {
+            // Log synchronously first — the async channel may not drain before the process exits.
+            // This also captures exceptions thrown inside dispatcher callbacks, which set
+            // e.Handled = true and continue running with a potentially dead dispatcher.
+            LogSync($"[CrashReporter] app.UnhandledException at {DateTime.Now:HH:mm:ss.fff}: {e.Exception?.GetType().Name}: {e.Exception?.Message}");
             WriteCrashReport("Microsoft.UI.Xaml.Application.UnhandledException", e.Exception,
                 note: $"WinUI exception. Handled = true (app will attempt to continue). Message: {e.Message}");
             e.Handled = true; // Try to keep the app alive

@@ -1,4 +1,4 @@
-// DetailPanelBuilder.Overrides.DriverSettings.cs — Driver Profile Settings (VSync, Latency, Smooth Motion, Power/CPU, ReBAR).
+// DetailPanelBuilder.Overrides.DriverSettings.cs — Driver Settings section (independent panel).
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -10,10 +10,11 @@ namespace RenoDXCommander;
 
 public partial class DetailPanelBuilder
 {
-    // Set by BuildNvidiaProfileSection so BuildDriverProfileSection appends to the body, not the panel root
-    private StackPanel? _nvBodyPanel;
-    // Set by BuildNvidiaProfileSection so BuildNvidiaProfileBody can append the collapsed summary
+    // Used by BuildNvidiaProfileBody to update the DLSS collapsed summary (still needed)
     private StackPanel? _nvHeaderRow;
+
+    // Separate header row reference for the Driver Settings section summary
+    private StackPanel? _driverHeaderRow;
 
     // Snapshot of all NVAPI values needed to build the driver profile section — fetched off the UI thread.
     private sealed record DriverProfileData(
@@ -33,44 +34,100 @@ public partial class DetailPanelBuilder
 
     private void BuildDriverProfileSection(GameCardViewModel card, string capturedName)
     {
-        var nvidiaPresetService = _dlssPresetService;
-        if (!nvidiaPresetService.IsSupported)
+        // ══════════════════════════════════════════════════════════════════════
+        // Driver Settings — independent collapsible section
+        // VSync, Low Latency, Smooth Motion, Power/G-Sync, ReBAR
+        // ══════════════════════════════════════════════════════════════════════
+
+        _window.NvidiaProfileDriverPanel.Children.Clear();
+
+        const string driverSectionKey = "NvidiaProfileDriver";
+        var driverSettings  = _window.ViewModel.Settings;
+        bool driverCollapsed = driverSettings.CollapsedDetailSections.Contains(driverSectionKey);
+
+        var driverVer = _dlssPresetService.DriverVersionString;
+        var driverHeaderText = string.IsNullOrEmpty(driverVer)
+            ? "Driver Settings"
+            : $"Driver Settings — Driver {driverVer}";
+
+        var driverArrow = new TextBlock
         {
-            // Just add the admin notice
+            Text              = driverCollapsed ? "▶" : "▼",
+            FontSize          = 10,
+            Foreground        = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin            = new Thickness(0, 0, 6, 0),
+        };
+        var driverTitle = new TextBlock
+        {
+            Text              = driverHeaderText,
+            FontSize          = 13,
+            FontWeight        = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var driverHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        driverHeaderRow.Children.Add(MakeDragHandle(_window.NvidiaProfileDriverContainer));
+        driverHeaderRow.Children.Add(driverArrow);
+        driverHeaderRow.Children.Add(driverTitle);
+        _window.NvidiaProfileDriverPanel.Children.Add(driverHeaderRow);
+
+        var driverBody = new StackPanel { Spacing = 6, Visibility = driverCollapsed ? Visibility.Collapsed : Visibility.Visible };
+        _window.NvidiaProfileDriverPanel.Children.Add(driverBody);
+
+        driverHeaderRow.PointerEntered += (s, e) => driverTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
+        driverHeaderRow.PointerExited  += (s, e) => driverTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+        var driverHandCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var driverArrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var driverCursorProp  = DetailPanelBuilder.CursorProp;
+        driverHeaderRow.PointerEntered += (s, e) => driverCursorProp?.SetValue(driverHeaderRow, driverHandCursor);
+        driverHeaderRow.PointerExited  += (s, e) => driverCursorProp?.SetValue(driverHeaderRow, driverArrowCursor);
+
+        driverHeaderRow.PointerPressed += (s, e) =>
+        {
+            bool nowCollapsed = driverBody.Visibility == Visibility.Visible;
+            driverBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            driverArrow.Text = nowCollapsed ? "▶" : "▼";
+            // Show/hide the summary TextBlock at index 3 (appended after data is loaded)
+            if (_driverHeaderRow != null && _driverHeaderRow.Children.Count > 3
+                && _driverHeaderRow.Children[3] is TextBlock driverSummaryTb)
+                driverSummaryTb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            if (nowCollapsed) driverSettings.CollapsedDetailSections.Add(driverSectionKey);
+            else              driverSettings.CollapsedDetailSections.Remove(driverSectionKey);
+            _window.ViewModel.SaveSettingsPublic();
+        };
+
+        _driverHeaderRow = driverHeaderRow;
+
+        if (!_dlssPresetService.IsSupported)
+        {
             bool elevated = VulkanLayerService.IsRunningAsAdmin();
-            (_nvBodyPanel ?? _window.NvidiaProfilePanel).Children.Add(new TextBlock
+            driverBody.Children.Add(new TextBlock
             {
                 Text = elevated
                     ? "✓ Running as admin — all driver profile settings are writable."
                     : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
-                FontSize = 10,
-                Foreground = UIFactory.Brush(elevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
+                FontSize     = 10,
+                Foreground   = UIFactory.Brush(elevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 8, 0, 0),
+                Margin       = new Thickness(0, 4, 0, 0),
             });
             return;
         }
 
-        // Capture stable references before going off-thread
-        var gameName = card.GameName;
+        var gameName    = card.GameName;
         var installPath = card.InstallPath ?? "";
-        var gameSource = card.Source ?? "";
-        var targetCard = card;
-        var svc = nvidiaPresetService;
-        var nvBodySnapshot = _nvBodyPanel;
+        var gameSource  = card.Source ?? "";
+        var targetCard  = card;
+        var svc         = _dlssPresetService;
 
-        // Create a dedicated container for the driver profile section.
-        // This lets us replace only the driver content when the live scan completes,
-        // without touching the DLSS rows above it in nvBodySnapshot.
+        // Dedicated container for the driver grid — swapped atomically by TryEnqueue
         var driverContainer = new StackPanel();
-        nvBodySnapshot?.Children.Add(driverContainer);
+        driverBody.Children.Add(driverContainer);
 
-        // Fetch all NVAPI values off the UI thread, then build UI synchronously on dispatcher
         var scanToken = _panelScanCts.Token;
         _ = Task.Run(async () =>
         {
-            // Skip if the user navigated away before we even acquire the semaphore —
-            // the cached render is already showing; no need to do the NVAPI scan.
             if (_window.ViewModel.SelectedGame?.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) != true
                 || _window.ViewModel.SelectedGame?.Source != gameSource)
                 return;
@@ -82,43 +139,36 @@ public partial class DetailPanelBuilder
             DriverProfileData? data = null;
             try
             {
-                // Use a 4s cancellation token for the exe scan inside FindProfile.
-                // This is shorter than the 5s WhenAny timeout so the scan thread exits
-                // cleanly before the outer timeout fires — preventing thread pool starvation.
                 using var scanCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
                 var scanCt = scanCts.Token;
-
-                // Wrap NVAPI reads in a timeout — they can hang indefinitely after sleep/wake
                 var nvapiTask = Task.Run(() =>
                 {
-                    // Prime the profile lookup cache with the cancellable token first.
-                    // All subsequent Get* calls will hit the in-memory _profileLookupCache
-                    // and never run the expensive exe scan again.
                     svc.PrimeProfileCache(gameName, installPath, scanCt);
                     return new DriverProfileData(
-                        VSyncMode:              svc.GetVSyncMode(gameName, installPath),
-                        GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
-                        VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
-                        LowLatencyMode:         svc.GetLowLatencyMode(gameName, installPath),
-                        SmoothMotionEnable:     svc.GetSmoothMotionEnable(gameName, installPath),
-                        SmoothMotionApis:       svc.GetSmoothMotionApis(gameName, installPath),
+                        VSyncMode:                svc.GetVSyncMode(gameName, installPath),
+                        GlobalVSyncMode:          svc.GetGlobalVSyncMode(),
+                        VSyncTearControl:         svc.GetVSyncTearControl(gameName, installPath),
+                        LowLatencyMode:           svc.GetLowLatencyMode(gameName, installPath),
+                        SmoothMotionEnable:       svc.GetSmoothMotionEnable(gameName, installPath),
+                        SmoothMotionApis:         svc.GetSmoothMotionApis(gameName, installPath),
                         SmoothMotionFlipPacingFs: svc.GetSmoothMotionFlipPacingFs(gameName, installPath),
-                        PowerManagementMode:    svc.GetPowerManagementMode(gameName, installPath),
-                        PerGameGSyncEnabled:    svc.GetPerGameGSyncEnabled(gameName, installPath),
-                        ReBarSizeLimit:         svc.GetReBarSizeLimit(gameName, installPath),
-                        ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
-                        ReBarMode:              svc.GetReBarMode(gameName, installPath),
-                        GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
-                        IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
+                        PowerManagementMode:      svc.GetPowerManagementMode(gameName, installPath),
+                        PerGameGSyncEnabled:      svc.GetPerGameGSyncEnabled(gameName, installPath),
+                        ReBarSizeLimit:           svc.GetReBarSizeLimit(gameName, installPath),
+                        ReBarEnableMode:          svc.GetReBarEnableMode(gameName, installPath),
+                        ReBarMode:                svc.GetReBarMode(gameName, installPath),
+                        GlobalReBarSizeLimit:     svc.GetGlobalReBarSizeLimit(),
+                        IsAdmin:                  VulkanLayerService.IsRunningAsAdmin());
                 }, scanCt);
                 using var delayCts = new CancellationTokenSource();
                 var delayTask = Task.Delay(5000, delayCts.Token);
                 var completed = await Task.WhenAny(nvapiTask, delayTask).ConfigureAwait(false);
-                delayCts.Cancel(); // cancel the delay timer immediately so it doesn't hold a thread
+                delayCts.Cancel();
                 if (completed == nvapiTask)
                     data = await nvapiTask.ConfigureAwait(false);
                 else
-                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");            }
+                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");
+            }
             finally
             {
                 CrashReporter.Log($"[BuildDriverProfileSection] Semaphore releasing: '{gameName}'");
@@ -127,10 +177,12 @@ public partial class DetailPanelBuilder
 
             _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
-                // Bail if a newer BuildNvidiaProfileSection call has started (e.g. user changed a preset)
                 if (scanToken.IsCancellationRequested) return;
-
-                // Guard: if the user has navigated away, the body panel may have been replaced
+                if (_window.SettingsPanel.Visibility == Microsoft.UI.Xaml.Visibility.Visible || DialogService.IsDialogOpen)
+                {
+                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] Skipped AddToTree for '{gameName}' — Settings panel is open");
+                    return;
+                }
                 var currentCard = _window.ViewModel.SelectedGame;
                 if (currentCard == null || !currentCard.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
                     || currentCard.Source != gameSource)
@@ -138,9 +190,9 @@ public partial class DetailPanelBuilder
 
                 _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData({gameName})");
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                // Build into a throwaway container first, then swap atomically.
+                var availW = driverContainer.ActualWidth > 0 ? driverContainer.ActualWidth : _window.NvidiaProfileDriverPanel.ActualWidth;
                 var tempDriver = new StackPanel();
-                BuildDriverProfileSectionWithData(targetCard, capturedName, svc, tempDriver, data);
+                BuildDriverProfileSectionWithData(targetCard, capturedName, svc, tempDriver, data, availW);
                 sw.Stop();
                 if (sw.ElapsedMilliseconds > 50)
                     CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW build: '{gameName}' took {sw.ElapsedMilliseconds}ms");
@@ -151,32 +203,73 @@ public partial class DetailPanelBuilder
                 sw2.Stop();
                 if (sw2.ElapsedMilliseconds > 50)
                     CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW AddToTree: '{gameName}' took {sw2.ElapsedMilliseconds}ms on UI thread");
+
+                // Update collapsed summary — appended at index 3 of driverHeaderRow
+                if (_driverHeaderRow != null && data != null)
+                {
+                    while (_driverHeaderRow.Children.Count > 3)
+                        _driverHeaderRow.Children.RemoveAt(3);
+
+                    var vsyncName = DlssPresetService.VSyncModeOptions
+                        .FirstOrDefault(o => o.Value == data.VSyncMode).Name ?? "Default";
+                    var smoothName = data.SmoothMotionEnable != 0 ? "On" : null;
+                    // ReBarEnableMode: 0=Off, 1=Auto (default), 2=On
+                    var rebarName = data.ReBarEnableMode == 2 ? "On"
+                                  : data.ReBarEnableMode == 0 ? "Off"
+                                  : null; // Auto = default, omit from summary
+
+                    var summaryEntries = new System.Collections.Generic.List<(string, string?)>
+                    {
+                        ("VSync", vsyncName),
+                    };
+                    if (smoothName != null)
+                        summaryEntries.Add(("Smooth", smoothName));
+                    if (rebarName != null)
+                        summaryEntries.Add(("ReBAR", rebarName));
+                    var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries);
+                    if (summaryTb != null)
+                    {
+                        summaryTb.Visibility = driverCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                        _driverHeaderRow.Children.Add(summaryTb);
+                    }
+                }
             });
         });
     }
 
     private void BuildDriverProfileSectionWithData(GameCardViewModel card, string capturedName,
-        DlssPresetService nvidiaPresetService, StackPanel? nvBody, DriverProfileData d)
+        DlssPresetService nvidiaPresetService, StackPanel? nvBody, DriverProfileData d,
+        double containerWidth = 0)
     {
         // ══════════════════════════════════════════════════════════════════════
-        // Nvidia Profile Settings — VSync, Latency, Smooth Motion, Power/CPU, ReBAR
+        // Driver Settings — VSync, Latency, Smooth Motion, Power/CPU, ReBAR
         // ══════════════════════════════════════════════════════════════════════
         if (nvidiaPresetService.IsSupported)
         {
             bool isAdmin = d.IsAdmin;
 
-            (nvBody ?? _window.NvidiaProfilePanel).Children.Add(UIFactory.MakeSeparator());
-            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:GridSetup({capturedName})");
-
             var nvidiaGrid = new Grid { ColumnSpacing = 12, Opacity = isAdmin ? 1.0 : 0.4, IsHitTestVisible = isAdmin };
-            // 4 columns with dividers between: col0 | div1 | col2 | div3 | col4 | div5 | col6
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // Use fixed-pixel column widths to avoid the WinUI infinite layout loop.
+            // Star columns inside a StackPanel inside ScrollViewer cause an infinite measurement cycle.
+            // We compute equal column widths from the container width: 4 columns + 3 x 1px dividers.
+            // Fall back to 200px per column if container width isn't available yet.
+            const double DividerWidth = 1.0;
+            const int DividerCount   = 3;
+            const int ColCount       = 4;
+            const double ColSpacing  = 12.0; // nvidiaGrid.ColumnSpacing
+            // Total width consumed: ColumnSpacing between all 7 columns (6 gaps) + 3 divider columns
+            double overhead = (ColCount + DividerCount - 1) * ColSpacing + DividerCount * DividerWidth;
+            double colW = containerWidth > overhead
+                ? (containerWidth - overhead) / ColCount
+                : 200.0;
+
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DividerWidth) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DividerWidth) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DividerWidth) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
 
             var installPathSafe = card.InstallPath ?? "";
 
@@ -223,6 +316,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(combo, globalVSync.HasValue
                     ? "Global = inherit from global setting. App Controlled: let the game decide. Force Off: disables VSync. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame."
@@ -269,6 +363,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(combo, "VSync Tear Control — Standard: normal VSync behavior. Adaptive: VSync on when FPS ≥ refresh rate, off when below (reduces stuttering at low FPS).");
                 var init = true;
@@ -302,6 +397,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                     IsEnabled = !latencyLocked,
                     Opacity = latencyLocked ? 0.4 : 1.0,
                 };
@@ -349,6 +445,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(combo, "Smooth Motion Enable — Off: disabled. On: enables driver-level frame generation (RTX 40 Series+ only).");
                 var init = true;
@@ -385,7 +482,9 @@ public partial class DetailPanelBuilder
                             card.PreSmoothMotionLowLatency = enabling ? savedLatency : null;
                         });
                     });
-                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
+                    // Rebuild only the driver profile section — Smooth Motion affects the Low Latency
+                    // row's enabled state and the APIs combo. Rebuilding the full panel is unnecessary.
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildDriverProfileSection(card, card.GameName));
                 };
                 smoothCol.Children.Add(combo);
                 init = false;
@@ -406,6 +505,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                     IsEnabled = smoothMotionEnabled,
                     Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
@@ -438,6 +538,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                     IsEnabled = smoothMotionEnabled,
                     Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
@@ -487,6 +588,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(combo, "Power Management — Adaptive: GPU clocks down at idle. Maximum: locks GPU to highest clocks. Optimal: balanced (NVIDIA recommended).");
                 var init = true;
@@ -513,6 +615,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(gsyncCombo, "Per-game G-Sync control. Disabled forces G-Sync off for this game regardless of global setting.");
                 var gsyncInit = true;
@@ -612,6 +715,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                 };
                 ToolTipService.SetToolTip(rebarEnableCombo, "Auto = driver decides. On = force-enable ReBAR. Off = force-disable ReBAR.");
                 var rebarComboInit = true;
@@ -621,7 +725,9 @@ public partial class DetailPanelBuilder
                     // index 0=Auto(1), 1=Off(0), 2=On(2)
                     uint mode = rebarEnableCombo.SelectedIndex switch { 1 => 0u, 2 => 2u, _ => 1u };
                     _ = Task.Run(() => nvidiaPresetService.SetReBarEnableMode(capturedName, installPathSafe, mode));
-                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
+                    // Rebuild only the driver profile section — ReBAR Enable affects whether the
+                    // ReBAR Size combo is enabled. Rebuilding the full panel is unnecessary.
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildDriverProfileSection(card, card.GameName));
                 };
                 rebarCol.Children.Add(rebarEnableCombo);
                 rebarComboInit = false;
@@ -647,6 +753,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                     IsEnabled = rebarEnabled,
                     Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
@@ -690,6 +797,7 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
                     IsEnabled = rebarEnabled,
                     Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
@@ -712,22 +820,54 @@ public partial class DetailPanelBuilder
             nvidiaGrid.Children.Add(MakeDlssDivider(3));
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:ReBAR done({capturedName})");
 
-            (nvBody ?? _window.NvidiaProfilePanel).Children.Add(nvidiaGrid);
+            // Defer adding the fully-built driver grid to the visual tree so WinUI can
+            // finish any queued layout work from the DLSS columns above before committing
+            // another large grid. Prevents the UI freeze seen on games with all five
+            // DLSS components (S.T.A.L.K.E.R. 2 and similar).
+            var targetPanel = nvBody ?? _window.NvidiaProfileDriverPanel;
+            var isElevatedCapture = d.IsAdmin;
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddToTree({capturedName})");
+            var enqueued = _window.DispatcherQueue?.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () =>
+                {
+                    // Guard: user navigated away between the outer callback and this deferred grid addition.
+                    if (_window.ViewModel.SelectedGame != card) return;
+                    _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingGrid({capturedName})");
+                    targetPanel.Children.Add(nvidiaGrid);
+                    _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingNotice({capturedName})");
+
+                    // Admin notice appended after the grid so it stays at the bottom
+                    targetPanel.Children.Add(new TextBlock
+                    {
+                        Text = isElevatedCapture
+                            ? "✓ Running as admin — all driver profile settings are writable."
+                            : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
+                        FontSize = 10,
+                        Foreground = UIFactory.Brush(isElevatedCapture ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 8, 0, 0),
+                    });
+                    _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Done({capturedName})");
+                });
+            CrashReporter.Log($"[BuildDriverProfileSectionWithData] TryEnqueue(Low) for grid add returned {enqueued?.ToString() ?? "null (no dispatcher)"} for '{capturedName}'");
         }
-
-        // Admin notice at the bottom of the Nvidia Profile section
-        bool isElevated = d.IsAdmin;
-        (nvBody ?? _window.NvidiaProfilePanel).Children.Add(new TextBlock
+        // Admin notice is now added inside the deferred TryEnqueue above when nvidiaPresetService.IsSupported.
+        // When not supported we still need to add it immediately.
+        if (!nvidiaPresetService.IsSupported)
         {
-            Text = isElevated
-                ? "✓ Running as admin — all driver profile settings are writable."
-                : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
-            FontSize = 10,
-            Foreground = UIFactory.Brush(isElevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 8, 0, 0),
-        });
-
+            bool isElevated = d.IsAdmin;
+            (nvBody ?? _window.NvidiaProfileDriverPanel).Children.Add(new TextBlock
+            {
+                Text = isElevated
+                    ? "✓ Running as admin — all driver profile settings are writable."
+                    : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
+                FontSize = 10,
+                Foreground = UIFactory.Brush(isElevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 8, 0, 0),
+            });
+        }
     }
 }
 

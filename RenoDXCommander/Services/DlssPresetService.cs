@@ -12,6 +12,18 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public partial class DlssPresetService
 {
+    // ── Session serialization lock ─────────────────────────────────────────────
+    // All _session access (reads AND writes) must be serialized — NvAPIWrapper's
+    // DriverSettingsSession is a COM wrapper and is not thread-safe for concurrent
+    // access from multiple thread-pool threads. Without this lock, concurrent panel
+    // reads and user-triggered writes can corrupt the internal COM object state,
+    // causing the UI thread's dispatcher to deadlock waiting for work that will
+    // never complete (observed as a permanent 12-second UI freeze).
+    //
+    // Safe to use blocking Wait() because every caller is already on a Task.Run
+    // background thread — the UI thread never acquires this lock directly.
+    private static readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
+
     // ── Raw NVAPI P/Invoke for settings that NvAPIWrapper doesn't recognize ───
     [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr NvAPI_QueryInterface(uint id);
@@ -130,47 +142,6 @@ public partial class DlssPresetService
         {
             Marshal.FreeHGlobal(ptr);
         }
-    }
-
-    /// <summary>
-    /// Sets a BINARY setting directly via raw NVAPI, bypassing NvAPIWrapper.
-    /// Replicates NVPI's StoreBinaryValue approach: settingType=1 (BINARY),
-    /// currentValue = [int32 length][data bytes].
-    /// Used for QWORD/binary settings like ReBAR Size Limit (0x000F00FF).
-    /// </summary>
-    private bool SetBinarySettingRawNvApi(IntPtr sessionHandle, IntPtr profileHandle, uint settingId, byte[] data)
-    {
-        EnsureNativeFunctions();
-        if (_nativeSetSettingPtr == null || _nativeSaveSettings == null) return false;
-
-        const int STRUCT_SIZE = 12320;
-        var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
-        try
-        {
-            unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
-            Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
-            Marshal.WriteInt32(ptr, 4100, (int)settingId);
-            Marshal.WriteInt32(ptr, 4104, 1);
-            Marshal.WriteInt32(ptr, 4108, 0);
-            Marshal.WriteInt32(ptr, 8216, data.Length);
-            Marshal.Copy(data, 0, ptr + 8220, data.Length);
-
-            int result = _nativeSetSettingPtr(sessionHandle, profileHandle, ptr, 0, 0);
-            if (result != 0)
-            {
-                CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] NvAPI_DRS_SetSetting returned {result} for 0x{settingId:X8} (len={data.Length})");
-                return false;
-            }
-            int saveResult = _nativeSaveSettings(sessionHandle);
-            if (saveResult != 0)
-            {
-                CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] NvAPI_DRS_SaveSettings returned {saveResult}");
-                return false;
-            }
-            CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] Set BINARY 0x{settingId:X8} (len={data.Length}) via raw NVAPI");
-            return true;
-        }
-        finally { Marshal.FreeHGlobal(ptr); }
     }
 
     /// <summary>
@@ -336,7 +307,6 @@ public partial class DlssPresetService
     private const uint MFG_DYNAMIC_MAX_COUNT_ID = 0x10562D0F;   // Off=0, 3x=2, 4x=3, 5x=4, 6x=5
     private const uint MFG_DYNAMIC_TARGET_FPS_ID = 0x10CF4125;  // Off=0, MaxRefresh=0x01000000, or FPS value directly
 
-    private const uint RENDER_SCALE_DEFAULT = 0x03;
     private const uint RENDER_SCALE_CUSTOM = 0x06;
 
     // ── Preset values ─────────────────────────────────────────────────────────
@@ -443,12 +413,6 @@ public partial class DlssPresetService
 
     /// <summary>Counter for profiles created during the current batch operation. Reset before use.</summary>
     public int ProfilesCreatedCount { get; set; }
-
-    /// <summary>When true, the ReBAR enable warning dialog won't be shown again this session.</summary>
-    public bool ReBarWarningAcknowledged { get; set; }
-
-    /// <summary>When true, the ReBAR Optimized mode warning won't be shown again this session.</summary>
-    public bool ReBarOptimizedWarningAcknowledged { get; set; }
 
     /// <summary>
     /// Initializes NVAPI. Call once during app startup.

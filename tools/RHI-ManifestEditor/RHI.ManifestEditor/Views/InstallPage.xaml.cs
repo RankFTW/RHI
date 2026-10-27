@@ -21,7 +21,6 @@ public sealed partial class InstallPage : Page
         LegacyAvailableView.ItemsSource = _vm.LegacyReShadeAvailable;
         ForceExternalView.ItemsSource = _vm.ForceExternalOnly;
         GacSymlinkView.ItemsSource = _vm.GacSymlinkGames;
-        OptiScalerDllView.ItemsSource = _vm.OptiScalerDllOverrides;
         RenodxIniView.ItemsSource = _vm.RenodxIniOverrides;
         RenodxExtraSettingsView.ItemsSource = _vm.RenodxExtraSettings;
     }
@@ -58,9 +57,6 @@ public sealed partial class InstallPage : Page
     private void RemoveGacSymlink_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Button)s).Tag is KeyValueItem i) _vm?.RemoveGacSymlinkCommand.Execute(i); }
 
-    private void AddOptiScalerDll_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddOptiScalerDllCommand.Execute(null);
-    private void RemoveOptiScalerDll_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
-    { if (((Button)s).Tag is KeyValueItem i) _vm?.RemoveOptiScalerDllCommand.Execute(i); }
 
     private void AddRenodxIniGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddRenodxIniGameCommand.Execute(null);
     private void RemoveRenodxIniGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)

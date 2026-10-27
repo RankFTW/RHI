@@ -9,10 +9,30 @@ namespace RenoDXCommander;
 // Update dialogs, patch notes, DC removal warning, and legacy cleanup workflows.
 public partial class DialogService
 {
+    private bool _checkingForAppUpdate;
+
+    internal async Task ShowStartupDialogsAsync()
+    {
+        await ShowPatchNotesIfNewVersionAsync();
+        if (_window.IsShuttingDown) return;
+        await ShowMotdIfNewAsync();
+        if (_window.IsShuttingDown) return;
+        await CheckForAppUpdateAsync();
+    }
+
+    private async Task WaitForXamlRootAsync()
+    {
+        while (_window.Content.XamlRoot == null)
+            await Task.Delay(200, _window.LifetimeToken);
+        _window.LifetimeToken.ThrowIfCancellationRequested();
+    }
+
     // ── Auto-Update Dialogs ─────────────────────────────────────────────────────
 
     public async Task CheckForAppUpdateAsync()
     {
+        if (_checkingForAppUpdate || _window.IsShuttingDown) return;
+        _checkingForAppUpdate = true;
         try
         {
             if (ViewModel.SkipUpdateCheck)
@@ -22,23 +42,18 @@ public partial class DialogService
             }
 
             // Wait until the XamlRoot is available (window needs to be fully loaded for dialogs)
-            while (_window.Content.XamlRoot == null)
-                await Task.Delay(200);
+            await WaitForXamlRootAsync();
 
             var updateInfo = await _updateService.CheckForUpdateAsync(ViewModel.BetaOptIn);
             if (updateInfo == null) return; // up to date or check failed
 
-            // Marshal back to the UI thread to show the dialog.
-            // IMPORTANT: do NOT use TryEnqueue(async () => await ShowUpdateDialogAsync(...)) —
-            // that blocks the dispatcher queue thread for up to 10s waiting for the dialog gate.
-            // Instead, enqueue a non-async action that fires a new Task on the UI thread.
-            // The Task runs as an async continuation without ever occupying the queue dispatch slot.
-            _dispatcherQueue.TryEnqueue(() => _ = ShowUpdateDialogAsync(updateInfo));
+            if (!_window.IsShuttingDown) await ShowUpdateDialogAsync(updateInfo);
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[DialogService.CheckForAppUpdateAsync] Update check error — {ex.Message}");
         }
+        finally { _checkingForAppUpdate = false; }
     }
 
     /// <summary>
@@ -49,8 +64,7 @@ public partial class DialogService
     {
         try
         {
-            while (_window.Content.XamlRoot == null)
-                await Task.Delay(200);
+            await WaitForXamlRootAsync();
             return await _updateService.CheckForUpdateAsync(betaOptIn);
         }
         catch (Exception ex)
@@ -128,58 +142,39 @@ public partial class DialogService
             // No buttons — dialog will be closed programmatically when download completes
         };
 
-        // Show dialog non-blocking — wait up to 15s for any concurrently-showing dialog
-        // (e.g. MOTD) to finish. Using TryAcquireDialogGate (zero timeout) here would
-        // silently abort the update if the MOTD dialog happened to open first.
-        if (!await DialogService.WaitDialogGateAsync(15))
-        {
-            CrashReporter.Log("[DialogService.Update] Timed out waiting for dialog gate — proceeding with update download without progress dialog");
-            // Still launch the download even if we can't show the progress UI
-            var installerPathFallback = await _updateService.DownloadInstallerAsync(updateInfo.DownloadUrl, null);
-            if (!string.IsNullOrEmpty(installerPathFallback))
-                _updateService.LaunchInstallerAndExit(installerPathFallback, () => _dispatcherQueue.TryEnqueue(() => _window.Close()));
-            return;
-        }
-        bool gateReleased = false;
-        downloadDlg.Closed += (_, _) => { if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); } };
-        var dialogTask = downloadDlg.ShowAsync();
+        await using var progressSession = await ShowProgressAsync(downloadDlg);
+        if (progressSession == null) return;
 
         var progress = new Progress<(string msg, double pct)>(p =>
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
+                if (_window.IsShuttingDown) return;
                 progressText.Text = p.msg;
                 progressBar.Value = p.pct;
             });
         });
 
         var installerPath = await _updateService.DownloadInstallerAsync(
-            updateInfo.DownloadUrl, progress);
+            updateInfo.DownloadUrl, progress, _window.LifetimeToken);
+        if (_window.IsShuttingDown) return;
 
         if (string.IsNullOrEmpty(installerPath))
         {
             // Download failed — update dialog to show error with a Close button
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
-                progressBar.Value = 0;
-                downloadDlg.CloseButtonText = "Close";
-            });
+            progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
+            progressBar.Value = 0;
+            downloadDlg.CloseButtonText = "Close";
+            await progressSession.Completion;
             return;
         }
 
         // Close the progress dialog
-        downloadDlg.Hide();
-        if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
+        await progressSession.DisposeAsync();
 
         // Launch installer and close RDXC
-        _updateService.LaunchInstallerAndExit(installerPath, () =>
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                _window.Close();
-            });
-        });
+        if (!_window.IsShuttingDown)
+            _updateService.LaunchInstallerAndExit(installerPath, _window.RequestExit);
     }
 
     // ── Patch Notes Dialogs ─────────────────────────────────────────────────────
@@ -189,11 +184,10 @@ public partial class DialogService
         try
         {
             // Wait until XamlRoot is ready
-            while (_window.Content.XamlRoot == null)
-                await Task.Delay(200);
+            await WaitForXamlRootAsync();
 
             // Wait for UI to settle and any update dialog to finish
-            await Task.Delay(1500);
+            await Task.Delay(1500, _window.LifetimeToken);
 
             var current = _updateService.CurrentVersion;
             var versionStr = $"{current.Major}.{current.Minor}.{current.Build}";
@@ -227,7 +221,7 @@ public partial class DialogService
                 CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to write patch notes marker — {ex.Message}");
             }
 
-            _dispatcherQueue.TryEnqueue(() => _ = ShowPatchNotesDialogAsync());
+            if (!_window.IsShuttingDown) await ShowPatchNotesDialogAsync();
         }
         catch (Exception ex)
         {
@@ -286,16 +280,15 @@ public partial class DialogService
         try
         {
             // Wait until XamlRoot is ready
-            while (_window.Content.XamlRoot == null)
-                await Task.Delay(200);
+            await WaitForXamlRootAsync();
 
             // Wait for UI to settle and other startup dialogs to finish
-            await Task.Delay(2000);
+            await Task.Delay(2000, _window.LifetimeToken);
 
             var motd = await Services.MotdService.CheckAsync(ViewModel.HttpClient);
             if (motd == null) return;
 
-            _dispatcherQueue.TryEnqueue(() => _ = ShowMotdContentAsync(motd));
+            if (!_window.IsShuttingDown) await ShowMotdContentAsync(motd);
         }
         catch (Exception ex)
         {

@@ -84,7 +84,7 @@ public partial class DlssPresetService
                 int deleted = 0;
                 foreach (var settingId in settingsToDelete)
                 {
-                    try { profile.DeleteSetting(settingId); deleted++; } catch { }
+                    try { profile.DeleteSetting(settingId); deleted++; } catch (Exception) { /* DeleteSetting throws when the setting isn't in the profile; nothing to reset */ }
                 }
 
                 // Also explicitly reset settings that are invisible to NvAPIWrapper's enumeration
@@ -108,7 +108,7 @@ public partial class DlssPresetService
                     {
                         foreach (var settingId in invisibleSettings)
                         {
-                            try { SetSettingRawNvApi(sessionH, profileH, settingId, 0); } catch { }
+                            try { SetSettingRawNvApi(sessionH, profileH, settingId, 0); } catch (Exception) { /* setting unsupported on this driver; nothing to reset */ }
                         }
                         if (_nativeSaveSettings != null)
                             _nativeSaveSettings(sessionH);
@@ -201,7 +201,7 @@ public partial class DlssPresetService
             int globalDeleted = 0;
             foreach (var id in globalSettingIds)
             {
-                try { baseProfile.DeleteSetting(id); globalDeleted++; } catch { }
+                try { baseProfile.DeleteSetting(id); globalDeleted++; } catch (Exception) { /* DeleteSetting throws when the setting isn't in the base profile; nothing to reset */ }
             }
 
             // Shader Pre-Compile needs raw API (DeleteSetting can't reach it on the base profile)
@@ -225,6 +225,11 @@ public partial class DlssPresetService
 
     private void ReloadSession()
     {
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log("[DlssPresetService.ReloadSession] Lock timeout — NVAPI may be hung. Skipping reload.");
+            return;
+        }
         try
         {
             _session = DriverSettingsSession.CreateAndLoad();
@@ -236,6 +241,10 @@ public partial class DlssPresetService
         catch (Exception reloadEx)
         {
             CrashReporter.Log($"[DlssPresetService.ReloadSession] Session reload failed — {reloadEx.Message}");
+        }
+        finally
+        {
+            _sessionLock.Release();
         }
     }
 

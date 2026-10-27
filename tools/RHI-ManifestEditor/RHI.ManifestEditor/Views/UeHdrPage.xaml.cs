@@ -17,7 +17,6 @@ public sealed partial class UeHdrPage : Page
         UeCompatView.ItemsSource = _vm.UeExtendedCompatibility;
         NoUeView.ItemsSource = _vm.NoUeExtendedGames;
         LumaCompatView.ItemsSource = _vm.LumaRenodxCompat;
-        LumaDefaultView.ItemsSource = _vm.LumaDefaultGames;
     }
 
     private void AddNativeHdr_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddNativeHdrCommand.Execute(null);
@@ -32,7 +31,4 @@ public sealed partial class UeHdrPage : Page
     private void AddLumaCompat_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddLumaCompatCommand.Execute(null);
     private void RemoveLumaCompat_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Button)s).Tag is StringItem i) _vm?.RemoveLumaCompatCommand.Execute(i); }
-    private void AddLumaDefault_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddLumaDefaultCommand.Execute(null);
-    private void RemoveLumaDefault_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
-    { if (((Button)s).Tag is StringItem i) _vm?.RemoveLumaDefaultCommand.Execute(i); }
 }

@@ -18,90 +18,91 @@ public sealed partial class MainWindow
 
     private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
     {
-        // Build the progress dialog
-        var statusText = new TextBlock
-        {
-            Text = "Preparing...",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-        };
-        var progressBar = new ProgressBar
-        {
-            IsIndeterminate = true,
-            Height = 3,
-            CornerRadius = new CornerRadius(2),
-            Margin = new Thickness(0, 8, 0, 0),
-        };
-        var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(statusText);
-        panel.Children.Add(progressBar);
-
-        var dialog = new ContentDialog
-        {
-            Title = "Updating All Components",
-            Content = panel,
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        // Show dialog non-blocking (it stays open while updates run)
-        var dialogTask = DialogService.ShowSafeAsync(dialog);
-
         try
         {
-            if (!ViewModel.Settings.GlobalSkipRsUpdates)
+            // Build the progress dialog
+            var statusText = new TextBlock
             {
-                statusText.Text = "Updating ReShade...";
-                await ViewModel.UpdateAllReShadeAsync();
-            }
-            if (!ViewModel.Settings.GlobalSkipRdxUpdates)
+                Text = "Preparing...",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            };
+            var progressBar = new ProgressBar
             {
-                statusText.Text = "Updating RenoDX...";
-                await ViewModel.UpdateAllRenoDxAsync();
-            }
-            if (!ViewModel.Settings.GlobalSkipUlUpdates)
+                IsIndeterminate = true,
+                Height = 3,
+                CornerRadius = new CornerRadius(2),
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+            var panel = new StackPanel { Spacing = 4 };
+            panel.Children.Add(statusText);
+            panel.Children.Add(progressBar);
+
+            var dialog = new ContentDialog
             {
-                statusText.Text = "Updating ReLimiter...";
-                await ViewModel.UpdateAllUlAsync();
-            }
-            if (!ViewModel.Settings.GlobalSkipDcUpdates)
+                Title = "Updating All Components",
+                Content = panel,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            await using var progressSession = await DialogService.ShowProgressAsync(dialog);
+            if (progressSession == null) return;
+
+            try
             {
-                statusText.Text = "Updating Display Commander...";
-                await ViewModel.UpdateAllDcAsync();
+                if (!ViewModel.Settings.GlobalSkipRsUpdates)
+                {
+                    statusText.Text = "Updating ReShade...";
+                    await ViewModel.UpdateAllReShadeAsync();
+                }
+                if (!ViewModel.Settings.GlobalSkipRdxUpdates)
+                {
+                    statusText.Text = "Updating RenoDX...";
+                    await ViewModel.UpdateAllRenoDxAsync();
+                }
+                if (!ViewModel.Settings.GlobalSkipUlUpdates)
+                {
+                    statusText.Text = "Updating ReLimiter...";
+                    await ViewModel.UpdateAllUlAsync();
+                }
+                if (!ViewModel.Settings.GlobalSkipDcUpdates)
+                {
+                    statusText.Text = "Updating Display Commander...";
+                    await ViewModel.UpdateAllDcAsync();
+                }
+                if (!ViewModel.Settings.GlobalSkipOsUpdates)
+                {
+                    statusText.Text = "Updating OptiScaler...";
+                    await ViewModel.UpdateAllOsAsync();
+                }
+                if (!ViewModel.Settings.GlobalSkipRefUpdates)
+                {
+                    statusText.Text = "Updating RE Framework...";
+                    await ViewModel.UpdateAllRefAsync();
+                }
+                statusText.Text = "Updating DXVK...";
+                await ViewModel.UpdateAllDxvkAsync();
+                statusText.Text = "Updating Luma...";
+                await ViewModel.UpdateAllLumaAsync();
+                statusText.Text = "Updating DOF Fix...";
+                await ViewModel.UpdateAllDofFixAsync();
             }
-            if (!ViewModel.Settings.GlobalSkipOsUpdates)
+            catch (Exception ex)
             {
-                statusText.Text = "Updating OptiScaler...";
-                await ViewModel.UpdateAllOsAsync();
+                _crashReporter.Log($"[MainWindow.UpdateAllButton_Click] Error during Update All — {ex.Message}");
             }
-            if (!ViewModel.Settings.GlobalSkipRefUpdates)
-            {
-                statusText.Text = "Updating RE Framework...";
-                await ViewModel.UpdateAllRefAsync();
-            }
-            statusText.Text = "Updating DXVK...";
-            await ViewModel.UpdateAllDxvkAsync();
-            statusText.Text = "Updating Luma...";
-            await ViewModel.UpdateAllLumaAsync();
-            statusText.Text = "Updating DOF Fix...";
-            await ViewModel.UpdateAllDofFixAsync();
+
+            // Close the dialog
+            await progressSession.DisposeAsync();
+            ViewModel.NotifyUpdateButtonChanged();
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[MainWindow.UpdateAllButton_Click] Error during Update All — {ex.Message}");
+            CrashReporter.Log($"[MainWindow.UpdateAllButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
-
-        // Close the dialog
-        dialog.Hide();
-        ViewModel.NotifyUpdateButtonChanged();
     }
-
-    private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
-        => await ViewModel.UpdateAllRenoDxAsync();
-
-    private async void UpdateAllReShade_Click(object sender, RoutedEventArgs e)
-        => await ViewModel.UpdateAllReShadeAsync();
 
     internal void InstallUlButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallUlButton_Click(sender, e);
@@ -130,52 +131,25 @@ public sealed partial class MainWindow
     internal void UninstallRefButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallRefButton_Click(sender, e);
 
-    private void UlIniButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            AuxInstallService.CopyUlIni(card.InstallPath);
-            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
-        }
-        catch (Exception ex)
-        {
-            card.UlActionMessage = $"❌ {ex.Message}";
-        }
-    }
-
-    private void DcIniButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            AuxInstallService.CopyDcIni(card.InstallPath);
-            card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
-            card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
-        }
-        catch (Exception ex)
-        {
-            card.DcActionMessage = $"❌ {ex.Message}";
-        }
-    }
-
-    private void CopyOsIniButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.CopyOsIniButton_Click(sender, e);
-
     // ── DXVK event handlers ──────────────────────────────────────────────────
 
     internal async void InstallDxvkButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (card.DxvkIsInstalling) return;
-        if (card.DxvkStatus == GameStatus.UpdateAvailable)
-            await ViewModel.UpdateDxvkAsync(card);
-        else if (card.DxvkStatus == GameStatus.Installed)
-            await ViewModel.InstallDxvkAsync(card, Content.XamlRoot); // reinstall
-        else
-            await ViewModel.InstallDxvkAsync(card, Content.XamlRoot);
+        try
+        {
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (card.DxvkIsInstalling) return;
+            if (card.DxvkStatus == GameStatus.UpdateAvailable)
+                await ViewModel.UpdateDxvkAsync(card);
+            else if (card.DxvkStatus == GameStatus.Installed)
+                await ViewModel.InstallDxvkAsync(card, Content.XamlRoot); // reinstall
+            else
+                await ViewModel.InstallDxvkAsync(card, Content.XamlRoot);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.InstallDxvkButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     internal void UninstallDxvkButton_Click(object sender, RoutedEventArgs e)
@@ -184,50 +158,51 @@ public sealed partial class MainWindow
         ViewModel.UninstallDxvk(card);
     }
 
-    private void CopyDxvkConfButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        ViewModel.CopyDxvkConf(card);
-    }
-
     internal async void DxvkInfoButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-
-        // Build DXVK info content with game-specific notes from manifest
-        var content = "DXVK translates DirectX 8/9/10/11 API calls into Vulkan.\n\n"
-            + "Benefits:\n"
-            + "• Enables ReShade compute shaders on older DX games\n"
-            + "• May improve performance and reduce shader stutter\n"
-            + "• Enables HDR output via dxvk.conf\n"
-            + "• Borderless fullscreen recommended over exclusive fullscreen\n\n"
-            + "⚠ Anti-cheat games may ban players using DXVK.\n"
-            + "⚠ Game overlays (Steam, NVIDIA, RTSS) may conflict.";
-
-        // Append game-specific notes from manifest
-        var manifest = ViewModel.Manifest;
-        if (manifest?.DxvkGameNotes != null
-            && manifest.DxvkGameNotes.TryGetValue(card.GameName, out var noteEntry)
-            && !string.IsNullOrWhiteSpace(noteEntry.Notes))
+        try
         {
-            content += $"\n\n── Game Notes ──\n{noteEntry.Notes}";
-        }
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-        var dialog = new ContentDialog
-        {
-            Title = "ℹ DXVK Info",
-            Content = new TextBlock
+            // Build DXVK info content with game-specific notes from manifest
+            var content = "DXVK translates DirectX 8/9/10/11 API calls into Vulkan.\n\n"
+                + "Benefits:\n"
+                + "• Enables ReShade compute shaders on older DX games\n"
+                + "• May improve performance and reduce shader stutter\n"
+                + "• Enables HDR output via dxvk.conf\n"
+                + "• Borderless fullscreen recommended over exclusive fullscreen\n\n"
+                + "⚠ Anti-cheat games may ban players using DXVK.\n"
+                + "⚠ Game overlays (Steam, NVIDIA, RTSS) may conflict.";
+
+            // Append game-specific notes from manifest
+            var manifest = ViewModel.Manifest;
+            if (manifest?.DxvkGameNotes != null
+                && manifest.DxvkGameNotes.TryGetValue(card.GameName, out var noteEntry)
+                && !string.IsNullOrWhiteSpace(noteEntry.Notes))
             {
-                Text = content,
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            },
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
+                content += $"\n\n── Game Notes ──\n{noteEntry.Notes}";
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "ℹ DXVK Info",
+                Content = new TextBlock
+                {
+                    Text = content,
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontSize = 13,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                },
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DxvkInfoButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void DxvkVariantCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -236,106 +211,126 @@ public sealed partial class MainWindow
     private void ReShadeChannelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.ReShadeChannelCombo_SelectionChanged(sender, e);
 
-    private async void DetailOsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-    {
-        var card = ViewModel.SelectedGame;
-        if (card == null) return;
-
-        if (card.IsOsInstalled)
-        {
-            var variant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
-            var url = variant == "DlssNr"
-                ? "https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases"
-                : "https://github.com/optiscaler/OptiScaler/wiki";
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-        }
-    }
-
     private async void DetailUlStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card == null) return;
+        try
+        {
+            var card = ViewModel.SelectedGame;
+            if (card == null) return;
 
-        if (card.UlStatus == Models.GameStatus.UpdateAvailable && ViewModel.LatestUlReleasePageUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(ViewModel.LatestUlReleasePageUrl));
-        else if (card.UlStatus == Models.GameStatus.Installed || card.UlStatus == Models.GameStatus.UpdateAvailable)
-            await Windows.System.Launcher.LaunchUriAsync(
-                new Uri("https://github.com/RankFTW/ReLimiter?tab=readme-ov-file#relimiter--comprehensive-feature-guide"));
+            if (card.UlStatus == Models.GameStatus.UpdateAvailable && ViewModel.LatestUlReleasePageUrl != null)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(ViewModel.LatestUlReleasePageUrl));
+            else if (card.UlStatus == Models.GameStatus.Installed || card.UlStatus == Models.GameStatus.UpdateAvailable)
+                await Windows.System.Launcher.LaunchUriAsync(
+                    new Uri("https://github.com/RankFTW/ReLimiter?tab=readme-ov-file#relimiter--comprehensive-feature-guide"));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailUlStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DetailDcStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card == null) return;
+        try
+        {
+            var card = ViewModel.SelectedGame;
+            if (card == null) return;
 
-        if (card.IsDcInstalled)
-            await Windows.System.Launcher.LaunchUriAsync(
-                new Uri("https://github.com/pmnoxx/display-commander/releases/tag/latest_build"));
+            if (card.IsDcInstalled)
+                await Windows.System.Launcher.LaunchUriAsync(
+                    new Uri("https://github.com/pmnoxx/display-commander/releases/tag/latest_build"));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailDcStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DetailLumaStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card == null) return;
+        try
+        {
+            var card = ViewModel.SelectedGame;
+            if (card == null) return;
 
-        if (card.IsLumaInstalled)
-            await Windows.System.Launcher.LaunchUriAsync(
-                new Uri("https://github.com/Filoppi/Luma-Framework/releases"));
+            if (card.IsLumaInstalled)
+                await Windows.System.Launcher.LaunchUriAsync(
+                    new Uri("https://github.com/Filoppi/Luma-Framework/releases"));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailLumaStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     internal async void DetailDxvkStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card == null || !card.IsDxvkInstalled) return;
-
-        var variant = ViewModel.ResolveDxvkVariant(card.GameName, card.Source ?? "");
-        var url = variant switch
+        try
         {
-            Models.DxvkVariant.LiliumHdr => "https://github.com/EndlesslyFlowering/dxvk/releases",
-            Models.DxvkVariant.Stable => "https://github.com/doitsujin/dxvk/releases",
-            _ => "https://github.com/doitsujin/dxvk/releases", // Development doesn't have a stable release page
-        };
-        await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+            var card = ViewModel.SelectedGame;
+            if (card == null || !card.IsDxvkInstalled) return;
+
+            var variant = ViewModel.ResolveDxvkVariant(card.GameName, card.Source ?? "");
+            var url = variant switch
+            {
+                Models.DxvkVariant.LiliumHdr => "https://github.com/EndlesslyFlowering/dxvk/releases",
+                Models.DxvkVariant.Stable => "https://github.com/doitsujin/dxvk/releases",
+                _ => "https://github.com/doitsujin/dxvk/releases", // Development doesn't have a stable release page
+            };
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailDxvkStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     // ── DOF Fix event handlers ───────────────────────────────────────────────
 
     private async void InstallDofFixButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
-
-        card.DofFixIsInstalling = true;
-        card.DofFixActionMessage = "Installing DOF Fix...";
-        card.DofFixProgress = 0;
         try
         {
-            var progress = new Progress<(string msg, double pct)>(p =>
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
+
+            card.DofFixIsInstalling = true;
+            card.DofFixActionMessage = "Installing DOF Fix...";
+            card.DofFixProgress = 0;
+            try
             {
-                card.DofFixActionMessage = p.msg;
-                card.DofFixProgress = p.pct;
-            });
-            var success = await _dofFixService.InstallAsync(card.InstallPath, progress);
-            if (success)
-            {
-                card.DofFixInstalledVersion = _dofFixService.StagedVersion;
-                card.DofFixStatus = Models.GameStatus.Installed;
-                card.DofFixActionMessage = "✅ DOF Fix installed!";
-                card.NotifyAll();
-                card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
+                var progress = new Progress<(string msg, double pct)>(p =>
+                {
+                    card.DofFixActionMessage = p.msg;
+                    card.DofFixProgress = p.pct;
+                });
+                var success = await _dofFixService.InstallAsync(card.InstallPath, progress);
+                if (success)
+                {
+                    card.DofFixInstalledVersion = _dofFixService.StagedVersion;
+                    card.DofFixStatus = Models.GameStatus.Installed;
+                    card.DofFixActionMessage = "✅ DOF Fix installed!";
+                    card.NotifyAll();
+                    card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
+                }
+                else
+                {
+                    card.DofFixActionMessage = "❌ Install failed";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                card.DofFixActionMessage = "❌ Install failed";
+                card.DofFixActionMessage = $"❌ {ex.Message}";
+            }
+            finally
+            {
+                card.DofFixIsInstalling = false;
             }
         }
         catch (Exception ex)
         {
-            card.DofFixActionMessage = $"❌ {ex.Message}";
-        }
-        finally
-        {
-            card.DofFixIsInstalling = false;
+            CrashReporter.Log($"[MainWindow.InstallDofFixButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -361,90 +356,132 @@ public sealed partial class MainWindow
 
     private async void DofFixInfoButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-
-        var notes = _dofFixService.ReleaseNotes;
-        if (string.IsNullOrEmpty(notes))
+        try
         {
-            await _dofFixService.CheckForUpdateAsync();
-            notes = _dofFixService.ReleaseNotes;
-        }
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-        var dialog = new ContentDialog
-        {
-            Title = "UE DOF Fix — Release Notes",
-            Content = new ScrollViewer
+            var notes = _dofFixService.ReleaseNotes;
+            if (string.IsNullOrEmpty(notes))
             {
-                Content = new TextBlock
+                await _dofFixService.CheckForUpdateAsync();
+                notes = _dofFixService.ReleaseNotes;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "UE DOF Fix — Release Notes",
+                Content = new ScrollViewer
                 {
-                    Text = notes ?? "No release notes available.",
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true,
+                    Content = new TextBlock
+                    {
+                        Text = notes ?? "No release notes available.",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true,
+                    },
+                    MaxHeight = 400,
                 },
-                MaxHeight = 400,
-            },
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DofFixInfoButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DofFixCogButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new ContentDialog
+        try
         {
-            Title = "DOF Fix Settings",
-            Content = new TextBlock
+            var dialog = new ContentDialog
             {
-                Text = "No configurable settings available for this component.",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            },
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
+                Title = "DOF Fix Settings",
+                Content = new TextBlock
+                {
+                    Text = "No configurable settings available for this component.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                },
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DofFixCogButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DetailDofFixStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card == null || !card.IsDofFixInstalled) return;
-
-        var version = card.DofFixInstalledVersion;
-        if (!string.IsNullOrEmpty(version))
+        try
         {
-            var url = _dofFixService.GetReleaseUrl(version);
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+            var card = ViewModel.SelectedGame;
+            if (card == null || !card.IsDofFixInstalled) return;
+
+            var version = card.DofFixInstalledVersion;
+            if (!string.IsNullOrEmpty(version))
+            {
+                var url = _dofFixService.GetReleaseUrl(version);
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailDofFixStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     private async void DetailRsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://reshade.me"));
+        try
+        {
+            if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri("https://reshade.me"));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailRsStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DetailRefStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        if (ViewModel.SelectedGame?.IsRefInstalled == true)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/praydog/REFramework-nightly/releases"));
+        try
+        {
+            if (ViewModel.SelectedGame?.IsRefInstalled == true)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/praydog/REFramework-nightly/releases"));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailRefStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DetailRdxStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        var card = ViewModel.SelectedGame;
-        if (card?.IsRdxInstalled == true)
+        try
         {
-            string url;
-            if (!string.IsNullOrEmpty(card.NameUrl))
-                url = card.NameUrl;
-            else if (card.UseUeExtended)
-                url = "https://github.com/marat569/renodx/commits/main/src/games/ue-extended";
-            else
-                url = "https://github.com/clshortfuse/renodx/wiki/Mods";
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+            var card = ViewModel.SelectedGame;
+            if (card?.IsRdxInstalled == true)
+            {
+                string url;
+                if (!string.IsNullOrEmpty(card.NameUrl))
+                    url = card.NameUrl;
+                else if (card.UseUeExtended)
+                    url = "https://github.com/marat569/renodx/commits/main/src/games/ue-extended";
+                else
+                    url = "https://github.com/clshortfuse/renodx/wiki/Mods";
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DetailRdxStatus_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -479,87 +516,94 @@ public sealed partial class MainWindow
 
     private async void EngineBadge_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-
-        // Games force-enabled via manifest cannot be toggled off
-        if (_dofFixService.IsForceEligible(card.GameName))
-            return;
-
-        // Games with a specific engine version (from manifest or auto-detection) cannot be toggled.
-        // The badge toggle is only for games with vague "Unreal Engine" (no version suffix).
-        if (card.EngineHint != null && card.EngineHint != "Unreal Engine"
-            && card.EngineHint != "Unreal Engine 5"
-            && System.Text.RegularExpressions.Regex.IsMatch(card.EngineHint, @"Unreal Engine \d"))
-            return;
-
-        // Show first-time warning dialog
-        if (!ViewModel.Settings.EngineBadgeWarningDismissed)
+        try
         {
-            var dontShowCheck = new CheckBox
-            {
-                Content = "Don't show this again",
-                FontSize = 12,
-                Margin = new Thickness(0, 8, 0, 0),
-            };
-            var panel = new StackPanel { Spacing = 8 };
-            panel.Children.Add(new TextBlock
-            {
-                Text = "This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontSize = 12,
-            });
-            panel.Children.Add(dontShowCheck);
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-            var dialog = new ContentDialog
-            {
-                Title = "Engine Version Override",
-                Content = panel,
-                PrimaryButtonText = "Continue",
-                CloseButtonText = "Cancel",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            var result = await DialogService.ShowSafeAsync(dialog);
+            // Games force-enabled via manifest cannot be toggled off
+            if (_dofFixService.IsForceEligible(card.GameName))
+                return;
 
-            if (dontShowCheck.IsChecked == true)
+            // Games with a specific engine version (from manifest or auto-detection) cannot be toggled.
+            // The badge toggle is only for games with vague "Unreal Engine" (no version suffix).
+            if (card.EngineHint != null && card.EngineHint != "Unreal Engine"
+                && card.EngineHint != "Unreal Engine 5"
+                && System.Text.RegularExpressions.Regex.IsMatch(card.EngineHint, @"Unreal Engine \d"))
+                return;
+
+            // Show first-time warning dialog
+            if (!ViewModel.Settings.EngineBadgeWarningDismissed)
             {
-                ViewModel.Settings.EngineBadgeWarningDismissed = true;
-                ViewModel.SaveSettingsPublic();
+                var dontShowCheck = new CheckBox
+                {
+                    Content = "Don't show this again",
+                    FontSize = 12,
+                    Margin = new Thickness(0, 8, 0, 0),
+                };
+                var panel = new StackPanel { Spacing = 8 };
+                panel.Children.Add(new TextBlock
+                {
+                    Text = "This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontSize = 12,
+                });
+                panel.Children.Add(dontShowCheck);
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Engine Version Override",
+                    Content = panel,
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+                var result = await DialogService.ShowSafeAsync(dialog);
+
+                if (dontShowCheck.IsChecked == true)
+                {
+                    ViewModel.Settings.EngineBadgeWarningDismissed = true;
+                    ViewModel.SaveSettingsPublic();
+                }
+
+                if (result != ContentDialogResult.Primary) return;
             }
 
-            if (result != ContentDialogResult.Primary) return;
-        }
+            // Toggle between "Unreal Engine" (no DOF Fix) and "Unreal Engine 5" (DOF Fix eligible)
+            var current = card.EngineHint ?? "Unreal Engine";
+            bool isCurrentlyUe5 = current.Contains("Unreal Engine 5", StringComparison.OrdinalIgnoreCase);
+            var next = isCurrentlyUe5 ? "Unreal Engine" : "Unreal Engine 5";
 
-        // Toggle between "Unreal Engine" (no DOF Fix) and "Unreal Engine 5" (DOF Fix eligible)
-        var current = card.EngineHint ?? "Unreal Engine";
-        bool isCurrentlyUe5 = current.Contains("Unreal Engine 5", StringComparison.OrdinalIgnoreCase);
-        var next = isCurrentlyUe5 ? "Unreal Engine" : "Unreal Engine 5";
-
-        // Store or remove override
-        if (next == "Unreal Engine")
-        {
-            _gameNameService.EngineVersionOverrides.Remove(card.GameName);
-
-            // Uninstall DOF Fix addon if it was installed
-            if (card.DofFixStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
+            // Store or remove override
+            if (next == "Unreal Engine")
             {
-                _dofFixService.Uninstall(card.InstallPath);
-                card.DofFixStatus = GameStatus.NotInstalled;
-                card.DofFixInstalledVersion = null;
+                _gameNameService.EngineVersionOverrides.Remove(card.GameName);
+
+                // Uninstall DOF Fix addon if it was installed
+                if (card.DofFixStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
+                {
+                    _dofFixService.Uninstall(card.InstallPath);
+                    card.DofFixStatus = GameStatus.NotInstalled;
+                    card.DofFixInstalledVersion = null;
+                }
             }
+            else
+                _gameNameService.EngineVersionOverrides[card.GameName] = next;
+
+            // Update card
+            card.EngineHint = next;
+            card.IsDofFixEligible = _dofFixService.IsGameEligible(next, card.Is32Bit, card.GameName);
+            card.NotifyAll();
+
+            // Persist and rebuild panel
+            ViewModel.SaveSettingsPublic();
+            _detailPanelBuilder?.PopulateDetailPanel(card);
+            _detailPanelBuilder?.UpdateDetailComponentRows(card);
         }
-        else
-            _gameNameService.EngineVersionOverrides[card.GameName] = next;
-
-        // Update card
-        card.EngineHint = next;
-        card.IsDofFixEligible = _dofFixService.IsGameEligible(next, card.Is32Bit, card.GameName);
-        card.NotifyAll();
-
-        // Persist and rebuild panel
-        ViewModel.SaveSettingsPublic();
-        _detailPanelBuilder?.PopulateDetailPanel(card);
-        _detailPanelBuilder?.UpdateDetailComponentRows(card);
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.EngineBadge_PointerPressed] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void EngineBadge_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
@@ -580,20 +624,11 @@ public sealed partial class MainWindow
         }
     }
 
-    private void SwitchToLumaButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.SwitchToLumaButton_Click(sender, e);
-
     private void InstallLumaButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallLumaButton_Click(sender, e);
 
     private void UninstallLumaButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallLumaButton_Click(sender, e);
-
-    private void UeExtendedFlyoutItem_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.UeExtendedFlyoutItem_Click(sender, e);
-
-    internal async Task ShowUeExtendedWarningAsync(GameCardViewModel card)
-        => await _dialogService.ShowUeExtendedWarningAsync(card);
 
     internal void HideButton_Click(object sender, RoutedEventArgs e)
     {
@@ -603,15 +638,29 @@ public sealed partial class MainWindow
 
     internal async void LaunchGame_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender) ?? ViewModel.SelectedGame;
-        if (card == null) return;
-        await LaunchGameAsync(card);
+        try
+        {
+            var card = GetCardFromSender(sender) ?? ViewModel.SelectedGame;
+            if (card == null) return;
+            await LaunchGameAsync(card);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.LaunchGame_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void GameList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
-        if (ViewModel.SelectedGame is { } card)
-            await LaunchGameAsync(card);
+        try
+        {
+            if (ViewModel.SelectedGame is { } card)
+                await LaunchGameAsync(card);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.GameList_DoubleTapped] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     internal async Task LaunchGameAsync(GameCardViewModel card)
@@ -684,6 +733,7 @@ public sealed partial class MainWindow
                 {
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
+                    WorkingDirectory = System.IO.Path.GetDirectoryName(userExe) ?? "",
                 });
                 MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
@@ -702,6 +752,7 @@ public sealed partial class MainWindow
                     {
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
+                        WorkingDirectory = card.InstallPath ?? "",
                     });
                     return;
                 }
@@ -787,6 +838,7 @@ public sealed partial class MainWindow
                     {
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
+                        WorkingDirectory = installPath,
                     });
                     MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                     return;
@@ -862,7 +914,7 @@ public sealed partial class MainWindow
                                         catch { return false; }
                                     });
                             }
-                            catch { }
+                            catch (Exception) { /* Safe to ignore: process enumeration can fail transiently; the polling loop simply retries on its next pass. */ }
 
                             if (survivingProc != null) break;
                         }
@@ -918,7 +970,7 @@ public sealed partial class MainWindow
                                     catch { return false; }
                                 });
                         }
-                        catch { }
+                        catch (Exception) { /* Safe to ignore: process enumeration can fail transiently; the polling loop simply retries on its next pass. */ }
 
                         if (gameProc != null) break;
                     }
@@ -960,25 +1012,32 @@ public sealed partial class MainWindow
                 if (File.Exists(exe)) return exe;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[MainWindow.GetSteamExePath] Failed to read Steam install path from registry — {ex.Message}"); }
         return null;
     }
 
     internal async void BrowseFolder_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-        var suggestedPath = card.InstallPath is { Length: > 0 } p && Directory.Exists(p) ? p
-                          : card.DetectedGame?.InstallPath is { Length: > 0 } dp && Directory.Exists(dp) ? dp
-                          : null;
-        var folder = await PickFolderAsync(suggestedPath);
-        if (folder != null)
+        try
         {
-            card.InstallPath = folder;
-            if (card.DetectedGame != null)
-                card.DetectedGame.InstallPath = folder;
-            // Persist the override so it survives Refresh / app restart
-            ViewModel.SetFolderOverride(card.GameName, folder, card.Source);
+            var card = GetCardFromSender(sender);
+            if (card == null) return;
+            var suggestedPath = card.InstallPath is { Length: > 0 } p && Directory.Exists(p) ? p
+                              : card.DetectedGame?.InstallPath is { Length: > 0 } dp && Directory.Exists(dp) ? dp
+                              : null;
+            var folder = await PickFolderAsync(suggestedPath);
+            if (folder != null)
+            {
+                card.InstallPath = folder;
+                if (card.DetectedGame != null)
+                    card.DetectedGame.InstallPath = folder;
+                // Persist the override so it survives Refresh / app restart
+                ViewModel.SetFolderOverride(card.GameName, folder, card.Source);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.BrowseFolder_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -1021,114 +1080,121 @@ public sealed partial class MainWindow
 
     internal async void RemoveManualGame_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-
-        if (card.IsManuallyAdded)
+        try
         {
-            // Build a list of installed components to show in the dialog
-            var installed = new List<string>();
-            if (card.RsRecord != null || card.RsStatus == Models.GameStatus.Installed) installed.Add("ReShade");
-            if (card.InstalledRecord != null) installed.Add("RenoDX");
-            if (card.IsUlInstalled) installed.Add("ReLimiter");
-            if (card.IsDcInstalled) installed.Add("Display Commander");
-            if (card.LumaRecord != null) installed.Add("Luma");
-            if (card.IsRefInstalled) installed.Add("RE Framework");
-            if (card.IsOsInstalled) installed.Add("OptiScaler");
-            if (card.DxvkStatus == Models.GameStatus.Installed) installed.Add("DXVK");
+            var card = GetCardFromSender(sender);
+            if (card == null) return;
 
-            ContentDialogResult result;
-            bool uninstallComponents = false;
-
-            if (installed.Count > 0)
+            if (card.IsManuallyAdded)
             {
-                var componentList = string.Join(", ", installed);
-                var panel = new StackPanel { Spacing = 8 };
-                panel.Children.Add(new TextBlock
-                {
-                    Text = $"Remove {card.GameName} from RHI?",
-                    FontSize = 13,
-                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                });
-                panel.Children.Add(new TextBlock
-                {
-                    Text = $"The following components are installed: {componentList}.",
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    FontSize = 12,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                });
+                // Build a list of installed components to show in the dialog
+                var installed = new List<string>();
+                if (card.RsRecord != null || card.RsStatus == Models.GameStatus.Installed) installed.Add("ReShade");
+                if (card.InstalledRecord != null) installed.Add("RenoDX");
+                if (card.IsUlInstalled) installed.Add("ReLimiter");
+                if (card.IsDcInstalled) installed.Add("Display Commander");
+                if (card.LumaRecord != null) installed.Add("Luma");
+                if (card.IsRefInstalled) installed.Add("RE Framework");
+                if (card.IsOsInstalled) installed.Add("OptiScaler");
+                if (card.DxvkStatus == Models.GameStatus.Installed) installed.Add("DXVK");
 
-                var uninstallCheck = new CheckBox
-                {
-                    Content = "Also uninstall all RHI-managed components from game folder",
-                    FontSize = 12,
-                    IsChecked = false,
-                };
-                panel.Children.Add(uninstallCheck);
+                ContentDialogResult result;
+                bool uninstallComponents = false;
 
-                var dialog = new ContentDialog
+                if (installed.Count > 0)
                 {
-                    Title = "Remove Game",
-                    Content = panel,
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    var componentList = string.Join(", ", installed);
+                    var panel = new StackPanel { Spacing = 8 };
+                    panel.Children.Add(new TextBlock
+                    {
+                        Text = $"Remove {card.GameName} from RHI?",
+                        FontSize = 13,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    });
+                    panel.Children.Add(new TextBlock
+                    {
+                        Text = $"The following components are installed: {componentList}.",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        FontSize = 12,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    });
 
-                result = await DialogService.ShowSafeAsync(dialog);
-                uninstallComponents = uninstallCheck.IsChecked == true;
+                    var uninstallCheck = new CheckBox
+                    {
+                        Content = "Also uninstall all RHI-managed components from game folder",
+                        FontSize = 12,
+                        IsChecked = false,
+                    };
+                    panel.Children.Add(uninstallCheck);
+
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Remove Game",
+                        Content = panel,
+                        PrimaryButtonText = "Remove",
+                        CloseButtonText = "Cancel",
+                        XamlRoot = Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+
+                    result = await DialogService.ShowSafeAsync(dialog);
+                    uninstallComponents = uninstallCheck.IsChecked == true;
+                }
+                else
+                {
+                    // No components installed — simple confirm
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Remove Game",
+                        Content = new TextBlock
+                        {
+                            Text = $"Remove {card.GameName} from RHI?",
+                            FontSize = 12,
+                            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        },
+                        PrimaryButtonText = "Remove",
+                        CloseButtonText = "Cancel",
+                        XamlRoot = Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    result = await DialogService.ShowSafeAsync(dialog);
+                }
+
+                if (result != ContentDialogResult.Primary) return;
+
+                // Uninstall components if requested
+                if (uninstallComponents)
+                {
+                    try
+                    {
+                        if (card.LumaRecord != null) ViewModel.UninstallLuma(card);
+                        if (card.IsOsInstalled) _installEventHandler.UninstallOptiScaler(card);
+                        if (card.DxvkStatus == Models.GameStatus.Installed) ViewModel.UninstallDxvk(card);
+                        if (card.IsUlInstalled) ViewModel.UninstallUl(card);
+                        if (card.IsDcInstalled) ViewModel.UninstallDc(card);
+                        if (card.IsRefInstalled) ViewModel.UninstallREFramework(card);
+                        if (card.InstalledRecord != null) ViewModel.UninstallMod(card);
+                        if (card.RsRecord != null) ViewModel.UninstallReShade(card);
+                        _crashReporter.Log($"[RemoveManualGame] Uninstalled all components for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[RemoveManualGame] Component uninstall failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
+
+                ViewModel.RemoveManualGameCommand.Execute(card);
             }
             else
             {
-                // No components installed — simple confirm
-                var dialog = new ContentDialog
-                {
-                    Title = "Remove Game",
-                    Content = new TextBlock
-                    {
-                        Text = $"Remove {card.GameName} from RHI?",
-                        FontSize = 12,
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    },
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
-                result = await DialogService.ShowSafeAsync(dialog);
+                // Auto-detected game — reset folder to original detected path
+                ViewModel.ResetFolderOverride(card);
             }
-
-            if (result != ContentDialogResult.Primary) return;
-
-            // Uninstall components if requested
-            if (uninstallComponents)
-            {
-                try
-                {
-                    if (card.LumaRecord != null) ViewModel.UninstallLuma(card);
-                    if (card.IsOsInstalled) _installEventHandler.UninstallOptiScaler(card);
-                    if (card.DxvkStatus == Models.GameStatus.Installed) ViewModel.UninstallDxvk(card);
-                    if (card.IsUlInstalled) ViewModel.UninstallUl(card);
-                    if (card.IsDcInstalled) ViewModel.UninstallDc(card);
-                    if (card.IsRefInstalled) ViewModel.UninstallREFramework(card);
-                    if (card.InstalledRecord != null) ViewModel.UninstallMod(card);
-                    if (card.RsRecord != null) ViewModel.UninstallReShade(card);
-                    _crashReporter.Log($"[RemoveManualGame] Uninstalled all components for '{card.GameName}'");
-                }
-                catch (Exception ex)
-                {
-                    _crashReporter.Log($"[RemoveManualGame] Component uninstall failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-
-            ViewModel.RemoveManualGameCommand.Execute(card);
         }
-        else
+        catch (Exception ex)
         {
-            // Auto-detected game — reset folder to original detected path
-            ViewModel.ResetFolderOverride(card);
+            CrashReporter.Log($"[MainWindow.RemoveManualGame_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -1167,17 +1233,14 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        
-        // Use explicit gate pattern to ensure proper gate release even if operation completes quickly
-        bool refreshGateReleased = false;
-        progressDialog.Closed += (_, _) => { if (!refreshGateReleased) { refreshGateReleased = true; DialogService.ReleaseDialogGate(); } };
-        _ = DialogService.ShowSafeAsync(progressDialog);
+
+        await using var progressSession = await DialogService.ShowProgressAsync(progressDialog);
+        if (progressSession == null) return;
 
         var uiProgress = new Progress<string>(msg => DispatcherQueue?.TryEnqueue(() => progressText.Text = msg));
         await ViewModel.FullRefreshAsync(uiProgress);
 
-        refreshGateReleased = true;
-        progressDialog.Hide();
+        await progressSession.DisposeAsync();
         RestoreScrollAndSelection(selectedName);
     }
 

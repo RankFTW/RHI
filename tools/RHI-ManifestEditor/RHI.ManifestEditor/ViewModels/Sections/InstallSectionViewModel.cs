@@ -105,7 +105,6 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     public ObservableCollection<ForceExternalItem> ForceExternalOnly { get; }
     public ObservableCollection<KeyValueItem> SnapshotOverrides { get; }
     public ObservableCollection<DllOverrideItem> DllNameOverrides { get; }
-    public ObservableCollection<KeyValueItem> OptiScalerDllOverrides { get; }
     public ObservableCollection<KeyValueItem> GacSymlinkGames { get; }
     public ObservableCollection<KeyValueItem> LaunchExeOverrides { get; }
     public ObservableCollection<KeyValueItem> LegacyReShadeVersions { get; }
@@ -123,7 +122,6 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         SnapshotOverrides = ToKvObservable(manifest.SnapshotOverrides);
         DllNameOverrides = new(manifest.DllNameOverrides?
             .Select(kv => new DllOverrideItem(kv.Key, kv.Value)) ?? Enumerable.Empty<DllOverrideItem>());
-        OptiScalerDllOverrides = ToKvObservable(manifest.OptiScalerDllOverrides);
         GacSymlinkGames = ToKvObservable(manifest.GacSymlinkGames);
         LaunchExeOverrides = ToKvObservable(manifest.LaunchExeOverrides);
         LegacyReShadeVersions = ToKvObservable(manifest.LegacyReShadeVersions);
@@ -153,8 +151,6 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveForceExternal(ForceExternalItem item) { ForceExternalOnly.Remove(item); Dirty(); }
     [RelayCommand] public void AddGacSymlink() { GacSymlinkGames.Add(new KeyValueItem()); Dirty(); }
     [RelayCommand] public void RemoveGacSymlink(KeyValueItem item) { GacSymlinkGames.Remove(item); Dirty(); }
-    [RelayCommand] public void AddOptiScalerDll() { OptiScalerDllOverrides.Add(new KeyValueItem()); Dirty(); }
-    [RelayCommand] public void RemoveOptiScalerDll(KeyValueItem item) { OptiScalerDllOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddRenodxIniGame() { RenodxIniOverrides.Add(new RenodxIniGameItem(_main)); Dirty(); }
     [RelayCommand] public void RemoveRenodxIniGame(RenodxIniGameItem item) { RenodxIniOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddRenodxExtra() { RenodxExtraSettings.Add(new RenodxExtraSettingItem(_main)); Dirty(); }
@@ -180,7 +176,6 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         _manifest.LaunchExeOverrides = FromKvObservable(LaunchExeOverrides);
         _manifest.LegacyReShadeVersions = FromKvObservable(LegacyReShadeVersions);
         _manifest.LegacyReShadeAvailable = FromObservable(LegacyReShadeAvailable).Count > 0 ? FromObservable(LegacyReShadeAvailable) : null;
-        _manifest.OptiScalerDllOverrides = FromKvObservable(OptiScalerDllOverrides);
         _manifest.RenodxIniOverrides = RenodxIniOverrides.Count > 0
             ? RenodxIniOverrides
                 .Where(g => !string.IsNullOrWhiteSpace(g.GameName))

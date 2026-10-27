@@ -1,1 +1,1 @@
-Hi to all the new users. If you need any help with anything then we have support channels on The Ultra Place and RenoDX Discords. Thank you for all of your support, Rank
+Hi everyone, back to normal opperations now. If you have issues then let me know on Discord please. Also remember that any new beta versions are posted on Discord in pins Thank you, Rank

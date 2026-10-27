@@ -129,23 +129,8 @@ public class DlssNrCostScalerService
         try
         {
             string? json;
-            if (forceRefresh)
-            {
-                // Bypass ETag cache — make a direct request to get current data
-                var req = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-                req.Headers.Add("User-Agent", "RHI");
-                var resp = await _http.SendAsync(req).ConfigureAwait(false);
-                if (!resp.IsSuccessStatusCode)
-                {
-                    _crashReporter.Log($"[DlssNrCostScalerService.FetchRelease] HTTP {(int)resp.StatusCode}");
-                    return (null, null);
-                }
-                json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-            }
-            else
-            {
-                json = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
-            }
+            // An ETag request always returns current data, so forced checks use the cache too.
+            json = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
             if (json == null) return (null, null);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
@@ -232,7 +217,7 @@ public class DlssNrCostScalerService
             // Delete proxy and restore real DLL
             if (File.Exists(realDst))
             {
-                try { if (File.Exists(proxyDst)) File.Delete(proxyDst); } catch { }
+                try { if (File.Exists(proxyDst)) File.Delete(proxyDst); } catch (Exception ex) { _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Failed to delete '{ProxyDllName}' before restore — {ex.Message}"); }
                 File.Move(realDst, proxyDst);
                 _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Restored '{ProxyDllName}' from '{RealDllName}'");
             }
@@ -242,8 +227,8 @@ public class DlssNrCostScalerService
                 File.Delete(proxyDst);
             }
 
-            try { if (File.Exists(iniDst))   File.Delete(iniDst);   } catch { }
-            try { if (File.Exists(addonDst)) File.Delete(addonDst); } catch { }
+            try { if (File.Exists(iniDst))   File.Delete(iniDst);   } catch (Exception ex) { _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Failed to delete '{IniFileName}' — {ex.Message}"); }
+            try { if (File.Exists(addonDst)) File.Delete(addonDst); } catch (Exception ex) { _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Failed to delete '{CompanionAddonName}' — {ex.Message}"); }
 
             _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Cleaned up '{installPath}'");
         }

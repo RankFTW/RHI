@@ -29,6 +29,8 @@ public static class Sources
     public const string OptiScalerStable = "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest";
     public const string OptiScalerNightlyReleases = "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases";
     public const string OptiScalerNightly = OptiScalerNightlyReleases + "?per_page=5";
+    // Windows lists enough history to pin older nightly builds.
+    public const string OptiScalerNightlyHistory = OptiScalerNightlyReleases + "?per_page=30";
     public const string OptiScalerDlssNrReleases = "https://api.github.com/repos/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases";
     public const string OptiScalerDlssNr = OptiScalerDlssNrReleases + "?per_page=5";
     public const string OptiPatcher = "https://github.com/optiscaler/OptiPatcher/releases/download/rolling/OptiPatcher.asi";

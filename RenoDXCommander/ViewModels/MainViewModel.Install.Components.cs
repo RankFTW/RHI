@@ -371,7 +371,7 @@ public partial class MainViewModel
 
             // Disable driver FPS limiter for this game (conflicts with ReLimiter)
             try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallUlAsync] Failed to disable driver FPS limiter — {ex.Message}"); }
 
             // Apply shared presets setting to the newly deployed INI if enabled
             if (_settingsViewModel.UlSharedPresets)
@@ -560,7 +560,7 @@ public partial class MainViewModel
 
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
             try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallUl] Failed to restore driver FPS limiter — {ex.Message}"); }
 
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
@@ -822,7 +822,7 @@ public partial class MainViewModel
 
             // Disable driver FPS limiter for this game (conflicts with Display Commander)
             try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallDcAsync] Failed to disable driver FPS limiter — {ex.Message}"); }
 
             // Create and persist AuxInstalledRecord for DC tracking
             var dcRecord = new AuxInstalledRecord
@@ -891,7 +891,7 @@ public partial class MainViewModel
 
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
             try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallDc] Failed to restore driver FPS limiter — {ex.Message}"); }
 
             card.DcInstalledFile = null;
             card.DcInstalledVersion = null;

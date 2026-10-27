@@ -224,7 +224,7 @@ public partial class MainViewModel
                     using var proc = System.Diagnostics.Process.Start(psi)!;
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
                     try { await proc.WaitForExitAsync(cts.Token); }
-                    catch (OperationCanceledException) { try { proc.Kill(); } catch { } }
+                    catch (OperationCanceledException) { try { proc.Kill(); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.DownloadAndDeployNexusFileAsync] Failed to kill timed-out 7z process — {ex.Message}"); } }
                 }
                 else
                 {
@@ -340,13 +340,13 @@ public partial class MainViewModel
             finally
             {
                 // Clean up temp extract dir
-                try { Directory.Delete(tempExtractDir, recursive: true); } catch { }
+                try { Directory.Delete(tempExtractDir, recursive: true); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.DownloadAndDeployNexusFileAsync] Temp extract dir cleanup failed — {ex.Message}"); }
             }
         }
         finally
         {
             // Clean up downloaded temp file
-            try { File.Delete(tempPath); } catch { }
+            try { File.Delete(tempPath); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.DownloadAndDeployNexusFileAsync] Temp file cleanup failed — {ex.Message}"); }
         }
     }
 }

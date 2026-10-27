@@ -35,7 +35,6 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private static readonly string StreamlineCacheDir = Path.Combine(BaseStagingDir, "Streamline");
     private static readonly string DlssCustomDir = Path.Combine(BaseStagingDir, "Custom", "DLSS");
     private static readonly string StreamlineCustomDir = Path.Combine(BaseStagingDir, "Custom", "Streamline");
-    private static readonly string CustomBaseDir = Path.Combine(BaseStagingDir, "Custom");
 
     /// <summary>AppData backup root for game-original Streamline DLLs — one subfolder per game name.</summary>
     internal static readonly string StreamlineBackupsDir = Path.Combine(BaseStagingDir, "StreamlineBackups");
@@ -50,7 +49,6 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     // ── Dependencies ──────────────────────────────────────────────────────────
 
     private readonly HttpClient _http;
-    private readonly GitHubETagCache _etagCache;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -76,7 +74,6 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public DlssStreamlineService(HttpClient http, GitHubETagCache etagCache)
     {
         _http = http;
-        _etagCache = etagCache;
 
         // Try load cached manifest synchronously for immediate availability
         LoadCachedManifest();
@@ -85,9 +82,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         MigrateCustomFolders();
 
         // Ensure custom folders exist so users can drop files in
-        try { Directory.CreateDirectory(DlssCustomDir); } catch { }
-        try { Directory.CreateDirectory(StreamlineCustomDir); } catch { }
-        try { Directory.CreateDirectory(RsCustomDir); } catch { }
+        try { Directory.CreateDirectory(DlssCustomDir); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.ctor] Failed to create DLSS custom folder — {ex.Message}"); }
+        try { Directory.CreateDirectory(StreamlineCustomDir); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.ctor] Failed to create Streamline custom folder — {ex.Message}"); }
+        try { Directory.CreateDirectory(RsCustomDir); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.ctor] Failed to create ReShade custom folder — {ex.Message}"); }
     }
 
     /// <summary>Custom ReShade folder path — exposed for AuxInstallService.</summary>
@@ -121,7 +118,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         if (files.Length == 0)
         {
             // Empty old folder — just delete it
-            try { Directory.Delete(oldPath, false); } catch { }
+            try { Directory.Delete(oldPath, false); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.MigrateFolder] Failed to delete empty folder '{oldPath}' — {ex.Message}"); }
             return;
         }
 
@@ -141,7 +138,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             if (Directory.GetFiles(oldPath).Length == 0 && Directory.GetDirectories(oldPath).Length == 0)
                 Directory.Delete(oldPath, false);
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.MigrateFolder] Failed to delete old folder '{oldPath}' — {ex.Message}"); }
     }
 
     // ── Manifest fetching ─────────────────────────────────────────────────────
@@ -264,8 +261,6 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public static string FormatVersion(string? rawVersion) => DlssVersion.Format(rawVersion);
 
     public bool HasBackup(string dllPath) => File.Exists(dllPath + BackupExtension);
-
-    public string? GetNewestDlssVersion() => _manifest?.Dlss?.FirstOrDefault()?.Version;
 
     // ── DLSS scan skip cache ──────────────────────────────────────────────────
 
@@ -685,7 +680,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(TrustedPathCachePath)!);
                 var json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(TrustedPathCachePath, json);
+                FileHelper.WriteAllTextAtomic(TrustedPathCachePath, json, "DlssStreamlineService.SaveTrustedCache");
             }
             catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SaveTrustedCache] Failed — {ex.Message}"); }
         }
@@ -751,22 +746,13 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         var newest = _manifest?.Dlssnr?.FirstOrDefault();
         if (newest == null) return null;
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, newest.Version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(newest.Version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (File.Exists(cachedDll))
             return cachedDll;
 
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
-        return File.Exists(cachedDll) ? cachedDll : null;
-    }
-
-    /// <inheritdoc />
-    public string? GetCachedNrDllPath()
-    {
-        var newest = _manifest?.Dlssnr?.FirstOrDefault();
-        if (newest == null) return null;
-        var cachedDll = Path.Combine(DlssnrCacheDir, newest.Version, DlssnrDllName);
         return File.Exists(cachedDll) ? cachedDll : null;
     }
 
@@ -783,7 +769,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return null;
         }
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (File.Exists(cachedDll))

@@ -15,6 +15,7 @@ public static class SingleInstanceService
     private const string PipeName = "RenoDXCommander_AddonPipe";
     private static Mutex? _mutex;
     private static CancellationTokenSource? _cts;
+    private static Task? _listenerTask;
 
     /// <summary>Raised when a second instance sends a file path.</summary>
     public static event Action<string>? FileReceived;
@@ -25,8 +26,18 @@ public static class SingleInstanceService
     /// </summary>
     public static bool TryAcquire()
     {
-        _mutex = new Mutex(true, MutexName, out bool createdNew);
-        return createdNew;
+        if (_mutex != null) return true;
+        var mutex = new Mutex(false, MutexName);
+        bool acquired;
+        try { acquired = mutex.WaitOne(0); }
+        catch (AbandonedMutexException) { acquired = true; }
+        if (!acquired)
+        {
+            mutex.Dispose();
+            return false;
+        }
+        _mutex = mutex;
+        return true;
     }
 
     /// <summary>
@@ -38,6 +49,13 @@ public static class SingleInstanceService
         {
             using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
             client.Connect(3000); // 3s timeout
+            // A user-launched secondary instance can transfer its foreground rights
+            // to the existing instance before asking that instance to show itself.
+            if (NativeInterop.GetNamedPipeServerProcessId(client.SafePipeHandle, out var owner) && owner != 0)
+            {
+                var granted = NativeInterop.AllowSetForegroundWindow(owner);
+                CrashReporter.Log($"[Foreground] Existing-instance grant to PID {owner}: {granted}");
+            }
             using var writer = new StreamWriter(client) { AutoFlush = true };
             writer.WriteLine(filePath);
         }
@@ -50,8 +68,10 @@ public static class SingleInstanceService
     /// </summary>
     public static void StartListening()
     {
+        if (_cts != null) return;
         _cts = new CancellationTokenSource();
-        Task.Run(() => ListenLoop(_cts.Token));
+        var token = _cts.Token;
+        _listenerTask = Task.Run(() => ListenLoop(token));
     }
 
     private static async Task ListenLoop(CancellationToken ct)
@@ -75,15 +95,34 @@ public static class SingleInstanceService
                     FileReceived?.Invoke(line);
             }
             catch (OperationCanceledException) { break; }
-            catch { /* Log and continue listening */ }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SingleInstance] Listener failed — {ex.Message}");
+                // Do not hot-spin if pipe creation repeatedly fails.
+                try { await Task.Delay(250, ct).ConfigureAwait(false); }
+                catch (OperationCanceledException) { break; }
+            }
         }
     }
 
     public static void Stop()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _mutex?.ReleaseMutex();
-        _mutex?.Dispose();
+        var cancellation = _cts;
+        _cts = null;
+        cancellation?.Cancel();
+        if (cancellation != null)
+        {
+            var listener = _listenerTask ?? Task.CompletedTask;
+            _ = listener.ContinueWith(_ => cancellation.Dispose(), TaskScheduler.Default);
+        }
+        _listenerTask = null;
+        FileReceived = null;
+        var mutex = _mutex;
+        _mutex = null;
+        if (mutex != null)
+        {
+            try { mutex.ReleaseMutex(); }
+            finally { mutex.Dispose(); }
+        }
     }
 }

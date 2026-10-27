@@ -6,7 +6,8 @@ namespace RenoDXCommander.Services;
 public partial class DxvkService
 {
     // ── File lock for sequential JSON writes (Requirement 22.3) ──────
-    private static readonly object _dbLock = new();
+    // Shared with SafeJsonFile so reads and writes of dxvk_installed.json serialize together.
+    private static object _dbLock => SafeJsonFile.LockFor(DbPath);
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -18,19 +19,8 @@ public partial class DxvkService
     /// <inheritdoc />
     public List<DxvkInstalledRecord> LoadAllRecords()
     {
-        try
-        {
-            if (!File.Exists(DbPath))
-                return new();
-
-            var json = File.ReadAllText(DbPath);
-            return JsonSerializer.Deserialize<List<DxvkInstalledRecord>>(json) ?? new();
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[DxvkService.LoadAllRecords] Failed to read {DbPath} — {ex.Message}");
-            return new();
-        }
+        // SafeJsonFile: corrupt-file recovery from .bak; blocks saves if the file is unreadable.
+        return SafeJsonFile.ReadList<DxvkInstalledRecord>(DbPath);
     }
 
     /// <inheritdoc />
@@ -84,9 +74,7 @@ public partial class DxvkService
 
                 records.Add(record);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
-                var json = JsonSerializer.Serialize(records, _jsonOptions);
-                File.WriteAllText(DbPath, json);
+                SafeJsonFile.Write(DbPath, records, "DxvkService.SaveRecords", _jsonOptions);
             }
         }
         catch (Exception ex)
@@ -119,9 +107,7 @@ public partial class DxvkService
                     return;
                 }
 
-                Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
-                var json = JsonSerializer.Serialize(records, _jsonOptions);
-                File.WriteAllText(DbPath, json);
+                SafeJsonFile.Write(DbPath, records, "DxvkService.SaveRecords", _jsonOptions);
             }
         }
         catch (Exception ex)

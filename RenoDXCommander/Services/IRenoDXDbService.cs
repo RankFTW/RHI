@@ -22,13 +22,4 @@ public interface IRenoDXDbService
 
     /// <summary>Clears the ETag cache for all DB URLs so the next fetch is unconditional.</summary>
     void InvalidateCache();
-
-    /// <summary>Named mod list from the last successful fetch. Empty until FetchAllAsync completes.</summary>
-    IReadOnlyList<GameMod> CachedMods { get; }
-
-    /// <summary>UE-Extended entry dict from the last successful fetch. Empty until FetchAllAsync completes.</summary>
-    IReadOnlyDictionary<string, RenoDXDbUnrealEntry> CachedUnrealEntries { get; }
-
-    /// <summary>Unity entry dict from the last successful fetch. Empty until FetchAllAsync completes.</summary>
-    IReadOnlyDictionary<string, RenoDXDbUnityEntry> CachedUnityEntries { get; }
 }

@@ -27,12 +27,6 @@ public interface IAuxInstallService
 
     void Uninstall(AuxInstalledRecord record);
 
-    /// <summary>
-    /// Removes only the DLL file and DB record for the given install, without
-    /// triggering shader folder operations (RestoreOriginalIfPresent).
-    /// </summary>
-    void UninstallDllOnly(AuxInstalledRecord record);
-
     List<AuxInstalledRecord> LoadAll();
 
     AuxInstalledRecord? FindRecord(string gameName, string installPath, string addonType);

@@ -93,24 +93,6 @@
                 </StackPanel>
             </Expander>
 
-            <Expander HorizontalAlignment="Stretch">
-                <Expander.Header><TextBlock Text="lumaDefaultGames — auto-enable Luma on first detection" FontWeight="SemiBold"/></Expander.Header>
-                <StackPanel Spacing="4" Padding="0,8,0,0">
-                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Only fires in Phase 2 (background scan). Respects prior user toggles."/>
-                    <ListView x:Name="LumaDefaultView" MaxHeight="220" SelectionMode="None">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" FontSize="12"/>
-                                    <Button Grid.Column="1" Content="✕" Tag="{Binding}" Click="RemoveLumaDefault_Click" Padding="8,4"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <Button Content="+ Add" Click="AddLumaDefault_Click"/>
-                </StackPanel>
-            </Expander>
         </StackPanel>
     </ScrollViewer>
 </Page>

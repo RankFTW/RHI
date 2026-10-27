@@ -78,7 +78,32 @@ public class AddonInfoResolver
         {
             var wikiResult = TryResolveWiki(card, addon, manifest, osWikiData);
             if (wikiResult != null)
+            {
+                // Append DB comment (card.Notes) if present — wiki content alone
+                // may miss game-specific notes that live only in the RHI database.
+                if (addon == AddonType.RenoDX && !string.IsNullOrWhiteSpace(card.Notes))
+                {
+                    var dbNote = card.Notes
+                        .Replace("⚠ In-game HDR must be turned ON for UE-Extended to work correctly in this title.", "")
+                        .Trim();
+                    if (!string.IsNullOrWhiteSpace(dbNote))
+                        wikiResult = new AddonInfoResult
+                        {
+                            Content = (wikiResult.Content ?? "") + "\n\n" + dbNote,
+                            Url = wikiResult.Url,
+                            UrlLabel = wikiResult.UrlLabel,
+                            Source = wikiResult.Source,
+                            WikiStatusLabel = wikiResult.WikiStatusLabel,
+                            WikiStatusBadgeBg = wikiResult.WikiStatusBadgeBg,
+                            WikiStatusBadgeFg = wikiResult.WikiStatusBadgeFg,
+                            WikiStatusBadgeBorder = wikiResult.WikiStatusBadgeBorder,
+                            OptiScalerCompat = wikiResult.OptiScalerCompat,
+                            OptiScalerFsr4Compat = wikiResult.OptiScalerFsr4Compat,
+                            HdrAnalysisUrl = wikiResult.HdrAnalysisUrl,
+                        };
+                }
                 return AttachExtras(wikiResult, card, addon, hdrDatabase);
+            }
         }
 
         // ── Tier 2b: Nexus mod summary (external-only games with Nexus URLs) ──
@@ -99,14 +124,12 @@ public class AddonInfoResolver
             ? FallbackNativeHdr
             : GetFallbackText(addon);
 
-        // For NativeHDR/UE-Extended games, append DB Comments from card.Notes.
-        // BuildNotes() populates card.Notes with the HDR warning + any DB comment.
-        // Extract just the comment portion (everything after the HDR warning line).
-        if (addon == AddonType.RenoDX && card.IsNativeHdrGame
-            && !string.IsNullOrWhiteSpace(card.Notes))
+        // Append DB Comments from card.Notes for all games.
+        // For NativeHDR games, card.Notes = "⚠ HDR warning..." + optional "\n\n{dbComment}"
+        // — strip the warning to get just the comment portion.
+        // For named mods, card.Notes = wiki note + optional "\n\n{dbComment}" (or just dbComment).
+        if (addon == AddonType.RenoDX && !string.IsNullOrWhiteSpace(card.Notes))
         {
-            // card.Notes = "⚠ In-game HDR must be turned ON..." + optional "\n\n{dbComment}"
-            // Strip the warning line to get just the DB comment portion.
             var notesWithoutWarning = card.Notes
                 .Replace("⚠ In-game HDR must be turned ON for UE-Extended to work correctly in this title.", "")
                 .Trim();
@@ -488,35 +511,6 @@ public class AddonInfoResolver
         Dictionary<string, string>? hdrDatabase)
     {
         var hdrUrl = LookupHdrUrl(card.GameName, addon, hdrDatabase);
-        if (hdrUrl == null) return result;
-
-        return new AddonInfoResult
-        {
-            Content = result.Content,
-            Url = result.Url,
-            UrlLabel = result.UrlLabel,
-            Source = result.Source,
-            WikiStatusLabel = result.WikiStatusLabel,
-            WikiStatusBadgeBg = result.WikiStatusBadgeBg,
-            WikiStatusBadgeFg = result.WikiStatusBadgeFg,
-            WikiStatusBadgeBorder = result.WikiStatusBadgeBorder,
-            OptiScalerCompat = result.OptiScalerCompat,
-            OptiScalerFsr4Compat = result.OptiScalerFsr4Compat,
-            HdrAnalysisUrl = hdrUrl
-        };
-    }
-
-    /// <summary>
-    /// Attaches the HDR analysis URL to an existing result (for RenoDX/Luma only).
-    /// Returns a new result with HdrAnalysisUrl set if found, otherwise returns the original.
-    /// </summary>
-    private static AddonInfoResult AttachHdrUrl(
-        AddonInfoResult result,
-        string gameName,
-        AddonType addon,
-        Dictionary<string, string>? hdrDatabase)
-    {
-        var hdrUrl = LookupHdrUrl(gameName, addon, hdrDatabase);
         if (hdrUrl == null) return result;
 
         return new AddonInfoResult

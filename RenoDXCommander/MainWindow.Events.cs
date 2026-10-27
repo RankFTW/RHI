@@ -1,4 +1,4 @@
-﻿// MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
+// MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -24,89 +24,96 @@ public sealed partial class MainWindow
 
     private async void FullRefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        _crashReporter.Log("[MainWindow.FullRefreshButton_Click] User clicked Full Refresh");
-
-        var dialog = new ContentDialog
+        try
         {
-            Title = "Full Refresh",
-            Content = "This will clear all caches and re-scan everything from scratch:\n\n" +
-                      "• Re-detects all games from every storefront\n" +
-                      "• Re-scans DLSS/Streamline DLL paths\n" +
-                      "• Re-detects graphics APIs and engine types\n" +
-                      "• Rebuilds shader and addon deployment state\n\n" +
-                      "Try a normal Refresh first — it handles most issues without the full rescan. " +
-                      "Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n" +
-                      "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
-                      "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
-            PrimaryButtonText = "Continue",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = Content.XamlRoot,
-        };
+            _crashReporter.Log("[MainWindow.FullRefreshButton_Click] User clicked Full Refresh");
 
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
+            var dialog = new ContentDialog
+            {
+                Title = "Full Refresh",
+                Content = "This will clear all caches and re-scan everything from scratch:\n\n" +
+                          "• Re-detects all games from every storefront\n" +
+                          "• Re-scans DLSS/Streamline DLL paths\n" +
+                          "• Re-detects graphics APIs and engine types\n" +
+                          "• Rebuilds shader and addon deployment state\n\n" +
+                          "Try a normal Refresh first — it handles most issues without the full rescan. " +
+                          "Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n" +
+                          "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
+                          "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
+                PrimaryButtonText = "Continue",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme  = ElementTheme.Dark,
+            };
 
-        _ = FullRefreshWithScrollRestore();
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            _ = FullRefreshWithScrollRestore();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.FullRefreshButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
-        _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
-
-        // Acquire the dialog gate before showing — use WaitDialogGateAsync so we don't skip
-        // if another dialog is briefly open (e.g. MOTD)
-        if (!await DialogService.WaitDialogGateAsync(5))
-        {
-            _crashReporter.Log("[CheckForUpdatesButton_Click] Could not acquire dialog gate");
-            return;
-        }
-
-        // Show progress dialog
-        var progressPanel = new StackPanel { Spacing = 8 };
-        var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
-        var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-        var progressText = new TextBlock { Text = "Fetching manifest...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
-        progressRow.Children.Add(progressRing);
-        progressRow.Children.Add(progressText);
-        progressPanel.Children.Add(progressRow);
-
-        var progressDialog = new ContentDialog
-        {
-            Title = "Checking for updates...",
-            Content = progressPanel,
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        // Fire-and-forget the ShowAsync — we'll Hide() it when done
-        // (ShowAsync returns when the dialog is dismissed; we dismiss it via Hide())
-        _ = progressDialog.ShowAsync();
-
         try
         {
-            // Force bypass cooldown for the update check
-            ViewModel.ForceNextUpdateCheck();
+            _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
 
-            // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
-            await ViewModel.RefreshAsync();
+            // Show progress dialog
+            var progressPanel = new StackPanel { Spacing = 8 };
+            var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+            var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
+            var progressText = new TextBlock { Text = "Fetching manifest...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+            progressRow.Children.Add(progressRing);
+            progressRow.Children.Add(progressText);
+            progressPanel.Children.Add(progressRow);
 
-            // Trigger silent auto-install of any updates found
-            ViewModel.TriggerAutoUpdate();
+            var progressDialog = new ContentDialog
+            {
+                Title = "Checking for updates...",
+                Content = progressPanel,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
 
-            // Check app update
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
-            await _dialogService.CheckForAppUpdateAsync();
+            await using var progressSession = await DialogService.ShowProgressAsync(progressDialog, 5);
+            if (progressSession == null) return;
+
+            try
+            {
+                // Force bypass cooldown for the update check
+                ViewModel.ForceNextUpdateCheck();
+
+                // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
+                DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
+                await ViewModel.RefreshAsync();
+
+                // Trigger silent auto-install of any updates found
+                ViewModel.TriggerAutoUpdate();
+
+                // Check app update
+                DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
+                // The update prompt needs the same modal slot; close progress first.
+                await progressSession.DisposeAsync();
+                await _dialogService.CheckForAppUpdateAsync();
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[CheckForUpdatesButton_Click] Error: {ex.Message}");
+            }
+            finally
+            {
+                await progressSession.DisposeAsync();
+            }
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[CheckForUpdatesButton_Click] Error: {ex.Message}");
-        }
-        finally
-        {
-            progressDialog.Hide();
-            DialogService.ReleaseDialogGate();
+            CrashReporter.Log($"[MainWindow.CheckForUpdatesButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -137,189 +144,150 @@ public sealed partial class MainWindow
         _crashReporter.Log("[MainWindow] Addon watch folder reset to default Downloads");
     }
 
-    private async void RsIniButton_Click(object sender, RoutedEventArgs e)
+    private async void LumaCogButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            var screenshotPath = BuildScreenshotSavePath(card.GameName);
-            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            var installPath = card.InstallPath;
-            var gameName = card.GameName;
-            var requiresVulkan = card.RequiresVulkanInstall;
-            var useUeExtended = card.UseUeExtended;
-            var status = card.Status;
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-            await Task.Run(() =>
+            var content = new StackPanel { Spacing = 8 };
+
+            // ── Engine.ini Settings ───────────────────────────────────────────────
+            // Only show for Unreal Engine games with Luma installed
+            if (card.LumaMod != null && card.EngineHint?.Contains("Unreal") == true)
             {
-                if (requiresVulkan)
+                content.Children.Add(new TextBlock
                 {
-                    AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                    VulkanFootprintService.Create(installPath);
-                }
-                else
-                    AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
+                    Text = "Engine.ini Settings",
+                    FontSize = 13,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    Margin = new Thickness(0, 0, 0, 4),
+                });
 
-                // Apply [renodx] section if UE-Extended is installed
-                if (useUeExtended && status == GameStatus.Installed)
-                    AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
+                var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+                cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+                cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                // Force-apply manifest [renodx] INI overrides on redeploy
-                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
-                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(gameName, out var iniOvr))
-                    AuxInstallService.ApplyRenodxIniOverrides(installPath, iniOvr, forceOverwrite: true);
-            });
+                // ── HDR on First Boot ──────────────────────────────────────────────
+                var hdrLabel = new TextBlock
+                {
+                    Text = "HDR on First Boot",
+                    FontSize = 11,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
+                cogGrid.Children.Add(hdrLabel);
 
-            // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI) — on UI thread
-            if (requiresVulkan)
-                ViewModel.DeployShadersForCard(gameName);
+                var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+                hdrCombo.Items.Add("Default");
+                hdrCombo.Items.Add("Off");
+                hdrCombo.Items.Add("On");
+                ToolTipService.SetToolTip(hdrCombo,
+                    "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
+                    "Default: leaves both keys as-is (Luma controls them).\n" +
+                    "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
+                    "On: sets EnableHDR=1 and DisplayMode=1.");
 
-            card.RsActionMessage = "✅ reshade.ini merged into game folder.";
+                var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+                // Default = key absent or never set by RHI; Off = "0"; On = "1"
+                hdrCombo.SelectedIndex = currentHdr == null ? 0 : currentHdr == "0" ? 1 : 2;
+                bool hdrInitializing = true;
+                hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
+                hdrCombo.SelectionChanged += (s2, ev) =>
+                {
+                    if (hdrInitializing) return;
+                    if (hdrCombo.SelectedIndex == 0) // Default — remove keys, let Luma manage them
+                    {
+                        AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+                        AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
+                        card.LumaActionMessage = "✅ HDR reset to Luma default.";
+                    }
+                    else
+                    {
+                        bool hdrOn = hdrCombo.SelectedIndex == 2;
+                        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
+                        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
+                        card.LumaActionMessage = hdrOn ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                    }
+                    card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+                };
+                Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);
+                cogGrid.Children.Add(hdrCombo);
+
+                // ── TAA Settings ───────────────────────────────────────────────────
+                var taaLabel = new TextBlock
+                {
+                    Text = "TAA Settings",
+                    FontSize = 11,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
+                cogGrid.Children.Add(taaLabel);
+
+                var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+                taaCombo.Items.Add("Off");
+                taaCombo.Items.Add("On");
+                ToolTipService.SetToolTip(taaCombo,
+                    "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
+                    "Forces TAA with high quality for Luma HDR compatibility.");
+
+                bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
+                taaCombo.SelectedIndex = taaActive ? 1 : 0;
+                bool taaInitializing = true;
+                taaCombo.Loaded += (s2, e2) => taaInitializing = false;
+
+                taaCombo.SelectionChanged += (s2, ev) =>
+                {
+                    if (taaInitializing) return;
+                    var taaKeys = new (string Section, string Key, string Value)[]
+                    {
+                        ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
+                        ("SystemSettings", "r.PostProcessAAQuality", "4"),
+                    };
+                    if (taaCombo.SelectedIndex == 1)
+                    {
+                        AuxInstallService.ApplyEngineIniCustomKeys(
+                            card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
+                        ViewModel.SetLumaTaaEnabled(card.GameName, true);
+                        card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
+                    }
+                    else
+                    {
+                        AuxInstallService.RemoveEngineIniCustomKeys(
+                            card.InstallPath,
+                            taaKeys.Select(k => k.Key),
+                            card.EngineIniProjectOverride, card.GameName, card.Source);
+                        ViewModel.SetLumaTaaEnabled(card.GameName, false);
+                        card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
+                    }
+                    card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+                };
+                Grid.SetRow(taaCombo, 1); Grid.SetColumn(taaCombo, 1);
+                cogGrid.Children.Add(taaCombo);
+
+                content.Children.Add(cogGrid);
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Luma Settings",
+                Content = content,
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            await DialogService.ShowSafeAsync(dialog);
         }
         catch (Exception ex)
         {
-            card.RsActionMessage = $"❌ {ex.Message}";
+            CrashReporter.Log($"[MainWindow.LumaCogButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
-    }
-
-    private async void LumaCogButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-
-        var content = new StackPanel { Spacing = 8 };
-
-        // ── Engine.ini Settings ───────────────────────────────────────────────
-        // Only show for Unreal Engine games with Luma installed
-        if (card.LumaMod != null && card.EngineHint?.Contains("Unreal") == true)
-        {
-            content.Children.Add(new TextBlock
-            {
-                Text = "Engine.ini Settings",
-                FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 0, 0, 4),
-            });
-
-            var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
-            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            // ── HDR on First Boot ──────────────────────────────────────────────
-            var hdrLabel = new TextBlock
-            {
-                Text = "HDR on First Boot",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
-            cogGrid.Children.Add(hdrLabel);
-
-            var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-            hdrCombo.Items.Add("Default");
-            hdrCombo.Items.Add("Off");
-            hdrCombo.Items.Add("On");
-            ToolTipService.SetToolTip(hdrCombo,
-                "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
-                "Default: leaves both keys as-is (Luma controls them).\n" +
-                "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
-                "On: sets EnableHDR=1 and DisplayMode=1.");
-
-            var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
-            // Default = key absent or never set by RHI; Off = "0"; On = "1"
-            hdrCombo.SelectedIndex = currentHdr == null ? 0 : currentHdr == "0" ? 1 : 2;
-            bool hdrInitializing = true;
-            hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
-            hdrCombo.SelectionChanged += (s2, ev) =>
-            {
-                if (hdrInitializing) return;
-                if (hdrCombo.SelectedIndex == 0) // Default — remove keys, let Luma manage them
-                {
-                    AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
-                    AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
-                    card.LumaActionMessage = "✅ HDR reset to Luma default.";
-                }
-                else
-                {
-                    bool hdrOn = hdrCombo.SelectedIndex == 2;
-                    AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
-                    AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
-                    card.LumaActionMessage = hdrOn ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
-                }
-                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
-            };
-            Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);
-            cogGrid.Children.Add(hdrCombo);
-
-            // ── TAA Settings ───────────────────────────────────────────────────
-            var taaLabel = new TextBlock
-            {
-                Text = "TAA Settings",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
-            cogGrid.Children.Add(taaLabel);
-
-            var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-            taaCombo.Items.Add("Off");
-            taaCombo.Items.Add("On");
-            ToolTipService.SetToolTip(taaCombo,
-                "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
-                "Forces TAA with high quality for Luma HDR compatibility.");
-
-            bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
-            taaCombo.SelectedIndex = taaActive ? 1 : 0;
-            bool taaInitializing = true;
-            taaCombo.Loaded += (s2, e2) => taaInitializing = false;
-
-            taaCombo.SelectionChanged += (s2, ev) =>
-            {
-                if (taaInitializing) return;
-                var taaKeys = new (string Section, string Key, string Value)[]
-                {
-                    ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
-                    ("SystemSettings", "r.PostProcessAAQuality", "4"),
-                };
-                if (taaCombo.SelectedIndex == 1)
-                {
-                    AuxInstallService.ApplyEngineIniCustomKeys(
-                        card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
-                    ViewModel.SetLumaTaaEnabled(card.GameName, true);
-                    card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
-                }
-                else
-                {
-                    AuxInstallService.RemoveEngineIniCustomKeys(
-                        card.InstallPath,
-                        taaKeys.Select(k => k.Key),
-                        card.EngineIniProjectOverride, card.GameName, card.Source);
-                    ViewModel.SetLumaTaaEnabled(card.GameName, false);
-                    card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
-                }
-                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
-            };
-            Grid.SetRow(taaCombo, 1); Grid.SetColumn(taaCombo, 1);
-            cogGrid.Children.Add(taaCombo);
-
-            content.Children.Add(cogGrid);
-        }
-
-        var dialog = new ContentDialog
-        {
-            Title = "Luma Settings",
-            Content = content,
-            CloseButtonText = "Close",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = this.Content.XamlRoot,
-        };
-
-        await DialogService.ShowSafeAsync(dialog);
     }
 
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
@@ -354,183 +322,331 @@ public sealed partial class MainWindow
             new Uri("https://github.com/RankFTW/ReLimiter"));
     }
 
+    // ── Donate dialog ─────────────────────────────────────────────────────────
+
+    private async void DonateButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var donationUrls = GameCardViewModel.GetAllDonationUrls();
+            // Always prefer live manifest roles (most up to date after a fetch).
+            // Fall back to the merged static dict if manifest hasn't loaded yet.
+            var manifestRoles = ViewModel.Manifest?.AuthorRoles;
+            var roles = (manifestRoles != null && manifestRoles.Count > 0)
+                ? (IReadOnlyDictionary<string, string>)manifestRoles
+                : GameCardViewModel.AuthorRoles;
+
+            var entries = donationUrls.Keys
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (entries.Count == 0)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Support the Mod Authors",
+                    Content = "No donation links available.",
+                    CloseButtonText = "Close",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
+                return;
+            }
+
+            // ── Build the dialog content ──────────────────────────────────────────
+            var panel = new StackPanel { Spacing = 0 };
+
+            var intro = new TextBlock
+            {
+                Text = "These are the people who make the mods RHI manages. If you enjoy their work, consider supporting them.",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 8),
+            };
+            panel.Children.Add(intro);
+
+            var warning = new TextBlock
+            {
+                Text = "⚠ Important: To receive early access to RenoDX mods, you MUST link your Discord account to Ko-fi BEFORE donating. Donations made without linking first cannot be retroactively credited.",
+                FontSize = 12,
+                Foreground = UIFactory.GetBrush("#F0A500"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 14),
+            };
+            panel.Children.Add(warning);
+
+            var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+            var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+            var cursorProp  = DetailPanelBuilder.CursorProp;
+
+            foreach (var name in entries)
+            {
+                if (!donationUrls.TryGetValue(name, out var url)) continue;
+                roles.TryGetValue(name, out var role);
+
+                // Row: [Name (fixed)] [Role (fills middle)] [Ko-fi (right)]
+                var row = new Grid { Margin = new Thickness(0, 2, 0, 2), ColumnSpacing = 12 };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var nameBlock = new TextBlock
+                {
+                    Text = name,
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(nameBlock, 0);
+                row.Children.Add(nameBlock);
+
+                var roleBlock = new TextBlock
+                {
+                    Text = role ?? "",
+                    FontSize = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                };
+                Grid.SetColumn(roleBlock, 1);
+                row.Children.Add(roleBlock);
+
+                // Ko-fi button
+                var kofiBtn = new Button
+                {
+                    Content = "Ko-fi",
+                    FontSize = 11,
+                    Padding = new Thickness(10, 4, 10, 4),
+                    CornerRadius = new CornerRadius(6),
+                    Background = UIFactory.GetBrush("#FF5E5B"),
+                    Foreground = UIFactory.GetBrush("#FFFFFF"),
+                    BorderThickness = new Thickness(0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                var capturedUrl = url;
+                kofiBtn.Click += (s, ev) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(capturedUrl));
+                ToolTipService.SetToolTip(kofiBtn, capturedUrl);
+                Grid.SetColumn(kofiBtn, 2);
+                row.Children.Add(kofiBtn);
+
+                panel.Children.Add(row);
+
+                // Subtle separator between rows
+                if (name != entries.Last())
+                    panel.Children.Add(new Border
+                    {
+                        Height = 1,
+                        Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+                        Margin = new Thickness(0, 2, 0, 2),
+                        Opacity = 0.4,
+                    });
+            }
+
+            var scroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = panel,
+                Padding = new Thickness(0, 0, 12, 0),
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "❤ Support the Mod Authors",
+                Content = scroll,
+                CloseButtonText = "Close",
+                XamlRoot = Content.XamlRoot,
+                Background = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DonateButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
 
     // ── Per-component install flyout click handlers ──
 
     internal async void CardComponentInstall_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
-        var component = btn.DataContext as string;
-
-        // Ensure install path exists (same pattern as CardInstallButton_Click)
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
+        try
         {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
+            if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+            var component = btn.DataContext as string;
+
+            // Ensure install path exists (same pattern as CardInstallButton_Click)
+            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
+            {
+                var folder = await PickFolderAsync();
+                if (folder == null) return;
+                card.InstallPath = folder;
+                ViewModel.SaveLibraryPublic();
+            }
+
+            switch (component)
+            {
+                case "RDX":
+                    await ViewModel.InstallModCommand.ExecuteAsync(card);
+                    break;
+                case "RS":
+                    await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
+                    break;
+                case "Luma":
+                    await ViewModel.InstallLumaAsync(card);
+                    break;
+                case "UL":
+                    await ViewModel.InstallUlAsync(card);
+                    break;
+                case "DC":
+                    await ViewModel.InstallDcAsync(card);
+                    break;
+                case "REF":
+                    await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
+                    break;
+                case "OS":
+                    _installEventHandler.InstallOsButton_Click(sender, e);
+                    break;
+            }
         }
-
-        switch (component)
+        catch (Exception ex)
         {
-            case "RDX":
-                await ViewModel.InstallModCommand.ExecuteAsync(card);
-                break;
-            case "RS":
-                await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-                break;
-            case "Luma":
-                await ViewModel.InstallLumaAsync(card);
-                break;
-            case "UL":
-                await ViewModel.InstallUlAsync(card);
-                break;
-            case "DC":
-                await ViewModel.InstallDcAsync(card);
-                break;
-            case "REF":
-                await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
-                break;
-            case "OS":
-                _installEventHandler.InstallOsButton_Click(sender, e);
-                break;
-        }
-    }
-
-    internal void CardComponentUninstall_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
-        var component = btn.DataContext as string;
-
-        switch (component)
-        {
-            case "RDX":
-                ViewModel.UninstallModCommand.Execute(card);
-                break;
-            case "RS":
-                if (card.RequiresVulkanInstall)
-                    ViewModel.UninstallVulkanReShadeCommand.Execute(card);
-                else
-                    ViewModel.UninstallReShadeCommand.Execute(card);
-                break;
-            case "Luma":
-                ViewModel.UninstallLumaCommand.Execute(card);
-                break;
-            case "UL":
-                ViewModel.UninstallUl(card);
-                break;
-            case "DC":
-                ViewModel.UninstallDc(card);
-                break;
-            case "REF":
-                ViewModel.UninstallREFrameworkCommand.Execute(card);
-                break;
-            case "OS":
-                _installEventHandler.UninstallOsButton_Click(sender, e);
-                break;
+            CrashReporter.Log($"[MainWindow.CardComponentInstall_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     internal async void CardCopyRsIni_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            var screenshotPath = BuildScreenshotSavePath(card.GameName);
-            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            var installPath = card.InstallPath;
-            var gameName = card.GameName;
-            var requiresVulkan = card.RequiresVulkanInstall;
-            var useUeExtended = card.UseUeExtended;
-            var status = card.Status;
-
-            await Task.Run(() =>
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
             {
-                if (requiresVulkan)
+                var screenshotPath = BuildScreenshotSavePath(card.GameName);
+                var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+                var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+                var installPath = card.InstallPath;
+                var gameName = card.GameName;
+                var requiresVulkan = card.RequiresVulkanInstall;
+                var useUeExtended = card.UseUeExtended;
+                var status = card.Status;
+
+                await Task.Run(() =>
                 {
-                    AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                    VulkanFootprintService.Create(installPath);
-                }
-                else
-                    AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
+                    if (requiresVulkan)
+                    {
+                        AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                        VulkanFootprintService.Create(installPath);
+                    }
+                    else
+                        AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
 
-                // Apply [renodx] section if UE-Extended is installed
-                if (useUeExtended && status == GameStatus.Installed)
-                    AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
-            });
+                    // Apply [renodx] section if UE-Extended is installed
+                    if (useUeExtended && status == GameStatus.Installed)
+                        AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
+                });
 
-            // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI) — on UI thread
-            if (requiresVulkan)
-                ViewModel.DeployShadersForCard(gameName);
+                // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI) — on UI thread
+                if (requiresVulkan)
+                    ViewModel.DeployShadersForCard(gameName);
 
-            card.RsActionMessage = "✅ reshade.ini merged into game folder.";
+                card.RsActionMessage = "✅ reshade.ini merged into game folder.";
+            }
+            catch (Exception ex)
+            {
+                card.RsActionMessage = $"❌ {ex.Message}";
+            }
         }
         catch (Exception ex)
         {
-            card.RsActionMessage = $"❌ {ex.Message}";
+            CrashReporter.Log($"[MainWindow.CardCopyRsIni_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     internal async void CardCopyUlIni_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            var installPath = card.InstallPath;
-            await Task.Run(() => AuxInstallService.CopyUlIni(installPath));
-            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                var installPath = card.InstallPath;
+                await Task.Run(() => AuxInstallService.CopyUlIni(installPath));
+                card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
+            }
+            catch (Exception ex)
+            {
+                card.UlActionMessage = $"❌ {ex.Message}";
+            }
         }
         catch (Exception ex)
         {
-            card.UlActionMessage = $"❌ {ex.Message}";
+            CrashReporter.Log($"[MainWindow.CardCopyUlIni_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     internal async void CardCopyDcIni_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            var installPath = card.InstallPath;
-            await Task.Run(() => AuxInstallService.CopyDcIni(installPath));
-            card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
-            card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                var installPath = card.InstallPath;
+                await Task.Run(() => AuxInstallService.CopyDcIni(installPath));
+                card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
+                card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
+            }
+            catch (Exception ex)
+            {
+                card.DcActionMessage = $"❌ {ex.Message}";
+            }
         }
         catch (Exception ex)
         {
-            card.DcActionMessage = $"❌ {ex.Message}";
+            CrashReporter.Log($"[MainWindow.CardCopyDcIni_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     internal async void CardCopyOsIni_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            var sourceIni = Services.OptiScalerService.OsIniPath;
-            if (!File.Exists(sourceIni))
+            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
             {
-                card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
-                return;
+                var sourceIni = Services.OptiScalerService.OsIniPath;
+                if (!File.Exists(sourceIni))
+                {
+                    card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
+                    return;
+                }
+                var installPath = card.InstallPath;
+                var destIni = Path.Combine(installPath, Services.OptiScalerService.IniFileName);
+                await Task.Run(() =>
+                {
+                    File.Copy(sourceIni, destIni, overwrite: true);
+                    Services.OptiScalerService.EnforceLoadReshade(destIni);
+                });
+                card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
+                card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
             }
-            var installPath = card.InstallPath;
-            var destIni = Path.Combine(installPath, Services.OptiScalerService.IniFileName);
-            await Task.Run(() =>
+            catch (Exception ex)
             {
-                File.Copy(sourceIni, destIni, overwrite: true);
-                Services.OptiScalerService.EnforceLoadReshade(destIni);
-            });
-            card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
-            card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
+                card.OsActionMessage = $"❌ {ex.Message}";
+            }
         }
         catch (Exception ex)
         {
-            card.OsActionMessage = $"❌ {ex.Message}";
+            CrashReporter.Log($"[MainWindow.CardCopyOsIni_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -538,42 +654,29 @@ public sealed partial class MainWindow
 
     internal async void CardInstallButton_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
-
-        // Ensure install path exists
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
+        try
         {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
+            if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
+
+            // Ensure install path exists
+            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
+            {
+                var folder = await PickFolderAsync();
+                if (folder == null) return;
+                card.InstallPath = folder;
+                ViewModel.SaveLibraryPublic();
+            }
+            // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
+            if (card.Mod?.SnapshotUrl != null)
+                await ViewModel.InstallModCommand.ExecuteAsync(card);
+            if (card.RefRowVisibility == Visibility.Visible)
+                await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
+            if (card.ReShadeRowVisibility == Visibility.Visible)
+                await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
         }
-        // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
-        if (card.Mod?.SnapshotUrl != null)
-            await ViewModel.InstallModCommand.ExecuteAsync(card);
-        if (card.RefRowVisibility == Visibility.Visible)
-            await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
-        if (card.ReShadeRowVisibility == Visibility.Visible)
-            await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-    }
-
-    internal void CardFavouriteButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
-        ViewModel.ToggleFavouriteCommand.Execute(card);
-        btn.Content = card.IsFavourite ? "⭐" : "☆";
-
-        // Also refresh the detail panel icon if this is the selected game
-        if (card == ViewModel.SelectedGame)
+        catch (Exception ex)
         {
-            DetailFavIcon.Text = "Favourite";
-            var favColor = card.IsFavourite
-                ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
-                : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
-            DetailFavIcon.Foreground = new SolidColorBrush(favColor);
-            DetailFavBtn.BorderBrush = card.IsFavourite
-                ? new SolidColorBrush(((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color)
-                : (Brush)Application.Current.Resources[ResourceKeys.BorderSubtleBrush];
+            CrashReporter.Log($"[MainWindow.CardInstallButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -583,6 +686,12 @@ public sealed partial class MainWindow
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
         if (System.IO.Directory.Exists(card.InstallPath))
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(card.InstallPath) { UseShellExecute = true });
+    }
+
+    internal void GameRow_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is GameCardViewModel)
+            CardMoreMenu_Click(fe, e);
     }
 
     internal void CardMoreMenu_Click(object sender, RoutedEventArgs e)
@@ -600,16 +709,25 @@ public sealed partial class MainWindow
         // ── Open Folder ──
         var openFolderItem = new MenuFlyoutItem
         {
-            Text = "📂 Open Folder",
+            Text = "Open Folder",
             Tag = card,
         };
         openFolderItem.Click += CardOpenFolder_Click;
         menu.Items.Add(openFolderItem);
 
+        // ── Favourite ──
+        var favItem = new MenuFlyoutItem
+        {
+            Text = card.IsFavourite ? "Unfavourite" : "Favourite",
+            Tag  = card,
+        };
+        favItem.Click += (s, ev) => ViewModel.ToggleFavouriteCommand.Execute(card);
+        menu.Items.Add(favItem);
+
         // ── Hide / Show ──
         var hideItem = new MenuFlyoutItem
         {
-            Text = card.HideButtonLabel,
+            Text = card.IsHidden ? "Show" : "Hide",
             Tag = card,
         };
         hideItem.Click += (s, ev) => ViewModel.ToggleHideGameCommand.Execute(card);
@@ -622,7 +740,7 @@ public sealed partial class MainWindow
         {
             var discussionItem = new MenuFlyoutItem
             {
-                Text = "ℹ Discussion / Instructions",
+                Text = "Discussion / Instructions",
                 Tag = card,
             };
             discussionItem.Click += async (s, ev) =>
@@ -638,7 +756,7 @@ public sealed partial class MainWindow
         {
             var notesItem = new MenuFlyoutItem
             {
-                Text = "💬 View Notes",
+                Text = "View Notes",
                 Tag = card,
             };
             notesItem.Click += async (s, ev) =>
@@ -651,100 +769,159 @@ public sealed partial class MainWindow
             menu.Items.Add(notesItem);
         }
 
+        // ── Create Desktop Shortcut ──
+        menu.Items.Add(new MenuFlyoutSeparator());
+        var shortcutItem = new MenuFlyoutItem
+        {
+            Text = "Create Desktop Shortcut",
+            Tag  = card,
+        };
+        shortcutItem.Click += async (s, ev) => await CreateDesktopShortcutAsync(card);
+        menu.Items.Add(shortcutItem);
+
         menu.ShowAt(anchor);
     }
 
+    private async Task CreateDesktopShortcutAsync(GameCardViewModel card)
+    {
+        try
+        {
+            var http = App.Services.GetRequiredService<System.Net.Http.HttpClient>();
+            var pcgw = App.Services.GetRequiredService<IPcgwService>();
+            var lnkPath = await ShortcutService.CreateGameShortcutAsync(
+                card.GameName, card, _gameNameService, ViewModel.Manifest, http, pcgw);
+
+            var msg = lnkPath != null
+                ? $"Shortcut created on Desktop for {card.GameName}"
+                : $"Failed to create shortcut for {card.GameName}";
+            StatusBarText.Text = msg;
+            _ = Task.Delay(8000).ContinueWith(_ =>
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    if (StatusBarText.Text == msg)
+                        StatusBarText.Text = ViewModel.StatusText;
+                }));
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.CreateDesktopShortcutAsync] {ex.Message}");
+        }
+    }
+
     internal async void InfoButton_Click(object sender, RoutedEventArgs e)
-        => await _dialogService.ShowAddonInfoDialogAsync(sender, e);
+    {
+        try
+        {
+            await _dialogService.ShowAddonInfoDialogAsync(sender, e);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.InfoButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
 
     internal async void CardInfoLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card?.NameUrl != null)
+        try
         {
-            try { await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NameUrl)); }
-            catch (Exception ex) { _crashReporter.Log($"[MainWindow.CardInfoLink_Click] Failed — {ex.Message}"); }
+            var card = GetCardFromSender(sender);
+            if (card?.NameUrl != null)
+            {
+                try { await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NameUrl)); }
+                catch (Exception ex) { _crashReporter.Log($"[MainWindow.CardInfoLink_Click] Failed — {ex.Message}"); }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.CardInfoLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     internal async void ExternalLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-
-        // ── Nexus direct download intercept (dev-unlocked, premium only) ──────
-        if (FeatureFlags.NexusMods && card.NexusUrl != null)
+        try
         {
-            var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
-            if (nexusDl.IsApiKeyConfigured && nexusDl.IsPremium)
-            {
-                await ViewModel.InstallNexusModAsync(card);
-                return;
-            }
-        }
+            var card = GetCardFromSender(sender);
+            if (card == null) return;
 
-        // ── Default: open browser ─────────────────────────────────────────────
-        // When IsExternalOnly the ExternalUrl has already been resolved correctly
-        // (e.g. forced to Discord by ApplyCardOverrides). Use it directly so a
-        // NexusUrl on the underlying mod can't override the intended destination.
-        var url = card.IsExternalOnly ? card.ExternalUrl : (card.NexusUrl ?? card.DiscordUrl ?? card.ExternalUrl);
-
-        // For Nexus URLs, resolve the latest file ID and open directly to the download page
-        // URL format: nexusmods.com/{domain}/mods/{id}?tab=files&file_id={fileId}&nmm=1
-        // This skips the mod page and files tab, landing directly on the "Slow download" button.
-        if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
-            && FeatureFlags.NexusMods)
-        {
-            var parsed = NexusUpdateService.ParseNexusUrl(url);
-            if (parsed.HasValue)
+            // ── Nexus direct download intercept (dev-unlocked, premium only) ──────
+            if (FeatureFlags.NexusMods && card.NexusUrl != null)
             {
-                try
+                var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+                if (nexusDl.IsApiKeyConfigured && nexusDl.IsPremium)
                 {
-                    var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
-                    var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
-                    if (latestFile != null)
-                        url = $"https://www.nexusmods.com/{parsed.Value.Domain}/mods/{parsed.Value.ModId}?tab=files&file_id={latestFile.FileId}&nmm=1";
+                    await ViewModel.InstallNexusModAsync(card);
+                    return;
                 }
-                catch { /* fall through to base URL */ }
+            }
+
+            // ── Default: open browser ─────────────────────────────────────────────
+            // When IsExternalOnly the ExternalUrl has already been resolved correctly
+            // (e.g. forced to Discord by ApplyCardOverrides). Use it directly so a
+            // NexusUrl on the underlying mod can't override the intended destination.
+            var url = card.IsExternalOnly ? card.ExternalUrl : (card.NexusUrl ?? card.DiscordUrl ?? card.ExternalUrl);
+
+            // For Nexus URLs, resolve the latest file ID and open directly to the download page
+            // URL format: nexusmods.com/{domain}/mods/{id}?tab=files&file_id={fileId}&nmm=1
+            // This skips the mod page and files tab, landing directly on the "Slow download" button.
+            if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
+                && FeatureFlags.NexusMods)
+            {
+                var parsed = NexusUpdateService.ParseNexusUrl(url);
+                if (parsed.HasValue)
+                {
+                    try
+                    {
+                        var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+                        var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
+                        if (latestFile != null)
+                            url = $"https://www.nexusmods.com/{parsed.Value.Domain}/mods/{parsed.Value.ModId}?tab=files&file_id={latestFile.FileId}&nmm=1";
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[MainWindow.ExternalLink_Click] Failed to resolve latest Nexus file, using base URL — {ex.Message}"); }
+                }
+            }
+            else if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
+                && !url.Contains("?tab=", StringComparison.OrdinalIgnoreCase))
+            {
+                url = url.TrimEnd('/') + "?tab=files";
+            }
+            if (!string.IsNullOrEmpty(url))
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+
+            // Reset Nexus baseline when user clicks the update button — they're acknowledging the update
+            // NOTE: This runs on the UI thread (LaunchUriAsync returns on the original context).
+            // The ConfigureAwait(false) above is only for the Nexus API call — after that we're back
+            // on the UI thread via the await chain. But to be explicit and safe, wrap UI mutations.
+            if (card.Status == GameStatus.UpdateAvailable && card.IsExternalOnly)
+            {
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
+                    nexusService.ResetBaseline(card.GameName);
+                    card.Status = GameStatus.Installed;
+                    card.NotifyAll();
+                    ViewModel.NotifyUpdateButtonChanged();
+                });
             }
         }
-        else if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
-            && !url.Contains("?tab=", StringComparison.OrdinalIgnoreCase))
+        catch (Exception ex)
         {
-            url = url.TrimEnd('/') + "?tab=files";
+            CrashReporter.Log($"[MainWindow.ExternalLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
-        if (!string.IsNullOrEmpty(url))
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-
-        // Reset Nexus baseline when user clicks the update button — they're acknowledging the update
-        // NOTE: This runs on the UI thread (LaunchUriAsync returns on the original context).
-        // The ConfigureAwait(false) above is only for the Nexus API call — after that we're back
-        // on the UI thread via the await chain. But to be explicit and safe, wrap UI mutations.
-        if (card.Status == GameStatus.UpdateAvailable && card.IsExternalOnly)
-        {
-            DispatcherQueue?.TryEnqueue(() =>
-            {
-                var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
-                nexusService.ResetBaseline(card.GameName);
-                card.Status = GameStatus.Installed;
-                card.NotifyAll();
-                ViewModel.NotifyUpdateButtonChanged();
-            });
-        }
-    }
-
-    private async void NameLink_Click(object sender, RoutedEventArgs e)
-    {
-        var card = GetCardFromSender(sender);
-        if (card?.NameUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NameUrl));
     }
 
     private async void PcgwLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card?.PcgwUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.PcgwUrl));
+        try
+        {
+            var card = GetCardFromSender(sender);
+            if (card?.PcgwUrl != null)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(card.PcgwUrl));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.PcgwLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     // ── Nexus Mods button forwarders (XAML routes clicks to MainWindow) ──────────
@@ -758,25 +935,60 @@ public sealed partial class MainWindow
     private void NxmRegisterBtn_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.NxmRegisterBtn_Click(sender, e);
 
+    // ── GitHub OAuth button forwarders ────────────────────────────────────────
+
+    private void GitHubConnectBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubConnectBtn_Click(sender, e);
+
+    private void GitHubDisconnectBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubDisconnectBtn_Click(sender, e);
+
+    private void GitHubPatSaveBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubPatSaveBtn_Click(sender, e);
+
+    private void GitHubPatClearBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubPatClearBtn_Click(sender, e);
+
     private async void NexusModsLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card?.NexusModsUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NexusModsUrl));
+        try
+        {
+            var card = GetCardFromSender(sender);
+            if (card?.NexusModsUrl != null)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NexusModsUrl));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.NexusModsLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void UwFixLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card?.UwFixUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UwFixUrl));
+        try
+        {
+            var card = GetCardFromSender(sender);
+            if (card?.UwFixUrl != null)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UwFixUrl));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.UwFixLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void UltraPlusLink_Click(object sender, RoutedEventArgs e)
     {
-        var card = GetCardFromSender(sender);
-        if (card?.UltraPlusUrl != null)
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UltraPlusUrl));
+        try
+        {
+            var card = GetCardFromSender(sender);
+            if (card?.UltraPlusUrl != null)
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UltraPlusUrl));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.UltraPlusLink_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     // ── Detail panel handlers ─────────────────────────────────────────────────────
@@ -806,78 +1018,85 @@ public sealed partial class MainWindow
 
     private async void SaveFilterButton_Click(object sender, RoutedEventArgs e)
     {
-        var currentQuery = SearchBox.Text?.Trim() ?? "";
-        if (string.IsNullOrEmpty(currentQuery)) return;
-
-        var nameBox = new TextBox { PlaceholderText = "Filter name", Text = currentQuery, Width = 350 };
-        var errorText = new TextBlock
+        try
         {
-            Text = "",
-            Foreground = Brush(ResourceKeys.AccentRedBrush),
-            Visibility = Visibility.Collapsed,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 4, 0, 0),
-        };
+            var currentQuery = SearchBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(currentQuery)) return;
 
-        var dialog = new ContentDialog
-        {
-            Title = "Save Custom Filter",
-            Content = new StackPanel
+            var nameBox = new TextBox { PlaceholderText = "Filter name", Text = currentQuery, Width = 350 };
+            var errorText = new TextBlock
             {
-                Spacing = 8,
-                Children =
+                Text = "",
+                Foreground = Brush(ResourceKeys.AccentRedBrush),
+                Visibility = Visibility.Collapsed,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0),
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "Save Custom Filter",
+                Content = new StackPanel
                 {
-                    new TextBlock
+                    Spacing = 8,
+                    Children =
                     {
-                        Text = $"Save the current search \"{currentQuery}\" as a custom filter:",
-                        TextWrapping = TextWrapping.Wrap,
-                        Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-                    },
-                    nameBox,
-                    errorText,
+                        new TextBlock
+                        {
+                            Text = $"Save the current search \"{currentQuery}\" as a custom filter:",
+                            TextWrapping = TextWrapping.Wrap,
+                            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+                        },
+                        nameBox,
+                        errorText,
+                    }
+                },
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+                Background = Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            // Validate inline before closing the dialog
+            dialog.PrimaryButtonClick += (s, args) =>
+            {
+                var name = nameBox.Text?.Trim() ?? "";
+                if (string.IsNullOrEmpty(name))
+                {
+                    errorText.Text = "Please enter a filter name.";
+                    errorText.Visibility = Visibility.Visible;
+                    args.Cancel = true;
+                    return;
                 }
-            },
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            XamlRoot = Content.XamlRoot,
-            Background = Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme = ElementTheme.Dark,
-        };
+                if (ViewModel.Filter.CustomFilterNameExists(name))
+                {
+                    errorText.Text = $"A filter named \"{name}\" already exists.";
+                    errorText.Visibility = Visibility.Visible;
+                    args.Cancel = true;
+                    return;
+                }
+            };
 
-        // Validate inline before closing the dialog
-        dialog.PrimaryButtonClick += (s, args) =>
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            var filterName = nameBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(filterName)) return;
+
+            ViewModel.Filter.AddCustomFilter(filterName, currentQuery);
+            RebuildCustomFilterChips();
+
+            // Clear search box and auto-select the new filter
+            SearchBox.Text = "";
+            SaveFilterButton.Visibility = Visibility.Collapsed;
+            ViewModel.Filter.ActivateCustomFilter(filterName);
+            RebuildCustomFilterChips();
+        }
+        catch (Exception ex)
         {
-            var name = nameBox.Text?.Trim() ?? "";
-            if (string.IsNullOrEmpty(name))
-            {
-                errorText.Text = "Please enter a filter name.";
-                errorText.Visibility = Visibility.Visible;
-                args.Cancel = true;
-                return;
-            }
-            if (ViewModel.Filter.CustomFilterNameExists(name))
-            {
-                errorText.Text = $"A filter named \"{name}\" already exists.";
-                errorText.Visibility = Visibility.Visible;
-                args.Cancel = true;
-                return;
-            }
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        var filterName = nameBox.Text?.Trim() ?? "";
-        if (string.IsNullOrEmpty(filterName)) return;
-
-        ViewModel.Filter.AddCustomFilter(filterName, currentQuery);
-        RebuildCustomFilterChips();
-
-        // Clear search box and auto-select the new filter
-        SearchBox.Text = "";
-        SaveFilterButton.Visibility = Visibility.Collapsed;
-        ViewModel.Filter.ActivateCustomFilter(filterName);
-        RebuildCustomFilterChips();
+            CrashReporter.Log($"[MainWindow.SaveFilterButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     /// <summary>
@@ -937,80 +1156,87 @@ public sealed partial class MainWindow
 
     private async void AddGameButton_Click(object sender, RoutedEventArgs e)
     {
-        _crashReporter.Log("[MainWindow.AddGameButton_Click] Button clicked");
-
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        _crashReporter.Log($"[MainWindow.AddGameButton_Click] hwnd={hwnd}");
-
-        // Use Win32 OpenFileDialog as primary method — WinRT FileOpenPicker has
-        // COM threading issues on some systems when background work is active.
-        string? filePath = null;
         try
         {
-            filePath = await Task.Run(() =>
-            {
-                var ofn = new NativeInterop.OpenFileName();
-                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
-                ofn.hwndOwner = hwnd;
-                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
-                ofn.file = new string(new char[260]);
-                ofn.maxFile = ofn.file.Length;
-                ofn.title = "Select Game Executable";
-                ofn.flags = 0x00080000 | 0x00001000; // OFN_EXPLORER | OFN_FILEMUSTEXIST
+            _crashReporter.Log("[MainWindow.AddGameButton_Click] Button clicked");
 
-                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
-            });
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            _crashReporter.Log($"[MainWindow.AddGameButton_Click] hwnd={hwnd}");
+
+            // Use Win32 OpenFileDialog as primary method — WinRT FileOpenPicker has
+            // COM threading issues on some systems when background work is active.
+            string? filePath = null;
+            try
+            {
+                filePath = await Task.Run(() =>
+                {
+                    var ofn = new NativeInterop.OpenFileName();
+                    ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                    ofn.hwndOwner = hwnd;
+                    ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
+                    ofn.file = new string(new char[260]);
+                    ofn.maxFile = ofn.file.Length;
+                    ofn.title = "Select Game Executable";
+                    ofn.flags = 0x00080000 | 0x00001000; // OFN_EXPLORER | OFN_FILEMUSTEXIST
+
+                    return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+                });
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainWindow.AddGameButton_Click] Win32 file dialog failed — {ex.GetType().Name}: {ex.Message}");
+                return;
+            }
+
+            _crashReporter.Log($"[MainWindow.AddGameButton_Click] Dialog result: {(filePath != null ? filePath : "null (cancelled)")}");
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            // Use the exe's parent folder as the install path
+            var folder = Path.GetDirectoryName(filePath);
+            if (string.IsNullOrEmpty(folder)) return;
+
+            // Pre-populate the game name from the folder name
+            var suggestedName = Path.GetFileName(folder);
+
+            // Step 2: Ask for the game name
+            var nameBox = new TextBox { Text = suggestedName, Width = 350 };
+            nameBox.SelectAll();
+            var nameDialog = new ContentDialog
+            {
+                Title           = "Name This Game",
+                Content         = new StackPanel
+                {
+                    Spacing = 10,
+                    Children =
+                    {
+                        new TextBlock { Text = $"Selected: {filePath}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
+                        new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
+                        nameBox
+                    }
+                },
+                PrimaryButtonText   = "Add Game",
+                CloseButtonText     = "Cancel",
+                XamlRoot            = Content.XamlRoot,
+                Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme      = ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(nameDialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            var gameName = nameBox.Text.Trim();
+            if (string.IsNullOrEmpty(gameName)) return;
+            _crashReporter.Log($"[MainWindow.AddGameButton_Click] Adding game: {gameName} at {folder}");
+
+            var game = new DetectedGame
+            {
+                Name = gameName, InstallPath = folder, Source = "Manual", IsManuallyAdded = true
+            };
+            ViewModel.AddManualGameCommand.Execute(game);
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[MainWindow.AddGameButton_Click] Win32 file dialog failed — {ex.GetType().Name}: {ex.Message}");
-            return;
+            CrashReporter.Log($"[MainWindow.AddGameButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
-
-        _crashReporter.Log($"[MainWindow.AddGameButton_Click] Dialog result: {(filePath != null ? filePath : "null (cancelled)")}");
-        if (string.IsNullOrEmpty(filePath)) return;
-
-        // Use the exe's parent folder as the install path
-        var folder = Path.GetDirectoryName(filePath);
-        if (string.IsNullOrEmpty(folder)) return;
-
-        // Pre-populate the game name from the folder name
-        var suggestedName = Path.GetFileName(folder);
-
-        // Step 2: Ask for the game name
-        var nameBox = new TextBox { Text = suggestedName, Width = 350 };
-        nameBox.SelectAll();
-        var nameDialog = new ContentDialog
-        {
-            Title           = "Name This Game",
-            Content         = new StackPanel
-            {
-                Spacing = 10,
-                Children =
-                {
-                    new TextBlock { Text = $"Selected: {filePath}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
-                    new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
-                    nameBox
-                }
-            },
-            PrimaryButtonText   = "Add Game",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme      = ElementTheme.Dark,
-        };
-        var result = await DialogService.ShowSafeAsync(nameDialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        var gameName = nameBox.Text.Trim();
-        if (string.IsNullOrEmpty(gameName)) return;
-        _crashReporter.Log($"[MainWindow.AddGameButton_Click] Adding game: {gameName} at {folder}");
-
-        var game = new DetectedGame
-        {
-            Name = gameName, InstallPath = folder, Source = "Manual", IsManuallyAdded = true
-        };
-        ViewModel.AddManualGameCommand.Execute(game);
     }
 
     // ── Filter tabs ───────────────────────────────────────────────────────────────
@@ -1040,26 +1266,8 @@ public sealed partial class MainWindow
 
     // ── Card handlers ─────────────────────────────────────────────────────────────
 
-    private void ExpandComponents_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
-            card.ComponentExpanded = !card.ComponentExpanded;
-    }
-
-    private void CombinedInstallButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.CombinedInstallButton_Click(sender, e);
-
     internal void InstallButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallButton_Click(sender, e);
-
-    private void Install64Button_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.Install64Button_Click(sender, e);
-
-    private void Install32Button_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.Install32Button_Click(sender, e);
-
-    private async Task EnsurePathAndInstall(GameCardViewModel card, Func<Task> installAction)
-        => await _installEventHandler.EnsurePathAndInstall(card, installAction);
 
     internal void UninstallButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallButton_Click(sender, e);

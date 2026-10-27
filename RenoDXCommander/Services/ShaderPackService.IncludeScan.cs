@@ -130,8 +130,7 @@ public partial class ShaderPackService
 
             if (!packIdList.Any()) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
 
-            if (!File.Exists(SettingsPath)) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            var d = ReadSettings();
             if (d == null) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
 
             foreach (var packId in packIdList)

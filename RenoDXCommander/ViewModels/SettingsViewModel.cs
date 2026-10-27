@@ -11,11 +11,6 @@ namespace RenoDXCommander.ViewModels;
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
-    // Settings stored as JSON — ApplicationData.Current throws in unpackaged WinUI 3
-    private static readonly string _settingsFilePath = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "settings.json");
-
     [ObservableProperty] private bool _skipUpdateCheck;
     [ObservableProperty] private bool _betaOptIn;
     [ObservableProperty] private bool _verboseLogging;
@@ -63,6 +58,10 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>When true, silently installs component updates in the background after an update check.</summary>
     [ObservableProperty] private bool _autoUpdateComponents;
 
+    // ── Background Update Checks ──────────────────────────────────────────────
+    /// <summary>"On" = full background checks including Nexus (default). "Minimal" = manifest fetches only; Nexus calls only on explicit user action.</summary>
+    [ObservableProperty] private string _backgroundUpdateChecks = "On";
+
     // ── DLSS/Streamline Auto-Update ───────────────────────────────────────────
     [ObservableProperty] private bool _autoUpdateDlss;
     [ObservableProperty] private bool _autoUpdateStreamline;
@@ -89,6 +88,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _nexusIsPremium;
     [ObservableProperty] private string _nexusUsername = "";
 
+    // ── GitHub OAuth (device flow) ─────────────────────────────────────────────
+    /// <summary>OAuth token obtained via GitHub Device Flow. Never logged.</summary>
+    [ObservableProperty] private string _gitHubOAuthToken = "";
+    /// <summary>GitHub login name of the authenticated user.</summary>
+    [ObservableProperty] private string _gitHubUsername = "";
+
     // ── Digital Vibrance ──────────────────────────────────────────────────────
     /// <summary>Per-display DVC values. Key = display index (string), Value = 0-100.</summary>
     public Dictionary<string, int> DigitalVibranceSettings { get; set; } = new();
@@ -104,11 +109,11 @@ public partial class SettingsViewModel : ObservableObject
     // ── Detail panel section order ────────────────────────────────────────────
     /// <summary>
     /// Ordered list of section keys for the detail panel.
-    /// Default order: Components, GameOverrides, NeuralRendering, NvidiaProfile, Management.
+    /// Default order: Components, GameOverrides, NeuralRendering, NvidiaProfileDlss, NvidiaProfileDriver, Management.
     /// Absent or incomplete = use default order.
     /// </summary>
     public static readonly IReadOnlyList<string> DefaultSectionOrder = new[]
-        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfile", "Management", "Extras" };
+        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfileDlss", "NvidiaProfileDriver", "Management", "Extras" };
 
     public List<string> DetailSectionOrder { get; set; } = new(DefaultSectionOrder);
 
@@ -152,24 +157,15 @@ public partial class SettingsViewModel : ObservableObject
 
     // ── Settings file I/O ─────────────────────────────────────────────────────────
 
-    public static Dictionary<string, string> LoadSettingsFile()
-    {
-        try
-        {
-            if (!System.IO.File.Exists(_settingsFilePath)) return new(StringComparer.OrdinalIgnoreCase);
-            var json = System.IO.File.ReadAllText(_settingsFilePath);
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(json)
-                   ?? new(StringComparer.OrdinalIgnoreCase);
-        }
-        catch (Exception ex) { CrashReporter.Log($"[SettingsViewModel.LoadSettingsFile] Failed to load settings — {ex.Message}"); return new(StringComparer.OrdinalIgnoreCase); }
-    }
+    // All settings.json access goes through SettingsFile (shared lock, .bak, corrupt-file recovery).
+    public static Dictionary<string, string> LoadSettingsFile() => SettingsFile.Load();
 
-    public static void SaveSettingsFile(Dictionary<string, string> settings)
-    {
-        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_settingsFilePath)!);
-        var json = JsonSerializer.Serialize(settings);
-        FileHelper.WriteAllTextWithRetry(_settingsFilePath, json, "SettingsViewModel.SaveSettingsFile");
-    }
+    public static Dictionary<string, string> LoadSettingsFile(out SafeJsonFile.LoadStatus status) =>
+        SettingsFile.Load(out status);
+
+    /// <summary>Read-modify-write of settings.json under the shared lock.</summary>
+    public static bool UpdateSettingsFile(Action<Dictionary<string, string>> mutate, string callerTag) =>
+        SettingsFile.Update(mutate, callerTag);
 
     /// <summary>
     /// Loads settings-specific values (SkipUpdateCheck, VerboseLogging,
@@ -323,6 +319,7 @@ public partial class SettingsViewModel : ObservableObject
             catch { PeakNitsPresets = new() { 1, 2, 3 }; }
         }
         if (s.TryGetValue("AutoUpdateComponents", out var aucVal)) AutoUpdateComponents = aucVal == "true";
+        if (s.TryGetValue("BackgroundUpdateChecks", out var bucVal) && !string.IsNullOrEmpty(bucVal)) BackgroundUpdateChecks = bucVal;
         if (s.TryGetValue("AutoUpdateDlss", out var audVal)) AutoUpdateDlss = audVal == "true";
         if (s.TryGetValue("AutoUpdateStreamline", out var ausVal)) AutoUpdateStreamline = ausVal == "true";
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
@@ -367,6 +364,10 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("NexusIsPremium", out var nipVal)) NexusIsPremium = nipVal == "true";
         if (s.TryGetValue("NexusUsername",  out var nunVal)) NexusUsername  = nunVal ?? "";
 
+        // GitHub OAuth token — never logged, applied to HttpClient after load
+        if (s.TryGetValue("GitHubOAuthToken", out var ghotVal) && !string.IsNullOrEmpty(ghotVal)) GitHubOAuthToken = ghotVal;
+        if (s.TryGetValue("GitHubUsername",   out var ghuVal)  && !string.IsNullOrEmpty(ghuVal))  GitHubUsername  = ghuVal;
+
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
         if (s.TryGetValue("DefaultDlssdVersion", out var ddrv)) DefaultDlssdVersion = ddrv ?? "";
@@ -397,6 +398,13 @@ public partial class SettingsViewModel : ObservableObject
             {
                 var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(cdsVal);
                 CollapsedDetailSections = new HashSet<string>(list ?? new(), StringComparer.OrdinalIgnoreCase);
+                // Migrate legacy "NvidiaProfile" collapse state to both new sections
+                if (CollapsedDetailSections.Contains("NvidiaProfile"))
+                {
+                    CollapsedDetailSections.Remove("NvidiaProfile");
+                    CollapsedDetailSections.Add("NvidiaProfileDlss");
+                    CollapsedDetailSections.Add("NvidiaProfileDriver");
+                }
             }
             catch { CollapsedDetailSections = new(StringComparer.OrdinalIgnoreCase); }
         }
@@ -407,6 +415,17 @@ public partial class SettingsViewModel : ObservableObject
             try
             {
                 var loaded = System.Text.Json.JsonSerializer.Deserialize<List<string>>(dsoVal);
+                // Migrate: expand legacy "NvidiaProfile" key into the two new keys
+                if (loaded != null)
+                {
+                    var migrIdx = loaded.IndexOf("NvidiaProfile");
+                    if (migrIdx >= 0)
+                    {
+                        loaded.RemoveAt(migrIdx);
+                        loaded.Insert(migrIdx, "NvidiaProfileDriver");
+                        loaded.Insert(migrIdx, "NvidiaProfileDlss");
+                    }
+                }
                 // Merge: keep loaded order for known keys, append any missing ones at end
                 if (loaded != null)
                 {
@@ -475,6 +494,7 @@ public partial class SettingsViewModel : ObservableObject
         else
             s.Remove("PeakNitsPresets"); // All 3 checked = default — remove stale non-default value
         if (AutoUpdateComponents) s["AutoUpdateComponents"] = "true"; else s.Remove("AutoUpdateComponents");
+        if (BackgroundUpdateChecks != "On") s["BackgroundUpdateChecks"] = BackgroundUpdateChecks; else s.Remove("BackgroundUpdateChecks"); // "On" is default — omit to keep file clean
         if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true"; else s.Remove("AutoUpdateDlss");
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true"; else s.Remove("AutoUpdateStreamline");
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
@@ -497,6 +517,10 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(NexusApiKey))    s["NexusApiKey"]    = NexusApiKey;
         if (NexusIsPremium)                        s["NexusIsPremium"] = "true";
         if (!string.IsNullOrEmpty(NexusUsername))  s["NexusUsername"]  = NexusUsername;
+
+        // GitHub OAuth token — never logged
+        if (!string.IsNullOrEmpty(GitHubOAuthToken)) s["GitHubOAuthToken"] = GitHubOAuthToken; else s.Remove("GitHubOAuthToken");
+        if (!string.IsNullOrEmpty(GitHubUsername))   s["GitHubUsername"]   = GitHubUsername;   else s.Remove("GitHubUsername");
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;

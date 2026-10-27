@@ -210,7 +210,7 @@ public class CustomReShadeHashService
             var json = JsonSerializer.Serialize(hashes, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(HashFilePath, json);
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[CustomReShadeHashService.SaveHashes] Failed to save hash file — {ex.Message}"); }
     }
 
     private static string ComputeSha256(string filePath)

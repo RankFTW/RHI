@@ -87,11 +87,15 @@ public static class MfgDialog
         string installPath,
         XamlRoot xamlRoot)
     {
-        // Read current values
-        var currentMode = presetService.GetMfgMode(gameName, installPath);
-        var currentFactor = presetService.GetMfgGenerationFactor(gameName, installPath);
-        var currentDynamicMax = presetService.GetMfgDynamicMaxCount(gameName, installPath);
-        var currentTargetFps = presetService.GetMfgDynamicTargetFps(gameName, installPath);
+        // Read current values off the UI thread — these call _sessionLock.Wait(5000) and
+        // will block the UI thread if NVAPI is hung (e.g. after GPU sleep/wake).
+        var (currentMode, currentFactor, currentDynamicMax, currentTargetFps) =
+            await Task.Run(() => (
+                presetService.GetMfgMode(gameName, installPath),
+                presetService.GetMfgGenerationFactor(gameName, installPath),
+                presetService.GetMfgDynamicMaxCount(gameName, installPath),
+                presetService.GetMfgDynamicTargetFps(gameName, installPath)
+            ));
 
         var panel = new StackPanel { Spacing = 8, MinWidth = 300 };
 

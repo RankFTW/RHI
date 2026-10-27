@@ -100,6 +100,8 @@ public interface IGameNameService
 
     /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     Dictionary<string, string> OsVariantOverrides { get; }
+    /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest".</summary>
+    Dictionary<string, string> OsNightlyBuild { get; }
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
     Dictionary<string, string> OsNrRuntime { get; }
 
@@ -139,8 +141,20 @@ public interface IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     HashSet<string> RtxHdrGames { get; }
 
+    /// <summary>Games with Windows Auto HDR forced via registry. Name-only.</summary>
+    HashSet<string> AutoHdrGames { get; }
+
+    /// <summary>Per-game AutoHDRStrength (0–100). Name-only key.</summary>
+    Dictionary<string, int> AutoHdrStrengths { get; }
+
     /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsDeployStreamline { get; }
+
+    /// <summary>Games where dgVoodoo2 has been standalone-installed via the Extras panel. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> DgVoodooStandaloneGames { get; }
+
+    /// <summary>Per-game dgVoodoo2 version override. Key = "GameName|Store", Value = version string. Absent = use latest.</summary>
+    Dictionary<string, string> DgVoodooVersionOverride { get; }
 
     /// <summary>Games where DLSS Enabler should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsDeployDlssEnabler { get; }
@@ -173,16 +187,22 @@ public interface IGameNameService
     /// <summary>Per-game standalone DLSS Enabler installed DLL name. Composite-keyed "GameName|Store".</summary>
     Dictionary<string, string> DeInstalledAs { get; }
     /// <summary>Legacy — games where ShortFuse auto-config was disabled. Kept for migration only.</summary>
-    HashSet<string> SfAutoConfigDisabled { get; }
     /// <summary>Games where ShortFuse auto-config is explicitly enabled. Absent = disabled.</summary>
     HashSet<string> SfAutoConfigEnabled { get; }
     HashSet<string> DlssNrCostScalerEnabled { get; }
+    /// <summary>Games where the ShortFuse addon is deployed as zzz_renodx-dlss.addon64. Composite-keyed.</summary>
+    HashSet<string> SfZzzMode { get; }
     /// <summary>Per-game RTX 40 MFG installed DLL name. Key = "GameName|Store", Value = DLL filename (e.g. "version.dll").</summary>
     Dictionary<string, string> Rtx40MfgInstalledAs { get; }
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>
     Dictionary<string, string> Dlssg2030InstalledAs { get; }
     /// <summary>Per-game 20/30 FG Unlock GPU generation. Key = "GameName|Store", Value = "RTX 30 Series" or "RTX 20 Series".</summary>
     Dictionary<string, string> Dlssg2030GpuGen { get; }
+
+    /// <summary>Per-game RTX Encore installed DLL name. Composite-keyed "GameName|Store".</summary>
+    Dictionary<string, string> RtxEncoreInstalledAs { get; }
+    /// <summary>Games where RTX Encore has deployed nvngx_dlssnr.dll. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> RtxEncoreNrDllDeployed { get; }
 
     // ── Load / Save ───────────────────────────────────────────────────────────
 
@@ -203,17 +223,6 @@ public interface IGameNameService
         SettingsViewModel settingsViewModel,
         ViewLayout currentViewLayout,
         bool isLoadingSettings,
-        string filterMode,
-        List<CustomFilter> customFilters);
-
-    /// <summary>
-    /// Persists all settings to disk immediately (bypasses debounce).
-    /// Use for game rename and app shutdown where immediate persistence is required.
-    /// </summary>
-    void SaveNameMappingsImmediate(
-        IDllOverrideService dllOverrideService,
-        SettingsViewModel settingsViewModel,
-        ViewLayout currentViewLayout,
         string filterMode,
         List<CustomFilter> customFilters);
 
@@ -263,7 +272,4 @@ public interface IGameNameService
 
     /// <summary>Applies persisted folder overrides to a list of detected games.</summary>
     void ApplyFolderOverrides(List<DetectedGame> games);
-
-    /// <summary>Clears the original-detected-names tracking dictionary.</summary>
-    void ClearOriginalDetectedNames();
 }

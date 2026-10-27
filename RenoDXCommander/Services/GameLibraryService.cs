@@ -79,7 +79,8 @@ public class GameLibraryService : IGameLibraryService
         Dictionary<string, string>? updateAvailableSnapshot = null,
         Dictionary<string, DlssPathCache>? dlssPathsCache = null,
         Dictionary<string, string>? rsInstalledVersions = null,
-        Dictionary<string, string>? rdxInstalledVersions = null)
+        Dictionary<string, string>? rdxInstalledVersions = null,
+        Dictionary<string, string>? engineFolderStamps = null)
     {
         var lib = new SavedGameLibrary
         {
@@ -107,11 +108,12 @@ public class GameLibraryService : IGameLibraryService
             DlssPathsCache          = dlssPathsCache          ?? new(StringComparer.OrdinalIgnoreCase),
             RsInstalledVersions     = rsInstalledVersions,
             RdxInstalledVersions    = rdxInstalledVersions,
+            EngineFolderStamps      = engineFolderStamps ?? new(StringComparer.OrdinalIgnoreCase),
         };
         Directory.CreateDirectory(Path.GetDirectoryName(LibraryPath)!);
         var json = JsonSerializer.Serialize(lib, JsonOpts);
 
-        FileHelper.WriteAllTextWithRetry(LibraryPath, json, "GameLibraryService.Save");
+        FileHelper.WriteAllTextAtomic(LibraryPath, json, "GameLibraryService.Save");
     }
 
     public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) =>

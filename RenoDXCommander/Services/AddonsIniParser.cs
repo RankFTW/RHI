@@ -84,40 +84,6 @@ public static class AddonsIniParser
         return entries;
     }
 
-    /// <summary>
-    /// Formats a list of <see cref="AddonEntry"/> objects back into valid Addons.ini format.
-    /// Output can be round-tripped through <see cref="Parse"/> to get equivalent entries.
-    /// </summary>
-    public static string PrettyPrint(List<AddonEntry> entries)
-    {
-        var sb = new System.Text.StringBuilder();
-
-        for (int i = 0; i < entries.Count; i++)
-        {
-            if (i > 0)
-                sb.AppendLine();
-
-            var e = entries[i];
-            sb.AppendLine($"[{e.SectionId}]");
-            sb.AppendLine($"PackageName={e.PackageName}");
-
-            if (e.PackageDescription != null)
-                sb.AppendLine($"PackageDescription={e.PackageDescription}");
-            if (e.EffectInstallPath != null)
-                sb.AppendLine($"EffectInstallPath={e.EffectInstallPath}");
-            if (e.DownloadUrl != null)
-                sb.AppendLine($"DownloadUrl={e.DownloadUrl}");
-            if (e.DownloadUrl32 != null)
-                sb.AppendLine($"DownloadUrl32={e.DownloadUrl32}");
-            if (e.DownloadUrl64 != null)
-                sb.AppendLine($"DownloadUrl64={e.DownloadUrl64}");
-            if (e.RepositoryUrl != null)
-                sb.AppendLine($"RepositoryUrl={e.RepositoryUrl}");
-        }
-
-        return sb.ToString();
-    }
-
     // ── Private helpers ──────────────────────────────────────────────────────
 
     /// <summary>

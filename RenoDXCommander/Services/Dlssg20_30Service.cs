@@ -39,13 +39,15 @@ public class Dlssg20_30Service
     // ── Instance state ─────────────────────────────────────────────────────────
 
     private readonly HttpClient     _http;
+    private readonly GitHubETagCache _etagCache;
     private readonly ICrashReporter _crashReporter;
     private readonly string         _stagingDir;
     private readonly string         _versionFile;
 
-    public Dlssg20_30Service(HttpClient http, ICrashReporter crashReporter)
+    public Dlssg20_30Service(HttpClient http, ICrashReporter crashReporter, GitHubETagCache etagCache)
     {
         _http          = http;
+        _etagCache = etagCache;
         _crashReporter = crashReporter;
         _stagingDir    = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -191,7 +193,7 @@ public class Dlssg20_30Service
                 AuxInstallService.SentinelRestore(Path.Combine(installPath, installedAs));
 
             var iniPath = Path.Combine(installPath, IniFileName);
-            try { if (File.Exists(iniPath)) File.Delete(iniPath); } catch { }
+            try { if (File.Exists(iniPath)) File.Delete(iniPath); } catch (Exception ex) { _crashReporter.Log($"[Dlssg20_30Service.Uninstall] Failed to delete '{IniFileName}' — {ex.Message}"); }
 
             _crashReporter.Log($"[Dlssg20_30Service.Uninstall] Removed from '{installPath}'");
         }
@@ -260,13 +262,9 @@ public class Dlssg20_30Service
         // Primary: parse version from README heading (e.g. "# DLSSG Native 0.2.4" → "0.2.4")
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, ReadmeApiUrl);
-            req.Headers.Add("User-Agent", "RHI");
-            req.Headers.Add("Accept", "application/vnd.github+json");
-            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
-            if (resp.IsSuccessStatusCode)
+            var json = await _etagCache.GetWithETagAsync(_http, ReadmeApiUrl).ConfigureAwait(false);
+            if (json != null)
             {
-                var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("content", out var contentProp))
                 {
@@ -296,16 +294,12 @@ public class Dlssg20_30Service
         // Fallback: short commit SHA
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, CommitsApiUrl);
-            req.Headers.Add("User-Agent", "RHI");
-            req.Headers.Add("Accept", "application/vnd.github+json");
-            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode)
+            var json = await _etagCache.GetWithETagAsync(_http, CommitsApiUrl).ConfigureAwait(false);
+            if (json == null)
             {
-                _crashReporter.Log($"[Dlssg20_30Service.FetchLatestVersion] HTTP {(int)resp.StatusCode}");
+                _crashReporter.Log($"[Dlssg20_30Service.FetchLatestVersion] request failed");
                 return null;
             }
-            var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
             var sha = doc.RootElement.EnumerateArray().FirstOrDefault().TryGetProperty("sha", out var shaProp)
                 ? shaProp.GetString() : null;

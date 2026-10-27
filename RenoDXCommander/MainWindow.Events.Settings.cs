@@ -1,4 +1,4 @@
-﻿// MainWindow.Events.Settings.cs — Settings page button click and ComboBox change handlers.
+// MainWindow.Events.Settings.cs — Settings page button click and ComboBox change handlers.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -71,6 +71,29 @@ public sealed partial class MainWindow
         }
     }
 
+    private void UpdateLogButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_updateLogWindow == null)
+            {
+                var svc = App.Services.GetRequiredService<IUpdateLogService>();
+                _updateLogWindow = new UpdateLogWindow(svc);
+                _updateLogWindow.Closed += (_, _) => _updateLogWindow = null;
+                _updateLogWindow.Activate();
+            }
+            else
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_updateLogWindow);
+                NativeInterop.ForceToForeground(hwnd);
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.UpdateLogButton_Click] {ex.Message}");
+        }
+    }
+
     private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenLogsFolder_Click(sender, e);
 
@@ -107,17 +130,8 @@ public sealed partial class MainWindow
     private void HotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         => _settingsHandler.HotkeyBox_PreviewKeyDown(sender, e);
 
-    private void ApplyOverlayHotkey_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.ApplyOverlayHotkey_Click(sender, e);
-
-    private void ApplyReShadeHotkeys_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.ApplyReShadeHotkeys_Click(sender, e);
-
     private void ScreenshotHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         => _settingsHandler.ScreenshotHotkeyBox_PreviewKeyDown(sender, e);
-
-    private void ApplyScreenshotHotkey_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.ApplyScreenshotHotkey_Click(sender, e);
 
     private void ResetScreenshotHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ResetScreenshotHotkey_Click(sender, e);
@@ -147,7 +161,16 @@ public sealed partial class MainWindow
         => _settingsHandler.OsDlssInputsCombo_SelectionChanged(sender, e);
 
     private async void GlobalUpdateInclusion_Click(object sender, RoutedEventArgs e)
-        => await _settingsHandler.GlobalUpdateInclusion_ClickAsync(sender, e);
+    {
+        try
+        {
+            await _settingsHandler.GlobalUpdateInclusion_ClickAsync(sender, e);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.GlobalUpdateInclusion_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
 
     private void CacheAllShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.CacheAllShadersCombo_SelectionChanged(sender, e);
@@ -168,35 +191,58 @@ public sealed partial class MainWindow
         => _massDeployHandler.MassDeployOsIni_Click(sender, e);
 
     private async void MassPresetInstall_Click(object sender, RoutedEventArgs e)
-        => await _massDeployHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
+    {
+        try
+        {
+            await _massDeployHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.MassPresetInstall_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
 
     private async void MassDlssDeploy_Click(object sender, RoutedEventArgs e)
     {
-        var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
-        var dialog = new MassDlssDeployDialog(ViewModel, dlssService, Content.XamlRoot, onComplete: () =>
+        try
         {
-            // Rebuild the detail panel for the currently selected game so versions update
-            if (ViewModel.SelectedGame is { } selectedCard)
+            var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
+            var dialog = new MassDlssDeployDialog(ViewModel, dlssService, Content.XamlRoot, onComplete: () =>
             {
-                PopulateDetailPanel(selectedCard);
-                BuildOverridesPanel(selectedCard);
-            }
-        });
-        await dialog.ShowAsync();
+                // Rebuild the detail panel for the currently selected game so versions update
+                if (ViewModel.SelectedGame is { } selectedCard)
+                {
+                    PopulateDetailPanel(selectedCard);
+                    BuildOverridesPanel(selectedCard);
+                }
+            });
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.MassDlssDeploy_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DlssDefaults_Click(object sender, RoutedEventArgs e)
     {
-        var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
-        var presetService = App.Services.GetRequiredService<DlssPresetService>();
-        await DlssDefaultsDialog.ShowAsync(ViewModel, dlssService, presetService, Content.XamlRoot);
-        RefreshDlssDefaultsSummary();
-
-        // Rebuild the detail panel so Quick Apply button reflects new defaults state
-        if (ViewModel.SelectedGame is { } selectedCard && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
+        try
         {
-            PopulateDetailPanel(selectedCard);
-            BuildOverridesPanel(selectedCard);
+            var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            await DlssDefaultsDialog.ShowAsync(ViewModel, dlssService, presetService, Content.XamlRoot);
+            RefreshDlssDefaultsSummary();
+
+            // Rebuild the detail panel so Quick Apply button reflects new defaults state
+            if (ViewModel.SelectedGame is { } selectedCard && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
+            {
+                PopulateDetailPanel(selectedCard);
+                BuildOverridesPanel(selectedCard);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DlssDefaults_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -382,7 +428,7 @@ public sealed partial class MainWindow
                 if (card.UlStatus == Models.GameStatus.Installed || card.DcStatus == Models.GameStatus.Installed)
                 {
                     try { presetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
-                    catch { }
+                    catch (Exception) { /* Safe to ignore: per-game loop over the whole library; a failure just leaves that game's FPS limit unchanged. */ }
                 }
             }
         });
@@ -390,49 +436,51 @@ public sealed partial class MainWindow
 
     private async void FpsLimitCombo_Custom(ComboBox combo)
     {
-        // Show a simple input dialog for custom FPS value
-        var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
-        var dialog = new ContentDialog
+        try
         {
-            Title = "Custom FPS Limit",
-            Content = textBox,
-            PrimaryButtonText = "Set",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-        };
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
-        {
-            var presetService = App.Services.GetRequiredService<DlssPresetService>();
-            _ = Task.Run(() =>
+            // Show a simple input dialog for custom FPS value
+            var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
+            var dialog = new ContentDialog
             {
-                presetService.SetGlobalFpsLimit(fps);
-                DisableFpsLimitForFrameLimiterGames(presetService);
-            });
+                Title = "Custom FPS Limit",
+                Content = textBox,
+                PrimaryButtonText = "Set",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.Content.XamlRoot,
+                RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
+            {
+                var presetService = App.Services.GetRequiredService<DlssPresetService>();
+                _ = Task.Run(() =>
+                {
+                    presetService.SetGlobalFpsLimit(fps);
+                    DisableFpsLimitForFrameLimiterGames(presetService);
+                });
 
-            // Add the custom value to the combo and select it
-            _shaderCacheComboInit = true;
-            var items = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
-            items.Add($"{fps} FPS (Custom)");
-            combo.ItemsSource = items.ToArray();
-            combo.SelectedIndex = items.Count - 1;
-            _shaderCacheComboInit = false;
+                // Add the custom value to the combo and select it
+                _shaderCacheComboInit = true;
+                var items = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+                items.Add($"{fps} FPS (Custom)");
+                combo.ItemsSource = items.ToArray();
+                combo.SelectedIndex = items.Count - 1;
+                _shaderCacheComboInit = false;
+            }
+            else
+            {
+                // Revert to previous selection
+                _shaderCacheComboInit = true;
+                var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalFpsLimit();
+                var idx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == currentFps);
+                combo.SelectedIndex = idx >= 0 ? idx : 0;
+                _shaderCacheComboInit = false;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Revert to previous selection
-            _shaderCacheComboInit = true;
-            var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalFpsLimit();
-            var idx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == currentFps);
-            combo.SelectedIndex = idx >= 0 ? idx : 0;
-            _shaderCacheComboInit = false;
+            CrashReporter.Log($"[MainWindow.FpsLimitCombo_Custom] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
-    }
-
-    private void FpsLimitCombo_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        // No longer needed — non-editable ComboBox
     }
 
     private void PreferredRefreshRateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -484,36 +532,43 @@ public sealed partial class MainWindow
 
     private async void DmfgTargetFpsCombo_Custom(ComboBox combo)
     {
-        var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
-        var dialog = new ContentDialog
+        try
         {
-            Title = "Custom DMFG Target FPS",
-            Content = textBox,
-            PrimaryButtonText = "Set",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-        };
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
-        {
-            var presetService = App.Services.GetRequiredService<DlssPresetService>();
-            _ = Task.Run(() => presetService.SetGlobalDmfgTargetFps(fps));
+            var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
+            var dialog = new ContentDialog
+            {
+                Title = "Custom DMFG Target FPS",
+                Content = textBox,
+                PrimaryButtonText = "Set",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.Content.XamlRoot,
+                RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
+            {
+                var presetService = App.Services.GetRequiredService<DlssPresetService>();
+                _ = Task.Run(() => presetService.SetGlobalDmfgTargetFps(fps));
 
-            _shaderCacheComboInit = true;
-            var items = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
-            items.Insert(items.Count - 1, $"{fps} FPS (Custom)");
-            combo.ItemsSource = items.ToArray();
-            combo.SelectedIndex = items.Count - 2;
-            _shaderCacheComboInit = false;
+                _shaderCacheComboInit = true;
+                var items = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
+                items.Insert(items.Count - 1, $"{fps} FPS (Custom)");
+                combo.ItemsSource = items.ToArray();
+                combo.SelectedIndex = items.Count - 2;
+                _shaderCacheComboInit = false;
+            }
+            else
+            {
+                _shaderCacheComboInit = true;
+                var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalDmfgTargetFps();
+                var idx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == currentFps);
+                combo.SelectedIndex = idx >= 0 ? idx : 0;
+                _shaderCacheComboInit = false;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _shaderCacheComboInit = true;
-            var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalDmfgTargetFps();
-            var idx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == currentFps);
-            combo.SelectedIndex = idx >= 0 ? idx : 0;
-            _shaderCacheComboInit = false;
+            CrashReporter.Log($"[MainWindow.DmfgTargetFpsCombo_Custom] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -530,8 +585,10 @@ public sealed partial class MainWindow
         GlobalReBarSizeCombo.Opacity = reBarOn ? 1.0 : 0.4;
         if (!reBarOn)
             GlobalReBarSizeCombo.SelectedIndex = 1; // Reset to 1GB (Default)
-        // Force detail panel rebuild if a game is selected
-        if (ViewModel.SelectedGame != null)
+        // Force detail panel rebuild if a game is selected and the detail panel is visible.
+        // Skip while Settings is open — triggering a rebuild here cancels in-flight NVAPI scans
+        // and starts new ones that compete on _sessionLock with the settings-page NVAPI reads.
+        if (ViewModel.SelectedGame != null && SettingsPanel.Visibility != Microsoft.UI.Xaml.Visibility.Visible)
             DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
     }
 
@@ -546,8 +603,10 @@ public sealed partial class MainWindow
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             _ = Task.Run(() => presetService.SetGlobalReBarSizeLimit(value));
         }
-        // Force detail panel rebuild if a game is selected
-        if (ViewModel.SelectedGame != null)
+        // Force detail panel rebuild if a game is selected and the detail panel is visible.
+        // Skip while Settings is open — triggering a rebuild here cancels in-flight NVAPI scans
+        // and starts new ones that compete on _sessionLock with the settings-page NVAPI reads.
+        if (ViewModel.SelectedGame != null && SettingsPanel.Visibility != Microsoft.UI.Xaml.Visibility.Visible)
             DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
     }
 
@@ -562,8 +621,10 @@ public sealed partial class MainWindow
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             _ = Task.Run(() => presetService.SetGlobalVSyncMode(value));
         }
-        // Force detail panel rebuild if a game is selected
-        if (ViewModel.SelectedGame != null)
+        // Force detail panel rebuild if a game is selected and the detail panel is visible.
+        // Skip while Settings is open — triggering a rebuild here cancels in-flight NVAPI scans
+        // and starts new ones that compete on _sessionLock with the settings-page NVAPI reads.
+        if (ViewModel.SelectedGame != null && SettingsPanel.Visibility != Microsoft.UI.Xaml.Visibility.Visible)
             DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
     }
 
@@ -582,45 +643,52 @@ public sealed partial class MainWindow
 
     private async void CreateMissingNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
-        var presetService = App.Services.GetRequiredService<DlssPresetService>();
-        if (!presetService.IsSupported) return;
-
-        // Copy card data for background thread
-        var cardData = ViewModel.AllCards
-            .Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))
-            .Select(c => (c.GameName, c.InstallPath))
-            .ToList();
-
-        // Run profile creation on background thread — may involve exe scanning
-        var created = await Task.Run(() =>
+        try
         {
-            var list = new List<string>();
-            foreach (var (gameName, installPath) in cardData)
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            if (!presetService.IsSupported) return;
+
+            // Copy card data for background thread
+            var cardData = ViewModel.AllCards
+                .Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))
+                .Select(c => (c.GameName, c.InstallPath))
+                .ToList();
+
+            // Run profile creation on background thread — may involve exe scanning
+            var created = await Task.Run(() =>
             {
-                if (presetService.EnsureProfileExists(gameName, installPath))
-                    list.Add(gameName);
-            }
-            return list;
-        });
+                var list = new List<string>();
+                foreach (var (gameName, installPath) in cardData)
+                {
+                    if (presetService.EnsureProfileExists(gameName, installPath))
+                        list.Add(gameName);
+                }
+                return list;
+            });
 
-        var content = created.Count > 0
-            ? $"Created {created.Count} profile(s):\n\n• " + string.Join("\n• ", created)
-            : "All games already have NVIDIA profiles.";
+            var content = created.Count > 0
+                ? $"Created {created.Count} profile(s):\n\n• " + string.Join("\n• ", created)
+                : "All games already have NVIDIA profiles.";
 
-        var dialog = new ContentDialog
+            var dialog = new ContentDialog
+            {
+                Title = "Create Missing Profiles",
+                Content = new ScrollViewer
+                {
+                    Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                    MaxHeight = 400,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                },
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
         {
-            Title = "Create Missing Profiles",
-            Content = new ScrollViewer
-            {
-                Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap, FontSize = 12 },
-                MaxHeight = 400,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            },
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
+            CrashReporter.Log($"[MainWindow.CreateMissingNvidiaProfiles_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
@@ -681,93 +749,95 @@ public sealed partial class MainWindow
 
     private async void ImportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
-        var path = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "nvidia_profiles_backup.json");
-
-        if (!System.IO.File.Exists(path))
+        try
         {
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RHI", "nvidia_profiles_backup.json");
+
+            if (!System.IO.File.Exists(path))
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Import",
+                    Content = $"No backup file found at:\n{path}\n\nBackup profiles first.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
+                return;
+            }
+
+            var json = System.IO.File.ReadAllText(path);
+            var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (data == null || data.Count == 0) return;
+
+            // Confirm before proceeding — importing overwrites driver profile settings irreversibly
+            bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
+            var warningText = "This will overwrite your current NVIDIA driver profile settings with the saved backup. This cannot be undone.";
+            if (!isAdmin)
+                warningText += "\n\nYou are not running as admin. Settings that require elevated privileges (e.g. ReBAR) will not be restored. Run RHI as admin to import all settings.";
+
+            var confirmResult = await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Restore Profiles",
+                Content = new TextBlock
+                {
+                    Text = warningText,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12,
+                },
+                PrimaryButtonText = "Import",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+            if (confirmResult != ContentDialogResult.Primary) return;
+
+            // Show progress dialog
+            var progressText = new TextBlock
+            {
+                Text = "Importing profiles...",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                TextWrapping = TextWrapping.Wrap,
+            };
+            var progressPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            progressPanel.Children.Add(new ProgressRing { IsActive = true, Width = 20, Height = 20 });
+            progressPanel.Children.Add(progressText);
+
+            var progressDialog = new ContentDialog
+            {
+                Title = "Importing...",
+                Content = progressPanel,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            await using var progressSession = await DialogService.ShowProgressAsync(progressDialog);
+            if (progressSession == null) return;
+
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            var count = await Task.Run(() => presetService.ImportProfiles(data));
+
+            await progressSession.DisposeAsync();
+
+            // Refresh settings page to reflect imported global values
+            await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
+
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Import",
-                Content = $"No backup file found at:\n{path}\n\nBackup profiles first.",
+                Title = "Import Complete",
+                Content = $"Imported {count} profile(s) from backup.",
                 CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             });
-            return;
         }
-
-        var json = System.IO.File.ReadAllText(path);
-        var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-        if (data == null || data.Count == 0) return;
-
-        // Confirm before proceeding — importing overwrites driver profile settings irreversibly
-        bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
-        var warningText = "This will overwrite your current NVIDIA driver profile settings with the saved backup. This cannot be undone.";
-        if (!isAdmin)
-            warningText += "\n\nYou are not running as admin. Settings that require elevated privileges (e.g. ReBAR) will not be restored. Run RHI as admin to import all settings.";
-
-        var confirmResult = await DialogService.ShowSafeAsync(new ContentDialog
+        catch (Exception ex)
         {
-            Title = "Restore Profiles",
-            Content = new TextBlock
-            {
-                Text = warningText,
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 12,
-            },
-            PrimaryButtonText = "Import",
-            CloseButtonText = "Cancel",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
-        if (confirmResult != ContentDialogResult.Primary) return;
-
-        // Show progress dialog
-        var progressText = new TextBlock
-        {
-            Text = "Importing profiles...",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            TextWrapping = TextWrapping.Wrap,
-        };
-        var progressPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        progressPanel.Children.Add(new ProgressRing { IsActive = true, Width = 20, Height = 20 });
-        progressPanel.Children.Add(progressText);
-
-        var progressDialog = new ContentDialog
-        {
-            Title = "Importing...",
-            Content = progressPanel,
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        
-        // Use explicit gate pattern to avoid race condition where fire-and-forget ShowSafeAsync
-        // hasn't acquired the gate yet when progressDialog.Hide() is called
-        bool importGateReleased = false;
-        progressDialog.Closed += (_, _) => { if (!importGateReleased) { importGateReleased = true; DialogService.ReleaseDialogGate(); } };
-        _ = DialogService.ShowSafeAsync(progressDialog);
-        await Task.Delay(100); // Let dialog render
-
-        var presetService = App.Services.GetRequiredService<DlssPresetService>();
-        var count = await Task.Run(() => presetService.ImportProfiles(data));
-
-        importGateReleased = true;
-        progressDialog.Hide();
-
-        // Refresh settings page to reflect imported global values
-        await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
-
-        await DialogService.ShowSafeAsync(new ContentDialog
-        {
-            Title = "Import Complete",
-            Content = $"Imported {count} profile(s) from backup.",
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
+            CrashReporter.Log($"[MainWindow.ImportNvidiaProfiles_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DigitalVibrance_Click(object sender, RoutedEventArgs e)
@@ -953,215 +1023,232 @@ public sealed partial class MainWindow
 
     private async void ResetAllNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
-        var confirmDialog = new ContentDialog
-        {
-            Title = "Reset all game profiles?",
-            Content = new TextBlock
-            {
-                Text = "This will remove ALL per-game NVIDIA driver profile overrides (DLSS/Streamline versions, presets, render scales, ReBAR, VSync, Smooth Motion, Low Latency, Power Mode — everything) AND reset global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR) to defaults.\n\nAll profiles will return to NVIDIA factory defaults. This cannot be undone.",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontSize = 13,
-            },
-            PrimaryButtonText = "Reset All",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        var result = await DialogService.ShowSafeAsync(confirmDialog);
-        if (result != ContentDialogResult.Primary) return;
-
         try
         {
-            var presetSvc = _dlssPresetService;
-            var gamesList = ViewModel.AllCards
-                .Where(c => !string.IsNullOrEmpty(c.InstallPath))
-                .Select(c => (c.GameName, c.InstallPath!))
-                .ToList();
-
-            // Show progress dialog
-            var progressPanel = new StackPanel { Spacing = 8 };
-            var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-            var progressText = new TextBlock { Text = "Preparing...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
-            var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
-            progressRow.Children.Add(progressRing);
-            progressRow.Children.Add(progressText);
-            progressPanel.Children.Add(progressRow);
-
-            var progressDialog = new ContentDialog
+            var confirmDialog = new ContentDialog
             {
-                Title = "Resetting...",
-                Content = progressPanel,
+                Title = "Reset all game profiles?",
+                Content = new TextBlock
+                {
+                    Text = "This will remove ALL per-game NVIDIA driver profile overrides (DLSS/Streamline versions, presets, render scales, ReBAR, VSync, Smooth Motion, Low Latency, Power Mode — everything) AND reset global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR) to defaults.\n\nAll profiles will return to NVIDIA factory defaults. This cannot be undone.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontSize = 13,
+                },
+                PrimaryButtonText = "Reset All",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            
-            // Use explicit gate pattern to avoid race condition where fire-and-forget ShowSafeAsync
-            // hasn't acquired the gate yet when progressDialog.Hide() is called
-            bool resetGateReleased = false;
-            progressDialog.Closed += (_, _) => { if (!resetGateReleased) { resetGateReleased = true; DialogService.ReleaseDialogGate(); } };
-            _ = DialogService.ShowSafeAsync(progressDialog);
+            var result = await DialogService.ShowSafeAsync(confirmDialog);
+            if (result != ContentDialogResult.Primary) return;
 
-            int resetCount = 0;
-            await Task.Run(() =>
+            try
             {
-                for (int i = 0; i < gamesList.Count; i++)
+                var presetSvc = _dlssPresetService;
+                var gamesList = ViewModel.AllCards
+                    .Where(c => !string.IsNullOrEmpty(c.InstallPath))
+                    .Select(c => (c.GameName, c.InstallPath!))
+                    .ToList();
+
+                // Show progress dialog
+                var progressPanel = new StackPanel { Spacing = 8 };
+                var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
+                var progressText = new TextBlock { Text = "Preparing...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+                var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+                progressRow.Children.Add(progressRing);
+                progressRow.Children.Add(progressText);
+                progressPanel.Children.Add(progressRow);
+
+                var progressDialog = new ContentDialog
                 {
-                    var (gameName, installPath) = gamesList[i];
-                    DispatcherQueue?.TryEnqueue(() =>
-                        progressText.Text = $"[{i + 1}/{gamesList.Count}] {gameName}");
-                    try
+                    Title = "Resetting...",
+                    Content = progressPanel,
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+
+                await using var progressSession = await DialogService.ShowProgressAsync(progressDialog);
+                if (progressSession == null) return;
+
+                int resetCount = 0;
+                await Task.Run(() =>
+                {
+                    for (int i = 0; i < gamesList.Count; i++)
                     {
-                        if (presetSvc.RestoreProfileDefaults(gameName, installPath))
-                            resetCount++;
+                        var (gameName, installPath) = gamesList[i];
+                        DispatcherQueue?.TryEnqueue(() =>
+                            progressText.Text = $"[{i + 1}/{gamesList.Count}] {gameName}");
+                        try
+                        {
+                            if (presetSvc.RestoreProfileDefaults(gameName, installPath))
+                                resetCount++;
+                        }
+                        catch (Exception) { /* Safe to ignore: per-game loop over the whole library; failures are reflected in the reset count shown to the user. */ }
                     }
-                    catch { }
+
+                    // Reset global profile
+                    DispatcherQueue?.TryEnqueue(() =>
+                        progressText.Text = "Resetting global settings...");
+                    presetSvc.ResetGlobalProfile();
+                });
+
+                await progressSession.DisposeAsync();
+
+                // Refresh all cards so the detail panel reflects cleared presets
+                foreach (var card in ViewModel.AllCards)
+                    card.NotifyAll();
+
+                // Rebuild the detail panel for the selected game to refresh NVIDIA section
+                if (ViewModel.SelectedGame != null)
+                {
+                    PopulateDetailPanel(ViewModel.SelectedGame);
+                    _detailPanelBuilder.BuildOverridesPanel(ViewModel.SelectedGame);
                 }
 
-                // Reset global profile
-                DispatcherQueue?.TryEnqueue(() =>
-                    progressText.Text = "Resetting global settings...");
-                presetSvc.ResetGlobalProfile();
-            });
+                // Re-initialize the Global Nvidia Settings combos to reflect cleared values
+                await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
 
-            resetGateReleased = true;
-            progressDialog.Hide();
-
-            // Refresh all cards so the detail panel reflects cleared presets
-            foreach (var card in ViewModel.AllCards)
-                card.NotifyAll();
-
-            // Rebuild the detail panel for the selected game to refresh NVIDIA section
-            if (ViewModel.SelectedGame != null)
-            {
-                PopulateDetailPanel(ViewModel.SelectedGame);
-                _detailPanelBuilder.BuildOverridesPanel(ViewModel.SelectedGame);
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Profiles Reset",
+                    Content = $"Reset {resetCount} game profile(s) and global settings to factory defaults.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
             }
-
-            // Re-initialize the Global Nvidia Settings combos to reflect cleared values
-            await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
-
-            await DialogService.ShowSafeAsync(new ContentDialog
+            catch (Exception ex)
             {
-                Title = "Profiles Reset",
-                Content = $"Reset {resetCount} game profile(s) and global settings to factory defaults.",
-                CloseButtonText = "OK",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                CrashReporter.Log($"[ResetAllNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Reset Failed",
+                    Content = $"Error: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
+            }
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[ResetAllNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
-            await DialogService.ShowSafeAsync(new ContentDialog
-            {
-                Title = "Reset Failed",
-                Content = $"Error: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+            CrashReporter.Log($"[MainWindow.ResetAllNvidiaProfiles_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     private async void ClearNvidiaShaderCache_Click(object sender, RoutedEventArgs e)
     {
-        var confirmDialog = new ContentDialog
+        try
         {
-            Title = "Clear NVIDIA Shader Cache",
-            Content = "This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.",
-            PrimaryButtonText = "Clear",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(confirmDialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        int filesDeleted = 0;
-        int filesFailed = 0;
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var cachePaths = new[]
-        {
-            Path.Combine(localAppData, "NVIDIA", "DXCache"),
-            Path.Combine(localAppData, "NVIDIA", "GLCache"),
-        };
-
-        foreach (var path in cachePaths)
-        {
-            if (!Directory.Exists(path)) continue;
-            try
+            var confirmDialog = new ContentDialog
             {
-                foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                Title = "Clear NVIDIA Shader Cache",
+                Content = "This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            var result = await DialogService.ShowSafeAsync(confirmDialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            int filesDeleted = 0;
+            int filesFailed = 0;
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var cachePaths = new[]
+            {
+                Path.Combine(localAppData, "NVIDIA", "DXCache"),
+                Path.Combine(localAppData, "NVIDIA", "GLCache"),
+            };
+
+            foreach (var path in cachePaths)
+            {
+                if (!Directory.Exists(path)) continue;
+                try
                 {
-                    try { File.Delete(file); filesDeleted++; }
-                    catch { filesFailed++; }
+                    foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                    {
+                        try { File.Delete(file); filesDeleted++; }
+                        catch { filesFailed++; }
+                    }
+                    // Try to remove empty subdirectories
+                    foreach (var dir in Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                    {
+                        try { Directory.Delete(dir); } catch (Exception) { /* Safe to ignore: per-directory cleanup loop; non-empty or locked directories are expected and left in place. */ }
+                    }
                 }
-                // Try to remove empty subdirectories
-                foreach (var dir in Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                catch (Exception ex)
                 {
-                    try { Directory.Delete(dir); } catch { }
+                    CrashReporter.Log($"[ClearNvidiaShaderCache] Error enumerating '{path}': {ex.Message}");
                 }
             }
-            catch (Exception ex)
+
+            var message = filesFailed > 0
+                ? $"Shader cache folders cleared. {filesDeleted} files deleted, {filesFailed} files skipped (in use by running games). Shaders will recompile on next game launch."
+                : $"Shader cache folders cleared. {filesDeleted} files deleted. Shaders will recompile on next game launch.";
+
+            await DialogService.ShowSafeAsync(new ContentDialog
             {
-                CrashReporter.Log($"[ClearNvidiaShaderCache] Error enumerating '{path}': {ex.Message}");
-            }
+                Title = "Shader Cache Cleared",
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
         }
-
-        var message = filesFailed > 0
-            ? $"Shader cache folders cleared. {filesDeleted} files deleted, {filesFailed} files skipped (in use by running games). Shaders will recompile on next game launch."
-            : $"Shader cache folders cleared. {filesDeleted} files deleted. Shaders will recompile on next game launch.";
-
-        await DialogService.ShowSafeAsync(new ContentDialog
+        catch (Exception ex)
         {
-            Title = "Shader Cache Cleared",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
+            CrashReporter.Log($"[MainWindow.ClearNvidiaShaderCache_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_dlssIndicatorInitializing) return;
-        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
-
-        // 0 = Enabled (0x400), 1 = Disabled (0x0)
-        uint value = combo.SelectedIndex == 0 ? 0x400u : 0u;
-
         try
         {
-            // Writing to HKLM requires admin — use a reg.exe process with elevation
-            var regValue = value.ToString();
-            var psi = new System.Diagnostics.ProcessStartInfo("reg.exe",
-                $"add \"HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NGXCore\" /v ShowDlssIndicator /t REG_DWORD /d {regValue} /f")
+            if (_dlssIndicatorInitializing) return;
+            if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+            // 0 = Enabled (0x400), 1 = Disabled (0x0)
+            uint value = combo.SelectedIndex == 0 ? 0x400u : 0u;
+
+            try
             {
-                UseShellExecute = true,
-                Verb = "runas",
-                CreateNoWindow = true,
-            };
-            var proc = System.Diagnostics.Process.Start(psi);
-            if (proc != null)
-            {
-                await proc.WaitForExitAsync();
-                _crashReporter.Log($"[DlssIndicatorCombo] Set ShowDlssIndicator to {value} (exit code: {proc.ExitCode})");
+                // Writing to HKLM requires admin — use a reg.exe process with elevation
+                var regValue = value.ToString();
+                var psi = new System.Diagnostics.ProcessStartInfo("reg.exe",
+                    $"add \"HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NGXCore\" /v ShowDlssIndicator /t REG_DWORD /d {regValue} /f")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    CreateNoWindow = true,
+                };
+                var proc = System.Diagnostics.Process.Start(psi);
+                if (proc != null)
+                {
+                    await proc.WaitForExitAsync();
+                    _crashReporter.Log($"[DlssIndicatorCombo] Set ShowDlssIndicator to {value} (exit code: {proc.ExitCode})");
+                }
             }
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            // User cancelled UAC — revert the combo without re-triggering the handler
-            _crashReporter.Log("[DlssIndicatorCombo] UAC cancelled — reverting selection");
-            _dlssIndicatorInitializing = true;
-            combo.SelectedIndex = combo.SelectedIndex == 0 ? 1 : 0;
-            _dlssIndicatorInitializing = false;
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // User cancelled UAC — revert the combo without re-triggering the handler
+                _crashReporter.Log("[DlssIndicatorCombo] UAC cancelled — reverting selection");
+                _dlssIndicatorInitializing = true;
+                combo.SelectedIndex = combo.SelectedIndex == 0 ? 1 : 0;
+                _dlssIndicatorInitializing = false;
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DlssIndicatorCombo] Failed to set registry — {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[DlssIndicatorCombo] Failed to set registry — {ex.Message}");
+            CrashReporter.Log($"[MainWindow.DlssIndicatorCombo_SelectionChanged] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -1195,6 +1282,13 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void BackgroundUpdateChecksCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.BackgroundUpdateChecks = combo.SelectedIndex == 1 ? "Minimal" : "On";
+        ViewModel.SaveSettingsPublic();
+    }
+
     private void HdrAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
@@ -1204,54 +1298,61 @@ public sealed partial class MainWindow
 
     private async void HdrSelectMonitors_Click(object sender, RoutedEventArgs e)
     {
-        var displays = HdrToggleService.GetAllDisplays();
-        if (displays.Count == 0) return;
-
-        var currentSelection = ViewModel.Settings.HdrTargetDisplays;
-        var panel = new StackPanel { Spacing = 8 };
-        var checkBoxes = new List<(CheckBox cb, uint targetId)>();
-
-        foreach (var display in displays)
+        try
         {
-            var cb = new CheckBox
+            var displays = HdrToggleService.GetAllDisplays();
+            if (displays.Count == 0) return;
+
+            var currentSelection = ViewModel.Settings.HdrTargetDisplays;
+            var panel = new StackPanel { Spacing = 8 };
+            var checkBoxes = new List<(CheckBox cb, uint targetId)>();
+
+            foreach (var display in displays)
             {
-                Content = $"{display.Name}{(display.HdrSupported ? "" : " (no HDR)")}",
-                IsChecked = currentSelection.Contains(display.TargetId),
-                IsEnabled = display.HdrSupported,
-                FontSize = 13,
+                var cb = new CheckBox
+                {
+                    Content = $"{display.Name}{(display.HdrSupported ? "" : " (no HDR)")}",
+                    IsChecked = currentSelection.Contains(display.TargetId),
+                    IsEnabled = display.HdrSupported,
+                    FontSize = 13,
+                };
+                checkBoxes.Add((cb, display.TargetId));
+                panel.Children.Add(cb);
+            }
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Leave all unchecked to enable HDR on the primary display only.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Select HDR Monitors",
+                Content = panel,
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
-            checkBoxes.Add((cb, display.TargetId));
-            panel.Children.Add(cb);
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            var selected = checkBoxes
+                .Where(x => x.cb.IsChecked == true)
+                .Select(x => x.targetId)
+                .ToList();
+
+            ViewModel.Settings.HdrTargetDisplays = selected;
+            ViewModel.SaveSettingsPublic();
         }
-
-        panel.Children.Add(new TextBlock
+        catch (Exception ex)
         {
-            Text = "Leave all unchecked to enable HDR on the primary display only.",
-            FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
-
-        var dialog = new ContentDialog
-        {
-            Title = "Select HDR Monitors",
-            Content = panel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        var selected = checkBoxes
-            .Where(x => x.cb.IsChecked == true)
-            .Select(x => x.targetId)
-            .ToList();
-
-        ViewModel.Settings.HdrTargetDisplays = selected;
-        ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[MainWindow.HdrSelectMonitors_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void PerGameScreenshotCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1279,8 +1380,10 @@ public sealed partial class MainWindow
 
     private void CloseToTrayCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
-        ViewModel.Settings.CloseToTray = ((ComboBox)sender).SelectedIndex == 1;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
+        var closeToTray = ((ComboBox)sender).SelectedIndex == 1;
+        if (closeToTray == ViewModel.Settings.CloseToTray) return;
+        ViewModel.Settings.CloseToTray = closeToTray;
         ViewModel.SaveSettingsPublic();
 
         // Initialize tray icon immediately if enabling and not yet created
@@ -1303,8 +1406,10 @@ public sealed partial class MainWindow
 
     private void RecentGamesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
-        ViewModel.Settings.RecentGamesMenu = ((ComboBox)sender).SelectedIndex == 1;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
+        var recentGames = ((ComboBox)sender).SelectedIndex == 1;
+        if (recentGames == ViewModel.Settings.RecentGamesMenu) return;
+        ViewModel.Settings.RecentGamesMenu = recentGames;
         ViewModel.SaveSettingsPublic();
         // Update jump list immediately
         if (ViewModel.Settings.RecentGamesMenu)
@@ -1315,8 +1420,11 @@ public sealed partial class MainWindow
 
     private void StartWithWindowsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
         var enabled = ((ComboBox)sender).SelectedIndex == 1;
+        // Ignore if the value matches what's already persisted — guards against WinUI
+        // delivering queued SelectionChanged events after async continuations resume.
+        if (enabled == ViewModel.Settings.StartWithWindows) return;
         ViewModel.Settings.StartWithWindows = enabled;
         ViewModel.SaveSettingsPublic();
 
@@ -1413,80 +1521,94 @@ public sealed partial class MainWindow
 
     private async void ColorApplyBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (ColorDisplayCombo.SelectedItem is not NvColorService.NvDisplay display) return;
-
-        var depthLabel = (ColorDepthCombo.SelectedItem as ComboBoxItem)?.Content as string
-                      ?? ColorDepthCombo.SelectedItem as string ?? "10 bpc";
-        var rangeLabel = (ColorRangeCombo.SelectedItem as ComboBoxItem)?.Content as string
-                      ?? ColorRangeCombo.SelectedItem as string ?? "Full";
-
-        byte bpc = NvColorService.LabelToBpc(depthLabel);
-        byte dr  = NvColorService.LabelToDynamicRange(rangeLabel);
-
-        bool ok = await Task.Run(() => NvColorService.SetColorData(display.DisplayId, bpc, dr));
-
-        var dialog = new ContentDialog
+        try
         {
-            Title   = "Output Colour Settings",
-            Content = ok
-                ? $"Applied to {display.Name}: {depthLabel}, {rangeLabel}."
-                : $"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.",
-            CloseButtonText = "OK",
-            XamlRoot        = Content.XamlRoot,
-            RequestedTheme  = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
+            if (ColorDisplayCombo.SelectedItem is not NvColorService.NvDisplay display) return;
+
+            var depthLabel = (ColorDepthCombo.SelectedItem as ComboBoxItem)?.Content as string
+                          ?? ColorDepthCombo.SelectedItem as string ?? "10 bpc";
+            var rangeLabel = (ColorRangeCombo.SelectedItem as ComboBoxItem)?.Content as string
+                          ?? ColorRangeCombo.SelectedItem as string ?? "Full";
+
+            byte bpc = NvColorService.LabelToBpc(depthLabel);
+            byte dr  = NvColorService.LabelToDynamicRange(rangeLabel);
+
+            bool ok = await Task.Run(() => NvColorService.SetColorData(display.DisplayId, bpc, dr));
+
+            var dialog = new ContentDialog
+            {
+                Title   = "Output Colour Settings",
+                Content = ok
+                    ? $"Applied to {display.Name}: {depthLabel}, {rangeLabel}."
+                    : $"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.",
+                CloseButtonText = "OK",
+                XamlRoot        = Content.XamlRoot,
+                RequestedTheme  = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.ColorApplyBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void ResSelectMonitors_Click(object sender, RoutedEventArgs e)
     {
-        var displays = HdrToggleService.GetAllDisplays();
-        if (displays.Count == 0) return;
-
-        var currentSelection = ViewModel.Settings.ResTargetDisplays;
-        var panel = new StackPanel { Spacing = 8 };
-        var checkBoxes = new List<(CheckBox cb, uint targetId)>();
-
-        foreach (var display in displays)
+        try
         {
-            var cb = new CheckBox
+            var displays = HdrToggleService.GetAllDisplays();
+            if (displays.Count == 0) return;
+
+            var currentSelection = ViewModel.Settings.ResTargetDisplays;
+            var panel = new StackPanel { Spacing = 8 };
+            var checkBoxes = new List<(CheckBox cb, uint targetId)>();
+
+            foreach (var display in displays)
             {
-                Content = display.Name,
-                IsChecked = currentSelection.Contains(display.TargetId),
-                FontSize = 13,
+                var cb = new CheckBox
+                {
+                    Content = display.Name,
+                    IsChecked = currentSelection.Contains(display.TargetId),
+                    FontSize = 13,
+                };
+                checkBoxes.Add((cb, display.TargetId));
+                panel.Children.Add(cb);
+            }
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Leave all unchecked to change resolution on the primary display only.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Select Resolution Monitors",
+                Content = panel,
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
-            checkBoxes.Add((cb, display.TargetId));
-            panel.Children.Add(cb);
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            var selected = checkBoxes
+                .Where(x => x.cb.IsChecked == true)
+                .Select(x => x.targetId)
+                .ToList();
+
+            ViewModel.Settings.ResTargetDisplays = selected;
+            ViewModel.SaveSettingsPublic();
         }
-
-        panel.Children.Add(new TextBlock
+        catch (Exception ex)
         {
-            Text = "Leave all unchecked to change resolution on the primary display only.",
-            FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
-
-        var dialog = new ContentDialog
-        {
-            Title = "Select Resolution Monitors",
-            Content = panel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        var selected = checkBoxes
-            .Where(x => x.cb.IsChecked == true)
-            .Select(x => x.targetId)
-            .ToList();
-
-        ViewModel.Settings.ResTargetDisplays = selected;
-        ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[MainWindow.ResSelectMonitors_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void ResolutionTargetCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1525,6 +1647,371 @@ public sealed partial class MainWindow
         DetailResToggleText.Foreground = resActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DLDSR Control Handlers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private async void DldsrInfoBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var content = new StackPanel { Spacing = 12, MaxWidth = 480 };
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "How DLDSR Control Works",
+                FontSize = 14,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "DLDSR (Deep Learning Dynamic Super Resolution) renders games at higher resolutions and downscales with AI for sharper image quality. This feature lets you switch DLDSR presets without opening NVIDIA Control Panel.\n\n" +
+                       "DLDSR uses a Lanczos algorithm — less jaggies, more stable, but can look slightly painterly. Standard DSR uses a Gaussian filter — more natural but with more aliasing. DLDSR is generally sharper than DSR at equivalent settings.\n\n" +
+                       "Recommended factors: DLDSR 2.25x offers the best balance of quality and performance. DSR 4.00x uses significantly more VRAM. DLDSR 1.78x is the most VRAM-friendly option.",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "Initial Setup (One Time)",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "1. Open NVIDIA Control Panel → Manage 3D Settings → Global Settings\n" +
+                       "2. Find \"DSR - Factors\" and enable the DLDSR factors you want (e.g. 1.78x DL, 2.25x DL)\n" +
+                       "3. Click Apply and wait for the ~15 second display blackout\n" +
+                       "4. Come back here and click \"Capture Current\" to save this state\n" +
+                       "5. Repeat steps 2-4 for each DLDSR configuration you want to save (e.g. \"Off\", \"2.25x only\", \"1.78x + 2.25x\")",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "Daily Use",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "Select a saved state from the dropdown and click Apply. RHI writes the registry values directly and triggers a display reset (~15 seconds of blackout while the driver reinitializes).",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "DSR Smoothness",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "Controls the sharpening/smoothing applied during downscale. 100 = no sharpening (pure Lanczos downscale). Lower values add sharpening — the image gets progressively sharper as you reduce it.\n\n" +
+                       "Recommended DLDSR smoothness values (from r/MotionClarity):\n" +
+                       "  • 100 — No sharpening\n" +
+                       "  • 80 — Sharp without artifacts\n" +
+                       "  • 75 — Clear\n" +
+                       "  • 65 — Clearer\n" +
+                       "  • 55-65 — Similar clarity to DSR 4.00x at 0% (recommended range)\n" +
+                       "  • 45 — As sharp as DSR 4.00x everywhere\n\n" +
+                       "Note: DLDSR uses a Lanczos algorithm — it is naturally much sharper than standard DSR (Gaussian), so it requires higher smoothness values for a comparable look.\n\n" +
+                       "Changing smoothness causes the same ~15 second display blackout as applying a full state. Tip: set smoothness first, then click Apply — both will apply together in a single restart.",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            var scrollViewer = new ScrollViewer
+            {
+                Content = content,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                MaxHeight = 520,
+                Padding = new Thickness(0, 0, 16, 0),
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "DLDSR Control",
+                Content = scrollViewer,
+                CloseButtonText = "Got it",
+                XamlRoot = Content.XamlRoot,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DldsrInfoBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    private async void DldsrApplyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
+                return;
+
+            DldsrApplyBtn.IsEnabled = false;
+            DldsrApplyBtn.Content = "Applying...";
+
+            try
+            {
+                var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+                var success = await dldsrService.ApplyStateAsync(selectedLabel, smoothnessOverride: (int)DldsrSmoothnessSlider.Value);
+                if (success)
+                {
+                    _crashReporter.Log($"[DLDSR] Applied state '{selectedLabel}'");
+                    // Give the driver a moment to fully initialize and write registry values
+                    await Task.Delay(500);
+                    // Refresh the DLDSR current state
+                    _settingsHandler.RefreshDldsrCurrentState();
+                    // Also refresh the resolution dropdown in case DLDSR factors appeared
+                    if (ResolutionTargetCombo != null)
+                    {
+                        var resolutions = ResolutionToggleService.GetSupportedResolutions();
+                        ResolutionTargetCombo.ItemsSource = resolutions;
+                        var stored = ViewModel.Settings.ResolutionTarget;
+                        if (!string.IsNullOrEmpty(stored))
+                        {
+                            var match = resolutions.FirstOrDefault(r => r.Key == stored);
+                            if (match != null) ResolutionTargetCombo.SelectedItem = match;
+                        }
+                    }
+                }
+                else
+                {
+                    _crashReporter.Log($"[DLDSR] Failed to apply state '{selectedLabel}'");
+                    var dlg = new ContentDialog
+                    {
+                        Title = "DLDSR Apply Failed",
+                        Content = "Failed to apply DLDSR state. Check logs for details.",
+                        CloseButtonText = "OK",
+                        XamlRoot = Content.XamlRoot,
+                    };
+                    await DialogService.ShowSafeAsync(dlg);
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DLDSR] Exception applying state — {ex.Message}");
+                var dlg = new ContentDialog
+                {
+                    Title = "DLDSR Apply Failed",
+                    Content = ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(dlg);
+            }
+            finally
+            {
+                DldsrApplyBtn.IsEnabled = true;
+                DldsrApplyBtn.Content = "Apply";
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DldsrApplyBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    private async void DldsrCaptureBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Show input dialog to get a label for the capture
+            var inputBox = new TextBox
+            {
+                PlaceholderText = "e.g. DLDSR 2.25x + 1.78x",
+                FontSize = 12,
+                Width = 300,
+            };
+            var dialog = new ContentDialog
+            {
+                Title = "Capture DLDSR State",
+                Content = new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = "Enter a label for this DLDSR configuration.\nFirst enable the DLDSR factors you want in NVIDIA Control Panel, then capture here.",
+                            FontSize = 12,
+                            TextWrapping = TextWrapping.Wrap,
+                            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                        },
+                        inputBox,
+                    },
+                },
+                PrimaryButtonText = "Capture",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+            };
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            var label = inputBox.Text?.Trim();
+            if (string.IsNullOrEmpty(label))
+            {
+                var errDlg = new ContentDialog
+                {
+                    Title = "Invalid Label",
+                    Content = "Please enter a label for the capture.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(errDlg);
+                return;
+            }
+
+            try
+            {
+                var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+                dldsrService.CaptureCurrentState(label);
+                _crashReporter.Log($"[DLDSR] Captured state as '{label}'");
+                _settingsHandler.RefreshDldsrStateCombo();
+                _settingsHandler.RefreshDldsrCurrentState();
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DLDSR] Failed to capture state — {ex.Message}");
+                var errDlg = new ContentDialog
+                {
+                    Title = "DLDSR Capture Failed",
+                    Content = ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(errDlg);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DldsrCaptureBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    private async void DldsrDeleteBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
+                return;
+
+            var confirm = new ContentDialog
+            {
+                Title = "Delete DLDSR Capture",
+                Content = $"Delete the capture '{selectedLabel}'?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+            };
+
+            var result = await DialogService.ShowSafeAsync(confirm);
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+                dldsrService.DeleteCapture(selectedLabel);
+                _crashReporter.Log($"[DLDSR] Deleted capture '{selectedLabel}'");
+                _settingsHandler.RefreshDldsrStateCombo();
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DLDSR] Failed to delete capture — {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DldsrDeleteBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    private void DldsrRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _settingsHandler.RefreshDldsrCurrentState();
+        _settingsHandler.RefreshDldsrStateCombo();
+    }
+
+    private async void DldsrSmoothnessApplyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var smoothness = (int)DldsrSmoothnessSlider.Value;
+
+            DldsrSmoothnessApplyBtn.IsEnabled = false;
+            DldsrSmoothnessApplyBtn.Content = "Setting...";
+
+            try
+            {
+                var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+                var success = await dldsrService.SetSmoothnessAsync(smoothness);
+                if (success)
+                {
+                    _crashReporter.Log($"[DLDSR] Set smoothness to {smoothness}%");
+                    // Give the driver a moment to fully initialize and write registry values
+                    await Task.Delay(500);
+                    // Refresh the DLDSR current state and smoothness display
+                    _settingsHandler.RefreshDldsrCurrentState();
+                }
+                else
+                {
+                    _crashReporter.Log($"[DLDSR] Failed to set smoothness to {smoothness}%");
+                    var dlg = new ContentDialog
+                    {
+                        Title = "Smoothness Apply Failed",
+                        Content = "Failed to set DSR smoothness. Check logs for details.",
+                        CloseButtonText = "OK",
+                        XamlRoot = Content.XamlRoot,
+                    };
+                    await DialogService.ShowSafeAsync(dlg);
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DLDSR] Exception setting smoothness — {ex.Message}");
+                var dlg = new ContentDialog
+                {
+                    Title = "Smoothness Apply Failed",
+                    Content = ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(dlg);
+            }
+            finally
+            {
+                DldsrSmoothnessApplyBtn.IsEnabled = true;
+                DldsrSmoothnessApplyBtn.Content = "Set";
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DldsrSmoothnessApplyBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
@@ -1584,7 +2071,7 @@ public sealed partial class MainWindow
                     if (mon.MaxLuminanceInNits > maxNitsFound)
                         maxNitsFound = mon.MaxLuminanceInNits;
                 }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[MainWindow.PeakNitsAuto_Click] Failed to read monitor peak luminance — {ex.Message}"); }
             }
             var peakNits = (int)maxNitsFound;
             if (peakNits <= 0) return;
@@ -1618,76 +2105,83 @@ public sealed partial class MainWindow
 
     private async void PeakNitsCog_Click(object sender, RoutedEventArgs e)
     {
-        var settings = ViewModel.Settings;
-        var content = new StackPanel { Spacing = 12 };
-
-        // Enable/Disable toggle
-        var enablePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        enablePanel.Children.Add(new TextBlock
+        try
         {
-            Text = "Auto-apply peak nits on deploy",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        var enableCombo = new ComboBox { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
-        enableCombo.Items.Add("Off");
-        enableCombo.Items.Add("On");
-        enableCombo.SelectedIndex = settings.PeakNitsEnabled ? 1 : 0;
-        enablePanel.Children.Add(enableCombo);
-        content.Children.Add(enablePanel);
+            var settings = ViewModel.Settings;
+            var content = new StackPanel { Spacing = 12 };
 
-        // Preset checkboxes
-        content.Children.Add(new TextBlock
+            // Enable/Disable toggle
+            var enablePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            enablePanel.Children.Add(new TextBlock
+            {
+                Text = "Auto-apply peak nits on deploy",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            var enableCombo = new ComboBox { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+            enableCombo.Items.Add("Off");
+            enableCombo.Items.Add("On");
+            enableCombo.SelectedIndex = settings.PeakNitsEnabled ? 1 : 0;
+            enablePanel.Children.Add(enableCombo);
+            content.Children.Add(enablePanel);
+
+            // Preset checkboxes
+            content.Children.Add(new TextBlock
+            {
+                Text = "Apply to presets:",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            var cb1 = new CheckBox { Content = "Preset 1", IsChecked = settings.PeakNitsPresets.Contains(1), FontSize = 12 };
+            var cb2 = new CheckBox { Content = "Preset 2", IsChecked = settings.PeakNitsPresets.Contains(2), FontSize = 12 };
+            var cb3 = new CheckBox { Content = "Preset 3", IsChecked = settings.PeakNitsPresets.Contains(3), FontSize = 12 };
+            content.Children.Add(cb1);
+            content.Children.Add(cb2);
+            content.Children.Add(cb3);
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "Unchecked presets keep their existing per-preset values.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+                TextWrapping = TextWrapping.Wrap,
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Peak Nits Settings",
+                Content = content,
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = (sender as FrameworkElement)?.XamlRoot ?? Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            // Persist settings
+            settings.PeakNitsEnabled = enableCombo.SelectedIndex == 1;
+            var presets = new HashSet<int>();
+            if (cb1.IsChecked == true) presets.Add(1);
+            if (cb2.IsChecked == true) presets.Add(2);
+            if (cb3.IsChecked == true) presets.Add(3);
+            settings.PeakNitsPresets = presets;
+
+            // Sync to static cache
+            AuxInstallService.GlobalPeakNitsEnabled = settings.PeakNitsEnabled;
+            AuxInstallService.GlobalPeakNitsPresets = settings.PeakNitsPresets;
+
+            ViewModel.SaveSettingsPublic();
+        }
+        catch (Exception ex)
         {
-            Text = "Apply to presets:",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
-
-        var cb1 = new CheckBox { Content = "Preset 1", IsChecked = settings.PeakNitsPresets.Contains(1), FontSize = 12 };
-        var cb2 = new CheckBox { Content = "Preset 2", IsChecked = settings.PeakNitsPresets.Contains(2), FontSize = 12 };
-        var cb3 = new CheckBox { Content = "Preset 3", IsChecked = settings.PeakNitsPresets.Contains(3), FontSize = 12 };
-        content.Children.Add(cb1);
-        content.Children.Add(cb2);
-        content.Children.Add(cb3);
-
-        content.Children.Add(new TextBlock
-        {
-            Text = "Unchecked presets keep their existing per-preset values.",
-            FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            TextWrapping = TextWrapping.Wrap,
-        });
-
-        var dialog = new ContentDialog
-        {
-            Title = "Peak Nits Settings",
-            Content = content,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = (sender as FrameworkElement)?.XamlRoot ?? Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        // Persist settings
-        settings.PeakNitsEnabled = enableCombo.SelectedIndex == 1;
-        var presets = new HashSet<int>();
-        if (cb1.IsChecked == true) presets.Add(1);
-        if (cb2.IsChecked == true) presets.Add(2);
-        if (cb3.IsChecked == true) presets.Add(3);
-        settings.PeakNitsPresets = presets;
-
-        // Sync to static cache
-        AuxInstallService.GlobalPeakNitsEnabled = settings.PeakNitsEnabled;
-        AuxInstallService.GlobalPeakNitsPresets = settings.PeakNitsPresets;
-
-        ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[MainWindow.PeakNitsCog_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -1696,6 +2190,13 @@ public sealed partial class MainWindow
     private void AboutButton_Click(object sender, RoutedEventArgs e)
     {
         AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        // Show installed Windows App Runtime version — scan WindowsApps for the installed runtime folder
+        try
+        {
+            var runtimeVersion = App.GetWindowsAppRuntimeVersion();
+            CrashReporter.Log($"[About] Runtime version: '{runtimeVersion}'");
+        }
+        catch (Exception ex) { CrashReporter.Log($"[MainWindow.AboutButton_Click] Failed to read Windows App Runtime version — {ex.Message}"); }
         ViewModel.NavigateToAboutCommand.Execute(null);
     }
 
@@ -1704,165 +2205,172 @@ public sealed partial class MainWindow
 
     private async void NewModsButton_Click(object sender, RoutedEventArgs e)
     {
-        var newWikiMods = ViewModel.NewWikiMods;
-        var newUltraPlusMods = ViewModel.NewUltraPlusMods;
-        var newLumaMods = ViewModel.NewLumaMods;
-        if (newWikiMods.Count == 0 && newUltraPlusMods.Count == 0 && newLumaMods.Count == 0) return;
-
-        var contentPanel = new StackPanel { Spacing = 16 };
-
-        // RenoDX section
-        if (newWikiMods.Count > 0)
+        try
         {
-            var wikiListPanel = new StackPanel { Spacing = 4 };
-            foreach (var modName in newWikiMods.Take(30))
+            var newWikiMods = ViewModel.NewWikiMods;
+            var newUltraPlusMods = ViewModel.NewUltraPlusMods;
+            var newLumaMods = ViewModel.NewLumaMods;
+            if (newWikiMods.Count == 0 && newUltraPlusMods.Count == 0 && newLumaMods.Count == 0) return;
+
+            var contentPanel = new StackPanel { Spacing = 16 };
+
+            // RenoDX section
+            if (newWikiMods.Count > 0)
             {
-                wikiListPanel.Children.Add(new TextBlock
+                var wikiListPanel = new StackPanel { Spacing = 4 };
+                foreach (var modName in newWikiMods.Take(30))
                 {
-                    Text = $"• {modName}",
-                    FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
-            }
-            if (newWikiMods.Count > 30)
-            {
-                wikiListPanel.Children.Add(new TextBlock
+                    wikiListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {modName}",
+                        FontSize = 12,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                    });
+                }
+                if (newWikiMods.Count > 30)
                 {
-                    Text = $"... and {newWikiMods.Count - 30} more",
-                    FontSize = 12,
-                    FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                    wikiListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"... and {newWikiMods.Count - 30} more",
+                        FontSize = 12,
+                        FontStyle = Windows.UI.Text.FontStyle.Italic,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                    });
+                }
+
+                var wikiSection = new StackPanel { Spacing = 8 };
+                wikiSection.Children.Add(new TextBlock
+                {
+                    Text = $"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
                 });
+                wikiSection.Children.Add(new ScrollViewer
+                {
+                    Content = wikiListPanel,
+                    MaxHeight = newUltraPlusMods.Count > 0 ? 150 : 300,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                });
+                contentPanel.Children.Add(wikiSection);
             }
 
-            var wikiSection = new StackPanel { Spacing = 8 };
-            wikiSection.Children.Add(new TextBlock
+            // Ultra+ section
+            if (newUltraPlusMods.Count > 0)
             {
-                Text = $"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-            });
-            wikiSection.Children.Add(new ScrollViewer
+                var ultraPlusListPanel = new StackPanel { Spacing = 4 };
+                foreach (var modName in newUltraPlusMods.Take(30))
+                {
+                    ultraPlusListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {modName}",
+                        FontSize = 12,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                    });
+                }
+                if (newUltraPlusMods.Count > 30)
+                {
+                    ultraPlusListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"... and {newUltraPlusMods.Count - 30} more",
+                        FontSize = 12,
+                        FontStyle = Windows.UI.Text.FontStyle.Italic,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                    });
+                }
+
+                var ultraPlusSection = new StackPanel { Spacing = 8 };
+                
+                // Header with U+ icon
+                var ultraPlusHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                ultraPlusHeader.Children.Add(new Image
+                {
+                    Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/Ultra+.png")),
+                    Width = 16,
+                    Height = 16,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                ultraPlusHeader.Children.Add(new TextBlock
+                {
+                    Text = $"{newUltraPlusMods.Count} new Ultra+ mod{(newUltraPlusMods.Count == 1 ? "" : "s")}:",
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                ultraPlusSection.Children.Add(ultraPlusHeader);
+                ultraPlusSection.Children.Add(new ScrollViewer
+                {
+                    Content = ultraPlusListPanel,
+                    MaxHeight = (newWikiMods.Count > 0 || newLumaMods.Count > 0) ? 150 : 300,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                });
+                contentPanel.Children.Add(ultraPlusSection);
+            }
+
+            // Luma section
+            if (newLumaMods.Count > 0)
             {
-                Content = wikiListPanel,
-                MaxHeight = newUltraPlusMods.Count > 0 ? 150 : 300,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            });
-            contentPanel.Children.Add(wikiSection);
+                var lumaListPanel = new StackPanel { Spacing = 4 };
+                foreach (var modName in newLumaMods.Take(30))
+                {
+                    lumaListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {modName}",
+                        FontSize = 12,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                    });
+                }
+                if (newLumaMods.Count > 30)
+                {
+                    lumaListPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"... and {newLumaMods.Count - 30} more",
+                        FontSize = 12,
+                        FontStyle = Windows.UI.Text.FontStyle.Italic,
+                        Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                    });
+                }
+
+                var lumaSection = new StackPanel { Spacing = 8 };
+                lumaSection.Children.Add(new TextBlock
+                {
+                    Text = $"🌙 {newLumaMods.Count} new Luma mod{(newLumaMods.Count == 1 ? "" : "s")}:",
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
+                });
+                lumaSection.Children.Add(new ScrollViewer
+                {
+                    Content = lumaListPanel,
+                    MaxHeight = (newWikiMods.Count > 0 || newUltraPlusMods.Count > 0) ? 150 : 300,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                });
+                contentPanel.Children.Add(lumaSection);
+            }
+
+            var totalCount = newWikiMods.Count + newUltraPlusMods.Count + newLumaMods.Count;
+            var dialog = new ContentDialog
+            {
+                Title = "New Mods Available",
+                Content = contentPanel,
+                PrimaryButtonText = "Dismiss",
+                CloseButtonText = "Close",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+
+            // "Dismiss" marks as seen and hides button; "Close" just closes (button stays visible)
+            if (result == ContentDialogResult.Primary)
+            {
+                ViewModel.DismissAllNewMods();
+            }
         }
-
-        // Ultra+ section
-        if (newUltraPlusMods.Count > 0)
+        catch (Exception ex)
         {
-            var ultraPlusListPanel = new StackPanel { Spacing = 4 };
-            foreach (var modName in newUltraPlusMods.Take(30))
-            {
-                ultraPlusListPanel.Children.Add(new TextBlock
-                {
-                    Text = $"• {modName}",
-                    FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
-            }
-            if (newUltraPlusMods.Count > 30)
-            {
-                ultraPlusListPanel.Children.Add(new TextBlock
-                {
-                    Text = $"... and {newUltraPlusMods.Count - 30} more",
-                    FontSize = 12,
-                    FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
-                });
-            }
-
-            var ultraPlusSection = new StackPanel { Spacing = 8 };
-            
-            // Header with U+ icon
-            var ultraPlusHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            ultraPlusHeader.Children.Add(new Image
-            {
-                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/Ultra+.png")),
-                Width = 16,
-                Height = 16,
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-            ultraPlusHeader.Children.Add(new TextBlock
-            {
-                Text = $"{newUltraPlusMods.Count} new Ultra+ mod{(newUltraPlusMods.Count == 1 ? "" : "s")}:",
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-            ultraPlusSection.Children.Add(ultraPlusHeader);
-            ultraPlusSection.Children.Add(new ScrollViewer
-            {
-                Content = ultraPlusListPanel,
-                MaxHeight = (newWikiMods.Count > 0 || newLumaMods.Count > 0) ? 150 : 300,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            });
-            contentPanel.Children.Add(ultraPlusSection);
-        }
-
-        // Luma section
-        if (newLumaMods.Count > 0)
-        {
-            var lumaListPanel = new StackPanel { Spacing = 4 };
-            foreach (var modName in newLumaMods.Take(30))
-            {
-                lumaListPanel.Children.Add(new TextBlock
-                {
-                    Text = $"• {modName}",
-                    FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
-            }
-            if (newLumaMods.Count > 30)
-            {
-                lumaListPanel.Children.Add(new TextBlock
-                {
-                    Text = $"... and {newLumaMods.Count - 30} more",
-                    FontSize = 12,
-                    FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
-                });
-            }
-
-            var lumaSection = new StackPanel { Spacing = 8 };
-            lumaSection.Children.Add(new TextBlock
-            {
-                Text = $"🌙 {newLumaMods.Count} new Luma mod{(newLumaMods.Count == 1 ? "" : "s")}:",
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-            });
-            lumaSection.Children.Add(new ScrollViewer
-            {
-                Content = lumaListPanel,
-                MaxHeight = (newWikiMods.Count > 0 || newUltraPlusMods.Count > 0) ? 150 : 300,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            });
-            contentPanel.Children.Add(lumaSection);
-        }
-
-        var totalCount = newWikiMods.Count + newUltraPlusMods.Count + newLumaMods.Count;
-        var dialog = new ContentDialog
-        {
-            Title = "New Mods Available",
-            Content = contentPanel,
-            PrimaryButtonText = "Dismiss",
-            CloseButtonText = "Close",
-            XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-
-        // "Dismiss" marks as seen and hides button; "Close" just closes (button stays visible)
-        if (result == ContentDialogResult.Primary)
-        {
-            ViewModel.DismissAllNewMods();
+            CrashReporter.Log($"[MainWindow.NewModsButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -1879,191 +2387,200 @@ public sealed partial class MainWindow
 
     private async void HdrModsListBtn_Click(object sender, RoutedEventArgs e)
     {
-        var allEntries = ViewModel.GetAllHdrMods();
-
-        // ── Search box ────────────────────────────────────────────────────────
-        var searchBox = new TextBox
+        try
         {
-            PlaceholderText = "Search games…",
-            FontSize        = 13,
-            Margin          = new Thickness(0, 0, 0, 10),
-        };
+            var allEntries = ViewModel.GetAllHdrMods();
 
-        // ── Column header row ─────────────────────────────────────────────────
-        var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4), Width = 500 };
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-
-        void AddHeader(string text, int col)
-        {
-            var tb = new TextBlock
+            // ── Search box ────────────────────────────────────────────────────────
+            var searchBox = new TextBox
             {
-                Text                = text,
-                FontSize            = 11,
-                FontWeight          = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
+                PlaceholderText = "Search games…",
+                FontSize        = 13,
+                Margin          = new Thickness(0, 0, 0, 10),
             };
-            Grid.SetColumn(tb, col);
-            headerGrid.Children.Add(tb);
-        }
-        AddHeader("Game",     0);
-        AddHeader("RenoDX",   1);
-        AddHeader("Luma",     2);
-        AddHeader("Download", 3);
 
-        // ── Virtualised ListView — only renders visible rows ──────────────────
-        var listView = new ListView
-        {
-            SelectionMode        = ListViewSelectionMode.None,
-            IsItemClickEnabled   = false,
-            ItemContainerStyle   = null,
-            Height               = 480,
-            Width                = 500,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-        };
+            // ── Column header row ─────────────────────────────────────────────────
+            var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4), Width = 500 };
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
 
-        // Remove default item container padding/hover highlight
-        listView.ItemContainerStyle = BuildFlatItemStyle();
-
-        Grid MakeRowGrid(RenoDXCommander.Models.HdrModEntry entry)
-        {
-            var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(0, 2, 0, 2) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-
-            var nameBlock = new TextBlock
+            void AddHeader(string text, int col)
             {
-                Text              = entry.Name,
-                FontSize          = 12,
-                Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming      = TextTrimming.CharacterEllipsis,
-            };
-            Grid.SetColumn(nameBlock, 0);
-            row.Children.Add(nameBlock);
-
-            var rdxTick = new TextBlock
-            {
-                Text                = entry.RenoDXStatus == "Done" ? "✓" : entry.RenoDXStatus == "WIP" ? "🔨" : "✗",
-                FontSize            = 13,
-                Foreground          = entry.RenoDXStatus == "Done" ? UIFactory.GetBrush("#5ECB7D")
-                                    : entry.RenoDXStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
-                                    : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(rdxTick, 1);
-            row.Children.Add(rdxTick);
-
-            var lumaTick = new TextBlock
-            {
-                Text                = entry.LumaStatus == "Done" ? "✓" : entry.LumaStatus == "WIP" ? "🔨" : "✗",
-                FontSize            = 13,
-                Foreground          = entry.LumaStatus == "Done" ? UIFactory.GetBrush("#B898E8")
-                                    : entry.LumaStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
-                                    : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(lumaTick, 2);
-            row.Children.Add(lumaTick);
-
-            var url = entry.RenoDXUrl ?? entry.LumaUrl;
-            if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var parsedUri))
-            {
-                var linkBtn = new HyperlinkButton
+                var tb = new TextBlock
                 {
-                    Content             = "Link",
-                    NavigateUri         = parsedUri,
+                    Text                = text,
                     FontSize            = 11,
-                    Padding             = new Thickness(0),
+                    FontWeight          = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground          = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(tb, col);
+                headerGrid.Children.Add(tb);
+            }
+            AddHeader("Game",     0);
+            AddHeader("RenoDX",   1);
+            AddHeader("Luma",     2);
+            AddHeader("Download", 3);
+
+            // ── Virtualised ListView — only renders visible rows ──────────────────
+            var listView = new ListView
+            {
+                SelectionMode        = ListViewSelectionMode.None,
+                IsItemClickEnabled   = false,
+                ItemContainerStyle   = null,
+                Height               = 480,
+                Width                = 500,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            };
+
+            // Remove default item container padding/hover highlight
+            listView.ItemContainerStyle = BuildFlatItemStyle();
+
+            Grid MakeRowGrid(RenoDXCommander.Models.HdrModEntry entry)
+            {
+                var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(0, 2, 0, 2) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+
+                var nameBlock = new TextBlock
+                {
+                    Text              = entry.Name,
+                    FontSize          = 12,
+                    Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming      = TextTrimming.CharacterEllipsis,
+                };
+                Grid.SetColumn(nameBlock, 0);
+                row.Children.Add(nameBlock);
+
+                var rdxTick = new TextBlock
+                {
+                    Text                = entry.RenoDXStatus == "Done" ? "✓" : entry.RenoDXStatus == "WIP" ? "🔨" : "✗",
+                    FontSize            = 13,
+                    Foreground          = entry.RenoDXStatus == "Done" ? UIFactory.GetBrush("#5ECB7D")
+                                        : entry.RenoDXStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                                        : UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment   = VerticalAlignment.Center,
                 };
-                Grid.SetColumn(linkBtn, 3);
-                row.Children.Add(linkBtn);
-            }
-            else
-            {
-                var noLink = new TextBlock
+                Grid.SetColumn(rdxTick, 1);
+                row.Children.Add(rdxTick);
+
+                var lumaTick = new TextBlock
                 {
-                    Text                = "—",
-                    FontSize            = 11,
-                    Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    Text                = entry.LumaStatus == "Done" ? "✓" : entry.LumaStatus == "WIP" ? "🔨" : "✗",
+                    FontSize            = 13,
+                    Foreground          = entry.LumaStatus == "Done" ? UIFactory.GetBrush("#B898E8")
+                                        : entry.LumaStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                                        : UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment   = VerticalAlignment.Center,
                 };
-                Grid.SetColumn(noLink, 3);
-                row.Children.Add(noLink);
+                Grid.SetColumn(lumaTick, 2);
+                row.Children.Add(lumaTick);
+
+                var url = entry.RenoDXUrl ?? entry.LumaUrl;
+                if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var parsedUri))
+                {
+                    var linkBtn = new HyperlinkButton
+                    {
+                        Content             = "Link",
+                        NavigateUri         = parsedUri,
+                        FontSize            = 11,
+                        Padding             = new Thickness(0),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment   = VerticalAlignment.Center,
+                    };
+                    Grid.SetColumn(linkBtn, 3);
+                    row.Children.Add(linkBtn);
+                }
+                else
+                {
+                    var noLink = new TextBlock
+                    {
+                        Text                = "—",
+                        FontSize            = 11,
+                        Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment   = VerticalAlignment.Center,
+                    };
+                    Grid.SetColumn(noLink, 3);
+                    row.Children.Add(noLink);
+                }
+
+                return row;
             }
 
-            return row;
-        }
+            // ListView with virtualisation — DataTemplate is a plain border so WinUI doesn't
+            // render the record's ToString(). ContainerContentChanging then populates the real grid.
+            listView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+                "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Border/></DataTemplate>");
 
-        // ListView with virtualisation — DataTemplate is a plain border so WinUI doesn't
-        // render the record's ToString(). ContainerContentChanging then populates the real grid.
-        listView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
-            "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Border/></DataTemplate>");
-
-        listView.ContainerContentChanging += (lv, args) =>
-        {
-            if (args.Phase == 0 && args.Item is RenoDXCommander.Models.HdrModEntry entry)
+            listView.ContainerContentChanging += (lv, args) =>
             {
-                if (args.ItemContainer.ContentTemplateRoot is Border border)
-                    border.Child = MakeRowGrid(entry);
+                if (args.Phase == 0 && args.Item is RenoDXCommander.Models.HdrModEntry entry)
+                {
+                    if (args.ItemContainer.ContentTemplateRoot is Border border)
+                        border.Child = MakeRowGrid(entry);
+                }
+            };
+
+            void ApplyFilter(string filter)
+            {
+                var filtered = string.IsNullOrWhiteSpace(filter)
+                    ? allEntries
+                    : allEntries.Where(e => e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+                listView.ItemsSource = filtered;
             }
-        };
 
-        void ApplyFilter(string filter)
-        {
-            var filtered = string.IsNullOrWhiteSpace(filter)
-                ? allEntries
-                : allEntries.Where(e => e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
-            listView.ItemsSource = filtered;
+            // Initial populate
+            ApplyFilter("");
+
+            searchBox.TextChanged += (s, _) => ApplyFilter(searchBox.Text);
+
+            // ── Assemble dialog content ───────────────────────────────────────────
+            var countLabel = new TextBlock
+            {
+                Text       = $"{allEntries.Count} games with HDR mods",
+                FontSize   = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Margin     = new Thickness(0, 0, 0, 10),
+            };
+
+            var content = new StackPanel { Spacing = 0, MinWidth = 480, MaxWidth = 520 };
+            content.Children.Add(countLabel);
+            content.Children.Add(searchBox);
+            content.Children.Add(headerGrid);
+            content.Children.Add(new Border
+            {
+                Height     = 1,
+                Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                Margin     = new Thickness(0, 0, 0, 6),
+            });
+            content.Children.Add(listView);
+
+            var dlg = new ContentDialog
+            {
+                Title           = "Available HDR Mods",
+                Content         = content,
+                CloseButtonText = "Close",
+                XamlRoot        = Content.XamlRoot,
+                RequestedTheme  = ElementTheme.Dark,
+                DefaultButton   = ContentDialogButton.Close,
+                
+            };
+
+            await DialogService.ShowSafeAsync(dlg);
         }
-
-        // Initial populate
-        ApplyFilter("");
-
-        searchBox.TextChanged += (s, _) => ApplyFilter(searchBox.Text);
-
-        // ── Assemble dialog content ───────────────────────────────────────────
-        var countLabel = new TextBlock
+        catch (Exception ex)
         {
-            Text       = $"{allEntries.Count} games with HDR mods",
-            FontSize   = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            Margin     = new Thickness(0, 0, 0, 10),
-        };
-
-        var content = new StackPanel { Spacing = 0, MinWidth = 480, MaxWidth = 520 };
-        content.Children.Add(countLabel);
-        content.Children.Add(searchBox);
-        content.Children.Add(headerGrid);
-        content.Children.Add(new Border
-        {
-            Height     = 1,
-            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            Margin     = new Thickness(0, 0, 0, 6),
-        });
-        content.Children.Add(listView);
-
-        var dlg = new ContentDialog
-        {
-            Title           = "Available HDR Mods",
-            Content         = content,
-            CloseButtonText = "Close",
-            XamlRoot        = Content.XamlRoot,
-            DefaultButton   = ContentDialogButton.Close,
-        };
-
-        await DialogService.ShowSafeAsync(dlg);
+            CrashReporter.Log($"[MainWindow.HdrModsListBtn_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private static Style BuildFlatItemStyle()

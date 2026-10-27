@@ -15,7 +15,6 @@ public static class ResolutionToggleService
 
     private const int ENUM_CURRENT_SETTINGS = -1;
     private const int CDS_UPDATEREGISTRY = 0x00000001;
-    private const int CDS_TEST = 0x00000002;
     private const int DISP_CHANGE_SUCCESSFUL = 0;
     private const int DM_PELSWIDTH = 0x00080000;
     private const int DM_PELSHEIGHT = 0x00100000;

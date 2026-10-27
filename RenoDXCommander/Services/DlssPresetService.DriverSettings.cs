@@ -72,13 +72,6 @@ public partial class DlssPresetService
         ("Maximum Performance", 0x00000001),
     ];
 
-    public static readonly (string Name, uint Value)[] CpuExprModeOptions =
-    [
-        ("Mode 0 (Default)", 0x00000000),
-        ("Mode 1", 0x00000001),
-        ("Mode 4", 0x00000004),
-    ];
-
     // ── Latency option arrays ─────────────────────────────────────────────────
 
     /// <summary>Combined Low Latency Mode options matching NVIDIA App behavior.</summary>
@@ -113,13 +106,6 @@ public partial class DlssPresetService
     [
         ("Off [Latency]", 0x00000000),
         ("On [Pacing]", 0xFFFFFFFF),
-    ];
-
-    public static readonly (string Name, uint Value)[] SmoothMotionFlipPacingWinOptions =
-    [
-        ("Off [Latency]", 0x00000000),
-        ("On [Pacing]", 0x00000001),
-        ("Force On [Pacing]", 0xFFFFFFFF),
     ];
 
     // ── Shader Cache option arrays ────────────────────────────────────────────
@@ -283,7 +269,7 @@ public partial class DlssPresetService
                         return true;
                 }
             }
-            catch { }
+            catch (Exception ex2) { CrashReporter.Log($"[DlssPresetService.SetGlobalVSyncMode] Raw NvAPI fallback failed — {ex2.Message}"); }
             CrashReporter.Log($"[DlssPresetService.SetGlobalVSyncMode] Error — {ex.Message}");
             return false;
         }
@@ -331,7 +317,7 @@ public partial class DlssPresetService
                         return true;
                 }
             }
-            catch { }
+            catch (Exception ex2) { CrashReporter.Log($"[DlssPresetService.SetGlobalPowerMode] Raw NvAPI fallback failed — {ex2.Message}"); }
             CrashReporter.Log($"[DlssPresetService.SetGlobalPowerMode] Error — {ex.Message}");
             return false;
         }
@@ -381,12 +367,6 @@ public partial class DlssPresetService
         return SetPreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID, value);
     }
 
-    public uint GetCpuExprMode(string gameName, string installPath)
-        => GetPreset(gameName, installPath, CPU_EXPR_MODES_ID);
-
-    public bool SetCpuExprMode(string gameName, string installPath, uint value)
-        => SetPreset(gameName, installPath, CPU_EXPR_MODES_ID, value);
-
     // ── Latency get/set ───────────────────────────────────────────────────────
 
     /// <summary>Gets the Low Latency Mode state by reading ULL Mode (0=Off, 1=On, 2=Ultra).</summary>
@@ -433,7 +413,7 @@ public partial class DlssPresetService
         try
         {
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_latency_set.ps1");
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+            var nvApiPath = AppPaths.InExeDir("NvAPIWrapper.dll");
 
             // Use raw NVAPI P/Invoke from PowerShell — NvAPIWrapper can't write these settings
             var script = $@"
@@ -552,10 +532,10 @@ $destroyDel.Invoke($hSession) | Out-Null
             {
                 var output = File.ReadAllText(logPath).Trim();
                 CrashReporter.Log($"[DlssPresetService.SetLowLatencyElevated] Script output: {output}");
-                try { File.Delete(logPath); } catch { }
+                try { File.Delete(logPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
             }
 
-            try { File.Delete(scriptPath); } catch { }
+            try { File.Delete(scriptPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
 
             // Reload session to reflect changes
             _session = DriverSettingsSession.CreateAndLoad();
@@ -593,9 +573,6 @@ $destroyDel.Invoke($hSession) | Out-Null
 
     public bool SetSmoothMotionFlipPacingFs(string gameName, string installPath, uint value)
         => SetPreset(gameName, installPath, SMOOTH_MOTION_FLIP_PACING_FS_ID, value);
-
-    public uint GetSmoothMotionFlipPacingWin(string gameName, string installPath)
-        => GetPreset(gameName, installPath, SMOOTH_MOTION_FLIP_PACING_WIN_ID);
 
     public bool SetSmoothMotionFlipPacingWin(string gameName, string installPath, uint value)
         => SetPreset(gameName, installPath, SMOOTH_MOTION_FLIP_PACING_WIN_ID, value);
@@ -759,7 +736,7 @@ $destroyDel.Invoke($hSession) | Out-Null
                 if (rawVal.HasValue) return rawVal.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalGSyncEnabled] Read failed, using default — {ex.Message}"); }
         return 0x00000001;
     }
 
@@ -813,7 +790,7 @@ $destroyDel.Invoke($hSession) | Out-Null
                 if (rawVal.HasValue) return rawVal.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalFpsLimit] Read failed, using default — {ex.Message}"); }
         return 0;
     }
 
@@ -860,7 +837,7 @@ $destroyDel.Invoke($hSession) | Out-Null
                 if (rawVal.HasValue) return rawVal.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalDmfgFrameCount] Read failed, using default — {ex.Message}"); }
         return 0;
     }
 
@@ -904,7 +881,7 @@ $destroyDel.Invoke($hSession) | Out-Null
                 if (rawVal.HasValue) return rawVal.Value;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalDmfgTargetFps] Read failed, using default — {ex.Message}"); }
         return 0;
     }
 
@@ -990,7 +967,7 @@ $destroyDel.Invoke($hSession) | Out-Null
                 if (rawVal.HasValue) return rawVal.Value == 0x01;
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.GetGlobalGSyncIndicator] Read failed, using default — {ex.Message}"); }
         return false;
     }
 
@@ -1065,26 +1042,6 @@ $destroyDel.Invoke($hSession) | Out-Null
 
     // ── Global ReBAR ──────────────────────────────────────────────────────────
 
-    /// <summary>Gets the global ReBAR enable state from the base profile. Returns null if not set.</summary>
-    public bool? GetGlobalReBarEnabled()
-    {
-        if (!_isSupported || _session == null) return null;
-        try
-        {
-            var baseProfile = _session.BaseProfile;
-            var sessionHandle = GetHandlePtr(_session.Handle);
-            var profileHandle = GetHandlePtr(baseProfile.Handle);
-            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
-            {
-                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, REBAR_FEATURE_ID);
-                if (rawVal.HasValue)
-                    return rawVal.Value != 0;
-            }
-            return null;
-        }
-        catch { return null; }
-    }
-
     /// <summary>Sets global ReBAR enable on the base profile.</summary>
     public bool SetGlobalReBarEnabled(bool enabled)
     {
@@ -1095,7 +1052,7 @@ $destroyDel.Invoke($hSession) | Out-Null
 
             // ReBAR Feature requires elevation — use elevated helper
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_global_rebar_enable.ps1");
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+            var nvApiPath = AppPaths.InExeDir("NvAPIWrapper.dll");
 
             string scriptBody;
             if (enabled)
@@ -1136,7 +1093,7 @@ $session.Save()
             var process = System.Diagnostics.Process.Start(psi);
             if (process == null) return false;
             process.WaitForExit(10000);
-            try { File.Delete(scriptPath); } catch { }
+            try { File.Delete(scriptPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
 
             if (enabled)
             {
@@ -1155,7 +1112,7 @@ $session.Save()
                     _cachedProfiles.TryAdd(p.Name, p);
                 InvalidateProfileLookupCache();
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnabled] Driver session reload failed — {ex.Message}"); }
 
             CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnabled] Set to {enabled}");
             return true;
@@ -1228,7 +1185,6 @@ $session.Save()
 
     // ── RTX HDR settings ──────────────────────────────────────────────────────
 
-    private const uint RTX_HDR_ALLOW_ID = 0x1077A11A;            // Disallow=0x00, Allow=0x01
     private const uint RTX_HDR_ENABLE_ID = 0x00DD48FB;           // Off=0x00, On=0x01
     private const uint RTX_HDR_CONTRAST_ID = 0x00DD48FE;         // stored = 100 + display (-100 to +100)
     private const uint RTX_HDR_SATURATION_ID = 0x00DD48FF;       // stored = 100 + display (-100 to +100)
@@ -1260,7 +1216,6 @@ $session.Save()
 
     // ── RTX HDR get/set ───────────────────────────────────────────────────────
 
-    public uint GetRtxHdrAllow(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_ALLOW_ID);
     public uint GetRtxHdrEnable(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_ENABLE_ID);
     public uint GetRtxHdrContrast(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_CONTRAST_ID);
     public uint GetRtxHdrSaturation(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_SATURATION_ID);
@@ -1274,6 +1229,11 @@ $session.Save()
     private bool SetRtxHdrRaw(string gameName, string installPath, uint settingId, uint value)
     {
         if (!_isSupported || _session == null) return false;
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.SetRtxHdrRaw] Lock timeout for '{gameName}' — NVAPI may be hung. Skipping.");
+            return false;
+        }
         try
         {
             var profile = FindProfile(gameName, installPath);
@@ -1304,9 +1264,12 @@ $session.Save()
             CrashReporter.Log($"[DlssPresetService.SetRtxHdrRaw] Error for '{gameName}' — {ex.Message}");
             return false;
         }
+        finally
+        {
+            _sessionLock.Release();
+        }
     }
 
-    public bool SetRtxHdrAllow(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_ALLOW_ID, value);
     public bool SetRtxHdrEnable(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_ENABLE_ID, value);
     public bool SetRtxHdrContrast(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_CONTRAST_ID, value);
     public bool SetRtxHdrSaturation(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_SATURATION_ID, value);
@@ -1334,29 +1297,41 @@ $session.Save()
         {
             var fetchTask = Task.Run(() =>
             {
-                CrashReporter.Log("[DlssPresetService.FetchNvApiSettingsAsync] Starting NVAPI reads on background thread");
-                var sw = Stopwatch.StartNew();
-
-                var snapshot = new NvApiSettingsSnapshot
+                if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
                 {
-                    ShaderCacheSize = GetShaderCacheSize(),
-                    ShaderPrecompile = GetShaderPrecompile(),
-                    GSyncMode = GetGSyncMode(),
-                    GSyncEnabled = GetGlobalGSyncEnabled(),
-                    GSyncIndicator = GetGSyncIndicator(),
-                    FpsLimit = GetGlobalFpsLimit(),
-                    PreferredRefreshRate = GetPreferredRefreshRate(),
-                    DmfgFrameCount = GetGlobalDmfgFrameCount(),
-                    DmfgTargetFps = GetGlobalDmfgTargetFps(),
-                    ReBarEnableMode = GetGlobalReBarEnableMode(),
-                    ReBarSizeLimit = GetGlobalReBarSizeLimit(),
-                    VSyncMode = GetGlobalVSyncMode(),
-                    PowerMode = GetGlobalPowerMode()
-                };
+                    CrashReporter.Log("[DlssPresetService.FetchNvApiSettingsAsync] Lock timeout — NVAPI may be hung.");
+                    return NvApiSettingsSnapshot.Default;
+                }
+                try
+                {
+                    CrashReporter.Log("[DlssPresetService.FetchNvApiSettingsAsync] Starting NVAPI reads on background thread");
+                    var sw = Stopwatch.StartNew();
 
-                sw.Stop();
-                CrashReporter.Log($"[DlssPresetService.FetchNvApiSettingsAsync] NVAPI reads completed in {sw.ElapsedMilliseconds}ms");
-                return snapshot;
+                    var snapshot = new NvApiSettingsSnapshot
+                    {
+                        ShaderCacheSize = GetShaderCacheSize(),
+                        ShaderPrecompile = GetShaderPrecompile(),
+                        GSyncMode = GetGSyncMode(),
+                        GSyncEnabled = GetGlobalGSyncEnabled(),
+                        GSyncIndicator = GetGSyncIndicator(),
+                        FpsLimit = GetGlobalFpsLimit(),
+                        PreferredRefreshRate = GetPreferredRefreshRate(),
+                        DmfgFrameCount = GetGlobalDmfgFrameCount(),
+                        DmfgTargetFps = GetGlobalDmfgTargetFps(),
+                        ReBarEnableMode = GetGlobalReBarEnableMode(),
+                        ReBarSizeLimit = GetGlobalReBarSizeLimit(),
+                        VSyncMode = GetGlobalVSyncMode(),
+                        PowerMode = GetGlobalPowerMode()
+                    };
+
+                    sw.Stop();
+                    CrashReporter.Log($"[DlssPresetService.FetchNvApiSettingsAsync] NVAPI reads completed in {sw.ElapsedMilliseconds}ms");
+                    return snapshot;
+                }
+                finally
+                {
+                    _sessionLock.Release();
+                }
             });
 
             var completedTask = await Task.WhenAny(fetchTask, Task.Delay(timeoutMs));

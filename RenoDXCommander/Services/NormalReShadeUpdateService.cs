@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RenoDXCommander.Services;
 
@@ -48,8 +49,12 @@ public class NormalReShadeUpdateService : INormalReShadeUpdateService
         try
         {
             CrashReporter.Log($"[NormalReShadeUpdateService.CheckLatestVersionAsync] Fetching {ReShadeMeUrl}...");
-            var html = await _http.GetStringAsync(ReShadeMeUrl);
-            CrashReporter.Log($"[NormalReShadeUpdateService.CheckLatestVersionAsync] Page fetched, {html.Length} chars");
+            // Use SendAsync so we can read the HTML body even when the server returns a 5xx
+            // error (reshade.me returns HTTP 500 due to a PHP template cache write failure
+            // even though the page itself renders correctly with the download links present).
+            using var response = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Get, ReShadeMeUrl));
+            var html = await response.Content.ReadAsStringAsync();
+            CrashReporter.Log($"[NormalReShadeUpdateService.CheckLatestVersionAsync] Page fetched (HTTP {(int)response.StatusCode}), {html.Length} chars");
 
             // Find all matches and pick the one that does NOT have _Addon suffix
             foreach (Match match in DownloadLinkRegex.Matches(html))
@@ -251,6 +256,13 @@ public class NormalReShadeUpdateService : INormalReShadeUpdateService
 
         progress?.Report(($"Normal ReShade {version} ready!", 100));
         CrashReporter.Log($"[NormalReShadeUpdateService.EnsureLatestAsync] Staged v{version} successfully");
+        App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
+        {
+            Timestamp     = DateTime.UtcNow,
+            Category      = "ReShade",
+            ComponentName = "ReShade (Standard)",
+            NewVersion    = version,
+        });
         return true;
     }
 }

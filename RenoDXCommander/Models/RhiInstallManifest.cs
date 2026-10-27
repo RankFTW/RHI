@@ -172,7 +172,7 @@ public class RhiInstallManifest
             if (manifest != null && manifest.Components.TryGetValue(component, out var rec))
                 return rec.Files.AsReadOnly();
         }
-        catch { }
+        catch (Exception) { /* unreadable rhi_install.txt = no record; called per game in update loops */ }
         return Array.Empty<string>();
     }
 

@@ -1,0 +1,28 @@
+name: Manifest check
+
+# Pushing manifest.json / dlss_manifest.json to main deploys them to every user.
+# This flags duplicate keys and case collisions that would make the app fall back
+# to a stale cached manifest. Run locally first: python tools/check-manifest.py
+
+on:
+  push:
+    paths:
+      - manifest.json
+      - dlss_manifest.json
+      - tools/check-manifest.py
+      - RenoDXCommander/Services/ManifestService.cs
+      - RenoDXCommander/Models/RemoteManifest.cs
+  pull_request:
+    paths:
+      - manifest.json
+      - dlss_manifest.json
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python tools/check-manifest.py

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RenoDXCommander.Services;
 
@@ -17,7 +18,7 @@ public class DgVoodooService
 {
     private const string D3D9Entry32 = "MS/x86/D3D9.dll";
     private const string D3D9Entry64 = "MS/x64/D3D9.dll";
-    private const string D3D9Dll     = "D3D9.dll";
+    private const string D3D9Dll     = "d3d9.dll";
     private const string ConfFile    = "dgVoodoo.conf";
 
     private static readonly string CacheDir = Path.Combine(
@@ -84,10 +85,18 @@ public class DgVoodooService
             if (File.Exists(zipPath)) File.Delete(zipPath);
             File.Move(tempPath, zipPath);
             CrashReporter.Log($"[DgVoodooService.EnsureStagedAsync] Downloaded dgVoodoo2 v{version} ({new FileInfo(zipPath).Length} bytes)");
+            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
+            {
+                Timestamp     = DateTime.UtcNow,
+                Category      = "dgVoodoo2",
+                ComponentName = "dgVoodoo2",
+                NewVersion    = version,
+                SizeBytes     = new FileInfo(zipPath).Length,
+            });
         }
         catch (Exception ex)
         {
-            if (File.Exists(tempPath)) try { File.Delete(tempPath); } catch { }
+            if (File.Exists(tempPath)) try { File.Delete(tempPath); } catch (Exception) { /* best-effort temp cleanup; the download failure is logged and rethrown below */ }
             CrashReporter.Log($"[DgVoodooService.EnsureStagedAsync] Download failed — {ex.Message}");
             throw;
         }
@@ -201,11 +210,14 @@ public class DgVoodooService
     }
 
     /// <summary>
-    /// Returns true if RHI has deployed dgVoodoo2 to this game folder
-    /// (detected by the presence of our sentinel marker D3D9.dll.original).
+    /// Returns true if RHI has deployed dgVoodoo2 to this game folder.
+    /// Checks for dgVoodoo.conf (always deployed by RHI alongside D3D9.dll)
+    /// as the primary indicator — more reliable than the sentinel which can be
+    /// removed by ReShade's foreign DLL restore step.
     /// </summary>
     public bool IsDeployed(string installPath)
-        => File.Exists(Path.Combine(installPath, D3D9Dll + ".original"));
+        => File.Exists(Path.Combine(installPath, ConfFile))
+        || File.Exists(Path.Combine(installPath, D3D9Dll + ".original"));
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

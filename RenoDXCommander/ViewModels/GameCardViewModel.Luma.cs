@@ -93,6 +93,9 @@ public partial class GameCardViewModel
         OnPropertyChanged(nameof(SidebarItemForeground));
         // Card grid
         OnPropertyChanged(nameof(CardPrimaryActionLabel));
+        // Author badge — may switch from RenoDX author to Luma author on install
+        OnPropertyChanged(nameof(AuthorList));
+        OnPropertyChanged(nameof(HasAuthors));
     }
 
     // ── Targeted notification: IsLumaInstalling changed ───────────────────────────

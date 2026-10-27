@@ -24,157 +24,185 @@ public class MassDeployHandler
 
     public async void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
     {
-        var eligible = _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-        var confirmDialog = new ContentDialog
+        try
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy ReShade.ini to {eligible.Count} game(s) with ReShade installed.\n\nCustom hotkey and screenshot path settings are preserved.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
-
-        int count = 0;
-        var screenshotPath = _window.BuildScreenshotSavePath(null); // base path
-        var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
-        var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
-        
-        await Task.Run(() =>
-        {
-            foreach (var card in eligible)
+            var eligible = _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+            var confirmDialog = new ContentDialog
             {
-                try
+                Title = "Confirm Mass Deployment",
+                Content = $"This will deploy ReShade.ini to {eligible.Count} game(s) with ReShade installed.\n\nCustom hotkey and screenshot path settings are preserved.\n\nContinue?",
+                PrimaryButtonText = "Deploy",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
+            int count = 0;
+            var screenshotPath = _window.BuildScreenshotSavePath(null); // base path
+            var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
+            var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
+        
+            await Task.Run(() =>
+            {
+                foreach (var card in eligible)
                 {
-                    var gameName = card.GameName;
-                    var installPath = card.InstallPath;
-                    var actualScreenshotPath = _window.BuildScreenshotSavePath(gameName);
-                    if (card.RequiresVulkanInstall)
-                        AuxInstallService.MergeRsVulkanIni(installPath, gameName, actualScreenshotPath, overlayHotkey, screenshotHotkey);
-                    else
-                        AuxInstallService.MergeRsIni(installPath, actualScreenshotPath, overlayHotkey, screenshotHotkey);
-                    count++;
+                    try
+                    {
+                        var gameName = card.GameName;
+                        var installPath = card.InstallPath;
+                        var actualScreenshotPath = _window.BuildScreenshotSavePath(gameName);
+                        if (card.RequiresVulkanInstall)
+                            AuxInstallService.MergeRsVulkanIni(installPath, gameName, actualScreenshotPath, overlayHotkey, screenshotHotkey);
+                        else
+                            AuxInstallService.MergeRsIni(installPath, actualScreenshotPath, overlayHotkey, screenshotHotkey);
+                        count++;
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-        CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
-        await ShowDeployResult("ReShade.ini", count);
+            });
+            CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
+            await ShowDeployResult("ReShade.ini", count);
+        }
+        catch (Exception unhandledEx)
+        {
+            CrashReporter.Log($"[MassDeployHandler.MassDeployRsIni_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
     }
 
     public async void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
     {
-        var eligible = _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-        var confirmDialog = new ContentDialog
+        try
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy relimiter.ini to {eligible.Count} game(s) with ReLimiter installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
-
-        int count = 0;
-        await Task.Run(() =>
-        {
-            foreach (var card in eligible)
+            var eligible = _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+            var confirmDialog = new ContentDialog
             {
-                try
+                Title = "Confirm Mass Deployment",
+                Content = $"This will deploy relimiter.ini to {eligible.Count} game(s) with ReLimiter installed.\n\nContinue?",
+                PrimaryButtonText = "Deploy",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
+            int count = 0;
+            await Task.Run(() =>
+            {
+                foreach (var card in eligible)
                 {
-                    AuxInstallService.CopyUlIni(card.InstallPath);
-                    count++;
+                    try
+                    {
+                        AuxInstallService.CopyUlIni(card.InstallPath);
+                        count++;
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-        CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
-        await ShowDeployResult("relimiter.ini", count);
+            });
+            CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
+            await ShowDeployResult("relimiter.ini", count);
+        }
+        catch (Exception unhandledEx)
+        {
+            CrashReporter.Log($"[MassDeployHandler.MassDeployUlIni_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
     }
 
     public async void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
     {
-        var eligible = _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-        var confirmDialog = new ContentDialog
+        try
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy DisplayCommander.ini to {eligible.Count} game(s) with Display Commander installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
-
-        int count = 0;
-        await Task.Run(() =>
-        {
-            foreach (var card in eligible)
+            var eligible = _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+            var confirmDialog = new ContentDialog
             {
-                try
+                Title = "Confirm Mass Deployment",
+                Content = $"This will deploy DisplayCommander.ini to {eligible.Count} game(s) with Display Commander installed.\n\nContinue?",
+                PrimaryButtonText = "Deploy",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
+            int count = 0;
+            await Task.Run(() =>
+            {
+                foreach (var card in eligible)
                 {
-                    AuxInstallService.CopyDcIni(card.InstallPath);
-                    count++;
+                    try
+                    {
+                        AuxInstallService.CopyDcIni(card.InstallPath);
+                        count++;
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-        CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
-        await ShowDeployResult("DisplayCommander.ini", count);
+            });
+            CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
+            await ShowDeployResult("DisplayCommander.ini", count);
+        }
+        catch (Exception unhandledEx)
+        {
+            CrashReporter.Log($"[MassDeployHandler.MassDeployDcIni_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
     }
 
     public async void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
     {
-        int count = 0;
-        var sourceIni = Services.OptiScalerService.OsIniPath;
-        if (!File.Exists(sourceIni))
+        try
         {
-            CrashReporter.Log("[MassDeployOsIni] No OptiScaler.ini found in INIs folder — aborting");
-            await ShowDeployResult("OptiScaler.ini", 0);
-            return;
-        }
-
-        var eligible = _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-        var confirmDialog = new ContentDialog
-        {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy OptiScaler.ini to {eligible.Count} game(s) with OptiScaler installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
-
-        var osHotkey = _window.ViewModel.Settings.OsHotkey;
-        await Task.Run(() =>
-        {
-            foreach (var card in eligible)
+            int count = 0;
+            var sourceIni = Services.OptiScalerService.OsIniPath;
+            if (!File.Exists(sourceIni))
             {
-                try
-                {
-                    _optiScalerService.CopyIniToGame(card, osHotkey);
-                    count++;
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
-                }
+                CrashReporter.Log("[MassDeployOsIni] No OptiScaler.ini found in INIs folder — aborting");
+                await ShowDeployResult("OptiScaler.ini", 0);
+                return;
             }
-        });
-        CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
-        await ShowDeployResult("OptiScaler.ini", count);
+
+            var eligible = _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Mass Deployment",
+                Content = $"This will deploy OptiScaler.ini to {eligible.Count} game(s) with OptiScaler installed.\n\nContinue?",
+                PrimaryButtonText = "Deploy",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
+            var osHotkey = _window.ViewModel.Settings.OsHotkey;
+            await Task.Run(() =>
+            {
+                foreach (var card in eligible)
+                {
+                    try
+                    {
+                        _optiScalerService.CopyIniToGame(card, osHotkey);
+                        count++;
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
+            });
+            CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
+            await ShowDeployResult("OptiScaler.ini", count);
+        }
+        catch (Exception unhandledEx)
+        {
+            CrashReporter.Log($"[MassDeployHandler.MassDeployOsIni_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
     }
 
     private async Task ShowDeployResult(string iniName, int count)

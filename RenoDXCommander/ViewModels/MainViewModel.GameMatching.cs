@@ -33,7 +33,7 @@ public partial class MainViewModel
                 _gameApiCache[key] = (primary, all);
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.LoadGameApiCache] Failed to load API cache — {ex.Message}"); }
     }
 
     internal static void SaveGameApiCache()
@@ -580,7 +580,7 @@ public partial class MainViewModel
                     return new HashSet<GraphicsApiType> { GraphicsApiType.DirectX12 };
             }
         }
-        catch { }
+        catch (Exception) { /* probe, runs per game each scan; inaccessible folder falls through to exe scan */ }
 
         // Scan all exes in the install directory
         ScanAllExesInDir(installPath, result);

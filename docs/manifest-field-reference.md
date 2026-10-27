@@ -136,9 +136,6 @@ Forces specific DLL proxy filenames (ReShade and/or DC) per game. Example: `{ "r
 - `GetManifestDllNames()` → exact → trademark-stripped → normalized lookup
 - `InstallReShadeAsync()`, `ApplyManifestDllRenames()` → use `.ReShade` filename
 
-### `optiScalerDllOverrides` — `Dict<string,string>`
-Per-game OptiScaler DLL filename override. **Declared in the model but not currently consumed in code** — reserved for future use.
-
 ### `gacSymlinkGames` — `Dict<string,string>`
 Routes XNA Framework games (e.g. Terraria) through a GAC symlink install instead of a normal DLL copy.
 - `GetGacSymlinkPath()` → checks this dict; if found, `InstallReShadeAsync` routes to `InstallReShadeGacAsync`

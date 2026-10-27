@@ -208,6 +208,16 @@ public static class ShaderProfileService
                 if (shaderPackService.IsPackCached(packId))
                     continue; // already have it
 
+                // packId comes from the imported file; it must be a plain folder name
+                if (string.IsNullOrWhiteSpace(packId)
+                    || packId != Path.GetFileName(packId)
+                    || packId is "." or ".."
+                    || packId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Skipping invalid pack id '{packId}'");
+                    continue;
+                }
+
                 var packShadersPrefix   = $"Shaders/{packId}/";
                 var packTexturesPrefix  = $"Textures/{packId}/";
 
@@ -233,7 +243,12 @@ public static class ShaderProfileService
                     if (destRoot == null || string.IsNullOrEmpty(relPath) || entry.Name == "")
                         continue;
 
-                    var destPath = Path.Combine(destRoot, relPath.Replace('/', Path.DirectorySeparatorChar));
+                    var destPath = FileHelper.SafeCombine(destRoot, relPath);
+                    if (destPath == null)
+                    {
+                        CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Skipping entry outside the pack folder: '{entry.FullName}'");
+                        continue;
+                    }
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
                     using var src  = entry.Open();
                     using var dest = File.Create(destPath);

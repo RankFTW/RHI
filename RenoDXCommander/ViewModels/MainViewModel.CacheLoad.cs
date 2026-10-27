@@ -52,7 +52,19 @@ public partial class MainViewModel
         }
 
         // Specific mod — wiki tooltip note (may be null/empty if no tooltip)
-        if (fallback == null) return effectiveMod.Notes ?? "";
+        // Also append any DB comment (game-specific notes from rhi-repo database).
+        if (fallback == null)
+        {
+            var dbComment = GetGenericNote(gameName, genericNotes);
+            if (!string.IsNullOrEmpty(dbComment))
+            {
+                var wikiNote = effectiveMod.Notes ?? "";
+                return string.IsNullOrEmpty(wikiNote)
+                    ? dbComment
+                    : wikiNote + "\n\n" + dbComment;
+            }
+            return effectiveMod.Notes ?? "";
+        }
 
         var notesParts = new List<string>();
 
@@ -354,7 +366,7 @@ public partial class MainViewModel
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
             _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName,
             dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot, dlssPathsCache,
-            rsVersions, rdxVersions);
+            rsVersions, rdxVersions, _engineFolderStamps);
     }
 
     /// <summary>
@@ -383,6 +395,7 @@ public partial class MainViewModel
         _resolvedPathCache = savedLib.ResolvedPathCache ?? new(StringComparer.OrdinalIgnoreCase);
         _addonFileCache    = savedLib.AddonFileCache    ?? new(StringComparer.OrdinalIgnoreCase);
         _bitnessCache      = savedLib.BitnessCache      ?? new(StringComparer.OrdinalIgnoreCase);
+        _engineFolderStamps = savedLib.EngineFolderStamps ?? new(StringComparer.OrdinalIgnoreCase);
         LastSelectedGameName = savedLib.LastSelectedGame;
 
         // 4. Convert cached games to DetectedGame list and deduplicate
@@ -612,6 +625,9 @@ public partial class MainViewModel
                 ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(savedLibKey),
                 ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(savedLibKey),
                 UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(savedLibKey),
+                IsRtxHdrEnabled            = _gameNameService.RtxHdrGames.Contains(game.Name),
+                IsAutoHdrEnabled           = _gameNameService.AutoHdrGames.Contains(game.Name),
+                AutoHdrStrength            = _gameNameService.AutoHdrStrengths.TryGetValue(game.Name, out var ahStrC) ? ahStrC : 50,
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
@@ -669,7 +685,9 @@ public partial class MainViewModel
                 newCard.OsInstalledVersion = !string.IsNullOrEmpty(osGameManifest?.Version)
                     ? osGameManifest.Version
                     : osRec.OsVariant switch {
-                        "Nightly" => _optiScalerService.StagedVersionNightly,
+                        "Nightly" => !string.IsNullOrEmpty(osRec.OsNightlyBuild)
+                            ? osRec.OsNightlyBuild
+                            : _optiScalerService.StagedVersionNightly,
                         "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
                         _         => _optiScalerService.StagedVersion
                     };
@@ -705,32 +723,45 @@ public partial class MainViewModel
                 newCard.DxvkStatus = GameStatus.Installed;
                 newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
 
-                // Direct DX9 mode (any variant): game runs Vulkan via DXVK.
-                // Keep the original native API in DetectedApis so it still shows in
-                // DX9 searches and the badge shows "DX9 / VLK" instead of just "VLK".
-                // If no API was detected (e.g. manually-added game with no PE scan), seed
-                // DX9 from the tracking record — d3d9.dll proves it's a DX9 game.
-                // IsDualApiGame is forced false — DXVK controls Vulkan, the user didn't
-                // toggle it; we don't want the rendering-path toggle to appear.
-                if (dxvkRec.IsLiliumHdrMode || dxvkRec.InstalledDlls.Contains("d3d9.dll"))
+                // Backfill per-game variant override for existing installs that predate
+                // the auto-persist-on-install change. Same logic as BuildCards.
+                var existingOverride = GetDxvkVariantOverride(game.Name, game.Source ?? "");
+                if (existingOverride == null && dxvkRec.IsLiliumHdrMode)
+                    SetDxvkVariantOverride(game.Name, "LiliumHdr", game.Source ?? "");
+
+                // Any DXVK install (DX9 d3d9.dll, Lilium HDR, or DX10/DX11 dxgi.dll+d3d11.dll)
+                // runs Vulkan via the DXVK layer. Detect DX10/DX11 installs via the
+                // persisted VulkanRenderingPath="Vulkan" (loaded from _vulkanRenderingPaths
+                // into newCard.VulkanRenderingPath at card construction above).
+                bool isDxvkVulkanCache = dxvkRec.IsLiliumHdrMode
+                    || dxvkRec.InstalledDlls.Contains("d3d9.dll")
+                    || newCard.VulkanRenderingPath == "Vulkan";
+
+                if (isDxvkVulkanCache)
                 {
-                    // Seed original API before overwriting GraphicsApi
-                    var originalApi = newCard.GraphicsApi;
-                    if (originalApi is GraphicsApiType.DirectX8
-                                    or GraphicsApiType.DirectX9
-                                    or GraphicsApiType.DirectX10)
-                        newCard.DetectedApis.Add(originalApi);
-                    else if (newCard.DetectedApis.Count == 0 || !newCard.DetectedApis.Any(
-                        a => a is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9 or GraphicsApiType.DirectX10))
-                        newCard.DetectedApis.Add(GraphicsApiType.DirectX9); // d3d9.dll install implies DX9
+                    // Only flip GraphicsApi to Vulkan for DX9 direct mode.
+                    // DX10/DX11+DXVK keeps GraphicsApi=DirectX11 so all guards work.
+                    bool isDx9DxvkCache = dxvkRec.IsLiliumHdrMode || dxvkRec.InstalledDlls.Contains("d3d9.dll");
+                    if (isDx9DxvkCache)
+                    {
+                        var originalApi = newCard.GraphicsApi;
+                        if (originalApi is GraphicsApiType.DirectX8
+                                        or GraphicsApiType.DirectX9
+                                        or GraphicsApiType.DirectX10)
+                            newCard.DetectedApis.Add(originalApi);
+                        else if (newCard.DetectedApis.Count == 0 || !newCard.DetectedApis.Any(
+                            a => a is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9 or GraphicsApiType.DirectX10))
+                            newCard.DetectedApis.Add(GraphicsApiType.DirectX9);
+
+                        newCard.DetectedApis.Add(GraphicsApiType.Vulkan);
+                        newCard.GraphicsApi = GraphicsApiType.Vulkan;
+                        newCard.IsDualApiGame = false;
+                    }
 
                     newCard.VulkanRenderingPath = "Vulkan";
-                    newCard.GraphicsApi = GraphicsApiType.Vulkan;
-                    newCard.DetectedApis.Add(GraphicsApiType.Vulkan);
-                    newCard.IsDualApiGame = false; // not a native dual-API game
 
-                    // The old DX aux record (e.g. d3d9.dll) is now stale — DXVK owns that
-                    // file. Clear it so the Vulkan RS re-check (reshade.ini) fires below.
+                    // The old DX aux record (e.g. d3d9.dll / dxgi.dll) is now stale —
+                    // DXVK owns that file. Clear it so the Vulkan RS re-check fires below.
                     if (newCard.RsRecord != null
                         && dxvkRec.InstalledDlls.Any(d => d.Equals(newCard.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase)))
                     {
@@ -988,6 +1019,7 @@ public partial class MainViewModel
                 {
                     Name = game.Name,
                     IsGenericLuma = true,
+                    Author = "Pumbo",
                     DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
                     Status = "✅",
                 };

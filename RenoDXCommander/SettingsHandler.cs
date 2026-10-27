@@ -11,7 +11,7 @@ namespace RenoDXCommander;
 /// Encapsulates settings-page event handlers and toggle logic.
 /// Extracted from MainWindow code-behind to reduce file size.
 /// </summary>
-public class SettingsHandler
+public partial class SettingsHandler
 {
     // ── Instance members ───────────────────────────────────────────────
 
@@ -19,6 +19,7 @@ public class SettingsHandler
     private readonly IDxvkService _dxvkService;
     private readonly IReShadeUpdateService _reShadeUpdateService;
     private readonly ReShadeNightlyService _reShadeNightlyService;
+    private bool _freezeDiagCardAdded;
 
     /// <summary>
     /// Stores the current hotkey string in KeyOverlay format ("vk,shift,ctrl,alt").
@@ -41,197 +42,451 @@ public class SettingsHandler
 
     public async void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.NavigateToSettingsCommand.Execute(null);
-        _window.GameViewPanel.Visibility = Visibility.Collapsed;
-        _window.SettingsPanel.Visibility = Visibility.Visible;
-        _window.LoadingPanel.Visibility = Visibility.Collapsed;
-        // Sync toggle state with ViewModel
-        _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
-        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
-        // Populate addon watch folder textbox
-        _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
-        // Populate screenshot path and per-game combo
-        _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
-        _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;
-        // Effect list style combo (Tabs=0, Tree=1)
-        _window.RsVariableListUseTabsCombo.SelectedIndex = ViewModel.Settings.RsVariableListUseTabs ? 0 : 1;
-        // Initialize peak nits display
-        _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
-        // Initialize hotkey display from persisted value (Req 2.4, 3.2)
-        _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
-        _window.HotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
-        // Initialize screenshot hotkey display
-        _currentScreenshotHotkeyString = ViewModel.Settings.ScreenshotHotkey;
-        _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
-        // Initialize ReLimiter OSD hotkey display
-        _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
-        _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
-        // Initialize ReLimiter shared presets toggle
-        _window.UlSharedPresetsCombo.SelectedIndex = ViewModel.Settings.UlSharedPresets ? 1 : 0;
-        _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
-        // Initialize ReLimiter Target FPS dropdown
-        InitializeUlTargetFpsCombo();
-        // Initialize OptiScaler hotkey display
-        _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
-        var osCombo = _window.OsHotkeyCombo;
-        for (int i = 0; i < osCombo.Items.Count; i++)
+        try
         {
-            if (osCombo.Items[i] is string item &&
-                item.Equals(_currentOsHotkeyString, StringComparison.OrdinalIgnoreCase))
+            ViewModel.NavigateToSettingsCommand.Execute(null);
+            _window.GameViewPanel.Visibility = Visibility.Collapsed;
+            _window.SettingsPanel.Visibility = Visibility.Visible;
+            _window.LoadingPanel.Visibility = Visibility.Collapsed;
+            // Sync toggle state with ViewModel
+            _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
+            _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+            // Show installed Windows App Runtime version
+            // Populate addon watch folder textbox
+            _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
+            // Populate screenshot path and per-game combo
+            _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
+            _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;
+            // Effect list style combo (Tabs=0, Tree=1)
+            _window.RsVariableListUseTabsCombo.SelectedIndex = ViewModel.Settings.RsVariableListUseTabs ? 0 : 1;
+            // Initialize peak nits display
+            _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
+            // Initialize hotkey display from persisted value (Req 2.4, 3.2)
+            _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
+            _window.HotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
+            // Initialize screenshot hotkey display
+            _currentScreenshotHotkeyString = ViewModel.Settings.ScreenshotHotkey;
+            _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
+            // Initialize ReLimiter OSD hotkey display
+            _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
+            _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
+            // Initialize ReLimiter shared presets toggle
+            _window.UlSharedPresetsCombo.SelectedIndex = ViewModel.Settings.UlSharedPresets ? 1 : 0;
+            _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
+            // Initialize ReLimiter Target FPS dropdown
+            InitializeUlTargetFpsCombo();
+            // Initialize OptiScaler hotkey display
+            _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
+            var osCombo = _window.OsHotkeyCombo;
+            for (int i = 0; i < osCombo.Items.Count; i++)
             {
-                osCombo.SelectedIndex = i;
-                break;
+                if (osCombo.Items[i] is string item &&
+                    item.Equals(_currentOsHotkeyString, StringComparison.OrdinalIgnoreCase))
+                {
+                    osCombo.SelectedIndex = i;
+                    break;
+                }
             }
-        }
-        if (osCombo.SelectedIndex < 0)
-            osCombo.SelectedIndex = 0; // Default to Insert
+            if (osCombo.SelectedIndex < 0)
+                osCombo.SelectedIndex = 0; // Default to Insert
 
-        // Initialize OptiScaler GPU combo
-        var gpuCombo = _window.OsGpuCombo;
-        var gpuType = ViewModel.Settings.OsGpuType;
-        for (int i = 0; i < gpuCombo.Items.Count; i++)
-        {
-            if (gpuCombo.Items[i] is string gpuItem &&
-                gpuItem.Equals(gpuType, StringComparison.OrdinalIgnoreCase))
+            // Initialize OptiScaler GPU combo
+            var gpuCombo = _window.OsGpuCombo;
+            var gpuType = ViewModel.Settings.OsGpuType;
+            for (int i = 0; i < gpuCombo.Items.Count; i++)
             {
-                gpuCombo.SelectedIndex = i;
-                break;
+                if (gpuCombo.Items[i] is string gpuItem &&
+                    gpuItem.Equals(gpuType, StringComparison.OrdinalIgnoreCase))
+                {
+                    gpuCombo.SelectedIndex = i;
+                    break;
+                }
             }
-        }
-        if (gpuCombo.SelectedIndex < 0)
-            gpuCombo.SelectedIndex = 0; // Default to NVIDIA
+            if (gpuCombo.SelectedIndex < 0)
+                gpuCombo.SelectedIndex = 0; // Default to NVIDIA
 
-        // Initialize DLSS inputs combo and visibility
-        _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 0 : 1; // 0=Yes, 1=No
-        bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
-        _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
+            // Initialize DLSS inputs combo and visibility
+            _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 0 : 1; // 0=Yes, 1=No
+            bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
+            _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
 
-        // Initialize Global Update Checks summary
-        RefreshGlobalUpdateSummary();
-        _window.CacheAllShadersCombo.SelectedIndex = ViewModel.Settings.CacheAllShaders ? 1 : 0;
+            // Initialize Global Update Checks summary
+            RefreshGlobalUpdateSummary();
+            _window.CacheAllShadersCombo.SelectedIndex = ViewModel.Settings.CacheAllShaders ? 1 : 0;
 
-        // Initialize DXVK variant combo
-        ViewModel.Settings.IsLoadingSettings = true;
-        var dxvkCombo = _window.DxvkVariantCombo;
-        var dxvkVariant = ViewModel.Settings.DxvkVariant;
-        if (string.Equals(dxvkVariant, "Stable", StringComparison.OrdinalIgnoreCase))
-            dxvkCombo.SelectedIndex = 1;
-        else if (string.Equals(dxvkVariant, "LiliumHdr", StringComparison.OrdinalIgnoreCase))
-            dxvkCombo.SelectedIndex = 2;
-        else
-            dxvkCombo.SelectedIndex = 0;
-        ViewModel.Settings.IsLoadingSettings = false;
-
-        // Initialize ReShade channel combo
-        var rsChannelCombo = _window.ReShadeChannelCombo;
-        var rsChannel = ViewModel.Settings.ReShadeChannel;
-        if (string.Equals(rsChannel, "Nightly", StringComparison.OrdinalIgnoreCase))
-            rsChannelCombo.SelectedIndex = 1;
-        else
-            rsChannelCombo.SelectedIndex = 0;
-
-        // Initialize DLSS Indicator combo from registry (read on background thread)
-        bool dlssIndicatorEnabled = false;
-        await Task.Run(() =>
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
-                var val = key?.GetValue("ShowDlssIndicator");
-                // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
-                dlssIndicatorEnabled = val is int intVal && intVal != 0;
-            }
-            catch { }
-        });
-        _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
-        _window._dlssIndicatorInitializing = false;
-
-        // Initialize DLSS/Streamline auto-update combos
-        _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
-        _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
-
-        // Initialize component auto-update combo
-        _window.AutoUpdateComponentsCombo.SelectedIndex = ViewModel.Settings.AutoUpdateComponents ? 1 : 0;
-
-        // Initialize HDR auto-toggle combo
-        _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
-
-        // Initialize Resolution Control (dev-only)
-        if (FeatureFlags.ResolutionControl)
-        {
-            _window.ResolutionControlCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            _window.ResAutoToggleCombo.SelectedIndex = ViewModel.Settings.ResolutionAutoToggle ? 1 : 0;
-
-            // Populate resolution combo with supported modes
-            var resolutions = ResolutionToggleService.GetSupportedResolutions();
-            _window.ResolutionTargetCombo.ItemsSource = resolutions;
-            _window.ResolutionTargetCombo.DisplayMemberPath = "Label";
-
-            var savedKey = ViewModel.Settings.ResolutionTarget;
-            if (!string.IsNullOrEmpty(savedKey))
-            {
-                var match = resolutions.FirstOrDefault(r =>
-                    string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase));
-                if (match != null)
-                    _window.ResolutionTargetCombo.SelectedItem = match;
-            }
-            if (_window.ResolutionTargetCombo.SelectedIndex < 0 && resolutions.Count > 0)
-                _window.ResolutionTargetCombo.SelectedIndex = 0;
-
-            // Populate colour display combo — enumerate NVIDIA displays
-            var nvDisplays = NvColorService.GetDisplays();
-            if (nvDisplays.Count > 0)
-            {
-                _window.ColorDisplayCombo.ItemsSource    = nvDisplays;
-                _window.ColorDisplayCombo.DisplayMemberPath = "Name";
-                _window.ColorDisplayCombo.SelectedIndex  = 0; // triggers SelectionChanged → reads current values
-            }
+            // Initialize DXVK variant combo
+            ViewModel.Settings.IsLoadingSettings = true;
+            var dxvkCombo = _window.DxvkVariantCombo;
+            var dxvkVariant = ViewModel.Settings.DxvkVariant;
+            if (string.Equals(dxvkVariant, "Stable", StringComparison.OrdinalIgnoreCase))
+                dxvkCombo.SelectedIndex = 1;
+            else if (string.Equals(dxvkVariant, "LiliumHdr", StringComparison.OrdinalIgnoreCase))
+                dxvkCombo.SelectedIndex = 2;
             else
+                dxvkCombo.SelectedIndex = 0;
+            ViewModel.Settings.IsLoadingSettings = false;
+
+            // Initialize ReShade channel combo
+            var rsChannelCombo = _window.ReShadeChannelCombo;
+            var rsChannel = ViewModel.Settings.ReShadeChannel;
+            if (string.Equals(rsChannel, "Nightly", StringComparison.OrdinalIgnoreCase))
+                rsChannelCombo.SelectedIndex = 1;
+            else
+                rsChannelCombo.SelectedIndex = 0;
+
+            // Initialize DLSS Indicator combo from registry (read on background thread)
+            bool dlssIndicatorEnabled = false;
+            await Task.Run(() =>
             {
-                // No NVIDIA displays found — hide the colour controls
-                _window.ColorDisplayCombo.Visibility  = Microsoft.UI.Xaml.Visibility.Collapsed;
-                _window.ColorDepthCombo.IsEnabled     = false;
-                _window.ColorRangeCombo.IsEnabled     = false;
-                _window.ColorApplyBtn.IsEnabled       = false;
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
+                    var val = key?.GetValue("ShowDlssIndicator");
+                    // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
+                    dlssIndicatorEnabled = val is int intVal && intVal != 0;
+                }
+                catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.SettingsButton_Click] Failed to read DLSS indicator registry value — {ex.Message}"); }
+            });
+            _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
+            // Keep _dlssIndicatorInitializing = true until ALL NVAPI combos are populated below.
+            // Setting it false here was too early — GSyncIndicator and other combos further down
+            // would fire their SelectionChanged handlers, each calling SetGSyncIndicator / SetGSyncMode etc.
+            // which call _session.Save(). That runs concurrently with the NVAPI read Task.Run for the
+            // panel, causing an unsynchronized concurrent NVAPI access → UI deadlock. (#freeze bug)
+            // _dlssIndicatorInitializing is set false at the END of PopulateNvApiCombosFromSnapshot.
+
+            // Initialize DLSS/Streamline auto-update combos
+            _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
+            _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
+
+            // Initialize component auto-update combo
+            _window.AutoUpdateComponentsCombo.SelectedIndex = ViewModel.Settings.AutoUpdateComponents ? 1 : 0;
+
+            // Initialize background update checks combo
+            _window.BackgroundUpdateChecksCombo.SelectedIndex = ViewModel.Settings.BackgroundUpdateChecks == "Minimal" ? 1 : 0;
+
+            // Initialize HDR auto-toggle combo
+            _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
+
+            // Initialize Resolution Control (dev-only)
+            if (FeatureFlags.ResolutionControl)
+            {
+                _window.ResolutionControlCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                _window.ResAutoToggleCombo.SelectedIndex = ViewModel.Settings.ResolutionAutoToggle ? 1 : 0;
+
+                // Populate resolution combo with supported modes
+                var resolutions = ResolutionToggleService.GetSupportedResolutions();
+                _window.ResolutionTargetCombo.ItemsSource = resolutions;
+                _window.ResolutionTargetCombo.DisplayMemberPath = "Label";
+
+                var savedKey = ViewModel.Settings.ResolutionTarget;
+                if (!string.IsNullOrEmpty(savedKey))
+                {
+                    var match = resolutions.FirstOrDefault(r =>
+                        string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                        _window.ResolutionTargetCombo.SelectedItem = match;
+                }
+                if (_window.ResolutionTargetCombo.SelectedIndex < 0 && resolutions.Count > 0)
+                    _window.ResolutionTargetCombo.SelectedIndex = 0;
+
+                // Populate colour display combo — enumerate NVIDIA displays
+                var nvDisplays = NvColorService.GetDisplays();
+                if (nvDisplays.Count > 0)
+                {
+                    _window.ColorDisplayCombo.ItemsSource    = nvDisplays;
+                    _window.ColorDisplayCombo.DisplayMemberPath = "Name";
+                    _window.ColorDisplayCombo.SelectedIndex  = 0; // triggers SelectionChanged → reads current values
+                }
+                else
+                {
+                    // No NVIDIA displays found — hide the colour controls
+                    _window.ColorDisplayCombo.Visibility  = Microsoft.UI.Xaml.Visibility.Collapsed;
+                    _window.ColorDepthCombo.IsEnabled     = false;
+                    _window.ColorRangeCombo.IsEnabled     = false;
+                    _window.ColorApplyBtn.IsEnabled       = false;
+                }
+
+                // Initialize DLDSR Control
+                InitDldsrControl();
             }
+
+            // Populate DLSS defaults summary
+            _window.RefreshDlssDefaultsSummary();
+
+            // Populate NVAPI-dependent combos (shader cache, G-Sync, FPS limit, ReBAR, VSync, Power)
+            // Fetch all NVAPI values on a background thread with timeout to prevent UI freeze after GPU sleep/wake
+            _window._shaderCacheComboInit = true;
+            var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+            if (presetSvc.IsSupported)
+            {
+                var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
+                PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
+            }
+            _window._shaderCacheComboInit = false;
+
+            // Initialize admin mode combo (async to avoid blocking on schtasks query)
+            await InitAdminModeComboAsync(_window.AdminModeCombo);
+
+            // Initialize drop helper combo (greyed out when not in admin mode — not needed)
+            _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
+            _window.DropHelperCombo.IsEnabled = VulkanLayerService.IsRunningAsAdmin();
+
+            // Initialize tray combos — set a flag so SelectionChanged handlers skip
+            // writing to the registry/settings during programmatic init.
+            _window.TrayComboInitializing = true;
+            _window.CloseToTrayCombo.SelectedIndex      = ViewModel.Settings.CloseToTray ? 1 : 0;
+            _window.RecentGamesCombo.SelectedIndex      = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
+            _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
+            _window.TrayComboInitializing = false;
+
+            // Initialize Nexus Mods card (dev-only)
+            if (FeatureFlags.NexusMods)
+            {
+                _window.NexusModsCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                RefreshNexusStatus();
+            }
+
+            // RenoDX Data Source card — always visible now that RHI Database is the default
+            _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            InitRenoDxDbSourceCombo();
+
+            // ── Dev-only: freeze diagnostic test buttons ─────────────────────────
+            // Validates CPU sampling and ClrMD stack capture before waiting for a real freeze.
+            // Built entirely in code — no XAML elements — to avoid WinAppSDK publish issues.
+            if (DevUnlockService.IsUnlocked && !_freezeDiagCardAdded)
+            {
+                _freezeDiagCardAdded = true;
+                var card = new Microsoft.UI.Xaml.Controls.Border
+                {
+                    Background   = UIFactory.Brush(ResourceKeys.SurfaceRaisedBrush),
+                    CornerRadius = new Microsoft.UI.Xaml.CornerRadius(10),
+                    Padding      = new Microsoft.UI.Xaml.Thickness(20, 16, 20, 16),
+                    BorderBrush  = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+                    BorderThickness = new Microsoft.UI.Xaml.Thickness(1),
+                };
+                var inner = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 12 };
+                inner.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
+                {
+                    Text       = "Freeze Diagnostics",
+                    FontSize   = 14,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                });
+                inner.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
+                {
+                    Text         = "Test freeze detection. Each button blocks the UI thread differently. Check the session log - IDLE = waiting on lock/native call, PEGGED = layout or compute loop. Native Block tests the walk on a pure-native wait (no managed frames). Idle Baseline captures the stack while the UI is healthy.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontSize     = 11,
+                    Foreground   = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+                });
+                var btnRow = new Microsoft.UI.Xaml.Controls.StackPanel
+                {
+                    Orientation = Microsoft.UI.Xaml.Controls.Orientation.Vertical,
+                    Spacing     = 8,
+                };
+                var btnRowTop = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+                var btnRowBot = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+                btnRow.Children.Add(btnRowTop);
+                btnRow.Children.Add(btnRowBot);
+                var sleepBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test IDLE (30s sleep)", FontSize = 11 };
+                sleepBtn.Click += (s, e) => { _window.ViewModel.IsTestFreezeActive = true; System.Threading.Thread.Sleep(30000); _window.ViewModel.IsTestFreezeActive = false; };
+                var spinBtn  = new Microsoft.UI.Xaml.Controls.Button { Content = "Test PEGGED (10s spin)", FontSize = 11 };
+                spinBtn.Click  += (s, e) => { _window.ViewModel.IsTestFreezeActive = true; var end = DateTime.UtcNow.AddSeconds(10); while (DateTime.UtcNow < end) { } _window.ViewModel.IsTestFreezeActive = false; };
+
+                // Native Block: WaitForSingleObject on an unsignaled event — pure native wait, WaitForSingleObject on an unsignaled event — pure native wait,
+                // no managed frames above the wait. Expected top: ntdll!NtWaitForSingleObject,
+                // then KERNELBASE!WaitForSingleObjectEx, then the managed-to-native boundary.
+                var nativeBlockBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Native Block (30s)", FontSize = 11 };
+                nativeBlockBtn.Click += (s, e) =>
+                {
+                    var hEvent = NativeInterop.CreateEventW(IntPtr.Zero, true, false, null); // unsignaled manual-reset
+                    if (hEvent != IntPtr.Zero)
+                    {
+                        _window.ViewModel.IsTestFreezeActive = true;
+                        try    { NativeInterop.WaitForSingleObject(hEvent, 30000); }
+                        finally { NativeInterop.CloseHandle(hEvent); _window.ViewModel.IsTestFreezeActive = false; }
+                    }
+                };
+
+                // Idle Baseline: triggers the native stack capture on a healthy UI thread.
+                // Fires CaptureNativeUiThreadStack from a background task immediately.
+                // Output shows what the idle message pump looks like — the reference for real freezes.
+                var idleBaselineBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Capture Idle Baseline", FontSize = 11 };
+                idleBaselineBtn.Click += (s, e) =>
+                {
+                    _ = System.Threading.Tasks.Task.Run(() =>
+                    {
+                        CrashReporter.LogSync("[Heartbeat.Native] ── IDLE BASELINE CAPTURE ──");
+                        _window.ViewModel.CaptureNativeUiThreadStackPublic();
+                    });
+                };
+
+                btnRowTop.Children.Add(sleepBtn);
+                btnRowTop.Children.Add(spinBtn);
+                btnRowTop.Children.Add(nativeBlockBtn);
+                btnRowTop.Children.Add(idleBaselineBtn);
+
+                // Dispatcher Exception: throws inside a TryEnqueue callback.
+                // Checks whether app.UnhandledException fires, e.Handled = true takes effect,
+                // and whether the dispatcher keeps running afterwards (timer + probes should continue).
+                var dispExBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Dispatcher Exception", FontSize = 11 };
+                dispExBtn.Click += (s, e) =>
+                {
+                    CrashReporter.LogSync("[FreezeDiag] Test Dispatcher Exception: about to throw inside TryEnqueue(Normal)");
+                    _window.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        throw new InvalidOperationException("FreezeDiag: intentional dispatcher exception test");
+                    });
+                };
+                btnRowBot.Children.Add(dispExBtn);
+
+                // Stress Loop: selects each game in turn every 1.5s for 30 passes.
+                // Reproduces rapid-navigation freeze patterns and shows which game/build triggers it.
+                // Each selection is logged with a sequential counter and timestamp so the last logged
+                // entry before [Heartbeat] *** UI FROZEN *** pinpoints exactly which game killed the dispatcher.
+                var stressBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Stress Loop (30 passes)", FontSize = 11 };
+                stressBtn.Click += (s, e) =>
+                {
+                    if (!stressBtn.IsEnabled) return;
+                    stressBtn.IsEnabled = false;
+                    CrashReporter.LogSync("[FreezeDiag] Stress loop started");
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            int selectionCount = 0;
+                            for (int pass = 0; pass < 30; pass++)
+                            {
+                                List<GameCardViewModel> games = new();
+                                _window.DispatcherQueue?.TryEnqueue(() => games = _window.ViewModel.DisplayedGames.ToList());
+                                await System.Threading.Tasks.Task.Delay(100).ConfigureAwait(false);
+                                foreach (var card in games)
+                                {
+                                    selectionCount++;
+                                    CrashReporter.Log($"[FreezeDiag] Stress loop selection #{selectionCount} (pass {pass + 1}/30): {card.GameName}");
+                                    _window.RequestReselect(card.GameName);
+                                    await System.Threading.Tasks.Task.Delay(1500).ConfigureAwait(false);
+                                }
+                                CrashReporter.Log($"[FreezeDiag] Stress loop pass {pass + 1}/30 complete ({selectionCount} selections so far)");
+                            }
+                        }
+                        finally
+                        {
+                            _window.DispatcherQueue?.TryEnqueue(() => stressBtn.IsEnabled = true);
+                            CrashReporter.LogSync("[FreezeDiag] Stress loop finished");
+                        }
+                    });
+                };
+                btnRowBot.Children.Add(stressBtn);
+
+                // Test Fast Restart: directly triggers the auto-restart path after 5 seconds.
+                // Bypasses freeze detection entirely — just tests that restart, unclean marker,
+                // and relaunch all work correctly.
+                var btnRowBot2 = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+                var fastRestartBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Fast Restart (5s)", FontSize = 11 };
+                fastRestartBtn.Click += (s, e) =>
+                {
+                    if (!fastRestartBtn.IsEnabled) return;
+                    fastRestartBtn.IsEnabled = false;
+                    CrashReporter.LogSync("[FreezeDiag] Test Fast Restart: restarting in 5s");
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        await System.Threading.Tasks.Task.Delay(5_000).ConfigureAwait(false);
+
+                        var restartLogPath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "restart_log.txt");
+                        var now = DateTime.UtcNow;
+                        try { System.IO.File.AppendAllText(restartLogPath, now.ToString("O") + Environment.NewLine); } catch (Exception) { /* best-effort restart log; process exits immediately after */ }
+
+                        var uncleanMarkerPath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "rhi_unclean_restart");
+                        try { System.IO.File.WriteAllText(uncleanMarkerPath, now.ToString("O")); } catch (Exception) { /* best-effort unclean-restart marker; process exits immediately after */ }
+
+                        CrashReporter.LogSync("[FreezeDiag] Test Fast Restart: executing restart now");
+                        CrashReporter.Shutdown();
+                        var exePath = Environment.ProcessPath;
+                        if (!string.IsNullOrEmpty(exePath))
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exePath) { UseShellExecute = true });
+                        Environment.Exit(2);
+                    });
+                };
+                btnRowBot2.Children.Add(fastRestartBtn);
+
+                // Test Known Signature Freeze: blocks the dispatcher thread in a managed semaphore wait
+                // while the Win32 pump stays alive. This matches the real freeze signature:
+                // CPU=IDLE, pump responded, High probe times out → fast-path restart (~5s).
+                var knownSigBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Known Sig Freeze (10s)", FontSize = 11 };
+                knownSigBtn.Click += (s, e) =>
+                {
+                    if (!knownSigBtn.IsEnabled) return;
+                    knownSigBtn.IsEnabled = false;
+                    CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: blocking dispatcher in managed wait for 10s");
+                    _window.ViewModel.IsTestFreezeActive = true;
+                    var sem = new System.Threading.SemaphoreSlim(0, 1);
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        await System.Threading.Tasks.Task.Delay(10_000).ConfigureAwait(false);
+                        sem.Release();
+                        _window.ViewModel.IsTestFreezeActive = false;
+                        _window.DispatcherQueue?.TryEnqueue(() => knownSigBtn.IsEnabled = true);
+                        CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: released after 10s");
+                    });
+                    _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                    {
+                        CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: dispatcher thread entering managed wait");
+                        sem.Wait();
+                        CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: dispatcher thread unblocked");
+                    });
+                };
+                btnRowBot2.Children.Add(knownSigBtn);
+                inner.Children.Add(btnRowBot2);
+
+                // EmptyWorkingSet stress: trims the process working set then immediately triggers
+                // a card rebuild — reproduces the idle/trim/wake/rebuild pattern seen in freezes 4 and 5.
+                var btnRowBot3 = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8, Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0) };
+                var ewsBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "EmptyWS + Rebuild (visible)", FontSize = 11 };
+                ewsBtn.Click += (s, e) =>
+                {
+                    CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet + Rebuild (visible): trimming then RequestCardRebuild");
+                    NativeInterop.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+                    CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet done — triggering RequestCardRebuild");
+                    var card2 = _window.ViewModel.SelectedGame;
+                    if (card2 != null) _window.ViewModel.RequestCardRebuild?.Invoke(card2);
+                    else CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet: no selected game");
+                };
+                var ewsMinBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "EmptyWS + Rebuild (minimised)", FontSize = 11 };
+                ewsMinBtn.Click += (s, e) =>
+                {
+                    CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet + Rebuild (minimised): hiding, trimming, rebuilding after 500ms");
+                    _window.AppWindow.Hide();
+                    NativeInterop.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        await System.Threading.Tasks.Task.Delay(500).ConfigureAwait(false);
+                        CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet (minimised): triggering RequestCardRebuild from background");
+                        var card2 = _window.ViewModel.SelectedGame;
+                        if (card2 != null) _window.DispatcherQueue?.TryEnqueue(() => _window.ViewModel.RequestCardRebuild?.Invoke(card2));
+                        await System.Threading.Tasks.Task.Delay(5000).ConfigureAwait(false);
+                        _window.DispatcherQueue?.TryEnqueue(() => { _window.AppWindow.Show(); _window.Activate(); });
+                        CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet (minimised): window restored");
+                    });
+                };
+                btnRowBot3.Children.Add(ewsBtn);
+                btnRowBot3.Children.Add(ewsMinBtn);
+                inner.Children.Add(btnRowBot3);
+
+                inner.Children.Add(btnRow);
+                card.Child = inner;
+                _window.SettingsCardsPanel.Children.Add(card);
+            }
+
+            RefreshGitHubStatus();
         }
-
-        // Populate DLSS defaults summary
-        _window.RefreshDlssDefaultsSummary();
-
-        // Populate NVAPI-dependent combos (shader cache, G-Sync, FPS limit, ReBAR, VSync, Power)
-        // Fetch all NVAPI values on a background thread with timeout to prevent UI freeze after GPU sleep/wake
-        _window._shaderCacheComboInit = true;
-        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
-        if (presetSvc.IsSupported)
+        catch (Exception unhandledEx)
         {
-            var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
-            PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
+            CrashReporter.Log($"[SettingsHandler.SettingsButton_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
         }
-        _window._shaderCacheComboInit = false;
-
-        // Initialize admin mode combo (async to avoid blocking on schtasks query)
-        await InitAdminModeComboAsync(_window.AdminModeCombo);
-
-        // Initialize drop helper combo (greyed out when not in admin mode — not needed)
-        _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
-        _window.DropHelperCombo.IsEnabled = VulkanLayerService.IsRunningAsAdmin();
-
-        // Initialize tray combos
-        _window.CloseToTrayCombo.SelectedIndex = ViewModel.Settings.CloseToTray ? 1 : 0;
-        _window.RecentGamesCombo.SelectedIndex = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
-        _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
-
-        // Initialize Nexus Mods card (dev-only)
-        if (FeatureFlags.NexusMods)
-        {
-            _window.NexusModsCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            RefreshNexusStatus();
-        }
-
-        // RenoDX Data Source card — always visible now that RHI Database is the default
-        _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-        InitRenoDxDbSourceCombo();
     }
 
     /// <summary>
@@ -334,6 +589,9 @@ public class SettingsHandler
             ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == snapshot.PowerMode.Value)
             : 0; // Default: Optimal Performance
         _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
+
+        // All NVAPI combos are now populated — safe to let SelectionChanged handlers fire.
+        _window._dlssIndicatorInitializing = false;
     }
 
     /// <summary>
@@ -369,1928 +627,4 @@ public class SettingsHandler
             ViewModel.SaveSettingsPublic();
         }
     }
-
-    /// <summary>
-    /// Re-reads global NVIDIA settings from the driver and refreshes the Settings page combos.
-    /// Called after Reset All to reflect the cleared values.
-    /// </summary>
-    public async Task RefreshGlobalNvidiaSettingsAsync()
-    {
-        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
-        if (!presetSvc.IsSupported) return;
-
-        _window._shaderCacheComboInit = true;
-        var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
-        PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
-        _window._shaderCacheComboInit = false;
-    }
-
-    public void SettingsBack_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateToGameViewCommand.Execute(null);
-        _window.SettingsPanel.Visibility = Visibility.Collapsed;
-        // Always show GameViewPanel — skeleton loading handles the loading state visually
-        _window.GameViewPanel.Visibility = Visibility.Visible;
-    }
-
-    // SkipUpdateToggle and VerboseLoggingToggle removed from UI — logic retained in ViewModel
-
-    public void BetaOptInToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.BetaOptIn = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo)
-        {
-            ViewModel.Settings.GlobalShadersOff = combo.SelectedIndex == 0;
-            ViewModel.Settings.UseCustomShaders = combo.SelectedIndex == 2;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public async void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
-    {
-        var screenshotPath = _window.ScreenshotPathBox.Text?.Trim() ?? "";
-        var perGame = _window.PerGameScreenshotCombo.SelectedIndex == 1;
-
-        // Persist screenshot settings + hotkeys
-        ViewModel.Settings.ScreenshotPath = screenshotPath;
-        ViewModel.Settings.PerGameScreenshotFolders = perGame;
-        ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
-        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
-
-        ViewModel.SaveSettingsPublic();
-
-        // Iterate all game cards and apply screenshot path + hotkeys to eligible games
-        int updatedCount = 0;
-        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
-        var currentOverlayHotkey = _currentHotkeyString;
-        var currentScreenshotHotkey = _currentScreenshotHotkeyString;
-        var rsVariableListUseTabs = ViewModel.Settings.RsVariableListUseTabs;
-        
-        await Task.Run(() =>
-        {
-            foreach (var card in allCards)
-            {
-                if (string.IsNullOrEmpty(card.InstallPath)) continue;
-                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-                // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
-                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (iniFiles.Count == 0) continue;
-
-                // Skip games where the user has locked reshade.ini updates
-                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-                try
-                {
-                    var savePath = string.IsNullOrEmpty(screenshotPath)
-                        ? null
-                        : perGame ? BuildSavePath(screenshotPath, card.GameName) : screenshotPath;
-                    var overlayHotkey = AuxInstallService.IsRdr2(card.GameName)
-                        ? null
-                        : currentOverlayHotkey;
-
-                    foreach (var iniFile in iniFiles)
-                        ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
-                            currentScreenshotHotkey, rsVariableListUseTabs);
-                    updatedCount++;
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[SettingsHandler.ApplyScreenshotPath_Click] Failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-
-        // Show confirmation dialog
-        var appliedSettings = string.IsNullOrEmpty(screenshotPath)
-            ? "ReShade hotkeys and effect list style"
-            : "Screenshot path, ReShade hotkeys, and effect list style";
-        var dialog = new ContentDialog
-        {
-            Title = "Screenshots & Hotkeys",
-            Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    internal static void ApplyScreenshotSettingsToIni(
-        string iniFilePath,
-        string? savePath,
-        string? overlayHotkey,
-        string screenshotHotkey,
-        bool useTabs)
-    {
-        if (!string.IsNullOrWhiteSpace(savePath))
-            AuxInstallService.ApplyScreenshotPath(iniFilePath, savePath);
-        if (overlayHotkey != null)
-            AuxInstallService.ApplyOverlayHotkey(iniFilePath, overlayHotkey);
-        AuxInstallService.ApplyScreenshotHotkey(iniFilePath, screenshotHotkey);
-        AuxInstallService.ApplyVariableListUseTabs(iniFilePath, useTabs);
-    }
-
-    /// <summary>
-    /// Builds the effective screenshot save path for a game, appending a sanitized
-    /// game name subfolder when per-game folders are enabled.
-    /// </summary>
-    private static string BuildSavePath(string basePath, string gameName)
-    {
-        var sanitized = AuxInstallService.SanitizeDirectoryName(gameName);
-        if (string.IsNullOrEmpty(sanitized)) return basePath;
-        return basePath + @"\" + sanitized;
-    }
-
-    /// <summary>
-    /// Handles the Apply to All Games button click for the HDR & Peak Brightness section.
-    /// Applies only peak nits to all managed reshade*.ini files.
-    /// </summary>
-    public async void ApplyPeakNitsToAll_Click(object sender, RoutedEventArgs e)
-    {
-        // Persist peak nits from textbox (user may not have pressed Enter)
-        if (int.TryParse(_window.PeakNitsBox.Text?.Trim(), out var nitsVal) && nitsVal > 0)
-            ViewModel.Settings.PeakNits = nitsVal;
-        AuxInstallService.GlobalPeakNits = ViewModel.Settings.PeakNits;
-        ViewModel.SaveSettingsPublic();
-
-        var peakNits = ViewModel.Settings.PeakNits;
-        if (peakNits <= 0 || !ViewModel.Settings.PeakNitsEnabled)
-        {
-            var emptyDialog = new ContentDialog
-            {
-                Title = "Peak Nits",
-                Content = "Peak nits is not configured or is disabled.",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(emptyDialog);
-            return;
-        }
-
-        int updatedCount = 0;
-        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
-        
-        await Task.Run(() =>
-        {
-            foreach (var card in allCards)
-            {
-                if (string.IsNullOrEmpty(card.InstallPath)) continue;
-                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (iniFiles.Count == 0) continue;
-
-                // Skip games where reshade.ini updates are locked
-                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-                try
-                {
-                    foreach (var iniFile in iniFiles)
-                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
-                    updatedCount++;
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-
-        var dialog = new ContentDialog
-        {
-            Title = "Peak Nits",
-            Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    public void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var logsDir = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "logs");
-        System.IO.Directory.CreateDirectory(logsDir);
-        CrashReporter.Log("[SettingsHandler.OpenLogsFolder_Click] User opened logs folder");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
-    }
-
-    private const string AdminTaskName = "RHI Admin Mode";
-    private bool _adminComboInit = true;
-
-    /// <summary>
-    /// Checks if the scheduled task exists and sets the combo box accordingly.
-    /// Called during settings page initialization.
-    /// </summary>
-    public async Task InitAdminModeComboAsync(ComboBox combo)
-    {
-        _adminComboInit = true;
-        // When UAC is disabled or the task exists, show as On
-        // Run the schtasks query on a background thread to avoid blocking UI
-        bool isUacDisabled = await Task.Run(() => IsUacDisabled());
-        bool taskRegistered = !isUacDisabled && await IsAdminTaskRegisteredAsync();
-        bool isOn = isUacDisabled || taskRegistered;
-        combo.SelectedIndex = isOn ? 1 : 0;
-        // Grey out when UAC is off — no task needed, state can't be changed
-        if (isUacDisabled) combo.IsEnabled = false;
-        _adminComboInit = false;
-    }
-
-    public async void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_adminComboInit) return;
-        if (sender is not ComboBox combo) return;
-
-        bool enable = combo.SelectedIndex == 1;
-        CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Admin mode = {(enable ? "On" : "Off")}");
-
-        // When UAC is disabled, all processes already run as admin — no task needed.
-        if (await Task.Run(() => IsUacDisabled()))
-        {
-            await DialogService.ShowSafeAsync(new ContentDialog
-            {
-                Title = "Admin Mode",
-                Content = "UAC is disabled on this system — RHI always runs as administrator.",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
-            _adminComboInit = true;
-            combo.SelectedIndex = 1; // keep showing On
-            _adminComboInit = false;
-            return;
-        }
-
-        try
-        {
-            // Run schtasks operations on background thread to avoid blocking UI
-            if (enable)
-                await Task.Run(() => CreateAdminTask());
-            else
-                await Task.Run(() => DeleteAdminTask());
-
-            // Show restart notice
-            await DialogService.ShowSafeAsync(new ContentDialog
-            {
-                Title = "Admin Mode",
-                Content = enable
-                    ? "Admin Mode enabled. Restart RHI for it to take effect."
-                    : "Admin Mode disabled. RHI will launch normally on next start.",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Failed: {ex.Message}");
-            // Revert the selection on failure
-            _adminComboInit = true;
-            combo.SelectedIndex = enable ? 0 : 1;
-            _adminComboInit = false;
-        }
-    }
-
-    private static async Task<bool> IsAdminTaskRegisteredAsync()
-    {
-        try
-        {
-            var result = await RunSchtasksAsync($"/Query /TN \"{AdminTaskName}\" /FO LIST");
-            return result.ExitCode == 0;
-        }
-        catch { return false; }
-    }
-
-    /// <summary>
-    /// Returns true when UAC is disabled system-wide (EnableLUA=0).
-    /// When UAC is off, all processes already run with full admin rights,
-    /// so the scheduled task elevation path is unnecessary.
-    /// </summary>
-    private static bool IsUacDisabled()
-    {
-        try
-        {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System");
-            return key?.GetValue("EnableLUA") is int val && val == 0;
-        }
-        catch { return false; }
-    }
-
-    private static void CreateAdminTask()
-    {
-        var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
-        // Create a scheduled task that runs RHI with highest privileges — no auto-start trigger.
-        // Uses /SC ONCE with a past date so the task exists but never auto-triggers.
-        // RHI launches itself through the task via "schtasks /Run" for UAC-free elevation.
-        var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";
-        var result = RunSchtasksElevatedSync(args);
-        if (result != 0)
-            throw new InvalidOperationException($"schtasks /Create failed (exit {result})");
-    }
-
-    private static void DeleteAdminTask()
-    {
-        var result = RunSchtasksElevatedSync($"/Delete /TN \"{AdminTaskName}\" /F");
-        if (result != 0)
-            throw new InvalidOperationException($"schtasks /Delete failed (exit {result})");
-    }
-
-    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion synchronously.
-    /// This is acceptable since it's called from a background thread.</summary>
-    private static int RunSchtasksElevatedSync(string arguments)
-    {
-        var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
-        {
-            UseShellExecute = true,
-            Verb = "runas",
-            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-        };
-        using var proc = System.Diagnostics.Process.Start(psi)!;
-        proc.WaitForExit(15000);
-        return proc.ExitCode;
-    }
-
-    private static async Task<(int ExitCode, string Output)> RunSchtasksAsync(string arguments)
-    {
-        var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        using var proc = System.Diagnostics.Process.Start(psi)!;
-        
-        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-        var stderrTask = proc.StandardError.ReadToEndAsync();
-        
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try
-        {
-            await proc.WaitForExitAsync(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            try { proc.Kill(); } catch { }
-            return (-1, "Timeout");
-        }
-        
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-        return (proc.ExitCode, (stdout + stderr).Trim());
-    }
-
-    public void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var appDataDir = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
-        System.IO.Directory.CreateDirectory(appDataDir);
-        CrashReporter.Log("[SettingsHandler.OpenAppDataFolder_Click] User opened AppData folder");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
-    }
-
-    public void OpenCustomFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var customDir = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "Custom");
-        System.IO.Directory.CreateDirectory(customDir);
-        CrashReporter.Log("[SettingsHandler.OpenCustomFolder_Click] User opened Custom folder");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customDir) { UseShellExecute = true });
-    }
-
-    public void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
-    {
-        System.IO.Directory.CreateDirectory(DownloadPaths.Root);
-        CrashReporter.Log("[SettingsHandler.OpenDownloadsFolder_Click] User opened downloads cache folder");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadPaths.Root) { UseShellExecute = true });
-    }
-
-    // ── Export Game Data ──────────────────────────────────────────────────────
-
-    public async void ExportGameData_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var btn = sender as Button;
-            if (btn != null) btn.IsEnabled = false;
-
-            string json = await Task.Run(() => BuildGameDataJson());
-
-            // Write to temp file and put on clipboard as a zip (same pattern as Copy Logs)
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            var jsonPath  = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.json");
-            File.WriteAllText(jsonPath, json, System.Text.Encoding.UTF8);
-
-            // Zip it
-            var zipPath = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.zip");
-            if (File.Exists(zipPath)) File.Delete(zipPath);
-            using (var archive = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
-            {
-                var entry = archive.CreateEntry("rhi_game_data.json");
-                using var entryStream = entry.Open();
-                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-                entryStream.Write(bytes, 0, bytes.Length);
-            }
-
-            try { File.Delete(jsonPath); } catch { }
-
-            var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(zipPath);
-            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dp.SetStorageItems(new[] { storageFile });
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
-
-            CrashReporter.Log($"[SettingsHandler.ExportGameData_Click] Game data exported: {zipPath}");
-
-            if (sender is FrameworkElement fe && fe.XamlRoot != null)
-            {
-                await DialogService.ShowSafeAsync(new ContentDialog
-                {
-                    Title = "Game Data Copied",
-                    Content = $"Data for {ViewModel.AllCards.Count} games has been gathered and copied to your clipboard. Paste directly into Discord to share.",
-                    CloseButtonText = "OK",
-                    XamlRoot = fe.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[SettingsHandler.ExportGameData_Click] Failed: {ex.Message}");
-        }
-        finally
-        {
-            if (sender is Button b) b.IsEnabled = true;
-        }
-    }
-
-    private string BuildGameDataJson()
-    {
-        var pcgwSvc = App.Services.GetRequiredService<IPcgwService>();
-        var gnSvc   = App.Services.GetRequiredService<IGameNameService>();
-        var cards   = ViewModel.AllCards;
-        var rhi     = CrashReporter.AppVersion;
-
-        var games = new System.Collections.Generic.List<object>();
-
-        foreach (var card in cards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            var installPath = card.InstallPath;
-
-            // ── Exe path ─────────────────────────────────────────────────────
-            // User override is an absolute path — make it relative to install root
-            string? exeRelative = null;
-            if (gnSvc.LaunchExeOverrides.TryGetValue(card.GameName, out var userExe)
-                && !string.IsNullOrEmpty(userExe)
-                && userExe.StartsWith(installPath, StringComparison.OrdinalIgnoreCase))
-            {
-                exeRelative = userExe.Substring(installPath.Length).TrimStart('\\', '/');
-            }
-            else if (ViewModel.Manifest?.LaunchExeOverrides?.TryGetValue(card.GameName, out var manifestExe) == true
-                     && !string.IsNullOrEmpty(manifestExe))
-            {
-                exeRelative = manifestExe; // already relative
-            }
-
-            // ── Install subpath (relative portion after the game root) ───────
-            // The install path itself IS the subpath we care about — strip the
-            // store root prefix to get the relative subfolder if possible.
-            // For the db we just record the folder name (last segment of path).
-            string? installSubpath = null;
-            if (!string.IsNullOrEmpty(installPath))
-            {
-                var folderName = Path.GetFileName(installPath.TrimEnd('\\', '/'));
-                installSubpath = string.IsNullOrEmpty(folderName) ? null : folderName;
-            }
-
-            // ── APIs — merge PE scan with PCGW scrape ────────────────────────
-            var detectedApis = card.DetectedApis ?? new System.Collections.Generic.HashSet<Models.GraphicsApiType>();
-            var primaryApi   = card.GraphicsApi.ToString().Replace("DirectX", "DX");
-
-            // PCGW can fill in APIs the PE scan missed (e.g. DX12 not in exe imports)
-            var pcgwInfo = pcgwSvc.GetCachedApiInfo(card.GameName);
-            var allApis  = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var a in detectedApis)
-                allApis.Add(a.ToString().Replace("DirectX", "DX"));
-            if (pcgwInfo != null)
-            {
-                if (pcgwInfo.HasDirectX9)  allApis.Add("DX9");
-                if (pcgwInfo.HasDirectX10) allApis.Add("DX10");
-                if (pcgwInfo.HasDirectX11) allApis.Add("DX11");
-                if (pcgwInfo.HasDirectX12) allApis.Add("DX12");
-                if (pcgwInfo.HasVulkan)    allApis.Add("Vulkan");
-                if (pcgwInfo.HasOpenGL)    allApis.Add("OpenGL");
-            }
-
-            // If PCGW says DX12 but PE scan only found DX11, promote primary to DX12
-            if (primaryApi == "DX11" && allApis.Contains("DX12"))
-                primaryApi = "DX12";
-
-            // ── Store-specific IDs ────────────────────────────────────────────
-            var dg = card.DetectedGame;
-            int? steamAppId = dg?.SteamAppId;
-            string? xboxAumid = dg?.XboxAumid;
-            string? epicAppName = dg?.EpicAppName;
-
-            games.Add(new
-            {
-                name          = card.GameName,
-                store         = card.Source,
-                install_subpath = installSubpath,
-                exe_relative  = exeRelative,
-                api           = primaryApi,
-                all_apis      = allApis.OrderBy(x => x).ToList(),
-                bitness       = card.Is32Bit ? 32 : 64,
-                engine        = string.IsNullOrEmpty(card.EngineHint) ? null : card.EngineHint,
-                steam_appid   = steamAppId,
-                xbox_aumid    = xboxAumid,
-                epic_app_name = epicAppName,
-                pcgw_url      = card.PcgwUrl,
-                config_path       = pcgwInfo?.ConfigPath,
-                config_path_xbox  = pcgwInfo?.ConfigPathXbox,
-                engine_ini_project_override = card.EngineIniProjectOverride,
-                api_source    = pcgwInfo != null ? "pcgw+pe" : "pe",
-            });
-        }
-
-        var export = new
-        {
-            version     = "1",
-            rhi_version = rhi,
-            exported_at = DateTime.UtcNow.ToString("o"),
-            game_count  = games.Count,
-            games,
-        };
-
-        return System.Text.Json.JsonSerializer.Serialize(export,
-            new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            });
-    }
-
-    public async void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var logsDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "RHI", "logs");
-            if (!Directory.Exists(logsDir))
-            {
-                CrashReporter.Log("[SettingsHandler.CopyLogsArchive_Click] Logs directory does not exist");
-                return;
-            }
-
-            var logFiles = Directory.GetFiles(logsDir, "*.txt");
-            if (logFiles.Length == 0)
-            {
-                CrashReporter.Log("[SettingsHandler.CopyLogsArchive_Click] No log files found");
-                return;
-            }
-
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            var archivePath = Path.Combine(Path.GetTempPath(), $"RHI_Logs_{timestamp}.zip");
-
-            // Delete if exists from a previous attempt
-            if (File.Exists(archivePath)) File.Delete(archivePath);
-
-            System.IO.Compression.ZipFile.CreateFromDirectory(logsDir, archivePath);
-
-            var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(archivePath);
-            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dp.SetStorageItems(new[] { storageFile });
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
-
-            CrashReporter.Log($"[SettingsHandler.CopyLogsArchive_Click] Logs archive copied to clipboard: {archivePath}");
-
-            // Show confirmation
-            if (sender is FrameworkElement fe && fe.XamlRoot != null)
-            {
-                await DialogService.ShowSafeAsync(new ContentDialog
-                {
-                    Title = "Logs Copied",
-                    Content = "All session logs have been archived and copied to your clipboard. Paste directly into Discord to share.",
-                    CloseButtonText = "OK",
-                    XamlRoot = fe.XamlRoot,
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[SettingsHandler.CopyLogsArchive_Click] Failed: {ex.Message}");
-        }
-    }
-
-    public async void PurgeCachedFiles_Click(object sender, RoutedEventArgs e)
-    {
-        // Show warning dialog
-        var warningDialog = new ContentDialog
-        {
-            Title = "⚠ Purge Staging Files",
-            Content = "This will delete cached DLSS, Streamline, and component staging files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
-            PrimaryButtonText = "Purge",
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(warningDialog);
-        if (result != ContentDialogResult.Primary) return;
-
-        int filesDeleted = 0;
-        long bytesFreed = 0;
-        var rhiRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
-
-        // Folders to purge completely (delete all contents, keep folder)
-        var foldersToClean = new[]
-        {
-            Path.Combine(rhiRoot, "DLSS"),
-            Path.Combine(rhiRoot, "DLSS-D"),
-            Path.Combine(rhiRoot, "DLSS-G"),
-            Path.Combine(rhiRoot, "Streamline"),
-        };
-
-        // Downloads subfolders to clean (all except shaders)
-        var downloadsRoot = DownloadPaths.Root;
-
-        try
-        {
-            // Clean DLSS/Streamline folders
-            foreach (var folder in foldersToClean)
-            {
-                if (!Directory.Exists(folder)) continue;
-                foreach (var dir in Directory.GetDirectories(folder))
-                {
-                    try
-                    {
-                        var dirInfo = new DirectoryInfo(dir);
-                        var dirSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-                        var dirCount = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Count();
-                        Directory.Delete(dir, recursive: true);
-                        filesDeleted += dirCount;
-                        bytesFreed += dirSize;
-                    }
-                    catch { /* skip locked files */ }
-                }
-                // Also delete any files directly in the folder
-                foreach (var file in Directory.GetFiles(folder))
-                {
-                    try
-                    {
-                        var fi = new FileInfo(file);
-                        bytesFreed += fi.Length;
-                        fi.Delete();
-                        filesDeleted++;
-                    }
-                    catch { }
-                }
-            }
-
-            // Collect installed addon filenames to preserve in renodx staging
-            var installedAddons = new HashSet<string>(
-                ViewModel.AllCards
-                    .Where(c => c.InstalledRecord != null && !string.IsNullOrEmpty(c.InstalledAddonFileName))
-                    .Select(c => c.InstalledAddonFileName!),
-                StringComparer.OrdinalIgnoreCase);
-
-            // Clean downloads subfolders (except shaders), preserving JSON metadata and in-use RenoDX addons
-            if (Directory.Exists(downloadsRoot))
-            {
-                foreach (var dir in Directory.GetDirectories(downloadsRoot))
-                {
-                    var dirName = Path.GetFileName(dir);
-                    if (dirName.Equals("shaders", StringComparison.OrdinalIgnoreCase)) continue;
-                    bool isRenodxDir = dirName.Equals("renodx", StringComparison.OrdinalIgnoreCase);
-
-                    try
-                    {
-                        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
-                        {
-                            if (Path.GetExtension(file).Equals(".json", StringComparison.OrdinalIgnoreCase)) continue;
-                            // Keep renodx addons that are currently installed on at least one game
-                            if (isRenodxDir && installedAddons.Contains(Path.GetFileName(file))) continue;
-                            try
-                            {
-                                var fi = new FileInfo(file);
-                                bytesFreed += fi.Length;
-                                fi.Delete();
-                                filesDeleted++;
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-                }
-                // Delete loose files in downloads root (e.g. .reorganised marker)
-                foreach (var file in Directory.GetFiles(downloadsRoot))
-                {
-                    try
-                    {
-                        var fi = new FileInfo(file);
-                        bytesFreed += fi.Length;
-                        fi.Delete();
-                        filesDeleted++;
-                    }
-                    catch { }
-                }
-            }
-
-            // Format size
-            string sizeStr = bytesFreed switch
-            {
-                >= 1_073_741_824 => $"{bytesFreed / 1_073_741_824.0:F1} GB",
-                >= 1_048_576 => $"{bytesFreed / 1_048_576.0:F1} MB",
-                >= 1024 => $"{bytesFreed / 1024.0:F1} KB",
-                _ => $"{bytesFreed} bytes"
-            };
-
-            CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Purged {filesDeleted} files, freed {sizeStr}");
-
-            var resultDialog = new ContentDialog
-            {
-                Title = "✅ Cache Purged",
-                Content = $"Deleted {filesDeleted} files, freed {sizeStr} of disk space.",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(resultDialog);
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Failed: {ex.Message}");
-            var errDialog = new ContentDialog
-            {
-                Title = "❌ Purge Failed",
-                Content = $"An error occurred: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(errDialog);
-        }
-    }
-
-    // ── Hotkey UI event handlers (placeholder — implemented in Tasks 6.2 / 6.3) ──
-
-    /// <summary>
-    /// Handles PreviewKeyDown on the HotkeyBox to capture key combinations.
-    /// Full implementation in Task 6.2.
-    /// </summary>
-    public void HotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        var key = e.Key;
-
-        // Req 7.4: Ignore modifier-only keys — do not update display when only a modifier is pressed
-        if (key == Windows.System.VirtualKey.Control ||
-            key == Windows.System.VirtualKey.Shift ||
-            key == Windows.System.VirtualKey.Menu ||       // Alt
-            key == (Windows.System.VirtualKey)91 ||        // Left Windows
-            key == (Windows.System.VirtualKey)92 ||        // Right Windows
-            key == Windows.System.VirtualKey.LeftControl ||
-            key == Windows.System.VirtualKey.RightControl ||
-            key == Windows.System.VirtualKey.LeftShift ||
-            key == Windows.System.VirtualKey.RightShift ||
-            key == Windows.System.VirtualKey.LeftMenu ||
-            key == Windows.System.VirtualKey.RightMenu)
-        {
-            return;
-        }
-
-        // Extract VK code from the pressed key (Req 2.2)
-        int vk = (int)key;
-
-        // Read modifier state from the current keyboard state (Req 2.1)
-        bool shift = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool ctrl = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool alt = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-        // Build and store the hotkey string in KeyOverlay format (Req 2.2)
-        _currentHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
-
-        // Update the TextBox display with human-readable format (Req 2.1)
-        if (sender is TextBox hotkeyBox)
-        {
-            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentHotkeyString);
-        }
-
-        // Prevent the TextBox from receiving the character
-        e.Handled = true;
-    }
-
-    /// <summary>
-    /// Handles the Apply to All Games button click for the overlay hotkey.
-    /// Persists the hotkey, applies it to all managed reshade*.ini files, and shows a confirmation dialog.
-    /// </summary>
-    public async void ApplyOverlayHotkey_Click(object sender, RoutedEventArgs e)
-    {
-        // Req 4.6: Persist hotkey to SettingsViewModel before iterating game cards
-        ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
-        ViewModel.SaveSettingsPublic();
-
-        bool isDefault = HotkeyManager.IsDefaultHotkey(_currentHotkeyString);
-
-        // Req 4.1: Iterate all game cards with a non-empty InstallPath
-        int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            // When the hotkey is the default (Home), skip RDR2 — its template uses
-            // END and we don't want to overwrite that with the generic default.
-            if (isDefault && AuxInstallService.IsRdr2(card.GameName))
-                continue;
-
-            // Req 4.2: Locate all reshade*.ini files in the game's install directory
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            try
-            {
-                // Req 4.3: Write KeyOverlay to [INPUT] section of each reshade*.ini
-                foreach (var iniFile in iniFiles)
-                {
-                    AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
-                }
-                updatedCount++;
-            }
-            catch (System.IO.IOException ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyOverlayHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-
-        // Req 4.5: Show confirmation dialog with count of updated files
-        var dialog = new ContentDialog
-        {
-            Title = "ReShade UI Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    // ── Combined ReShade Hotkeys (overlay + screenshot) ───────────────────────
-
-    /// <summary>
-    /// Applies both the overlay hotkey and screenshot hotkey to all managed reshade*.ini files.
-    /// </summary>
-    public async void ApplyReShadeHotkeys_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
-        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
-        ViewModel.SaveSettingsPublic();
-
-        bool isDefault = HotkeyManager.IsDefaultHotkey(_currentHotkeyString);
-
-        int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            if (isDefault && AuxInstallService.IsRdr2(card.GameName))
-                continue;
-
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            try
-            {
-                foreach (var iniFile in iniFiles)
-                {
-                    AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
-                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
-                }
-                updatedCount++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyReShadeHotkeys_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-
-        var dialog = new ContentDialog
-        {
-            Title = "ReShade Hotkeys",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    // ── Screenshot Hotkey ─────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Handles PreviewKeyDown on the ScreenshotHotkeyBox to capture key combinations.
-    /// </summary>
-    public void ScreenshotHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        var key = e.Key;
-
-        if (key == Windows.System.VirtualKey.Control ||
-            key == Windows.System.VirtualKey.Shift ||
-            key == Windows.System.VirtualKey.Menu ||
-            key == (Windows.System.VirtualKey)91 ||
-            key == (Windows.System.VirtualKey)92 ||
-            key == Windows.System.VirtualKey.LeftControl ||
-            key == Windows.System.VirtualKey.RightControl ||
-            key == Windows.System.VirtualKey.LeftShift ||
-            key == Windows.System.VirtualKey.RightShift ||
-            key == Windows.System.VirtualKey.LeftMenu ||
-            key == Windows.System.VirtualKey.RightMenu)
-        {
-            return;
-        }
-
-        int vk = (int)key;
-
-        bool shift = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool ctrl = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool alt = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-        _currentScreenshotHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
-
-        if (sender is TextBox hotkeyBox)
-        {
-            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentScreenshotHotkeyString);
-        }
-
-        e.Handled = true;
-    }
-
-    /// <summary>
-    /// Handles the Apply to All Games button click for the screenshot hotkey.
-    /// Persists the hotkey, applies it to all managed reshade*.ini files, and shows a confirmation dialog.
-    /// </summary>
-    public async void ApplyScreenshotHotkey_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
-        ViewModel.SaveSettingsPublic();
-
-        int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            try
-            {
-                foreach (var iniFile in iniFiles)
-                {
-                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
-                }
-                updatedCount++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyScreenshotHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-
-        var dialog = new ContentDialog
-        {
-            Title = "ReShade Screenshot Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    /// <summary>Resets the screenshot hotkey to the default Print Screen key.</summary>
-    public void ResetScreenshotHotkey_Click(object sender, RoutedEventArgs e)
-    {
-        _currentScreenshotHotkeyString = "44,0,0,0";
-        _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay("44,0,0,0");
-        ViewModel.Settings.ScreenshotHotkey = "44,0,0,0";
-        ViewModel.SaveSettingsPublic();
-    }
-
-    // ── ReLimiter OSD Hotkey ──────────────────────────────────────────────────
-
-    public void UlHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        var key = e.Key;
-
-        if (key == Windows.System.VirtualKey.Control ||
-            key == Windows.System.VirtualKey.Shift ||
-            key == Windows.System.VirtualKey.Menu ||
-            key == (Windows.System.VirtualKey)91 ||
-            key == (Windows.System.VirtualKey)92 ||
-            key == Windows.System.VirtualKey.LeftControl ||
-            key == Windows.System.VirtualKey.RightControl ||
-            key == Windows.System.VirtualKey.LeftShift ||
-            key == Windows.System.VirtualKey.RightShift ||
-            key == Windows.System.VirtualKey.LeftMenu ||
-            key == Windows.System.VirtualKey.RightMenu)
-        {
-            return;
-        }
-
-        int vk = (int)key;
-
-        bool shift = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool ctrl = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        bool alt = Microsoft.UI.Input.InputKeyboardSource
-            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-        _currentUlHotkeyString = HotkeyManager.BuildUlHotkeyString(vk, shift, ctrl, alt);
-
-        if (sender is TextBox hotkeyBox)
-            hotkeyBox.Text = _currentUlHotkeyString;
-
-        e.Handled = true;
-    }
-
-    public async void ApplyUlOsdHotkey_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.Settings.UlOsdHotkey = _currentUlHotkeyString;
-        ViewModel.SaveSettingsPublic();
-
-        bool sharedPresets = ViewModel.Settings.UlSharedPresets;
-        bool dlssHooks = ViewModel.Settings.UlDlssHooks;
-        int targetFps = ViewModel.Settings.UlTargetFps;
-        int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-
-            var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
-            var iniFile = Path.Combine(deployPath, "relimiter.ini");
-            if (!File.Exists(iniFile)) continue;
-
-            try
-            {
-                AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
-                AuxInstallService.ApplyUlSharedPresets(iniFile, sharedPresets);
-                AuxInstallService.ApplyUlDlssHooks(iniFile, dlssHooks);
-                AuxInstallService.ApplyUlTargetFps(iniFile, targetFps);
-
-                // RE Framework games also store relimiter.ini in _storage_
-                if (card.IsRefInstalled)
-                {
-                    var storagePath = Path.Combine(card.InstallPath, "_storage_", "relimiter.ini");
-                    if (File.Exists(storagePath))
-                    {
-                        AuxInstallService.ApplyUlOsdHotkey(storagePath, _currentUlHotkeyString);
-                        AuxInstallService.ApplyUlSharedPresets(storagePath, sharedPresets);
-                        AuxInstallService.ApplyUlDlssHooks(storagePath, dlssHooks);
-                        AuxInstallService.ApplyUlTargetFps(storagePath, targetFps);
-                    }
-                }
-
-                updatedCount++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyUlOsdHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-
-        // Also update the template in AppData
-        if (File.Exists(AuxInstallService.UlIniPath))
-        {
-            try
-            {
-                AuxInstallService.ApplyUlOsdHotkey(AuxInstallService.UlIniPath, _currentUlHotkeyString);
-                AuxInstallService.ApplyUlSharedPresets(AuxInstallService.UlIniPath, sharedPresets);
-                AuxInstallService.ApplyUlDlssHooks(AuxInstallService.UlIniPath, dlssHooks);
-                AuxInstallService.ApplyUlTargetFps(AuxInstallService.UlIniPath, targetFps);
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyUlOsdHotkey_Click] Failed to update template — {ex.Message}");
-            }
-        }
-
-        var dialog = new ContentDialog
-        {
-            Title = "ReLimiter Settings",
-            Content = $"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    // ── ReLimiter Shared Presets ──────────────────────────────────────────────
-
-    public void UlSharedPresetsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo)
-        {
-            ViewModel.Settings.UlSharedPresets = combo.SelectedIndex == 1;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void UlDlssHooksCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo)
-        {
-            ViewModel.Settings.UlDlssHooks = combo.SelectedIndex == 1;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    // ── ReLimiter Target FPS ──────────────────────────────────────────────────
-
-    /// <summary>VRR cap presets matching the MFG dialog pattern.</summary>
-    private static readonly (int Fps, string Label)[] _ulTargetFpsPresets =
-    {
-        (59,  "59 FPS (60Hz VRR Cap)"),
-        (73,  "73 FPS (75Hz VRR Cap)"),
-        (97,  "97 FPS (100Hz VRR Cap)"),
-        (116, "116 FPS (120Hz VRR Cap)"),
-        (138, "138 FPS (144Hz VRR Cap)"),
-        (157, "157 FPS (165Hz VRR Cap)"),
-        (171, "171 FPS (180Hz VRR Cap)"),
-        (189, "189 FPS (200Hz VRR Cap)"),
-        (224, "224 FPS (240Hz VRR Cap)"),
-        (258, "258 FPS (280Hz VRR Cap)"),
-        (275, "275 FPS (300Hz VRR Cap)"),
-        (324, "324 FPS (360Hz VRR Cap)"),
-        (416, "416 FPS (480Hz VRR Cap)"),
-        (431, "431 FPS (500Hz VRR Cap)"),
-    };
-    private static readonly HashSet<int> _ulTargetFpsPresetValues = new(_ulTargetFpsPresets.Select(p => p.Fps));
-
-    private bool _suppressUlTargetFpsChange;
-
-    private void InitializeUlTargetFpsCombo()
-    {
-        _suppressUlTargetFpsChange = true;
-        var combo = _window.UlTargetFpsCombo;
-        combo.Items.Clear();
-
-        combo.Items.Add("Off");
-        foreach (var preset in _ulTargetFpsPresets)
-            combo.Items.Add(preset.Label);
-
-        // If current value is a custom FPS (not in presets), insert it before "Custom..."
-        int currentFps = ViewModel.Settings.UlTargetFps;
-        if (currentFps > 0 && !_ulTargetFpsPresetValues.Contains(currentFps))
-            combo.Items.Add($"{currentFps} FPS (Custom)");
-
-        combo.Items.Add("Custom...");
-
-        // Select based on current value
-        if (currentFps == 0)
-            combo.SelectedIndex = 0; // Off
-        else
-        {
-            int matchIdx = Array.FindIndex(_ulTargetFpsPresets, p => p.Fps == currentFps);
-            if (matchIdx >= 0)
-                combo.SelectedIndex = matchIdx + 1; // +1 for "Off" at index 0
-            else
-            {
-                // Custom value — select the "(Custom)" item
-                combo.SelectedIndex = combo.Items.Count - 2; // before "Custom..."
-            }
-        }
-
-        _suppressUlTargetFpsChange = false;
-    }
-
-    public async void UlTargetFpsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_suppressUlTargetFpsChange) return;
-        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
-
-        var selectedText = combo.SelectedItem as string ?? "";
-
-        // "Custom..." opens a dialog for manual entry
-        if (selectedText == "Custom...")
-        {
-            var panel = new StackPanel { Spacing = 8 };
-            panel.Children.Add(new TextBlock
-            {
-                Text = "Enter a custom FPS value (20-1000):",
-                FontSize = 12,
-            });
-            var inputBox = new TextBox
-            {
-                PlaceholderText = "e.g. 165",
-                FontSize = 12,
-            };
-            panel.Children.Add(inputBox);
-
-            var dialog = new ContentDialog
-            {
-                Title = "Custom Target FPS",
-                Content = panel,
-                PrimaryButtonText = "Set",
-                CloseButtonText = "Cancel",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(dialog);
-            if (result == ContentDialogResult.Primary &&
-                int.TryParse(inputBox.Text, out int customFps) &&
-                customFps >= 20 && customFps <= 1000)
-            {
-                ViewModel.Settings.UlTargetFps = customFps;
-                ViewModel.SaveSettingsPublic();
-                InitializeUlTargetFpsCombo(); // Refresh to show custom value
-            }
-            else
-            {
-                // User cancelled or invalid — revert selection
-                InitializeUlTargetFpsCombo();
-            }
-            return;
-        }
-
-        // Handle preset/Off selection
-        int newFps;
-        if (combo.SelectedIndex == 0)
-            newFps = 0; // Off
-        else if (combo.SelectedIndex - 1 < _ulTargetFpsPresets.Length)
-            newFps = _ulTargetFpsPresets[combo.SelectedIndex - 1].Fps;
-        else
-            return; // Custom label item — don't set
-
-        ViewModel.Settings.UlTargetFps = newFps;
-        ViewModel.SaveSettingsPublic();
-    }
-
-    // ── OptiScaler Hotkey ─────────────────────────────────────────────────────
-
-    public void OsGpuCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo && combo.SelectedItem is string selected)
-        {
-            ViewModel.Settings.OsGpuType = selected;
-            ViewModel.SaveSettingsPublic();
-
-            // Show DLSS inputs combo only for AMD or Intel
-            bool showDlss = !string.Equals(selected, "NVIDIA", StringComparison.OrdinalIgnoreCase);
-            _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public void OsDlssInputsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo && combo.SelectedIndex >= 0)
-        {
-            ViewModel.Settings.OsDlssInputs = combo.SelectedIndex == 0; // 0=Yes, 1=No
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public async Task GlobalUpdateInclusion_ClickAsync(object sender, RoutedEventArgs e)
-    {
-        var settings = ViewModel.Settings;
-        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
-        if (xamlRoot == null) return;
-
-        var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !settings.GlobalSkipRsUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-        var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !settings.GlobalSkipRdxUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-        var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !settings.GlobalSkipUlUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-        var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !settings.GlobalSkipDcUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-        var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !settings.GlobalSkipOsUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-        var refCheck = new CheckBox { Content = "RE Framework", IsChecked = !settings.GlobalSkipRefUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-
-        var checkPanel = new StackPanel { Spacing = 0 };
-        checkPanel.Children.Add(new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
-        checkPanel.Children.Add(rsCheck);
-        checkPanel.Children.Add(rdxCheck);
-        checkPanel.Children.Add(ulCheck);
-        checkPanel.Children.Add(dcCheck);
-        checkPanel.Children.Add(osCheck);
-        checkPanel.Children.Add(refCheck);
-
-        var dialog = new ContentDialog
-        {
-            Title = "Global Update Inclusion",
-            Content = checkPanel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var result = await DialogService.ShowSafeAsync(dialog);
-        if (result == ContentDialogResult.Primary)
-        {
-            settings.GlobalSkipRsUpdates = !(rsCheck.IsChecked == true);
-            settings.GlobalSkipRdxUpdates = !(rdxCheck.IsChecked == true);
-            settings.GlobalSkipUlUpdates = !(ulCheck.IsChecked == true);
-            settings.GlobalSkipDcUpdates = !(dcCheck.IsChecked == true);
-            settings.GlobalSkipOsUpdates = !(osCheck.IsChecked == true);
-            settings.GlobalSkipRefUpdates = !(refCheck.IsChecked == true);
-            ViewModel.SaveSettingsPublic();
-            RefreshGlobalUpdateSummary();
-        }
-    }
-
-    public void RefreshGlobalUpdateSummary()
-    {
-        var tb = _window.GlobalUpdateSummaryText;
-        tb.Inlines.Clear();
-        var settings = ViewModel.Settings;
-        var items = new (string label, bool isOn)[]
-        {
-            ("RS", !settings.GlobalSkipRsUpdates),
-            ("RDX", !settings.GlobalSkipRdxUpdates),
-            ("RL", !settings.GlobalSkipUlUpdates),
-            ("DC", !settings.GlobalSkipDcUpdates),
-            ("OS", !settings.GlobalSkipOsUpdates),
-            ("REF", !settings.GlobalSkipRefUpdates),
-        };
-        for (int i = 0; i < items.Length; i++)
-        {
-            var (label, isOn) = items[i];
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-            {
-                Text = $"{label}: ",
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-            {
-                Text = isOn ? "On" : "Off",
-                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
-            if (i < items.Length - 1)
-            {
-                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                {
-                    Text = "  ·  ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
-            }
-        }
-    }
-
-    public void CacheAllShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ComboBox combo)
-        {
-            ViewModel.Settings.CacheAllShaders = combo.SelectedIndex == 1;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void OsHotkeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox combo && combo.SelectedItem is string selected)
-        {
-            _currentOsHotkeyString = selected;
-
-            // Persist immediately and write to INIs_Folder
-            ViewModel.Settings.OsHotkey = _currentOsHotkeyString;
-            ViewModel.SaveSettingsPublic();
-
-            // Write ShortcutKey to the OptiScaler.ini template in INIs_Folder
-            try
-            {
-                Directory.CreateDirectory(AuxInstallService.InisDir);
-                OptiScalerService.WriteShortcutKey(OptiScalerService.OsIniPath, _currentOsHotkeyString);
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.OsHotkeyCombo_SelectionChanged] Failed to write ShortcutKey — {ex.Message}");
-            }
-        }
-    }
-
-    public async void ApplyOsHotkey_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.Settings.OsHotkey = _currentOsHotkeyString;
-        ViewModel.SaveSettingsPublic();
-
-        // Write to INIs_Folder template
-        try
-        {
-            Directory.CreateDirectory(AuxInstallService.InisDir);
-            OptiScalerService.WriteShortcutKey(OptiScalerService.OsIniPath, _currentOsHotkeyString);
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[SettingsHandler.ApplyOsHotkey_Click] Failed to write template — {ex.Message}");
-        }
-
-        // Apply to all games where OptiScaler is installed
-        int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
-        {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!card.IsOsInstalled) continue;
-
-            var gameIniPath = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
-            if (!File.Exists(gameIniPath)) continue;
-
-            try
-            {
-                OptiScalerService.WriteShortcutKey(gameIniPath, _currentOsHotkeyString);
-                updatedCount++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyOsHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-
-        var dialog = new ContentDialog
-        {
-            Title = "OptiScaler Hotkey",
-            Content = $"Updated {updatedCount} OptiScaler.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    // ── DXVK Variant Selector ─────────────────────────────────────────────────
-
-    /// <summary>
-    /// Handles the DXVK variant ComboBox selection change.
-    /// Persists the variant, clears the staging cache, and prompts about re-deployment.
-    /// </summary>
-    public async void DxvkVariantCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is not ComboBox combo || combo.SelectedItem is not string selected) return;
-
-        var newVariant = selected switch
-        {
-            var s when s.Contains("Stable", StringComparison.OrdinalIgnoreCase) => DxvkVariant.Stable,
-            var s when s.Contains("Lilium", StringComparison.OrdinalIgnoreCase) => DxvkVariant.LiliumHdr,
-            _ => DxvkVariant.Development,
-        };
-
-        var currentVariant = _dxvkService.SelectedVariant;
-        if (newVariant == currentVariant) return;
-
-        // Persist the variant preference
-        ViewModel.Settings.DxvkVariant = newVariant switch
-        {
-            DxvkVariant.Stable => "Stable",
-            DxvkVariant.LiliumHdr => "LiliumHdr",
-            _ => "Development"
-        };
-        ViewModel.SaveSettingsPublic();
-
-        // Update the service
-        _dxvkService.SelectedVariant = newVariant;
-
-        // Ensure the new variant's staging is ready (download if needed)
-        _ = Task.Run(async () =>
-        {
-            try { await _dxvkService.EnsureStagingAsync(); }
-            catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.DxvkVariantCombo] Staging download failed — {ex.Message}"); }
-        });
-
-        // Auto-reinstall DXVK on all affected games (those without per-game override)
-        var gamesWithDxvk = ViewModel.AllCards
-            .Where(c => c.DxvkStatus == GameStatus.Installed || c.DxvkStatus == GameStatus.UpdateAvailable)
-            .Where(c => ViewModel.GetDxvkVariantOverride(c.GameName, c.Source) == null) // Only games using global default
-            .ToList();
-
-        if (gamesWithDxvk.Count > 0)
-        {
-            foreach (var card in gamesWithDxvk)
-            {
-                _ = ViewModel.InstallDxvkAsync(card);
-            }
-        }
-
-        var variantLabel = newVariant switch
-        {
-            DxvkVariant.Stable => "Stable",
-            DxvkVariant.LiliumHdr => "Lilium HDR",
-            _ => "Development",
-        };
-
-        var dialog = new ContentDialog
-        {
-            Title = "DXVK Variant Changed",
-            Content = $"DXVK variant changed to {variantLabel}."
-                + (gamesWithDxvk.Count > 0
-                    ? $"\n\nSwitching {gamesWithDxvk.Count} game(s) to the {variantLabel} build."
-                    : "\n\nNo games currently have DXVK installed."),
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    // ── ReShade Build Channel Selector ────────────────────────────────────────
-
-    /// <summary>
-    /// Handles the ReShade build channel ComboBox selection change.
-    /// Persists the channel, clears the addon ReShade staging cache, downloads
-    /// from the new source, and flags all installed ReShade games as UpdateAvailable.
-    /// </summary>
-    public async void ReShadeChannelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is not ComboBox combo || combo.SelectedItem is not string selected) return;
-
-        var newChannel = selected.Contains("Nightly", StringComparison.OrdinalIgnoreCase)
-            ? "Nightly" : "Stable";
-
-        if (string.Equals(newChannel, ViewModel.Settings.ReShadeChannel, StringComparison.OrdinalIgnoreCase))
-            return;
-
-        // Persist the channel preference
-        ViewModel.Settings.ReShadeChannel = newChannel;
-        ViewModel.SaveSettingsPublic();
-
-        // Download from the new source and update Vulkan layer when done
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                // Ensure both variants are available
-                var stableTask = _reShadeUpdateService.EnsureLatestAsync();
-                var nightlyTask = _reShadeNightlyService.EnsureLatestAsync();
-                await Task.WhenAll(stableTask, nightlyTask);
-
-                // Update the global Vulkan layer DLLs if they exist
-                // Only update if no per-game Vulkan override is active
-                var hasVulkanOverride = ViewModel.AllCards
-                    .Any(c => c.RequiresVulkanInstall
-                        && ViewModel.GetReShadeChannelOverride(c.GameName, c.Source) != null);
-
-                if (!hasVulkanOverride)
-                {
-                    try
-                    {
-                        var layerDir = VulkanLayerService.LayerDirectory;
-                        var stagedPath64 = AuxInstallService.GetStagedPathForChannel(newChannel, false);
-                        var stagedPath32 = AuxInstallService.GetStagedPathForChannel(newChannel, true);
-
-                        // 64-bit
-                        var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
-                        if (File.Exists(stagedPath64)
-                            && new FileInfo(stagedPath64).Length > AuxInstallService.MinReShadeSize
-                            && File.Exists(layer64))
-                        {
-                            try
-                            {
-                                File.Copy(stagedPath64, layer64, overwrite: true);
-                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL to {newChannel} build");
-                            }
-                            catch (UnauthorizedAccessException)
-                            {
-                                CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Direct copy denied, attempting elevated copy...");
-                                try
-                                {
-                                    await ElevatedFileCopyAsync(stagedPath64, layer64);
-                                    CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL via elevated copy to {newChannel} build");
-                                }
-                                catch (Exception elevEx)
-                                {
-                                    CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Elevated copy failed — {elevEx.Message}");
-                                }
-                            }
-                            catch (IOException ioEx)
-                            {
-                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
-                            }
-                        }
-
-                        // 32-bit
-                        var layer32 = Path.Combine(layerDir, "ReShade32.dll");
-                        if (File.Exists(stagedPath32)
-                            && new FileInfo(stagedPath32).Length > AuxInstallService.MinReShadeSize
-                            && File.Exists(layer32))
-                        {
-                            try
-                            {
-                                File.Copy(stagedPath32, layer32, overwrite: true);
-                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL to {newChannel} build");
-                            }
-                            catch (UnauthorizedAccessException)
-                            {
-                                try
-                                {
-                                    await ElevatedFileCopyAsync(stagedPath32, layer32);
-                                    CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL via elevated copy to {newChannel} build");
-                                }
-                                catch (Exception elevEx)
-                                {
-                                    CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] 32-bit elevated copy failed — {elevEx.Message}");
-                                }
-                            }
-                            catch (Exception ex32)
-                            {
-                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] 32-bit Vulkan layer copy failed — {ex32.Message}");
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Cannot update Vulkan layer — admin privileges required");
-                    }
-                    catch (Exception ex)
-                    {
-                        CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Failed to update Vulkan layer — {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Background download failed — {ex.Message}");
-            }
-        });
-
-        // Auto-reinstall ReShade on all affected games (those without a per-game override)
-        // Games with a per-game override keep their override channel — only "Global" games switch.
-        var gamesWithRs = ViewModel.AllCards
-            .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
-            .Where(c => !c.RequiresVulkanInstall) // Vulkan handled above via layer copy
-            .Where(c => ViewModel.GetReShadeChannelOverride(c.GameName, c.Source) == null) // Only games using global default
-            .Where(c => !c.UseNormalReShade) // Normal ReShade games are unaffected
-            .ToList();
-
-        foreach (var card in gamesWithRs)
-        {
-            _ = ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-        }
-
-        var totalCount = gamesWithRs.Count;
-        var vulkanCount = ViewModel.AllCards.Count(c => c.RequiresVulkanInstall && c.IsRsInstalled);
-        var channelLabel = string.Equals(newChannel, "Nightly", StringComparison.OrdinalIgnoreCase)
-            ? "Nightly" : "Stable";
-
-        var dialog = new ContentDialog
-        {
-            Title = "ReShade Build Channel Changed",
-            Content = $"ReShade build channel changed to {channelLabel}.\n\n"
-                + (totalCount > 0
-                    ? $"Switching {totalCount} game(s) to the {channelLabel} build."
-                      + (vulkanCount > 0 ? $"\n{vulkanCount} Vulkan game(s) updated via global layer." : "")
-                    : "No games currently have ReShade installed."),
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    /// <summary>
-    /// Copies a file using an elevated cmd.exe process (UAC prompt).
-    /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
-    /// </summary>
-    private static async Task ElevatedFileCopyAsync(string source, string destination)
-    {
-        var psi = new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/c copy /y \"{source}\" \"{destination}\"",
-            Verb = "runas",
-            UseShellExecute = true,
-            CreateNoWindow = true,
-            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-        };
-        using var proc = System.Diagnostics.Process.Start(psi);
-        if (proc == null) throw new IOException("Failed to start elevated copy process");
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        try
-        {
-            await proc.WaitForExitAsync(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            proc.Kill();
-            throw new IOException("Elevated copy timed out after 10 seconds");
-        }
-        if (proc.ExitCode != 0)
-            throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
-    }
-
-    // ── Nexus Mods (dev-only) ──────────────────────────────────────────────────
-
-    /// <summary>
-    /// Refreshes the Nexus status text and button states based on current settings.
-    /// Called on settings page open and after connect/disconnect.
-    /// </summary>
-    public void RefreshNexusStatus()
-    {
-        var key      = ViewModel.Settings.NexusApiKey;
-        var username = ViewModel.Settings.NexusUsername;
-        var isPremium = ViewModel.Settings.NexusIsPremium;
-
-        bool connected = !string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(username);
-
-        if (connected)
-        {
-            var tier = isPremium ? "Premium" : "Free";
-            _window.NexusStatusText.Text = $"Connected as {username} ({tier})";
-            _window.NexusStatusText.Foreground = UIFactory.Brush(
-                isPremium ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
-            _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            _window.NexusConnectBtn.Content = "Re-connect";
-        }
-        else
-        {
-            _window.NexusStatusText.Text = "Not connected";
-            _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-            _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-            _window.NexusConnectBtn.Content = "Connect";
-        }
-
-        // NXM handler status
-        bool nxmRegistered = NxmProtocolHandler.IsRegistered();
-        _window.NxmStatusText.Text = nxmRegistered ? "RHI is the active nxm:// handler" : "Not registered";
-        _window.NxmStatusText.Foreground = UIFactory.Brush(
-            nxmRegistered ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
-        _window.NxmRegisterBtn.Content = nxmRegistered ? "Unregister" : "Register";
-    }
-
-    public async void NexusConnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-    {
-        var nexusDl  = App.Services.GetRequiredService<NexusDownloadService>();
-        var nexusSso = App.Services.GetRequiredService<NexusSsoService>();
-
-        _window.NexusConnectBtn.IsEnabled = false;
-        _window.NexusStatusText.Text = "Opening browser for authorisation...";
-        _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-
-        using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(120));
-        string? receivedKey = null;
-
-        nexusSso.BrowserUrlReady += url =>
-        {
-            // Open the Nexus SSO page in the default browser
-            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
-            catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Failed to open browser — {ex.Message}"); }
-
-            _window.DispatcherQueue?.TryEnqueue(() =>
-                _window.NexusStatusText.Text = "Waiting for authorisation in browser...");
-        };
-
-        try
-        {
-            receivedKey = await nexusSso.AuthoriseAsync(cts.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) { }
-
-        // Validate the key on a background thread, then marshal ALL UI updates to the dispatcher
-        _ = Task.Run(async () =>
-        {
-            NexusUserInfo? info = null;
-            if (!string.IsNullOrEmpty(receivedKey))
-            {
-                try { info = await nexusDl.ValidateApiKeyAsync(receivedKey); }
-                catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Validate failed — {ex.Message}"); }
-            }
-
-            _window.DispatcherQueue?.TryEnqueue(() =>
-            {
-                _window.NexusConnectBtn.IsEnabled = true;
-
-                if (string.IsNullOrEmpty(receivedKey))
-                {
-                    _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
-                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                    return;
-                }
-
-                if (info == null)
-                {
-                    _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
-                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                    return;
-                }
-
-                ViewModel.Settings.NexusApiKey    = receivedKey;
-                ViewModel.Settings.NexusIsPremium = info.IsPremium;
-                ViewModel.Settings.NexusUsername  = info.Name;
-                ViewModel.SaveSettingsPublic();
-
-                RefreshNexusStatus();
-                CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected via SSO as {info.Name} (Premium={info.IsPremium})");
-            });
-        });
-    }
-
-    public void NexusDisconnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-    {
-        ViewModel.Settings.NexusApiKey    = "";
-        ViewModel.Settings.NexusIsPremium = false;
-        ViewModel.Settings.NexusUsername  = "";
-        ViewModel.SaveSettingsPublic();
-        RefreshNexusStatus();
-        CrashReporter.Log("[SettingsHandler.NexusDisconnectBtn_Click] Disconnected from Nexus Mods");
-    }
-
-    public async void NxmRegisterBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-    {
-        bool currentlyRegistered = NxmProtocolHandler.IsRegistered();
-
-        if (currentlyRegistered)
-        {
-            NxmProtocolHandler.UnregisterProtocolHandler();
-            CrashReporter.Log("[SettingsHandler.NxmRegisterBtn_Click] Unregistered nxm:// handler");
-        }
-        else
-        {
-            // Warn if another app already owns the handler
-            if (NxmProtocolHandler.AnyHandlerRegistered())
-            {
-                var result = await DialogService.ShowSafeAsync(new ContentDialog
-                {
-                    Title = "NXM Protocol Handler",
-                    Content = "Another application (e.g. Vortex or MO2) is already registered as the nxm:// handler. Registering RHI will replace it. Continue?",
-                    PrimaryButtonText = "Register RHI",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
-                if (result != ContentDialogResult.Primary) return;
-            }
-
-            try
-            {
-                NxmProtocolHandler.RegisterProtocolHandler();
-                CrashReporter.Log("[SettingsHandler.NxmRegisterBtn_Click] Registered nxm:// handler");
-            }
-            catch (Exception ex)
-            {
-                await DialogService.ShowSafeAsync(new ContentDialog
-                {
-                    Title = "NXM Registration Failed",
-                    Content = $"Could not register the nxm:// handler: {ex.Message}",
-                    CloseButtonText = "OK",
-                    XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
-                return;
-            }
-        }
-
-        RefreshNexusStatus();
-    }
-
-
 }

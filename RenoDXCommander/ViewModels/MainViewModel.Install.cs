@@ -1,6 +1,7 @@
 // MainViewModel.Install.cs -- Install/uninstall commands for RenoDX, ReShade, ReLimiter, RE Framework, and Luma.
 
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -844,6 +845,19 @@ public partial class MainViewModel
             return;
         }
 
+        // Bespoke pre-install dialog for Control Ultimate Edition
+        if (string.Equals(card.GameName, ControlUePostInstallService.GameName, StringComparison.OrdinalIgnoreCase))
+        {
+            var controlOpts = await ControlUePostInstallService.ShowInstallDialogAsync(card.InstallPath);
+            if (!controlOpts.Proceed)
+            {
+                if (swappedTo32 && originalSnapshotUrl != null) card.Mod.SnapshotUrl = originalSnapshotUrl;
+                return;
+            }
+            // Store options so they can be passed to RunAsync after the mod installs
+            _controlUeInstallOptions = controlOpts;
+        }
+
         card.IsInstalling = true;
         card.ActionMessage = "Starting download...";
         _crashReporter.Log($"[MainViewModel.InstallModAsync] Install started: {card.GameName} → {card.InstallPath}");
@@ -965,6 +979,47 @@ public partial class MainViewModel
                 && string.IsNullOrEmpty(engineIniFilename))
                 AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
+            // ── Control Ultimate Edition special post-install ──────────────────
+            if (ControlUePostInstallService.IsControlAddon(record.AddonFileName))
+            {
+                var controlOpts = _controlUeInstallOptions;
+                _controlUeInstallOptions = null; // clear after use
+                await ControlUePostInstallService.RunAsync(card.GameName, card.InstallPath, controlOpts).ConfigureAwait(false);
+
+                // Rescan DLSS — nvngx_dlss.dll and nvngx_dlssd.dll were just deployed.
+                // Update the card's detection result and rebuild the overrides panel so
+                // the NVIDIA Profile section reflects the new DLLs immediately.
+                try
+                {
+                    var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+                    var detection = dlssSvc.Detect(card.InstallPath);
+                    if (detection.HasAny)
+                    {
+                        dlssSvc.RecordDlssFound(card.GameName);
+                        dlssSvc.RecordTrustedPath(card.GameName, detection);
+                    }
+                    // Apply detection to the live card on the UI thread, then rebuild the panel
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        var live = _allCards.FirstOrDefault(c =>
+                            c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)
+                            && c.Source == card.Source) ?? card;
+                        live.DlssDetection = detection;
+                        live.ApplyDlssDetection(detection);
+                        live.RefreshDlssVersions(dlssSvc);
+                        // PopulateDetailPanel updates the components panel (badges, mod rows).
+                        // RequestOverridesPanelRebuild rebuilds the overrides panel which contains
+                        // the NVIDIA Profile section (DLSS columns + driver settings).
+                        RequestDetailPanelRebuild?.Invoke(live);
+                        RequestOverridesPanelRebuild?.Invoke(live);
+                    });
+                }
+                catch (Exception dlssEx)
+                {
+                    _crashReporter.Log($"[InstallModAsync] Control UE DLSS rescan failed — {dlssEx.Message}");
+                }
+            }
+
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
             // card visually the moment each property changes. No collection
@@ -988,6 +1043,10 @@ public partial class MainViewModel
                 // Recalculate counts only — do NOT call ApplyFilter() which
                 // would Clear() + re-add every card and flash the whole UI.
                 _filterViewModel.UpdateCounts();
+                // Rebuild the detail panel directly — the game is already selected so
+                // SelectionChanged won't fire, and NotifyAll() doesn't re-run the
+                // imperative panel builders.
+                RequestCardRebuild?.Invoke(card);
             });
         }
         catch (Exception ex)
@@ -1005,16 +1064,6 @@ public partial class MainViewModel
                     card.Mod.SnapshotUrl = originalSnapshotUrl;
             });
         }
-    }
-
-    [RelayCommand]
-    public async Task InstallMod32Async(GameCardViewModel? card)
-    {
-        if (card?.Mod?.SnapshotUrl32 == null) return;
-        var orig = card.Mod.SnapshotUrl;
-        card.Mod.SnapshotUrl = card.Mod.SnapshotUrl32;
-        await InstallModAsync(card);
-        card.Mod.SnapshotUrl = orig;
     }
 
     [RelayCommand]
@@ -1075,6 +1124,7 @@ public partial class MainViewModel
 
         SaveLibrary();
         _filterViewModel.UpdateCounts();
+        RequestCardRebuild?.Invoke(card);
     }
 
     // ── ReLimiter commands ────────────────────────────────────────────────────

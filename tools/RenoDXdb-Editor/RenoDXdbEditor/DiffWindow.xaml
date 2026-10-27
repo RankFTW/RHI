@@ -67,7 +67,8 @@
         <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
                 BorderThickness="0,0,0,1" Padding="16,12">
             <StackPanel>
-                <TextBlock Text="The remote file differs from your local copy."
+                <TextBlock x:Name="HeaderLabel"
+                           Text="The remote file differs from your local copy."
                            Foreground="#FFCC44" FontSize="14" FontWeight="SemiBold"/>
                 <TextBlock x:Name="FileNameLabel" Foreground="#AAAACC" FontSize="11" Margin="0,4,0,0"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Opacity="0.8">
@@ -75,14 +76,14 @@
                             CornerRadius="3" Padding="8,3" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="■" Foreground="#55CC77" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                            <TextBlock Text="Added (remote)" Foreground="#88EE88" FontSize="11"/>
+                            <TextBlock x:Name="AddedLegend" Text="Added (remote)" Foreground="#88EE88" FontSize="11"/>
                         </StackPanel>
                     </Border>
                     <Border Background="#4D2D2D" BorderBrush="#6A3A3A" BorderThickness="1"
                             CornerRadius="3" Padding="8,3">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="■" Foreground="#EE5555" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                            <TextBlock Text="Removed (local only)" Foreground="#EE8888" FontSize="11"/>
+                            <TextBlock x:Name="RemovedLegend" Text="Removed (local only)" Foreground="#EE8888" FontSize="11"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -133,7 +134,7 @@
                 <TextBlock x:Name="SummaryLabel" Foreground="#AAAACC" FontSize="11"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="Overwrite Local" Click="Overwrite_Click"
+                    <Button x:Name="OverwriteBtn" Content="Overwrite Local" Click="Overwrite_Click"
                             Style="{StaticResource AccentButton}"/>
                     <Button Content="Cancel" Click="Cancel_Click" Margin="8,0,0,0"/>
                 </StackPanel>

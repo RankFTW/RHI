@@ -57,10 +57,6 @@ public interface IShaderPackService
     void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null,
         Dictionary<string, HashSet<string>>? fileExclusions = null);
 
-    void SyncShadersToAllLocations(
-        IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
-        IEnumerable<string>? selectedPackIds = null);
-
     // ── Per-file include dependency map ──────────────────────────────────────────
 
     /// <summary>

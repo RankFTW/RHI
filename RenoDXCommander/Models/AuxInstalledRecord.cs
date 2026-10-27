@@ -17,4 +17,6 @@ public class AuxInstalledRecord
     public string? Channel        { get; set; }
     /// <summary>OptiScaler variant used at install time ("Stable" or "Nightly"). Null = legacy/Stable.</summary>
     public string? OsVariant      { get; set; }
+    /// <summary>OptiScaler nightly build date installed (e.g. "20261004"). Null = latest at time of install.</summary>
+    public string? OsNightlyBuild { get; set; }
 }

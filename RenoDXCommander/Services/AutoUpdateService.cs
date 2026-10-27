@@ -32,6 +32,15 @@ public class AutoUpdateService
     // Guard so two passes never run concurrently (startup + 4h timer can overlap).
     private int _running; // 0 = idle, 1 = running  (Interlocked)
 
+    private volatile bool _stopped;
+
+    public void Stop()
+    {
+        _stopped = true;
+        StopRetryTimer();
+        _retryQueue.Clear();
+    }
+
     private record RetryEntry(GameCardViewModel Card, string Component);
 
     public AutoUpdateService(ICrashReporter crashReporter, SettingsViewModel settings)
@@ -54,6 +63,7 @@ public class AutoUpdateService
     /// </summary>
     public void TriggerAsync()
     {
+        if (_stopped) return;
         if (!_settings.AutoUpdateComponents) return;
         if (_viewModel == null) return;
 
@@ -64,6 +74,7 @@ public class AutoUpdateService
 
     private async Task RunPassAsync()
     {
+        if (_stopped) return;
         if (System.Threading.Interlocked.CompareExchange(ref _running, 1, 0) != 0)
         {
             _crashReporter.Log("[AutoUpdateService] Pass skipped — previous pass still running");
@@ -90,187 +101,122 @@ public class AutoUpdateService
 
     private async Task RunUpdatePassAsync()
     {
-        if (_viewModel == null) return;
+        if (_stopped || _viewModel == null) return;
+        var vm = _viewModel;
 
-        // Collect every card with any pending update (mirrors AnyUpdateAvailable logic).
-        var cards = _viewModel.AllCards.ToList();
+        // Snapshot once; each component below is updated with ONE call that covers only the
+        // outdated, non-running games. (Calling the full Update All once per outdated game
+        // repeated the work for every game and also updated games that were running.)
+        var cards = vm.AllCards.ToList();
 
         // ── RenoDX ──────────────────────────────────────────────────────────────
-        var rdxCards = cards.Where(c =>
-            c.Status == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllRenoDx
-            && !c.IsExternalOnly
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        await UpdateComponentAsync("RenoDX", cards.Where(c =>
+                c.Status == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllRenoDx
+                && !c.IsExternalOnly
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllRenoDxAsync(batch)).ConfigureAwait(false);
 
-        foreach (var card in rdxCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "RenoDX"); continue; }
-            await TryUpdateOneAsync("RenoDX", card,
-                () => _viewModel.UpdateAllRenoDxAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        // ── ReShade (per-game DLL) ──────────────────────────────────────────────
+        // Only outdated games: the manual Update All reinstalls into every ReShade game.
+        await UpdateComponentAsync("ReShade", cards.Where(c =>
+                c.RsStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllReShade
+                && !c.RequiresVulkanInstall
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllReShadeAsync(batch)).ConfigureAwait(false);
 
-        // ── ReShade ─────────────────────────────────────────────────────────────
-        var rsCards = cards.Where(c =>
-            c.RsStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllReShade
-            && !c.RequiresVulkanInstall
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in rsCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "ReShade"); continue; }
-            await TryUpdateOneAsync("ReShade", card,
-                () => _viewModel.UpdateAllReShadeAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
-
-        // Vulkan ReShade — treat Vulkan cards as a group; skip the whole group if any is running.
-        var vulkanCards = cards.Where(c =>
+        // ── ReShade (Vulkan) ────────────────────────────────────────────────────
+        // One global layer shared by every Vulkan game: update it only when none is running.
+        var vulkanOutdated = cards.Where(c =>
             c.RsStatus == Models.GameStatus.UpdateAvailable
             && !c.IsHidden
             && !c.ExcludeFromUpdateAllReShade
             && c.RequiresVulkanInstall
             && !string.IsNullOrEmpty(c.InstallPath)).ToList();
 
-        if (vulkanCards.Count > 0)
+        if (vulkanOutdated.Count > 0)
         {
-            bool anyRunning = vulkanCards.Any(c => c.IsRunning);
-            if (anyRunning)
+            var vulkanGroup = VulkanGroup(cards);
+            if (vulkanGroup.Any(c => c.IsRunning))
             {
-                foreach (var vc in vulkanCards) EnqueueRetry(vc, "ReShade");
+                foreach (var vc in vulkanOutdated) EnqueueRetry(vc, "ReShade");
             }
             else
             {
-                // UpdateAllReShadeAsync handles Vulkan internally; just trigger it.
-                try
-                {
-                    _crashReporter.Log($"[AutoUpdateService] Updating ReShade (Vulkan, {vulkanCards.Count} game(s))");
-                    await _viewModel.UpdateAllReShadeAsync().ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _crashReporter.Log($"[AutoUpdateService] Vulkan ReShade update failed — {ex.Message}");
-                }
+                await TryUpdateAsync("ReShade (Vulkan)", vulkanOutdated,
+                    () => vm.UpdateAllReShadeAsync(vulkanGroup)).ConfigureAwait(false);
                 await Pause().ConfigureAwait(false);
             }
         }
 
         // ── ReLimiter ────────────────────────────────────────────────────────────
-        var ulCards = cards.Where(c =>
-            c.UlStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllUl
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in ulCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "ReLimiter"); continue; }
-            await TryUpdateOneAsync("ReLimiter", card,
-                () => _viewModel.UpdateAllUlAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("ReLimiter", cards.Where(c =>
+                c.UlStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllUl
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllUlAsync(batch)).ConfigureAwait(false);
 
         // ── Display Commander ────────────────────────────────────────────────────
-        var dcCards = cards.Where(c =>
-            c.DcStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllDc
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in dcCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "DC"); continue; }
-            await TryUpdateOneAsync("DC", card,
-                () => _viewModel.UpdateAllDcAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("DC", cards.Where(c =>
+                c.DcStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllDc
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllDcAsync(batch)).ConfigureAwait(false);
 
         // ── OptiScaler ───────────────────────────────────────────────────────────
-        var osCards = cards.Where(c =>
-            c.OsStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllOs
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in osCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "OptiScaler"); continue; }
-            await TryUpdateOneAsync("OptiScaler", card,
-                () => _viewModel.UpdateAllOsAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("OptiScaler", cards.Where(c =>
+                c.OsStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllOs
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllOsAsync(batch)).ConfigureAwait(false);
 
         // ── RE Framework ─────────────────────────────────────────────────────────
-        var refCards = cards.Where(c =>
-            c.RefStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllRef
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in refCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "REFramework"); continue; }
-            await TryUpdateOneAsync("REFramework", card,
-                () => _viewModel.UpdateAllRefAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("REFramework", cards.Where(c =>
+                c.RefStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllRef
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllRefAsync(batch)).ConfigureAwait(false);
 
         // ── DXVK ─────────────────────────────────────────────────────────────────
-        var dxvkCards = cards.Where(c =>
-            c.DxvkStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllDxvk
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in dxvkCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "DXVK"); continue; }
-            await TryUpdateOneAsync("DXVK", card,
-                () => _viewModel.UpdateAllDxvkAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("DXVK", cards.Where(c =>
+                c.DxvkStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllDxvk
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllDxvkAsync(batch)).ConfigureAwait(false);
 
         // ── Luma ─────────────────────────────────────────────────────────────────
-        var lumaCards = cards.Where(c =>
-            c.LumaStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && c.LumaMod?.DownloadUrl != null
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in lumaCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "Luma"); continue; }
-            await TryUpdateOneAsync("Luma", card,
-                () => _viewModel.UpdateAllLumaAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("Luma", cards.Where(c =>
+                c.LumaStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && c.LumaMod?.DownloadUrl != null
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllLumaAsync(batch)).ConfigureAwait(false);
 
         // ── DOF Fix ──────────────────────────────────────────────────────────────
-        var dofCards = cards.Where(c =>
-            c.DofFixStatus == Models.GameStatus.UpdateAvailable
-            && !c.IsHidden
-            && !c.ExcludeFromUpdateAllDofFix
-            && !string.IsNullOrEmpty(c.InstallPath)).ToList();
-
-        foreach (var card in dofCards)
-        {
-            if (card.IsRunning) { EnqueueRetry(card, "DofFix"); continue; }
-            await TryUpdateOneAsync("DofFix", card,
-                () => _viewModel.UpdateAllDofFixAsync()).ConfigureAwait(false);
-            await Pause().ConfigureAwait(false);
-        }
+        await UpdateComponentAsync("DofFix", cards.Where(c =>
+                c.DofFixStatus == Models.GameStatus.UpdateAvailable
+                && !c.IsHidden
+                && !c.ExcludeFromUpdateAllDofFix
+                && !string.IsNullOrEmpty(c.InstallPath)),
+            batch => vm.UpdateAllDofFixAsync(batch)).ConfigureAwait(false);
 
         // If anything was deferred, start the retry watcher.
         if (!_retryQueue.IsEmpty)
             EnsureRetryTimerRunning();
 
         // ── Nexus Mods (dev-unlocked, premium only) ──────────────────────────
+        // Per-card by nature (UpdateNexusModAsync takes one card).
         if (FeatureFlags.NexusMods)
         {
-            var nexusDl = _viewModel.AllCards.Count > 0
+            var nexusDl = vm.AllCards.Count > 0
                 ? App.Services.GetRequiredService<NexusDownloadService>()
                 : null;
 
@@ -287,35 +233,61 @@ public class AutoUpdateService
                 foreach (var card in nexusCards)
                 {
                     if (card.IsRunning) { EnqueueRetry(card, "Nexus"); continue; }
-                    await TryUpdateOneAsync("Nexus", card,
-                        () => _viewModel.UpdateNexusModAsync(card)).ConfigureAwait(false);
+                    await TryUpdateAsync("Nexus", new[] { card },
+                        () => vm.UpdateNexusModAsync(card)).ConfigureAwait(false);
                     await Pause().ConfigureAwait(false);
                 }
             }
         }
     }
 
+    /// <summary>
+    /// Updates one component: running games go to the retry queue, the rest are updated
+    /// together in a single call.
+    /// </summary>
+    private async Task UpdateComponentAsync(string component, IEnumerable<GameCardViewModel> outdated,
+        Func<IReadOnlyList<GameCardViewModel>, Task> updateBatch)
+    {
+        if (_stopped) return;
+        var batch = new List<GameCardViewModel>();
+        foreach (var card in outdated)
+        {
+            if (card.IsRunning) EnqueueRetry(card, component);
+            else batch.Add(card);
+        }
+        if (batch.Count == 0) return;
+
+        await TryUpdateAsync(component, batch, () => updateBatch(batch)).ConfigureAwait(false);
+        await Pause().ConfigureAwait(false);
+    }
+
+    /// <summary>All non-hidden Vulkan games — they share one ReShade layer.</summary>
+    private static List<GameCardViewModel> VulkanGroup(IEnumerable<GameCardViewModel> cards) =>
+        cards.Where(c => c.RequiresVulkanInstall && !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+
     // ── Per-card update wrapper ───────────────────────────────────────────────────
 
     /// <summary>
-    /// Calls the batch UpdateAll* method but catches IOExceptions (file locked)
-    /// and re-queues the card for retry.  All other exceptions are logged and swallowed.
+    /// Runs an update call. The UpdateAll* methods catch per-game errors themselves; an
+    /// IOException that still escapes (file locked) re-queues the affected games for retry.
     /// </summary>
-    private async Task TryUpdateOneAsync(string component, GameCardViewModel card, Func<Task> updateAll)
+    private async Task TryUpdateAsync(string component, IReadOnlyList<GameCardViewModel> games, Func<Task> update)
     {
+        if (_stopped) return;
+        var names = string.Join(", ", games.Select(g => "'" + g.GameName + "'"));
         try
         {
-            _crashReporter.Log($"[AutoUpdateService] Updating {component} for '{card.GameName}'");
-            await updateAll().ConfigureAwait(false);
+            _crashReporter.Log($"[AutoUpdateService] Updating {component} for {names}");
+            await update().ConfigureAwait(false);
         }
         catch (IOException ioEx)
         {
-            _crashReporter.Log($"[AutoUpdateService] {component} for '{card.GameName}' — file locked, queued for retry ({ioEx.Message})");
-            EnqueueRetry(card, component);
+            _crashReporter.Log($"[AutoUpdateService] {component} for {names} — file locked, queued for retry ({ioEx.Message})");
+            foreach (var g in games) EnqueueRetry(g, component);
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[AutoUpdateService] {component} for '{card.GameName}' — failed ({ex.Message})");
+            _crashReporter.Log($"[AutoUpdateService] {component} for {names} — failed ({ex.Message})");
         }
     }
 
@@ -323,6 +295,7 @@ public class AutoUpdateService
 
     private void EnqueueRetry(GameCardViewModel card, string component)
     {
+        if (_stopped) return;
         // Avoid duplicate entries for the same card+component.
         // ConcurrentQueue has no Contains — we accept rare duplicates harmlessly
         // since UpdateAll* is idempotent when nothing needs updating.
@@ -334,7 +307,7 @@ public class AutoUpdateService
     {
         lock (_retryTimerLock)
         {
-            if (_retryTimer != null) return; // already running
+            if (_stopped || _retryTimer != null) return;
             _retryTimer = new System.Threading.Timer(
                 _ => _ = Task.Run(RetryPassAsync),
                 null,
@@ -346,7 +319,15 @@ public class AutoUpdateService
 
     private async Task RetryPassAsync()
     {
-        if (_viewModel == null) return;
+        if (_stopped || Interlocked.CompareExchange(ref _running, 1, 0) != 0) return;
+        try { await RetryPassCoreAsync().ConfigureAwait(false); }
+        catch (Exception ex) { _crashReporter.Log($"[AutoUpdateService] Retry pass failed — {ex.Message}"); }
+        finally { Interlocked.Exchange(ref _running, 0); }
+    }
+
+    private async Task RetryPassCoreAsync()
+    {
+        if (_stopped || _viewModel == null) return;
         if (_retryQueue.IsEmpty)
         {
             StopRetryTimer();
@@ -364,6 +345,7 @@ public class AutoUpdateService
 
         foreach (var entry in snapshot)
         {
+            if (_stopped) return;
             if (entry.Card.IsRunning)
             {
                 // Still running — re-queue.
@@ -402,20 +384,37 @@ public class AutoUpdateService
         }
     }
 
-    private Task RunRetryUpdateAsync(RetryEntry entry) => entry.Component switch
+    // Retries update just the one game — except Vulkan ReShade, which is a shared layer.
+    private Task RunRetryUpdateAsync(RetryEntry entry)
     {
-        "RenoDX"     => _viewModel!.UpdateAllRenoDxAsync(),
-        "ReShade"    => _viewModel!.UpdateAllReShadeAsync(),
-        "ReLimiter"  => _viewModel!.UpdateAllUlAsync(),
-        "DC"         => _viewModel!.UpdateAllDcAsync(),
-        "OptiScaler" => _viewModel!.UpdateAllOsAsync(),
-        "REFramework"=> _viewModel!.UpdateAllRefAsync(),
-        "DXVK"       => _viewModel!.UpdateAllDxvkAsync(),
-        "Luma"       => _viewModel!.UpdateAllLumaAsync(),
-        "DofFix"     => _viewModel!.UpdateAllDofFixAsync(),
-        "Nexus"      => _viewModel!.UpdateNexusModAsync(entry.Card),
-        _            => Task.CompletedTask,
-    };
+        var vm = _viewModel!;
+        var one = new[] { entry.Card };
+        return entry.Component switch
+        {
+            "RenoDX"      => vm.UpdateAllRenoDxAsync(one),
+            "ReShade"     => entry.Card.RequiresVulkanInstall
+                                ? RetryVulkanAsync(vm)
+                                : vm.UpdateAllReShadeAsync(one),
+            "ReLimiter"   => vm.UpdateAllUlAsync(one),
+            "DC"          => vm.UpdateAllDcAsync(one),
+            "OptiScaler"  => vm.UpdateAllOsAsync(one),
+            "REFramework" => vm.UpdateAllRefAsync(one),
+            "DXVK"        => vm.UpdateAllDxvkAsync(one),
+            "Luma"        => vm.UpdateAllLumaAsync(one),
+            "DofFix"      => vm.UpdateAllDofFixAsync(one),
+            "Nexus"       => vm.UpdateNexusModAsync(entry.Card),
+            _             => Task.CompletedTask,
+        };
+    }
+
+    private Task RetryVulkanAsync(MainViewModel vm)
+    {
+        var group = VulkanGroup(vm.AllCards.ToList());
+        // A Vulkan game is still running: throw IOException so the retry loop re-queues it.
+        if (group.Any(c => c.IsRunning))
+            throw new IOException("A Vulkan game is still running");
+        return vm.UpdateAllReShadeAsync(group);
+    }
 
     private void StopRetryTimer()
     {
@@ -427,5 +426,5 @@ public class AutoUpdateService
     }
 
     /// <summary>2-second breathing gap between individual card updates — keeps the pass non-disruptive.</summary>
-    private static Task Pause() => Task.Delay(TimeSpan.FromSeconds(2));
+    private Task Pause() => _stopped ? Task.CompletedTask : Task.Delay(TimeSpan.FromSeconds(2));
 }

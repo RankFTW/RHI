@@ -25,7 +25,6 @@ public partial class UeHdrSectionViewModel : SectionViewModelBase
     public ObservableCollection<StringItem> UeExtendedGames { get; }
     public ObservableCollection<StringItem> NoUeExtendedGames { get; }
     public ObservableCollection<StringItem> LumaRenodxCompat { get; }
-    public ObservableCollection<StringItem> LumaDefaultGames { get; }
 
     public UeHdrSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -35,7 +34,6 @@ public partial class UeHdrSectionViewModel : SectionViewModelBase
         UeExtendedGames = ToObservable(manifest.UeExtendedGames);
         NoUeExtendedGames = ToObservable(manifest.NoUeExtendedGames);
         LumaRenodxCompat = ToObservable(manifest.LumaRenodxCompat);
-        LumaDefaultGames = ToObservable(manifest.LumaDefaultGames);
     }
 
     [RelayCommand] public void AddNativeHdr() { NativeHdrGames.Add(new StringItem("")); Dirty(); }
@@ -48,8 +46,6 @@ public partial class UeHdrSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveNoUeExtended(StringItem item) { NoUeExtendedGames.Remove(item); Dirty(); }
     [RelayCommand] public void AddLumaCompat() { LumaRenodxCompat.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveLumaCompat(StringItem item) { LumaRenodxCompat.Remove(item); Dirty(); }
-    [RelayCommand] public void AddLumaDefault() { LumaDefaultGames.Add(new StringItem("")); Dirty(); }
-    [RelayCommand] public void RemoveLumaDefault(StringItem item) { LumaDefaultGames.Remove(item); Dirty(); }
     [RelayCommand] public void SortNativeHdr() { var s = NativeHdrGames.OrderBy(i => i.Value).ToList(); NativeHdrGames.Clear(); foreach (var i in s) NativeHdrGames.Add(i); Dirty(); }
 
     public override void Commit()
@@ -62,6 +58,5 @@ public partial class UeHdrSectionViewModel : SectionViewModelBase
         _manifest.UeExtendedGames = FromObservable(UeExtendedGames).Count > 0 ? FromObservable(UeExtendedGames) : null;
         _manifest.NoUeExtendedGames = FromObservable(NoUeExtendedGames).Count > 0 ? FromObservable(NoUeExtendedGames) : null;
         _manifest.LumaRenodxCompat = FromObservable(LumaRenodxCompat).Count > 0 ? FromObservable(LumaRenodxCompat) : null;
-        _manifest.LumaDefaultGames = FromObservable(LumaDefaultGames).Count > 0 ? FromObservable(LumaDefaultGames) : null;
     }
 }

@@ -541,11 +541,6 @@
                                      VerticalScrollBarVisibility="Auto"/>
                         </StackPanel>
 
-                        <!-- Apply + status -->
-                        <Button Content="Apply Changes" Click="ApplyChanges_Click"
-                                Style="{StaticResource AccentButton}"
-                                Margin="0,18,0,0" HorizontalAlignment="Left"
-                                Padding="16,7"/>
                         <TextBlock x:Name="StatusLabel" Foreground="#55CC77"
                                    Margin="0,8,0,0" FontSize="11"/>
                     </StackPanel>

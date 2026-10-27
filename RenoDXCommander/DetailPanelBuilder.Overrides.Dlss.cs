@@ -88,10 +88,12 @@ public partial class DetailPanelBuilder
                 bool matched = false;
                 for (int i = 0; i < items.Count; i++)
                 {
-                    var itemBase = items[i].Replace(" (Default)", "");
-                    if (installedVersion.Equals(itemBase, StringComparison.OrdinalIgnoreCase)
-                        || itemBase.StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
-                        || installedVersion.StartsWith(itemBase, StringComparison.OrdinalIgnoreCase))
+                    // Strip the "(Default)" suffix if present for comparison
+                    var itemBase = items[i];
+                    if (itemBase.StartsWith("Default (", StringComparison.OrdinalIgnoreCase))
+                        itemBase = itemBase.Substring("Default (".Length).TrimEnd(')');
+
+                    if (installedVersion.Equals(itemBase, StringComparison.OrdinalIgnoreCase))
                     {
                         selectedIndex = i;
                         matched = true;
@@ -118,6 +120,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = isPresent || (onDriverOverrideToggled != null),
             Opacity = 1.0,
+            MaxDropDownHeight = 300,
         };
 
         if (driverOverrideActive)
@@ -156,6 +159,18 @@ public partial class DetailPanelBuilder
                 else
                     await onVersionSelected(selected);
             }
+            catch (DlssSwapException ex)
+            {
+                CrashReporter.Log($"[DetailPanelBuilder.BuildDlssColumn] {label} swap to '{selected}' failed — {ex.Message}");
+                // Put the dropdown back to what is actually on disk
+                if (ev.RemovedItems.Count > 0)
+                {
+                    versionInit = true;
+                    versionCombo.SelectedItem = ev.RemovedItems[0];
+                    versionInit = false;
+                }
+                await ShowDlssSwapErrorAsync(ex.Message);
+            }
             finally
             {
                 versionCombo.IsEnabled = isPresent || (onDriverOverrideToggled != null);
@@ -182,6 +197,7 @@ public partial class DetailPanelBuilder
                 FontSize = 11,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 IsEnabled = isPresent,
+                MaxDropDownHeight = 300,
             };
 
             // Add tooltip explaining presets
@@ -237,6 +253,7 @@ public partial class DetailPanelBuilder
                 FontSize = 11,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 IsEnabled = isPresent,
+                MaxDropDownHeight = 300,
             };
             ToolTipService.SetToolTip(rsCombo,
                 "Override the DLSS render resolution scale. Off = game controls the scale.\nNamed presets set a fixed percentage. Custom lets you enter any value from 33-100%.");
@@ -323,5 +340,19 @@ public partial class DetailPanelBuilder
         };
         Grid.SetColumn(divider, column);
         return divider;
+    }
+
+    /// <summary>Tells the user why a DLSS / Streamline swap couldn't be applied.</summary>
+    private async Task ShowDlssSwapErrorAsync(string message)
+    {
+        var xamlRoot = _window.Content?.XamlRoot;
+        if (xamlRoot == null) return;
+        await DialogService.ShowSafeAsync(new ContentDialog
+        {
+            Title = "Couldn't change DLSS files",
+            Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
+            CloseButtonText = "OK",
+            XamlRoot = xamlRoot,
+        });
     }
 }

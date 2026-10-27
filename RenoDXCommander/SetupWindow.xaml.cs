@@ -17,6 +17,7 @@ namespace RenoDXCommander;
 /// </summary>
 public sealed partial class SetupWindow : Window
 {
+    private ForegroundActivationTarget? _foregroundTarget;
     /// <summary>
     /// Called after the user clicks either button.
     /// <c>true</c> = "Manage ReShade for me", <c>false</c> = "I'll manage it myself".
@@ -69,6 +70,18 @@ public sealed partial class SetupWindow : Window
         }
 
         BuildContent();
+
+        Activated += (_, _) =>
+        {
+            _foregroundTarget ??= new ForegroundActivationTarget(hwnd,
+                action => DispatcherQueue.TryEnqueue(() => action()), () =>
+                {
+                    AppWindow.Show();
+                    Activate();
+                    ForegroundActivation.Request(hwnd);
+                });
+        };
+        Closed += (_, _) => _foregroundTarget?.Dispose();
     }
 
     private void CenterOnPrimaryDisplay()

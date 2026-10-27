@@ -698,6 +698,7 @@ public partial class MainViewModel
                 {
                     Name = card.GameName,
                     IsGenericLuma = true,
+                    Author = "Pumbo",
                     DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
                     Status = "✅",
                 };
@@ -868,11 +869,51 @@ public partial class MainViewModel
         card.NotifyAll();
     }
 
+    /// <summary>
+    /// Adds a Luma entry to Update History when an install replaced an older build
+    /// (GitHub build number) or an older Nexus file. Fresh installs are not logged.
+    /// </summary>
+    private void RecordLumaUpdate(string gameName, LumaInstalledRecord? previous, LumaInstalledRecord? current)
+    {
+        if (previous == null || current == null) return;
+
+        string? oldVer = null, newVer = null;
+        if (current.InstalledBuildNumber > 0 && current.InstalledBuildNumber > previous.InstalledBuildNumber)
+        {
+            oldVer = previous.InstalledBuildNumber > 0 ? $"build {previous.InstalledBuildNumber}" : null;
+            newVer = $"build {current.InstalledBuildNumber}";
+        }
+        else if (current.NexusFileId != null && current.NexusFileId != previous.NexusFileId)
+        {
+            oldVer = previous.NexusFileId != null ? $"file {previous.NexusFileId}" : null;
+            newVer = $"file {current.NexusFileId}";
+        }
+        if (newVer == null) return;
+
+        try
+        {
+            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
+            {
+                Timestamp     = DateTime.UtcNow,
+                Category      = "Luma",
+                ComponentName = gameName,
+                OldVersion    = oldVer,
+                NewVersion    = newVer,
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _crashReporter.Log($"[MainViewModel.RecordLumaUpdate] Could not write update history — {ex.Message}");
+        }
+    }
+
     public async Task InstallLumaAsync(GameCardViewModel? card, bool skipWarning = false)
     {
         if (card?.LumaMod == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
         var mod = card.LumaMod;
+        // Captured before install so a newer build can be logged to Update History
+        var previousRecord = card.LumaRecord;
 
         // Nexus-only mod (no GitHub download URL) — either open browser or use premium CDN
         if (mod.DownloadUrl == null && mod.NexusUrl != null)
@@ -974,7 +1015,7 @@ public partial class MainViewModel
                 }
                 finally
                 {
-                    try { File.Delete(tempPath); } catch { }
+                    try { File.Delete(tempPath); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallLumaAsync] Temp file cleanup failed — {ex.Message}"); }
                 }
             }
             else if (mod.DownloadUrl == null)
@@ -1006,6 +1047,8 @@ public partial class MainViewModel
                     card.Source);
             }
 
+            RecordLumaUpdate(card.GameName, previousRecord, record);
+
             // Marshal card property mutations to the UI thread after ConfigureAwait(false) paths
             DispatcherQueue?.TryEnqueue(() =>
             {
@@ -1013,6 +1056,8 @@ public partial class MainViewModel
                 card.LumaStatus = GameStatus.Installed;
                 card.LumaActionMessage = "Luma installed!";
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+                // Rebuild the detail panel so the addon label and author badge update immediately
+                RequestDetailPanelRebuild?.Invoke(card);
             });
 
             await ApplyLumaPostInstallAsync(card, record);
@@ -1191,11 +1236,12 @@ public partial class MainViewModel
             {
                 bool feederInstalled = File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon32"))
                                     || File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon64"));
-                if (feederInstalled)
+                bool standaloneInstalled = GetDgVoodooStandalone(card.GameName, card.Source ?? "");
+                if (feederInstalled || standaloneInstalled)
                 {
                     card.LumaRecord.InstalledFiles.RemoveAll(f => f.Equals("D3D9.dll", StringComparison.OrdinalIgnoreCase)
                                                                 || f.Equals("dgVoodoo.conf", StringComparison.OrdinalIgnoreCase));
-                    _crashReporter.Log($"[UninstallLuma] Feeder still installed — preserving dgVoodoo2 files for '{card.GameName}'");
+                    _crashReporter.Log($"[UninstallLuma] {(feederInstalled ? "Feeder" : "Standalone")} still installed — preserving dgVoodoo2 files for '{card.GameName}'");
                     wasDgVoodoo = false; // dgVoodoo stays — don't change ReShade filename
                 }
             }
@@ -1203,6 +1249,7 @@ public partial class MainViewModel
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;
             card.LumaActionMessage = "✖ Luma removed.";
+            RequestDetailPanelRebuild?.Invoke(card);
 
             // Clean up nvngx_dlss.dll deployed by ApplyLumaPostInstallAsync.
             // It's not in InstalledFiles (deployed after record was saved), so handle it here.
@@ -1216,8 +1263,8 @@ public partial class MainViewModel
                     var sentinelSize = new FileInfo(sentinelPath).Length;
                     if (sentinelSize == 0)
                     {
-                        try { File.Delete(dlssPath); } catch { }
-                        try { File.Delete(sentinelPath); } catch { }
+                        try { File.Delete(dlssPath); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallLuma] Failed to delete RHI-deployed nvngx_dlss.dll — {ex.Message}"); }
+                        try { File.Delete(sentinelPath); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallLuma] Failed to delete DLSS sentinel — {ex.Message}"); }
                         _crashReporter.Log($"[UninstallLuma] Removed RHI-deployed nvngx_dlss.dll from '{card.InstallPath}'");
                     }
                     else
@@ -1366,10 +1413,39 @@ public partial class MainViewModel
             }
             if (xamlRoot == null) return true;
 
+            // Build content: extract any trailing https:// URL into a HyperlinkButton
+            object dialogContent;
+            var urlMatch = System.Text.RegularExpressions.Regex.Match(message, @"https?://\S+$");
+            if (urlMatch.Success)
+            {
+                var textPart = message.Substring(0, urlMatch.Index).TrimEnd();
+                var url = urlMatch.Value;
+                var panel = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 10 };
+                panel.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
+                {
+                    Text = textPart,
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    MaxWidth = 440,
+                });
+                var link = new Microsoft.UI.Xaml.Controls.HyperlinkButton
+                {
+                    Content = url.Length > 60 ? url.Substring(0, 57) + "…" : url,
+                    NavigateUri = new Uri(url),
+                    Padding = new Microsoft.UI.Xaml.Thickness(0),
+                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left,
+                };
+                panel.Children.Add(link);
+                dialogContent = panel;
+            }
+            else
+            {
+                dialogContent = message;
+            }
+
             var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
             {
                 Title = $"⚠ Install Note — {gameName}",
-                Content = message,
+                Content = dialogContent,
                 PrimaryButtonText = "Continue",
                 CloseButtonText = "Cancel",
                 DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary,

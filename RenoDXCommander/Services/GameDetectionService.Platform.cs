@@ -32,40 +32,7 @@ public partial class GameDetectionService
         return games;
     }
 
-    // ── Epic ──────────────────────────────────────────────────────────────────────
-
-    public List<DetectedGame> FindEpicGames()
-    {
-        var games = new List<DetectedGame>();
-        var manifestDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Epic", "EpicGamesLauncher", "Data", "Manifests");
-        if (!Directory.Exists(manifestDir)) return games;
-        foreach (var file in Directory.GetFiles(manifestDir, "*.item"))
-        {
-            try
-            {
-                var json = File.ReadAllText(file);
-                var name = ExtractJsonString(json, "DisplayName");
-                var path = ExtractJsonString(json, "InstallLocation");
-                if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(path) && Directory.Exists(path))
-                {
-                    var catalogNamespace = ExtractJsonString(json, "CatalogNamespace");
-                    var appName = ExtractJsonString(json, "AppName");
-                    games.Add(new DetectedGame
-                    {
-                        Name = name,
-                        InstallPath = path,
-                        Source = "Epic",
-                        EpicCatalogNamespace = catalogNamespace,
-                        EpicAppName = appName,
-                    });
-                }
-            }
-            catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindEpicGames] Failed to parse manifest '{file}' — {ex.Message}"); }
-        }
-        return games;
-    }
+    // ── Epic: see GameDetectionService.Epic.cs ───────────────────────────────────
 
     // ── EA App ────────────────────────────────────────────────────────────────────
 

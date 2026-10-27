@@ -127,7 +127,7 @@ public partial class DlssPresetService
                         if (rawVal.HasValue)
                             globalDword[$"0x{id:X8}"] = rawVal.Value;
                     }
-                    catch { }
+                    catch (Exception) { /* setting not present / unsupported on this driver; skip it */ }
                 }
             }
 
@@ -221,7 +221,7 @@ public partial class DlssPresetService
                                         written = SetSettingRawNvApi(sessionHandle, baseHandle, settingId, value);
                                     if (!written)
                                     {
-                                        try { baseProfile.SetSetting(settingId, value); } catch { }
+                                        try { baseProfile.SetSetting(settingId, value); } catch (Exception) { /* raw write already failed; setting unsupported on this driver, skip it */ }
                                     }
                                 }
                             }
@@ -275,7 +275,7 @@ public partial class DlssPresetService
                                 ProfileApplication.CreateApplication(profile, appName, profileName, "", Array.Empty<string>(), false, "");
                                 CrashReporter.Log($"[DlssPresetService.ImportProfiles] Registered '{appName}' on '{profileName}'");
                             }
-                            catch { }
+                            catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.ImportProfiles] Failed to register '{appName}' on '{profileName}' — {ex.Message}"); }
                         }
                     }
                 }

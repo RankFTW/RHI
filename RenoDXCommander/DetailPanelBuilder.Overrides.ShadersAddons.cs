@@ -301,7 +301,7 @@ public partial class DetailPanelBuilder
                             .Select(Path.GetFileName)
                             .FirstOrDefault();
                 }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildShadersAddonsSection] Exe scan failed for '{card.InstallPath}' — {ex.Message}"); }
                 if (scannedExe != null)
                     _window.DispatcherQueue?.TryEnqueue(() =>
                     {

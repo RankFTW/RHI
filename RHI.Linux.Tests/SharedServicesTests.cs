@@ -14,24 +14,41 @@ public sealed class SharedServicesTests
     [Fact]
     public async Task GitHubCacheRevalidatesAndReusesBodyOn304AndServerFailure()
     {
+        const string url = "https://api.github.com/releases";
         var requests = 0;
         using var http = new HttpClient(new Handler(request =>
         {
             Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
             Assert.Equal("test-token", request.Headers.Authorization?.Parameter);
-            if (requests++ == 0)
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("release-json") };
-                response.Headers.ETag = new EntityTagHeaderValue("\"release-1\"");
-                return response;
-            }
             Assert.Equal("\"release-1\"", Assert.Single(request.Headers.IfNoneMatch).Tag);
-            return new HttpResponseMessage(requests == 2 ? HttpStatusCode.NotModified : HttpStatusCode.ServiceUnavailable);
+            return new HttpResponseMessage(requests++ == 0 ? HttpStatusCode.NotModified : HttpStatusCode.ServiceUnavailable);
+        }));
+        // Entries loaded from a previous launch are revalidated with If-None-Match on first use.
+        Dictionary<string, GitHubETagCache.SavedEntry> Saved() => new()
+        {
+            [url] = new() { ETag = "\"release-1\"", Body = "release-json", SavedUtc = DateTime.UtcNow }
+        };
+        var cache = new GitHubETagCache(getToken: () => "test-token", load: Saved);
+        Assert.Equal("release-json", await cache.GetWithETagAsync(http, url));
+        // A 304 answer stays fresh briefly, so an immediate repeat sends no request.
+        Assert.Equal("release-json", await cache.GetWithETagAsync(http, url));
+        Assert.Equal(1, requests);
+
+        var restarted = new GitHubETagCache(getToken: () => "test-token", load: Saved);
+        Assert.Equal("release-json", await restarted.GetWithETagAsync(http, url));
+        Assert.Equal(2, requests);
+    }
+
+    [Fact]
+    public async Task GitHubCacheSendsTokenToApiHostOnly()
+    {
+        using var http = new HttpClient(new Handler(request =>
+        {
+            Assert.Null(request.Headers.Authorization);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("archive") };
         }));
         var cache = new GitHubETagCache(getToken: () => "test-token");
-        for (var i = 0; i < 3; i++)
-            Assert.Equal("release-json", await cache.GetWithETagAsync(http, "https://api.github.com/releases"));
-        Assert.Equal(3, requests);
+        Assert.Equal("archive", await cache.GetWithETagAsync(http, "https://codeload.github.com/owner/repo/zip/main"));
     }
 
     [Fact]

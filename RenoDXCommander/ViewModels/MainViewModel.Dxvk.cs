@@ -99,15 +99,27 @@ public partial class MainViewModel
                 {
                     card.DxvkActionMessage = p.message;
                     card.DxvkProgress = p.percent;
-                }));
+                }),
+                screenshotSavePath: BuildScreenshotSavePath(card.GameName),
+                overlayHotkey: _settingsViewModel.OverlayHotkey,
+                screenshotHotkey: _settingsViewModel.ScreenshotHotkey);
 
             card.DxvkActionMessage = "✅ DXVK installed!";
+            card.DxvkEnabled = true; // must be set so RequiresVulkanInstall returns true for DX11
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
+
+            // Persist the installed variant as a per-game override so future update checks
+            // and Update All always use the correct variant regardless of the global setting.
+            // Same pattern as OptiScaler's variantHint persistence.
+            SetDxvkVariantOverride(card.GameName, resolvedVariant.ToString(), card.Source ?? "");
+
             SaveLibrary();
 
             // Persist Vulkan rendering path if direct DX9 mode switched the game to Vulkan
-            if (card.DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true && card.VulkanRenderingPath == "Vulkan")
+            // Persist Vulkan rendering path for any DXVK install that switched to Vulkan —
+            // not just DX9 (d3d9.dll) but also DX10/DX11 (dxgi.dll / d3d11.dll).
+            if (card.DxvkStatus == GameStatus.Installed && card.VulkanRenderingPath == "Vulkan")
                 SetVulkanRenderingPath(card.GameName, "Vulkan", card.Source ?? "");
 
             // Deploy shaders — DXVK sets up a Vulkan ReShade environment so the
@@ -146,18 +158,23 @@ public partial class MainViewModel
         try
         {
             await _dxvkService.UninstallAsync(card);
-            
-            // Clear persisted Vulkan rendering path — Lilium HDR uninstall resets to DirectX
+            card.DxvkEnabled = false; // must be cleared so RequiresVulkanInstall returns false after uninstall
+
+            // Clear persisted Vulkan rendering path
             SetVulkanRenderingPath(card.GameName, "DirectX", card.Source ?? "");
 
-            // Update API cache — DXVK set it to Vulkan, now it needs to go back to DX9
-            // so the next launch doesn't show a phantom VLK badge.
+            // Re-resolve the API now that DXVK DLLs are gone — skip the Vulkan override
+            // so we get the original native API (DX9, DX11, etc.) back.
             if (!string.IsNullOrEmpty(card.InstallPath))
             {
-                var dx9Set = new System.Collections.Generic.HashSet<GraphicsApiType>(card.DetectedApis);
-                dx9Set.Remove(GraphicsApiType.Vulkan);
-                if (dx9Set.Count == 0) dx9Set.Add(GraphicsApiType.DirectX9);
-                CacheGameApi(card.InstallPath, GraphicsApiType.DirectX9, dx9Set);
+                card.DetectedApis = _DetectAllApisForCard(card.InstallPath, card.GameName, card.Source);
+                card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
+                var nativeApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName, card.Source);
+                card.GraphicsApi = nativeApi;
+                var nativeSet = new System.Collections.Generic.HashSet<GraphicsApiType>(card.DetectedApis);
+                nativeSet.Remove(GraphicsApiType.Vulkan);
+                if (nativeSet.Count == 0) nativeSet.Add(nativeApi);
+                CacheGameApi(card.InstallPath, nativeApi, nativeSet);
                 SaveGameApiCache();
             }
             
@@ -165,6 +182,10 @@ public partial class MainViewModel
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
             SaveLibrary();
+
+            // Deploy shaders now that ReShade is back as DX proxy
+            if (card.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
+                DeployShadersForCard(card.GameName);
 
             // Rebuild the detail panel — uninstall reverts GraphicsApi and RS state.
             RequestDetailPanelRebuild?.Invoke(card);
@@ -222,6 +243,11 @@ public partial class MainViewModel
             card.DxvkStatus = GameStatus.Installed;
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
+
+            // Re-persist the variant — ensures per-game override is locked in even when
+            // it previously fell through to the global default.
+            SetDxvkVariantOverride(card.GameName, resolvedVariant.ToString(), card.Source ?? "");
+
             SaveLibrary();
         }
         catch (Exception ex)
@@ -245,6 +271,9 @@ public partial class MainViewModel
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
+            // Set the correct preset index before calling the service so CopyConfToGame
+            // uses the right Lilium HDR preset content for this specific game.
+            _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName, card.Source ?? "");
             _dxvkService.CopyConfToGame(card);
             card.DxvkActionMessage = "✅ dxvk.conf copied to game folder.";
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);

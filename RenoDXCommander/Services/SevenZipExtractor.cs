@@ -116,7 +116,7 @@ public class ReShadeExtractor : ISevenZipExtractor
                 catch (OperationCanceledException)
                 {
                     CrashReporter.Log("[ReShadeExtractor.ExtractWith7ZipAsync] 7z process timed out after 30 seconds");
-                    try { proc.Kill(); } catch { }
+                    try { proc.Kill(); } catch (Exception ex) { CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] Failed to kill timed-out 7z process — {ex.Message}"); }
                     return false;
                 }
 
@@ -165,66 +165,7 @@ public class ReShadeExtractor : ISevenZipExtractor
     /// <summary>
     /// Finds 7z.exe on the system asynchronously. Checks common install locations and PATH.
     /// </summary>
-    public async Task<string?> Find7ZipExeAsync()
-    {
-        // Check bundled 7z.exe next to the app exe first
-        var bundled = Path.Combine(AppContext.BaseDirectory, "7z.exe");
-        if (File.Exists(bundled))
-        {
-            CrashReporter.Log($"[ReShadeExtractor.Find7ZipExeAsync] Using bundled 7-Zip at {bundled}");
-            return bundled;
-        }
-
-        // Check common install locations
-        var candidates = new[]
-        {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "7-Zip", "7z.exe"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "7-Zip", "7z.exe"),
-            @"C:\Program Files\7-Zip\7z.exe",
-            @"C:\Program Files (x86)\7-Zip\7z.exe",
-        };
-
-        foreach (var path in candidates)
-        {
-            if (File.Exists(path))
-            {
-                CrashReporter.Log($"[ReShadeExtractor.Find7ZipExeAsync] Found 7-Zip at {path}");
-                return path;
-            }
-        }
-
-        // Check PATH
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "7z.exe",
-                Arguments = "--help",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-            };
-            using var proc = Process.Start(psi);
-            if (proc != null)
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                try
-                {
-                    await proc.WaitForExitAsync(cts.Token);
-                    CrashReporter.Log("[ReShadeExtractor.Find7ZipExeAsync] Found 7z.exe on PATH");
-                    return "7z.exe";
-                }
-                catch (OperationCanceledException)
-                {
-                    try { proc.Kill(); } catch { }
-                }
-            }
-        }
-        catch (Exception ex) { CrashReporter.Log($"[ReShadeExtractor] Operation failed — {ex.Message}"); }
-
-        CrashReporter.Log("[ReShadeExtractor.Find7ZipExeAsync] 7-Zip not found at any known location");
-        return null;
-    }
+    public Task<string?> Find7ZipExeAsync() => Task.Run(AppPaths.Find7Zip);
 
     /// <summary>
     /// Lists all entry names found inside the archive (for diagnostics).

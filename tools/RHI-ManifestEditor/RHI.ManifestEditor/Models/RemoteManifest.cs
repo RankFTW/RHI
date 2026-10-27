@@ -76,8 +76,6 @@ public class RemoteManifest
     [JsonPropertyName("lumaRenodxCompat")]
     public List<string>? LumaRenodxCompat { get; set; }
 
-    [JsonPropertyName("lumaDefaultGames")]
-    public List<string>? LumaDefaultGames { get; set; }
 
     [JsonPropertyName("lumaRequiresDgVoodoo")]
     public List<string>? LumaRequiresDgVoodoo { get; set; }
@@ -97,9 +95,6 @@ public class RemoteManifest
 
     [JsonPropertyName("dllNameOverrides")]
     public Dictionary<string, ManifestDllNames>? DllNameOverrides { get; set; }
-
-    [JsonPropertyName("optiScalerDllOverrides")]
-    public Dictionary<string, string>? OptiScalerDllOverrides { get; set; }
 
     [JsonPropertyName("gacSymlinkGames")]
     public Dictionary<string, string>? GacSymlinkGames { get; set; }

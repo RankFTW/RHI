@@ -43,6 +43,7 @@ public partial class DetailPanelBuilder
         // Cancel any in-flight NVAPI background scans from the previous game.
         // Tasks waiting on _panelScanSemaphore will observe the cancellation and
         // bail out immediately, freeing their thread pool threads.
+        if (_window.IsShuttingDown) return;
         _panelScanCts.Cancel();
         _panelScanCts = new CancellationTokenSource();
 
@@ -1229,11 +1230,14 @@ public partial class DetailPanelBuilder
         BuildNeuralRenderingSection(card);
         CrashReporter.Log($"[BuildOverridesPanel] NeuralRendering done: '{card.GameName}'");
         BuildNvidiaProfileSection(card, capturedName);
-        CrashReporter.Log($"[BuildOverridesPanel] NvidiaProfile done: '{card.GameName}'");
+        CrashReporter.Log($"[BuildOverridesPanel] NvidiaProfileDlss done: '{card.GameName}'");
+        BuildDriverProfileSection(card, capturedName);
+        CrashReporter.Log($"[BuildOverridesPanel] NvidiaProfileDriver done: '{card.GameName}'");
 
         BuildManagementSection(card, capturedName, ctx);
         CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
         BuildExtrasSection(card);
-        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");    }
+        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");
+    }
 }

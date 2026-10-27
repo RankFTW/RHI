@@ -53,7 +53,9 @@ public partial class GameCardViewModel
                      or GraphicsApiType.DirectX10
                      or GraphicsApiType.DirectX11)
         && !HasHigherApiDetected
-        || DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true; // Keep visible when direct DX9 mode is active (API switched to Vulkan)
+        || DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true   // DX9 direct mode: API switched to Vulkan, keep visible
+        || DxvkRecord?.InstalledDlls.Contains("d3d11.dll") == true  // DX11 mode: API switched to Vulkan, keep visible
+        || DxvkRecord?.InstalledDlls.Contains("dxgi.dll") == true;  // DX11 mode: dxgi.dll also signals DX10/DX11 install
 
     /// <summary>
     /// DXVK toggle is enabled when visible AND not blacklisted AND the API is not

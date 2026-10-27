@@ -80,15 +80,6 @@ public partial class AuxInstallService
     }
 
     /// <summary>
-    /// Checks if GAC symlinks are currently installed for a game.
-    /// </summary>
-    public static bool IsGacSymlinkInstalled(string gacDirectory, string dllFileName)
-    {
-        var gacDllLink = Path.Combine(gacDirectory, dllFileName);
-        return File.Exists(gacDllLink);
-    }
-
-    /// <summary>
     /// Writes or updates the [INSTALL] section in the given reshade.ini file,
     /// setting BasePath to the specified game directory.
     /// </summary>

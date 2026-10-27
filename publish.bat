@@ -3,12 +3,14 @@ set OUT=C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI
 set SRC=RenoDXCommander
 
 :: Force close RHI and helpers if running so the publish can replace the EXE
-taskkill /F /IM RHI.exe >nul 2>nul
-taskkill /F /IM RHI-Stats.exe >nul 2>nul
-taskkill /F /IM RHI.DropHelper.exe >nul 2>nul
+powershell -NoProfile -Command "Get-Process RHI,'RHI-Stats','RHI.DropHelper' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"
 timeout /t 2 /nobreak >nul
 
 dotnet publish %SRC%\RenoDXCommander.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o "%OUT%"
+if %errorlevel% neq 0 (
+    echo dotnet publish failed, trying MSBuild...
+    "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" %SRC%\RenoDXCommander.csproj /t:Publish /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=false /p:PublishDir="%OUT%"
+)
 
 :: Build and copy the drop helper (non-elevated overlay for admin mode drag-drop)
 dotnet build RHI.DropHelper\RHI.DropHelper.csproj -c Release -v quiet
@@ -35,6 +37,12 @@ copy /y "%SRC%\OptiScaler_nightly.amd-nodlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler_dlssnr.nvidia.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler_dlssnr.amd-dlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler_dlssnr.amd-nodlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_f5.nvidia.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_f5.amd-dlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_f5.amd-nodlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.nvidia.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.amd-dlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.amd-nodlss.ini" "%OUT%\" >nul
+
+:: Deploy ClrMD for freeze diagnostics (must be loose alongside EXE, not bundled)
+copy /y "%USERPROFILE%\.nuget\packages\microsoft.diagnostics.runtime\3.1.512801\lib\net6.0\Microsoft.Diagnostics.Runtime.dll" "%OUT%\" >nul

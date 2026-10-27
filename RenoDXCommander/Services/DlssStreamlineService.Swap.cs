@@ -4,6 +4,14 @@ namespace RenoDXCommander.Services;
 
 public partial class DlssStreamlineService
 {
+    /// <summary>
+    /// Sanitizes a version string for use as a directory name by replacing characters
+    /// that Windows treats as path separators or invalid in directory names.
+    /// e.g. "310.8.2 (20/30/40/50)" → "310.8.2 (20-30-40-50)"
+    /// </summary>
+    private static string SanitizeVersionForPath(string version)
+        => version.Replace('/', '-').Replace('\\', '-');
+
     // ── Entry lookup helpers (searches regular + dev lists) ───────────────────
 
     private DlssManifestEntry? FindDlssEntry(string version) =>
@@ -113,7 +121,7 @@ public partial class DlssStreamlineService
             return;
         }
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (!File.Exists(cachedDll))
@@ -151,6 +159,9 @@ public partial class DlssStreamlineService
             return;
         }
 
+        if (!Directory.Exists(gameFolder))
+            throw DlssSwapException.From(gameFolder, new DirectoryNotFoundException($"Folder not found: '{gameFolder}'"));
+
         // Before replacing, ensure game-original files are backed up to appdata
         // This gives us a fallback if the in-game .original backups are lost
         BackupStreamlineToAppData(gameFolder);
@@ -166,7 +177,15 @@ public partial class DlssStreamlineService
             {
                 // Plain overwrite — no .original backups. Streamline in OptiScaler\Streamline\ is
                 // always RHI-managed, never a game original. AppData zip backup covers restore.
-                File.Copy(cachedDllPath, gameDllPath, overwrite: true);
+                try
+                {
+                    File.Copy(cachedDllPath, gameDllPath, overwrite: true);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineAsync] Failed to write '{gameDllPath}' after {replaced} file(s) — {ex.GetType().Name}: {ex.Message}");
+                    throw DlssSwapException.From(gameDllPath, ex);
+                }
                 replaced++;
             }
         }
@@ -194,7 +213,7 @@ public partial class DlssStreamlineService
         // (nvngx_dlssnr.dll specifically uses this; other DLLs are identified by their version being absent from manifest)
         if (targetFileName.Equals("nvngx_dlssnr.dll", StringComparison.OrdinalIgnoreCase))
         {
-            try { File.WriteAllText(dllPath + ".rhi_custom", ""); } catch { }
+            try { File.WriteAllText(dllPath + ".rhi_custom", ""); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Failed to write custom marker for '{dllPath}' — {ex.Message}"); }
         }
 
         CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Swapped '{dllPath}' with custom DLL");
@@ -208,6 +227,9 @@ public partial class DlssStreamlineService
             return;
         }
 
+        if (!Directory.Exists(gameFolder))
+            throw DlssSwapException.From(gameFolder, new DirectoryNotFoundException($"Folder not found: '{gameFolder}'"));
+
         // Back up original files to AppData before replacing
         BackupStreamlineToAppData(gameFolder);
 
@@ -220,7 +242,15 @@ public partial class DlssStreamlineService
             if (File.Exists(gameDllPath) && File.Exists(customDllPath))
             {
                 // Plain overwrite — no .original backups. AppData zip backup covers restore.
-                File.Copy(customDllPath, gameDllPath, overwrite: true);
+                try
+                {
+                    File.Copy(customDllPath, gameDllPath, overwrite: true);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineCustomAsync] Failed to write '{gameDllPath}' after {replaced} file(s) — {ex.GetType().Name}: {ex.Message}");
+                    throw DlssSwapException.From(gameDllPath, ex);
+                }
                 replaced++;
             }
         }
@@ -239,7 +269,7 @@ public partial class DlssStreamlineService
         // Returns silently if no .original exists (not placed by RHI).
         AuxInstallService.SentinelRestore(dllPath);
         // Clean up any custom marker sidecar regardless
-        try { File.Delete(dllPath + ".rhi_custom"); } catch { }
+        try { File.Delete(dllPath + ".rhi_custom"); } catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.Restore] Failed to delete custom marker for '{dllPath}' — {ex.Message}"); }
     }
 
     public void RestoreStreamline(string gameFolder)
@@ -363,9 +393,53 @@ public partial class DlssStreamlineService
 
     /// <summary>
     /// Backs up the target file (if no backup exists) and replaces it with the source.
+    /// Throws <see cref="DlssSwapException"/> if the game folder can't be written to.
+    /// On failure the game's original DLL is put back, so the game is never left without one.
     /// </summary>
-    private void BackupAndReplace(string targetPath, string sourcePath) =>
-        SentinelFiles.Deploy(sourcePath, targetPath);
+    private void BackupAndReplace(string targetPath, string sourcePath)
+    {
+        // The detected path can be stale (game moved/updated — WindowsApps paths change
+        // version on every update). Check before touching anything.
+        var dir = Path.GetDirectoryName(targetPath);
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            throw DlssSwapException.From(targetPath, new DirectoryNotFoundException($"Folder not found: '{dir}'"));
+
+        var backup = targetPath + BackupExtension;
+        bool hadBackup = File.Exists(backup);
+        try
+        {
+            // Copies the original to .original (or writes a 0-byte sentinel), then replaces
+            // the target atomically, so a failed copy leaves the game's DLL in place.
+            SentinelFiles.Deploy(sourcePath, targetPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!hadBackup) UndoBackup(targetPath, backup);
+            CrashReporter.Log($"[DlssStreamlineService.BackupAndReplace] Failed to write '{targetPath}' — {ex.GetType().Name}: {ex.Message}");
+            throw DlssSwapException.From(targetPath, ex);
+        }
+    }
+
+    /// <summary>
+    /// Discards a backup made moments ago by <see cref="SentinelFiles.Deploy"/> after the
+    /// replacement failed: the original is still in place, so the copy or sentinel is removed.
+    /// </summary>
+    private static void UndoBackup(string targetPath, string backup)
+    {
+        try
+        {
+            if (!File.Exists(backup)) return;
+            if (File.Exists(targetPath) || new FileInfo(backup).Length == 0)
+                File.Delete(backup);
+            else
+                File.Move(backup, targetPath);
+            CrashReporter.Log($"[DlssStreamlineService.UndoBackup] Restored original after failed swap: '{targetPath}'");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.UndoBackup] Could not restore '{targetPath}' — {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Downloads a zip from the given URL, extracts the single DLL, and places it in the cache dir.
@@ -378,7 +452,7 @@ public partial class DlssStreamlineService
             var tempZip = Path.Combine(cacheDir, "download.zip.tmp");
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+            using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Download failed ({response.StatusCode}) for {url}");
@@ -409,7 +483,7 @@ public partial class DlssStreamlineService
             }
 
             // Clean up temp zip
-            try { File.Delete(tempZip); } catch { }
+            try { File.Delete(tempZip); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
         }
         catch (OperationCanceledException)
         {
@@ -432,7 +506,7 @@ public partial class DlssStreamlineService
             var tempZip = Path.Combine(cacheDir, "download.zip.tmp");
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+            using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheStreamlineAsync] Download failed ({response.StatusCode}) for {url}");
@@ -463,7 +537,7 @@ public partial class DlssStreamlineService
             CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheStreamlineAsync] Cached {extracted} Streamline DLLs to '{cacheDir}'");
 
             // Clean up temp zip
-            try { File.Delete(tempZip); } catch { }
+            try { File.Delete(tempZip); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
         }
         catch (OperationCanceledException)
         {
@@ -486,12 +560,12 @@ public partial class DlssStreamlineService
     private static void WriteCustomStreamlineMarker(string gameFolder)
     {
         try { File.WriteAllText(Path.Combine(gameFolder, CustomStreamlineMarker), "Custom Streamline deployed by RHI"); }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.WriteCustomStreamlineMarker] Failed to write marker in '{gameFolder}' — {ex.Message}"); }
     }
 
     private static void RemoveCustomStreamlineMarker(string gameFolder)
     {
         try { var path = Path.Combine(gameFolder, CustomStreamlineMarker); if (File.Exists(path)) File.Delete(path); }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.RemoveCustomStreamlineMarker] Failed to remove marker in '{gameFolder}' — {ex.Message}"); }
     }
 }

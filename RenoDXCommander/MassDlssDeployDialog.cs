@@ -249,6 +249,7 @@ public class MassDlssDeployDialog
         int srPresetCount = 0, rrPresetCount = 0, fgPresetCount = 0, presetMissedCount = 0;
         int srDriverCount = 0, rrDriverCount = 0, fgDriverCount = 0;
         int skippedNoComponent = 0, skippedAlreadyAtVersion = 0;
+        var failedGames = new List<string>();
         // Set auto-create flag on preset service
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
         var previousAutoCreate = presetService.AutoCreateProfiles;
@@ -293,14 +294,8 @@ public class MassDlssDeployDialog
             RequestedTheme = ElementTheme.Dark,
         };
 
-        // Use explicit gate pattern to avoid a race condition where fire-and-forget ShowSafeAsync
-        // hasn't acquired the gate yet when progressDialog.Hide() is called, causing two concurrent
-        // ShowSafeAsync calls to race on the gate and trigger WinUI's invisible modal overlay freeze.
-        bool deployGateReleased = false;
-        progressDialog.Closed += (_, _) => { if (!deployGateReleased) { deployGateReleased = true; DialogService.ReleaseDialogGate(); } };
-        if (await DialogService.WaitDialogGateAsync(10))
-            _ = progressDialog.ShowAsync();
-        await Task.Delay(100); // Let dialog render
+        await using var progressSession = await DialogService.ShowProgressAsync(progressDialog, 10);
+        if (progressSession == null) return;
 
         // Count selected games for progress
         int totalSelected = 0;
@@ -329,134 +324,143 @@ public class MassDlssDeployDialog
             processed++;
             progressText.Text = $"[{processed}/{totalSelected}] {card.GameName}";
             await Task.Delay(1); // Yield to UI thread so text updates visually
-
-            // DLSS SR — skip v1.x
-            if (dlssVersion != NoneOption && detection.DlssPath != null
-                && !(card.DlssInstalledVersion?.StartsWith("1.") == true))
+            try
             {
-                if (srDriverEnable)
+
+                // DLSS SR — skip v1.x
+                if (dlssVersion != NoneOption && detection.DlssPath != null
+                    && !(card.DlssInstalledVersion?.StartsWith("1.") == true))
                 {
-                    if (presetService.IsSupported && card.HasDlss)
-                    { presetService.SetSrDriverOverride(card.GameName, card.InstallPath, true); srDriverCount++; }
+                    if (srDriverEnable)
+                    {
+                        if (presetService.IsSupported && card.HasDlss)
+                        { presetService.SetSrDriverOverride(card.GameName, card.InstallPath, true); srDriverCount++; }
+                    }
+                    else if (dlssVersion == DefaultOption)
+                    {
+                        if (_dlssService.HasBackup(detection.DlssPath))
+                        { _dlssService.Restore(detection.DlssPath); dlssCount++; }
+                    }
+                    else if (dlssVersion == CustomOption)
+                    {
+                        await _dlssService.SwapDlssCustomAsync(detection.DlssPath); dlssCount++;
+                    }
+                    else
+                    {
+                        var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssPath));
+                        if (installed == dlssVersion) { skippedAlreadyAtVersion++; }
+                        else { await _dlssService.SwapDlssAsync(detection.DlssPath, dlssVersion!); dlssCount++; }
+                    }
                 }
-                else if (dlssVersion == DefaultOption)
+                else if (dlssVersion != NoneOption && detection.DlssPath == null) { skippedNoComponent++; }
+
+                // DLSS RR
+                if (dlssdVersion != NoneOption && detection.DlssdPath != null)
                 {
-                    if (_dlssService.HasBackup(detection.DlssPath))
-                    { _dlssService.Restore(detection.DlssPath); dlssCount++; }
+                    if (rrDriverEnable)
+                    {
+                        if (presetService.IsSupported && card.HasDlssd)
+                        { presetService.SetRrDriverOverride(card.GameName, card.InstallPath, true); rrDriverCount++; }
+                    }
+                    else if (dlssdVersion == DefaultOption)
+                    {
+                        if (_dlssService.HasBackup(detection.DlssdPath))
+                        { _dlssService.Restore(detection.DlssdPath); dlssdCount++; }
+                    }
+                    else if (dlssdVersion == CustomOption)
+                    {
+                        await _dlssService.SwapDlssCustomAsync(detection.DlssdPath); dlssdCount++;
+                    }
+                    else
+                    {
+                        var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssdPath));
+                        if (installed == dlssdVersion) { skippedAlreadyAtVersion++; }
+                        else { await _dlssService.SwapDlssdAsync(detection.DlssdPath, dlssdVersion!); dlssdCount++; }
+                    }
                 }
-                else if (dlssVersion == CustomOption)
+                else if (dlssdVersion != NoneOption && detection.DlssdPath == null) { skippedNoComponent++; }
+
+                // DLSS FG
+                if (dlssgVersion != NoneOption && detection.DlssgPath != null)
                 {
-                    await _dlssService.SwapDlssCustomAsync(detection.DlssPath); dlssCount++;
+                    if (fgDriverEnable)
+                    {
+                        if (presetService.IsSupported && card.HasDlssg)
+                        { presetService.SetFgDriverOverride(card.GameName, card.InstallPath, true); fgDriverCount++; }
+                    }
+                    else if (dlssgVersion == DefaultOption)
+                    {
+                        if (_dlssService.HasBackup(detection.DlssgPath))
+                        { _dlssService.Restore(detection.DlssgPath); dlssgCount++; }
+                    }
+                    else if (dlssgVersion == CustomOption)
+                    {
+                        await _dlssService.SwapDlssCustomAsync(detection.DlssgPath); dlssgCount++;
+                    }
+                    else
+                    {
+                        var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssgPath));
+                        if (installed == dlssgVersion) { skippedAlreadyAtVersion++; }
+                        else { await _dlssService.SwapDlssgAsync(detection.DlssgPath, dlssgVersion!); dlssgCount++; }
+                    }
                 }
-                else
+                else if (dlssgVersion != NoneOption && detection.DlssgPath == null) { skippedNoComponent++; }
+
+                // Streamline — skip v1.x
+                if (slVersion != NoneOption && detection.StreamlineFolder != null
+                    && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true))
                 {
-                    var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssPath));
-                    if (installed == dlssVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssAsync(detection.DlssPath, dlssVersion!); dlssCount++; }
+                    if (slVersion == DefaultOption)
+                    {
+                        _dlssService.RestoreStreamline(detection.StreamlineFolder); slCount++;
+                    }
+                    else if (slVersion == CustomOption)
+                    {
+                        await _dlssService.SwapStreamlineCustomAsync(detection.StreamlineFolder); slCount++;
+                    }
+                    else
+                    {
+                        var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.StreamlineInterposerPath!));
+                        if (installed == slVersion) { skippedAlreadyAtVersion++; }
+                        else { await _dlssService.SwapStreamlineAsync(detection.StreamlineFolder, slVersion!); slCount++; }
+                    }
+                }
+                else if (slVersion != NoneOption && detection.StreamlineFolder == null) { skippedNoComponent++; }
+
+                // ── Apply presets ──
+                if (anyPresetSelected)
+                {
+                    var profileCountBefore = presetService.IsSupported ? 0 : -1; // can't track if not supported
+                    bool presetApplied = false;
+
+                    if (srPresetSelection != NoneOption)
+                    {
+                        var srValue = GetPresetValue(DlssPresetService.SrPresets, srPresetSelection!);
+                        if (presetService.SetSrPreset(card.GameName, card.InstallPath, srValue))
+                        { srPresetCount++; presetApplied = true; }
+                        else if (!presetApplied) presetMissedCount++;
+                    }
+                    if (rrPresetSelection != NoneOption)
+                    {
+                        var rrValue = GetPresetValue(DlssPresetService.RrPresets, rrPresetSelection!);
+                        if (presetService.SetRrPreset(card.GameName, card.InstallPath, rrValue))
+                        { rrPresetCount++; presetApplied = true; }
+                        else if (!presetApplied) presetMissedCount++;
+                    }
+                    if (fgPresetSelection != NoneOption)
+                    {
+                        var fgValue = GetPresetValue(DlssPresetService.FgPresets, fgPresetSelection!);
+                        if (presetService.SetFgPreset(card.GameName, card.InstallPath, fgValue))
+                        { fgPresetCount++; presetApplied = true; }
+                        else if (!presetApplied) presetMissedCount++;
+                    }
                 }
             }
-            else if (dlssVersion != NoneOption && detection.DlssPath == null) { skippedNoComponent++; }
-
-            // DLSS RR
-            if (dlssdVersion != NoneOption && detection.DlssdPath != null)
+            catch (DlssSwapException ex)
             {
-                if (rrDriverEnable)
-                {
-                    if (presetService.IsSupported && card.HasDlssd)
-                    { presetService.SetRrDriverOverride(card.GameName, card.InstallPath, true); rrDriverCount++; }
-                }
-                else if (dlssdVersion == DefaultOption)
-                {
-                    if (_dlssService.HasBackup(detection.DlssdPath))
-                    { _dlssService.Restore(detection.DlssdPath); dlssdCount++; }
-                }
-                else if (dlssdVersion == CustomOption)
-                {
-                    await _dlssService.SwapDlssCustomAsync(detection.DlssdPath); dlssdCount++;
-                }
-                else
-                {
-                    var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssdPath));
-                    if (installed == dlssdVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssdAsync(detection.DlssdPath, dlssdVersion!); dlssdCount++; }
-                }
-            }
-            else if (dlssdVersion != NoneOption && detection.DlssdPath == null) { skippedNoComponent++; }
-
-            // DLSS FG
-            if (dlssgVersion != NoneOption && detection.DlssgPath != null)
-            {
-                if (fgDriverEnable)
-                {
-                    if (presetService.IsSupported && card.HasDlssg)
-                    { presetService.SetFgDriverOverride(card.GameName, card.InstallPath, true); fgDriverCount++; }
-                }
-                else if (dlssgVersion == DefaultOption)
-                {
-                    if (_dlssService.HasBackup(detection.DlssgPath))
-                    { _dlssService.Restore(detection.DlssgPath); dlssgCount++; }
-                }
-                else if (dlssgVersion == CustomOption)
-                {
-                    await _dlssService.SwapDlssCustomAsync(detection.DlssgPath); dlssgCount++;
-                }
-                else
-                {
-                    var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssgPath));
-                    if (installed == dlssgVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssgAsync(detection.DlssgPath, dlssgVersion!); dlssgCount++; }
-                }
-            }
-            else if (dlssgVersion != NoneOption && detection.DlssgPath == null) { skippedNoComponent++; }
-
-            // Streamline — skip v1.x
-            if (slVersion != NoneOption && detection.StreamlineFolder != null
-                && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true))
-            {
-                if (slVersion == DefaultOption)
-                {
-                    _dlssService.RestoreStreamline(detection.StreamlineFolder); slCount++;
-                }
-                else if (slVersion == CustomOption)
-                {
-                    await _dlssService.SwapStreamlineCustomAsync(detection.StreamlineFolder); slCount++;
-                }
-                else
-                {
-                    var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.StreamlineInterposerPath!));
-                    if (installed == slVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapStreamlineAsync(detection.StreamlineFolder, slVersion!); slCount++; }
-                }
-            }
-            else if (slVersion != NoneOption && detection.StreamlineFolder == null) { skippedNoComponent++; }
-
-            // ── Apply presets ──
-            if (anyPresetSelected)
-            {
-                var profileCountBefore = presetService.IsSupported ? 0 : -1; // can't track if not supported
-                bool presetApplied = false;
-
-                if (srPresetSelection != NoneOption)
-                {
-                    var srValue = GetPresetValue(DlssPresetService.SrPresets, srPresetSelection!);
-                    if (presetService.SetSrPreset(card.GameName, card.InstallPath, srValue))
-                    { srPresetCount++; presetApplied = true; }
-                    else if (!presetApplied) presetMissedCount++;
-                }
-                if (rrPresetSelection != NoneOption)
-                {
-                    var rrValue = GetPresetValue(DlssPresetService.RrPresets, rrPresetSelection!);
-                    if (presetService.SetRrPreset(card.GameName, card.InstallPath, rrValue))
-                    { rrPresetCount++; presetApplied = true; }
-                    else if (!presetApplied) presetMissedCount++;
-                }
-                if (fgPresetSelection != NoneOption)
-                {
-                    var fgValue = GetPresetValue(DlssPresetService.FgPresets, fgPresetSelection!);
-                    if (presetService.SetFgPreset(card.GameName, card.InstallPath, fgValue))
-                    { fgPresetCount++; presetApplied = true; }
-                    else if (!presetApplied) presetMissedCount++;
-                }
+                // Keep going with the other games; report this one at the end
+                CrashReporter.Log($"[MassDlssDeployDialog] '{card.GameName}' failed — {ex.Message}");
+                failedGames.Add($"{card.GameName}: {ex.Message}");
             }
 
             // Refresh card versions
@@ -465,8 +469,7 @@ public class MassDlssDeployDialog
         }
 
         // Close progress dialog — release gate explicitly before Hide
-        if (!deployGateReleased) { deployGateReleased = true; DialogService.ReleaseDialogGate(); }
-        progressDialog.Hide();
+        await progressSession.DisposeAsync();
 
         // Restore auto-create flag
         presetService.AutoCreateProfiles = previousAutoCreate;
@@ -488,6 +491,11 @@ public class MassDlssDeployDialog
         if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nSkipped: {skippedAlreadyAtVersion} (already at selected version)");
         if (skippedNoComponent > 0) report.AppendLine($"Skipped: {skippedNoComponent} (component not present)");
         if (presetMissedCount > 0) report.AppendLine($"Presets missed: {presetMissedCount} game(s) (no NVIDIA profile found)");
+        if (failedGames.Count > 0)
+        {
+            report.AppendLine($"\nFailed: {failedGames.Count} game(s)");
+            foreach (var f in failedGames) report.AppendLine($"  • {f}");
+        }
 
         if (report.Length == 0) report.Append("No changes made.");
 
@@ -539,12 +547,8 @@ public class MassDlssDeployDialog
             RequestedTheme = ElementTheme.Dark,
         };
 
-        // Use explicit gate pattern to avoid the fire-and-forget ShowSafeAsync race
-        bool restoreGateReleased = false;
-        progressDialog.Closed += (_, _) => { if (!restoreGateReleased) { restoreGateReleased = true; DialogService.ReleaseDialogGate(); } };
-        if (await DialogService.WaitDialogGateAsync(10))
-            _ = progressDialog.ShowAsync();
-        await Task.Delay(100);
+        await using var progressSession = await DialogService.ShowProgressAsync(progressDialog, 10);
+        if (progressSession == null) return;
 
         for (int i = 0; i < eligibleCards.Count; i++)
         {
@@ -577,9 +581,7 @@ public class MassDlssDeployDialog
             if (presetReset) presetsResetCount++;
         }
 
-        // Close progress dialog — release gate explicitly before Hide
-        if (!restoreGateReleased) { restoreGateReleased = true; DialogService.ReleaseDialogGate(); }
-        progressDialog.Hide();
+        await progressSession.DisposeAsync();
 
         var reportText = new System.Text.StringBuilder();
         if (restoredCount > 0) reportText.AppendLine($"Restored {restoredCount} game(s) to default DLLs.");
@@ -688,20 +690,5 @@ public class MassDlssDeployDialog
                 return value;
         }
         return 0; // Default
-    }
-
-    /// <summary>Builds the NVIDIA Override combo: None / Enable / Disable.</summary>
-    private static ComboBox BuildDriverOverrideCombo(bool savedDefault)
-    {
-        var items = new List<string> { NoneOption, "Enable", "Disable" };
-        int selectedIdx = savedDefault ? 1 : 0; // pre-select Enable when default is true
-        return new ComboBox
-        {
-            ItemsSource = items,
-            SelectedIndex = selectedIdx,
-            FontSize = 12,
-            CornerRadius = new CornerRadius(6),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
     }
 }

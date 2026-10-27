@@ -51,10 +51,4 @@ public interface IAddonPackService
     /// These are local-only addons that don't have download URLs or staging — deployed directly from the folder.
     /// </summary>
     IReadOnlyList<AddonEntry> GetCustomAddons();
-
-    /// <summary>Returns true if the given package name is a custom (local) addon from the Custom\Addons folder.</summary>
-    bool IsCustomAddon(string packageName);
-
-    /// <summary>Returns the full path to a custom addon file for the given bitness, or null if not found.</summary>
-    string? GetCustomAddonPath(string packageName, bool is32Bit);
 }

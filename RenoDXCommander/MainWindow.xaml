@@ -59,10 +59,11 @@
                             ToolTipService.ToolTip="Quick Start Guide"/>
                     <Button x:Name="HdrModsListBtn" Content="Available HDR Mods"
                             Click="HdrModsListBtn_Click"
+                            IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Browse all games with available HDR mods"/>
+                            ToolTipService.ToolTip="Loading mod data, please wait..."/>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
@@ -126,6 +127,13 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+
+                    <Button x:Name="DonateBtn" Content="Donate"
+                            Click="DonateButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Support the mod authors"/>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
@@ -292,7 +300,9 @@
                                 <DataTemplate x:DataType="vm:GameCardViewModel">
                                     <Border Background="{x:Bind SidebarItemBackground, Mode=OneWay}"
                                             BorderBrush="{x:Bind SidebarItemBorderBrush, Mode=OneWay}"
-                                            BorderThickness="1" CornerRadius="6" Padding="8,6">
+                                            BorderThickness="1" CornerRadius="6" Padding="8,6"
+                                            RightTapped="GameRow_RightTapped"
+                                            Tag="{x:Bind}">
                                         <Grid ColumnSpacing="6">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
@@ -370,9 +380,18 @@
                             <!-- Left box: Launch, links, badges -->
                             <Border Grid.Column="0" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                     BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
-                            <StackPanel Spacing="10">
-                                <!-- Action buttons row -->
-                                <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Grid RowSpacing="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Row 0, Col 0: Action buttons -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="4">
                                         <Button x:Name="DetailLaunchBtn" x:FieldModifier="internal"
                                                 Background="#1A3A20"
                                                 Foreground="#6AE87A"
@@ -451,31 +470,9 @@
                                         </Button>
                                     </StackPanel>
 
-                                <!-- Addon file + info badges with Browse button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <controls:WrapPanel Grid.Column="0" HorizontalSpacing="8" VerticalSpacing="6">
-                                    <!-- Group 1: Mod info (addon file + generic/extended badge) -->
-                                    <Border x:Name="DetailInstalledFileBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
-                                            Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            VerticalAlignment="Center" Visibility="Collapsed">
-                                        <TextBlock x:Name="DetailInstalledFile" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
-                                    </Border>
-                                    <TextBlock x:Name="DetailModStatusIcon" x:FieldModifier="internal" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed"/>
-                                    <Border x:Name="DetailGenericBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
-                                            Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            VerticalAlignment="Center" Visibility="Collapsed">
-                                        <TextBlock x:Name="DetailGenericText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
-                                    </Border>
-
-                                    <!-- Separator: mod → platform -->
-                                    <Border x:Name="DetailSepModPlatform" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
-                                            VerticalAlignment="Stretch" Visibility="Collapsed"/>
-
-                                    <!-- Group 2: Platform info (source + engine + 32-bit) -->
+                                <!-- Row 0, Col 1: Store + Engine (right-aligned) -->
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Border x:Name="DetailSourceBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
                                             Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                             VerticalAlignment="Center">
@@ -495,6 +492,37 @@
                                             <TextBlock x:Name="DetailEngineText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
                                         </StackPanel>
                                     </Border>
+                                </StackPanel>
+
+                                <!-- Row 1, Col 0: Addon file + mod badges -->
+                                <controls:WrapPanel Grid.Row="1" Grid.Column="0" HorizontalSpacing="8" VerticalSpacing="6">
+                                    <!-- Group 1: Mod info (addon file + generic/extended badge) -->
+                                    <Border x:Name="DetailInstalledFileBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                            Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center" Visibility="Collapsed">
+                                        <TextBlock x:Name="DetailInstalledFile" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                                    </Border>
+                                    <TextBlock x:Name="DetailModStatusIcon" x:FieldModifier="internal" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                    <Border x:Name="DetailGenericBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                            Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center" Visibility="Collapsed">
+                                        <TextBlock x:Name="DetailGenericText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                                    </Border>
+                                    <!-- Separator: mod → status -->
+                                    <Border x:Name="DetailSepModPlatform" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
+                                            VerticalAlignment="Stretch" Visibility="Collapsed"/>
+                                    <!-- Wiki status -->
+                                    <Border x:Name="DetailWikiBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                            VerticalAlignment="Center">
+                                        <TextBlock x:Name="DetailWikiText" x:FieldModifier="internal" FontSize="11"/>
+                                    </Border>
+                                    <!-- Kept for code-behind compatibility — always collapsed -->
+                                    <Border x:Name="DetailSepPlatformStatus" x:FieldModifier="internal" Width="0" Visibility="Collapsed"/>
+                                </controls:WrapPanel>
+
+                                <!-- Row 1, Col 1: API + Bitness (right-aligned) -->
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <StackPanel x:Name="DetailGraphicsApiBadgePanel" x:FieldModifier="internal"
                                                 Orientation="Horizontal" Spacing="4"
                                                 VerticalAlignment="Center" Visibility="Collapsed"/>
@@ -508,19 +536,8 @@
                                             VerticalAlignment="Center" Visibility="Collapsed">
                                         <TextBlock Text="64-bit" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
                                     </Border>
-
-                                    <!-- Separator: platform → status -->
-                                    <Border x:Name="DetailSepPlatformStatus" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
-                                            VerticalAlignment="Stretch" Visibility="Collapsed"/>
-
-                                    <!-- Group 3: Status (wiki + luma) -->
-                                    <Border x:Name="DetailWikiBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
-                                            VerticalAlignment="Center">
-                                        <TextBlock x:Name="DetailWikiText" x:FieldModifier="internal" FontSize="11"/>
-                                    </Border>
-                                </controls:WrapPanel>
-                                </Grid>
-                            </StackPanel>
+                                </StackPanel>
+                            </Grid>
                             </Border>
                             <!-- Right box: Hide, Favourite, Config, Browse -->
                             <Border Grid.Column="1" Background="{StaticResource SurfaceComponentTableBrush}"
@@ -648,7 +665,14 @@
                                             Click="InstallRefButton_Click"
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
-                                    <Border Grid.Column="4"/>
+                                    <Button x:Name="DetailRefCogBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="RefCogButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="RE Framework Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
+                                    </Button>
                                     <Button x:Name="DetailRefDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallRefButton_Click"
                                             Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
@@ -1055,13 +1079,25 @@
                             <StackPanel x:Name="NeuralRenderingPanel" x:FieldModifier="internal" Spacing="6"/>
                         </Border>
 
-                        <!-- ── Nvidia Profile Overrides section ── -->
-                        <Border x:Name="NvidiaProfileContainer" x:FieldModifier="internal"
+                        <!-- ── DLSS / Streamline section ── -->
+                        <Border x:Name="NvidiaProfileDlssContainer" x:FieldModifier="internal"
                                 Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                 Padding="14,12" Visibility="Collapsed">
-                            <StackPanel x:Name="NvidiaProfilePanel" x:FieldModifier="internal" Spacing="6"/>
+                            <StackPanel x:Name="NvidiaProfileDlssPanel" x:FieldModifier="internal" Spacing="6"/>
                         </Border>
+
+                        <!-- ── Driver Settings section ── -->
+                        <Border x:Name="NvidiaProfileDriverContainer" x:FieldModifier="internal"
+                                Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                Padding="14,12" Visibility="Collapsed">
+                            <StackPanel x:Name="NvidiaProfileDriverPanel" x:FieldModifier="internal" Spacing="6"/>
+                        </Border>
+
+                        <!-- ── Legacy container — kept for migration, never shown ── -->
+                        <Border x:Name="NvidiaProfileContainer" x:FieldModifier="internal"
+                                Visibility="Collapsed"/>
 
                         <!-- ── Management section (folder, reset, report) ── -->
                         <Border x:Name="ManagementContainer" x:FieldModifier="internal"
@@ -1120,7 +1156,8 @@
 
                 <!-- Scrollable settings content -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
+                    <StackPanel x:Name="SettingsCardsPanel" x:FieldModifier="internal"
+                                Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
                         <!-- ══════════════════════════════════════════════════════════
@@ -1143,6 +1180,8 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
                                         <TextBlock Text="Check For Updates" FontSize="13" FontWeight="SemiBold"
@@ -1157,6 +1196,23 @@
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"
                                             ToolTipService.ToolTip="Check all components and the app for available updates"/>
+                                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18" Margin="0,8,0,0"
+                                               Text="Background Checks"/>
+                                    <ComboBox Grid.Row="3" x:Name="BackgroundUpdateChecksCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              SelectionChanged="BackgroundUpdateChecksCombo_SelectionChanged">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip>
+                                                <TextBlock TextWrapping="Wrap" MaxWidth="280">
+                                                    <Run Text="On: all update checks run automatically on startup and every 4 hours, including ReShade, RenoDX, OptiScaler, Nexus Mods, and all other components."/><LineBreak/>
+                                                    <Run Text="Minimal: only manifests, PCGW data, and DLSS versions update automatically. Component update checks only run when you click Refresh or Update All."/>
+                                                </TextBlock>
+                                            </ToolTip>
+                                        </ToolTipService.ToolTip>
+                                        <ComboBoxItem Content="On"/>
+                                        <ComboBoxItem Content="Minimal"/>
+                                    </ComboBox>
                                 </Grid>
 
                                 <!-- Divider -->
@@ -1164,20 +1220,29 @@
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                <!-- Right: Automatic Updates -->
-                                <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
-                                    <ComboBox x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
+                                <!-- Right: Automatic Updates — uses same Grid structure as left so the combo aligns with Background Checks -->
+                                <Grid Grid.Column="2" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
+                                    </StackPanel>
+                                    <!-- Rows 1–2 intentionally empty — spacers to match left column height -->
+                                    <ComboBox Grid.Row="3" x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
                                               FontSize="12" HorizontalAlignment="Stretch"
                                               ToolTipService.ToolTip="Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background"
                                               SelectionChanged="AutoUpdateComponentsCombo_SelectionChanged">
                                         <ComboBoxItem Content="No"/>
                                         <ComboBoxItem Content="Yes"/>
                                     </ComboBox>
-                                </StackPanel>
+                                </Grid>
                             </Grid>
                             </StackPanel>
                         </Border>
@@ -1541,6 +1606,125 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
+                             CARD 2b2: DLDSR CONTROL (dev-only — gated by ResolutionControl feature flag)
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border x:Name="DldsrControlCard" x:FieldModifier="internal"
+                                Visibility="Collapsed"
+                                Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="DLDSR Control" FontSize="15" FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                    <Button x:Name="DldsrInfoBtn" x:FieldModifier="internal"
+                                            Content="ⓘ" Click="DldsrInfoBtn_Click"
+                                            Background="Transparent" Foreground="{StaticResource AccentTealBrush}"
+                                            BorderThickness="0" Padding="4,0" MinWidth="0" MinHeight="0"
+                                            FontSize="14" VerticalAlignment="Center"
+                                            ToolTipService.ToolTip="How to use DLDSR Control"/>
+                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Enable DLDSR (Deep Learning Dynamic Super Resolution) factors without opening NVIDIA Control Panel. Requires capturing states first via NVIDIA CP. ~15 second display blackout on apply."/>
+
+                                <Grid ColumnSpacing="12" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Row 0: Current State Display -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Spacing="4">
+                                        <TextBlock Text="Current State" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="DldsrCurrentStateText" x:FieldModifier="internal"
+                                                   Text="(not checked)"
+                                                   FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+
+                                    <!-- Row 1: DSR Smoothness Slider -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="DSR Smoothness" FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="DldsrSmoothnessValueText" x:FieldModifier="internal"
+                                                       Text="33%" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Slider x:Name="DldsrSmoothnessSlider" x:FieldModifier="internal"
+                                                Minimum="0" Maximum="100" StepFrequency="1" TickFrequency="10"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTipService.ToolTip="Adjust DSR smoothness (0-100%). Lower values are sharper, higher values are smoother. ~15 second display blackout on apply."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" Grid.Column="1" 
+                                            x:Name="DldsrSmoothnessApplyBtn" x:FieldModifier="internal"
+                                            Content="Set" Click="DldsrSmoothnessApplyBtn_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                                            BorderThickness="1" CornerRadius="6"
+                                            Padding="16,6" MinWidth="0" MinHeight="0"
+                                            FontSize="12" VerticalAlignment="Bottom"
+                                            ToolTipService.ToolTip="Apply the selected smoothness value. Causes ~15 second display blackout."/>
+
+                                    <!-- Row 2: Saved States combo + Apply button -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="Saved States" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="DldsrStateCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Select a previously captured DLDSR state to apply."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="2" Grid.Column="1" 
+                                            x:Name="DldsrApplyBtn" x:FieldModifier="internal"
+                                            Content="Apply" Click="DldsrApplyBtn_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}"
+                                            BorderThickness="1" CornerRadius="6"
+                                            Padding="16,6" MinWidth="0" MinHeight="0"
+                                            FontSize="12" VerticalAlignment="Bottom"
+                                            ToolTipService.ToolTip="Apply the selected DLDSR state. Causes ~15 second display blackout."/>
+
+                                    <!-- Row 3: Capture / Delete buttons -->
+                                    <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                                                Orientation="Horizontal" Spacing="8">
+                                        <Button x:Name="DldsrCaptureBtn" x:FieldModifier="internal"
+                                                Content="Capture Current" Click="DldsrCaptureBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Capture the current DLDSR state from NVIDIA Control Panel. Configure DLDSR in NVIDIA CP first, then capture."/>
+                                        <Button x:Name="DldsrDeleteBtn" x:FieldModifier="internal"
+                                                Content="Delete" Click="DldsrDeleteBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Delete the currently selected saved state."/>
+                                        <Button x:Name="DldsrRefreshBtn" x:FieldModifier="internal"
+                                                Content="Refresh" Click="DldsrRefreshBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Refresh the current DLDSR state from registry."/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
                              CARD 2c: NEXUS MODS (dev-only — hidden by DevUnlockService)
                              ══════════════════════════════════════════════════════════ -->
                         <Border x:Name="NexusModsCard" x:FieldModifier="internal"
@@ -1654,28 +1838,129 @@
                                 Visibility="Collapsed"
                                 Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="RenoDX Data Source" FontSize="15" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Controls where RHI fetches mod data. RHI Database uses the community-maintained RHI database (recommended). RenoDX Wiki falls back to the RenoDX wiki scraper. Changing this setting triggers an immediate refresh."/>
-                                <Grid ColumnSpacing="12">
+                            <Grid ColumnSpacing="0" RowSpacing="0">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Source" FontSize="13"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="RenoDxDbSourceCombo" x:FieldModifier="internal"
-                                              Grid.Column="1" FontSize="12"
-                                              HorizontalAlignment="Left" MinWidth="160">
-                                        <ComboBoxItem Content="RHI Database" Tag="DbOnly"/>
-                                        <ComboBoxItem Content="RenoDX Wiki" Tag="WikiOnly"/>
-                                    </ComboBox>
+
+                                    <!-- Left: Data Source combo -->
+                                    <StackPanel Grid.Column="0" Spacing="8">
+                                        <TextBlock Text="Mod Data Source" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Controls where RHI fetches mod data. RHI Database uses the community-maintained RHI database (recommended). RenoDX Wiki falls back to the RenoDX wiki scraper. Changing this setting triggers an immediate refresh."/>
+                                        <Grid ColumnSpacing="8" Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Source" FontSize="12"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <ComboBox x:Name="RenoDxDbSourceCombo" x:FieldModifier="internal"
+                                                      Grid.Column="1" FontSize="12"
+                                                      HorizontalAlignment="Left" MinWidth="160">
+                                                <ComboBoxItem Content="RHI Database" Tag="DbOnly"/>
+                                                <ComboBoxItem Content="RenoDX Wiki" Tag="WikiOnly"/>
+                                            </ComboBox>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Divider -->
+                                    <Border Grid.Column="1" Width="1"
+                                            Background="{StaticResource BorderDefaultBrush}"
+                                            VerticalAlignment="Stretch" Margin="20,0,20,0"/>
+
+                                    <!-- Right: GitHub API Rate Limit -->
+                                    <StackPanel Grid.Column="2" Spacing="8">
+                                        <TextBlock Text="GitHub API" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Sign in with GitHub to raise the API rate limit from 60 to 5,000 requests per hour. This improves reliability of update checks, DLSS version lookups, and manifest fetches."/>
+
+                                        <!-- Connect button -->
+                                        <Button x:Name="GitHubConnectBtn" x:FieldModifier="internal"
+                                                Content="Connect GitHub"
+                                                Click="GitHubConnectBtn_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0"
+                                                FontSize="12" HorizontalAlignment="Left"/>
+
+                                        <!-- Status text (connected / code display / error) -->
+                                        <TextBlock x:Name="GitHubStatusText" x:FieldModifier="internal"
+                                                   FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Text="Not connected (60 req/hr)"/>
+
+                                        <!-- Device code panel — shown during auth flow -->
+                                        <StackPanel x:Name="GitHubDeviceCodePanel" x:FieldModifier="internal"
+                                                    Spacing="6" Visibility="Collapsed">
+                                            <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                       Foreground="{StaticResource InlineDescriptionBrush}"
+                                                       Text="Open the link below and enter this code:"/>
+                                            <TextBlock x:Name="GitHubUserCodeText" x:FieldModifier="internal"
+                                                       FontSize="20" FontWeight="Bold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Text="XXXX-XXXX"
+                                                       CharacterSpacing="200"/>
+                                            <HyperlinkButton x:Name="GitHubVerificationLink" x:FieldModifier="internal"
+                                                             Content="github.com/login/device"
+                                                             NavigateUri="https://github.com/login/device"
+                                                             FontSize="11" Padding="0"/>
+                                        </StackPanel>
+
+                                        <!-- Disconnect row — shown only when connected -->
+                                        <StackPanel x:Name="GitHubDisconnectRow" x:FieldModifier="internal"
+                                                    Spacing="4" Visibility="Collapsed">
+                                            <Button Content="Disconnect"
+                                                    Click="GitHubDisconnectBtn_Click"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource AccentRedBrush}"
+                                                    BorderBrush="{StaticResource AccentRedBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="12,4" MinWidth="0"
+                                                    FontSize="11" HorizontalAlignment="Left"/>
+                                        </StackPanel>
+
+                                        <!-- PAT (Personal Access Token) alternative -->
+                                        <TextBlock Margin="0,8,0,0" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="Or paste a GitHub Personal Access Token (PAT) — stays valid until you revoke it. No scopes needed, just generate and paste."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/settings/tokens/new?description=RHI&amp;scopes="
+                                                         FontSize="11" Padding="0" Margin="0,-4,0,0"
+                                                         Content="Create a token at github.com/settings/tokens (no boxes to tick)"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBox x:Name="GitHubPatBox" x:FieldModifier="internal"
+                                                     PlaceholderText="ghp_..."
+                                                     FontSize="11" Width="220" CornerRadius="6"
+                                                     IsSpellCheckEnabled="False"
+                                                     InputScope="Url"/>
+                                            <Button x:Name="GitHubPatSaveBtn" x:FieldModifier="internal"
+                                                    Content="Save"
+                                                    Click="GitHubPatSaveBtn_Click"
+                                                    Background="{StaticResource AccentBlueBgBrush}"
+                                                    Foreground="{StaticResource AccentBlueBrush}"
+                                                    BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,4" MinWidth="0" FontSize="11"/>
+                                            <Button x:Name="GitHubPatClearBtn" x:FieldModifier="internal"
+                                                    Content="Clear"
+                                                    Click="GitHubPatClearBtn_Click"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource AccentRedBrush}"
+                                                    BorderBrush="{StaticResource AccentRedBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,4" MinWidth="0" FontSize="11"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="GitHubPatStatusText" x:FieldModifier="internal"
+                                                   FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Text="" Visibility="Collapsed"/>
+                                    </StackPanel>
                                 </Grid>
-                            </StackPanel>
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
@@ -3047,6 +3332,13 @@
                             Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
                             Padding="8,2" VerticalAlignment="Center"
                             ToolTipService.ToolTip="Show message of the day"/>
+                    <Button x:Name="UpdateLogBtn" x:FieldModifier="internal"
+                            Content="Updates"
+                            Click="UpdateLogButton_Click"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                            Padding="8,2" VerticalAlignment="Center"
+                            ToolTipService.ToolTip="View component update history"/>
                 </StackPanel>
             </Grid>
         </Border>

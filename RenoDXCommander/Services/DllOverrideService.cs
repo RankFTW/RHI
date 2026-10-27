@@ -26,13 +26,6 @@ public class DllOverrideService : IDllOverrideService
     /// </summary>
     private HashSet<string> _manifestDllOverrideOptOuts = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Per-game OptiScaler DLL filename overrides from the remote manifest.
-    /// Key = game name, Value = DLL filename string (e.g. "winmm.dll").
-    /// Re-evaluated on every manifest load.
-    /// </summary>
-    private Dictionary<string, string> _manifestOsDllOverrides = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>Raised when the overrides dictionary changes and settings should be persisted.</summary>
     public Action? OverridesChanged { get; set; }
 
@@ -504,92 +497,17 @@ public class DllOverrideService : IDllOverrideService
             : AuxInstallService.RsNormalName;
     }
 
-    /// <summary>
-    /// Returns the effective DC filename for a game — from override config if
-    /// active, otherwise the default addon name based on bitness.
-    /// </summary>
-    public string GetEffectiveDcName(string gameName, bool is32Bit)
-    {
-        var cfg = GetDllOverride(gameName);
-        return cfg != null && !string.IsNullOrWhiteSpace(cfg.DcFileName)
-            ? cfg.DcFileName
-            : MainViewModel.GetDcFileName(is32Bit);
-    }
-
-    /// <summary>
-    /// Checks whether <paramref name="targetName"/> is already in use by the
-    /// <em>other</em> component (RS or DC) in the same game folder.
-    /// <para>
-    /// <paramref name="component"/> is the component that <em>wants</em> to use
-    /// the name — <c>"RS"</c> or <c>"DC"</c>. The method checks the opposite
-    /// component's effective name (from override config) and also scans the
-    /// physical files on disk.
-    /// </para>
-    /// Comparison is case-insensitive (Windows filenames).
-    /// </summary>
-    public bool IsNameOccupiedByOtherComponent(
-        string gameName,
-        string targetName,
-        string component,
-        bool is32Bit,
-        string? installPath)
-    {
-        if (string.IsNullOrWhiteSpace(targetName))
-            return false;
-
-        // Check the other component's effective name from config / defaults
-        string otherEffectiveName;
-        if (component.Equals("RS", StringComparison.OrdinalIgnoreCase))
-            otherEffectiveName = GetEffectiveDcName(gameName, is32Bit);
-        else
-            otherEffectiveName = GetEffectiveRsName(gameName);
-
-        if (targetName.Equals(otherEffectiveName, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        // Check physical files on disk when an install path is available
-        if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
-        {
-            if (component.Equals("RS", StringComparison.OrdinalIgnoreCase))
-            {
-                // RS wants this name — check if DC physically occupies it
-                var deployPath = ModInstallService.GetAddonDeployPath(installPath);
-                if (File.Exists(Path.Combine(deployPath, targetName)))
-                    return true;
-                // Also check the game install path for DC files that may live there
-                if (!deployPath.Equals(installPath, StringComparison.OrdinalIgnoreCase)
-                    && File.Exists(Path.Combine(installPath, targetName))
-                    && !targetName.Equals(GetEffectiveRsName(gameName), StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            else
-            {
-                // DC wants this name — check if RS physically occupies it
-                var rsPath = Path.Combine(installPath, targetName);
-                if (File.Exists(rsPath)
-                    && targetName.Equals(GetEffectiveRsName(gameName), StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
     // ── OptiScaler DLL naming ─────────────────────────────────────────────
 
     /// <summary>
     /// Returns the effective OptiScaler DLL filename for a game.
-    /// Priority: user override > manifest override > default (dxgi.dll).
+    /// Priority: user override > default (dxgi.dll).
     /// </summary>
     public string GetEffectiveOsName(string gameName)
     {
         var cfg = GetDllOverride(gameName);
         if (cfg != null && !string.IsNullOrWhiteSpace(cfg.OsFileName))
             return cfg.OsFileName;
-
-        if (_manifestOsDllOverrides.TryGetValue(gameName, out var manifestName)
-            && !string.IsNullOrWhiteSpace(manifestName))
-            return manifestName;
 
         return OptiScalerService.DefaultDllName;
     }
@@ -637,18 +555,6 @@ public class DllOverrideService : IDllOverrideService
             };
         }
         OverridesChanged?.Invoke();
-    }
-
-    /// <summary>
-    /// Loads OptiScaler DLL overrides from the remote manifest.
-    /// Called during manifest application.
-    /// </summary>
-    public void LoadManifestOsDllOverrides(Dictionary<string, string>? overrides)
-    {
-        _manifestOsDllOverrides.Clear();
-        if (overrides == null) return;
-        foreach (var (key, value) in overrides)
-            _manifestOsDllOverrides[key] = value;
     }
 
     /// <summary>Migrates a DLL override entry when a game is renamed.</summary>

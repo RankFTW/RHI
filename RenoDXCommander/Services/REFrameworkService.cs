@@ -272,26 +272,29 @@ public class REFrameworkService : IREFrameworkService
             File.Copy(extractedDll, destDll, overwrite: true);
 
             // ── Update install record with PD-Upscaler version ───────────────
-            var records = LoadRecords();
-            var existing = records.FirstOrDefault(r =>
-                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
-                r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+            lock (SafeJsonFile.LockFor(DbPath))
+            {
+                var records = LoadRecords();
+                var existing = records.FirstOrDefault(r =>
+                    r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
 
-            if (existing != null)
-            {
-                existing.InstalledVersion = "PD-Upscaler";
-                existing.InstalledAt = DateTime.UtcNow;
-                SaveRecords(records);
-            }
-            else
-            {
-                SaveRecord(new REFrameworkInstalledRecord
+                if (existing != null)
                 {
-                    GameName = gameName,
-                    InstallPath = installPath,
-                    InstalledVersion = "PD-Upscaler",
-                    InstalledAt = DateTime.UtcNow,
-                });
+                    existing.InstalledVersion = "PD-Upscaler";
+                    existing.InstalledAt = DateTime.UtcNow;
+                    SaveRecords(records);
+                }
+                else
+                {
+                    SaveRecord(new REFrameworkInstalledRecord
+                    {
+                        GameName = gameName,
+                        InstallPath = installPath,
+                        InstalledVersion = "PD-Upscaler",
+                        InstalledAt = DateTime.UtcNow,
+                    });
+                }
             }
 
             progress?.Report(("PD-Upscaler REFramework installed!", 100));
@@ -334,17 +337,20 @@ public class REFrameworkService : IREFrameworkService
             File.Move(backupPath, dllPath);
 
             // Restore the version in the install record
-            var records = LoadRecords();
-            var existing = records.FirstOrDefault(r =>
-                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
-                r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
-
-            if (existing != null)
+            lock (SafeJsonFile.LockFor(DbPath))
             {
-                // Restore to the cached latest version, or "unknown" if unavailable
-                existing.InstalledVersion = _cachedLatestVersion ?? "unknown";
-                existing.InstalledAt = DateTime.UtcNow;
-                SaveRecords(records);
+                var records = LoadRecords();
+                var existing = records.FirstOrDefault(r =>
+                    r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    // Restore to the cached latest version, or "unknown" if unavailable
+                    existing.InstalledVersion = _cachedLatestVersion ?? "unknown";
+                    existing.InstalledAt = DateTime.UtcNow;
+                    SaveRecords(records);
+                }
             }
 
             CrashReporter.Log($"[REFrameworkService.RestoreStandardREFramework] Restored standard {DllFileName} for '{gameName}'");
@@ -368,21 +374,24 @@ public class REFrameworkService : IREFrameworkService
     {
         try
         {
-            var records = LoadRecords();
-            bool changed = false;
-            foreach (var r in records)
+            lock (SafeJsonFile.LockFor(DbPath))
             {
-                if (!string.Equals(r.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(r.InstalledVersion, version, StringComparison.OrdinalIgnoreCase))
+                var records = LoadRecords();
+                bool changed = false;
+                foreach (var r in records)
                 {
-                    r.InstalledVersion = version;
-                    changed = true;
+                    if (!string.Equals(r.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(r.InstalledVersion, version, StringComparison.OrdinalIgnoreCase))
+                    {
+                        r.InstalledVersion = version;
+                        changed = true;
+                    }
                 }
-            }
-            if (changed)
-            {
-                SaveRecords(records);
-                CrashReporter.Log($"[REFrameworkService.SyncInstalledVersion] Updated all records to {version}");
+                if (changed)
+                {
+                    SaveRecords(records);
+                    CrashReporter.Log($"[REFrameworkService.SyncInstalledVersion] Updated all records to {version}");
+                }
             }
         }
         catch (Exception ex)
@@ -391,45 +400,34 @@ public class REFrameworkService : IREFrameworkService
         }
     }
 
-    private List<REFrameworkInstalledRecord> LoadRecords()
-    {
-        try
-        {
-            if (!File.Exists(DbPath)) return new();
-            return JsonSerializer.Deserialize<List<REFrameworkInstalledRecord>>(
-                File.ReadAllText(DbPath)) ?? new();
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[REFrameworkService.LoadRecords] Failed — {ex.Message}");
-            return new();
-        }
-    }
+    // SafeJsonFile: atomic write + .bak, corrupt-file recovery, no save over an unreadable file.
+    private List<REFrameworkInstalledRecord> LoadRecords() => SafeJsonFile.ReadList<REFrameworkInstalledRecord>(DbPath);
 
-    private void SaveRecords(List<REFrameworkInstalledRecord> records)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
-        var json = JsonSerializer.Serialize(records,
-            new JsonSerializerOptions { WriteIndented = true });
-        FileHelper.WriteAllTextWithRetry(DbPath, json, "REFrameworkService.SaveRecords");
-    }
+    private void SaveRecords(List<REFrameworkInstalledRecord> records) =>
+        SafeJsonFile.Write(DbPath, records, "REFrameworkService.SaveRecords", SafeJsonFile.Indented);
 
     private void SaveRecord(REFrameworkInstalledRecord record)
     {
-        var records = LoadRecords();
-        var i = records.FindIndex(r =>
-            r.GameName.Equals(record.GameName, StringComparison.OrdinalIgnoreCase) &&
-            r.InstallPath.Equals(record.InstallPath, StringComparison.OrdinalIgnoreCase));
-        if (i >= 0) records[i] = record; else records.Add(record);
-        SaveRecords(records);
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var records = LoadRecords();
+            var i = records.FindIndex(r =>
+                r.GameName.Equals(record.GameName, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(record.InstallPath, StringComparison.OrdinalIgnoreCase));
+            if (i >= 0) records[i] = record; else records.Add(record);
+            SaveRecords(records);
+        }
     }
 
     private void RemoveRecord(string gameName, string installPath)
     {
-        var records = LoadRecords();
-        records.RemoveAll(r =>
-            r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
-            r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
-        SaveRecords(records);
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var records = LoadRecords();
+            records.RemoveAll(r =>
+                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+            SaveRecords(records);
+        }
     }
 }

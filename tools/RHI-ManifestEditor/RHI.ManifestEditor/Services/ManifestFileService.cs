@@ -187,7 +187,7 @@ public class ManifestFileService
 
         AddList(m.Blacklist); AddList(m.WikiUnlinks); AddList(m.NativeHdrGames);
         AddList(m.UeExtendedGames); AddList(m.NoUeExtendedGames); AddList(m.LumaRenodxCompat);
-        AddList(m.LumaDefaultGames); AddList(m.ThirtyTwoBitGames); AddList(m.SixtyFourBitGames);
+        AddList(m.ThirtyTwoBitGames); AddList(m.SixtyFourBitGames);
         AddList(m.DlssSkipGames); AddList(m.DofFixForceGames); AddList(m.DofFixSkipGames);
         AddList(m.DxvkBlacklist); AddList(m.ProfileExeExclusions);
 
@@ -233,7 +233,6 @@ public class ManifestFileService
         CheckList(m.UeExtendedGames, "ueExtendedGames", "UE/HDR");
         CheckList(m.NoUeExtendedGames, "noUeExtendedGames", "UE/HDR");
         CheckList(m.LumaRenodxCompat, "lumaRenodxCompat", "UE/HDR");
-        CheckList(m.LumaDefaultGames, "lumaDefaultGames", "UE/HDR");
         CheckList(m.ThirtyTwoBitGames, "thirtyTwoBitGames", "Engine");
         CheckList(m.SixtyFourBitGames, "sixtyFourBitGames", "Engine");
         CheckList(m.DlssSkipGames, "dlssSkipGames", "Engine");

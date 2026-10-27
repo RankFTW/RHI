@@ -9,6 +9,7 @@ public static class OptiScalerPolicy
         {
             "Nightly" => "_nightly",
             "DlssNr" => "_dlssnr",
+            "F5" => "_f5",
             _ => ""
         };
         var gpu = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)

@@ -99,7 +99,8 @@
             </StackPanel>
 
             <!-- Right: editable -->
-            <StackPanel Grid.Column="2">
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
                 <TextBlock Text="DB — Will Be Added As" Foreground="#88CCFF"
                            FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
                 <Label Content="Name *"/>
@@ -109,13 +110,29 @@
                     <ComboBoxItem Content="Done"/>
                     <ComboBoxItem Content="WIP"/>
                 </ComboBox>
-                <Label Content="Upgrades (backtick format)" Margin="0,8,0,0"/>
-                <TextBox x:Name="DbUpgradesBox" FontFamily="Consolas" FontSize="11"
-                         AcceptsReturn="False" ToolTip="e.g. `R11G11B10_FLOAT`"/>
+
+                <Label Content="Upgrades" Margin="0,8,0,0"/>
+                <TextBlock Text="One row per setting. Swapchain_Encoding: 0 = Linear, 1 = Gamma."
+                           Foreground="#666688" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="34"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Key" Foreground="#8888AA" FontSize="11"/>
+                    <TextBlock Grid.Column="2" Text="Value" Foreground="#8888AA" FontSize="11"/>
+                </Grid>
+                <StackPanel x:Name="UpgradesPanel"/>
+                <Button Content="+ Add Upgrade Row" HorizontalAlignment="Left"
+                        Margin="0,4,0,0" Padding="10,4" Click="AddUpgradeRow_Click"/>
+
                 <Label Content="Comments" Margin="0,8,0,0"/>
                 <TextBox x:Name="DbCommentsBox" AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto" Height="80" TextWrapping="Wrap"/>
             </StackPanel>
+            </ScrollViewer>
         </Grid>
     </DockPanel>
 </Window>

@@ -586,8 +586,13 @@ public class ShaderPackCatalog
             _ => null
         };
     // Shared selection order: first matching release asset, then the release source ZIP.
-    public static (string? Url, string Name) ResolveRelease(System.Text.Json.JsonElement root, string? assetExtension)
+    /// <summary>
+    /// Picks the release download. <c>Name</c> is the asset file name (archive format detection);
+    /// <c>Version</c> is always the release tag, a clean version token (e.g. "v4.2", "2026.09.10").
+    /// </summary>
+    public static (string? Url, string Name, string Version) ResolveRelease(System.Text.Json.JsonElement root, string? assetExtension)
     {
+        var tag = root.TryGetProperty("tag_name", out var value) ? value.GetString() ?? "unknown" : "unknown";
         if (root.TryGetProperty("assets", out var assets))
         {
             foreach (var asset in assets.EnumerateArray())
@@ -595,15 +600,14 @@ public class ShaderPackCatalog
                 var name = asset.GetProperty("name").GetString() ?? "";
                 var url = asset.GetProperty("browser_download_url").GetString() ?? "";
                 if ((assetExtension == null || name.EndsWith(assetExtension, StringComparison.OrdinalIgnoreCase)) && !string.IsNullOrEmpty(url))
-                    return (url, name);
+                    return (url, name, tag);
             }
         }
         if (root.TryGetProperty("zipball_url", out var zipball))
         {
-            var tag = root.TryGetProperty("tag_name", out var value) ? value.GetString() ?? "unknown" : "unknown";
-            if (zipball.GetString() is { Length: > 0 } url) return (url, $"source_{tag}.zip");
+            if (zipball.GetString() is { Length: > 0 } url) return (url, $"source_{tag}.zip", tag);
         }
-        return (null, "");
+        return (null, "", "");
     }
 
     /// <summary>Resolves a pack from the same defaults and manifest overrides as the Windows picker.</summary>

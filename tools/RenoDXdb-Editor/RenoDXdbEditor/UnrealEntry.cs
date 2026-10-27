@@ -72,16 +72,22 @@ public class UnrealEntry : INotifyPropertyChanged
         "B8G8R8A8_TYPELESS",
         "B8G8R8A8_UNORM",
         "B8G8R8A8_UNORM_SRGB",
+        "B10G10R10A2_UNORM",
+        "R8G8B8A8_SNORM",
         "R8G8B8A8_TYPELESS",
         "R8G8B8A8_UNORM",
         "R8G8B8A8_UNORM_SRGB",
         "R10G10B10A2_TYPELESS",
         "R10G10B10A2_UNORM",
+        "R11G11B10_FLOAT",
         "R16G16B16A16_TYPELESS",
         "R16G16B16A16_FLOAT",
         "R16G16B16A16_UNORM",
         "R32G32B32A32_TYPELESS",
         "R32G32B32A32_FLOAT",
+        "Upgrade_CopyDestinations",
+        "Upgrade_SwapChainCompatibility",
+        "Upgrade_UseSCRGB",
     ];
 
     /// <summary>
@@ -100,6 +106,7 @@ public class UnrealEntry : INotifyPropertyChanged
         "Upgrade_R16G16B16A16_UNORM",
         "Upgrade_CopyDestinations",
         "Upgrade_UseSCRGB",
+        "Upgrade_SwapChainCompatibility",
         "Use_Swapchain_Proxy",
         "Use_Resource_Cloning",
         "Force_Pipeline_Cloning",
@@ -108,6 +115,7 @@ public class UnrealEntry : INotifyPropertyChanged
         "Swapchain_Encoding",
         "SettingsMode",
         "Blit_Copy_Hack",
+        "Proxy_Revert_State",
         "Tonemap_Offset",
         "Scaling_Offset",
     ];
@@ -115,27 +123,43 @@ public class UnrealEntry : INotifyPropertyChanged
     /// <summary>
     /// Valid size tokens for UE-Extended entries.
     /// </summary>
-    public static readonly string[] SizeValues =
-    [
-        "Output Size",
-        "Output Ratio",
-        "Any Size",
-    ];
-
     /// <summary>
-    /// Valid value tokens for Unity entries — (DisplayLabel, StoredValue) pairs.
-    /// Format upgrade sizes use the same text as UE-Extended. Boolean settings use 0/1/2.
+    /// Valid size tokens for UE-Extended entries — (DisplayLabel, StoredValue) pairs.
+    /// Format upgrade sizes store the label as-is. Special key values show named context.
     /// </summary>
-    public static readonly (string Label, string Value)[] UnitySizeValuePairs =
+    public static readonly (string Label, string Value)[] SizeValues =
     [
         ("Output Size",           "Output Size"),
         ("Output Ratio",          "Output Ratio"),
         ("Any Size",              "Any Size"),
-        ("Off (0)",               "0"),
-        ("On (1)",                "1"),
-        ("On - Compat (2)",       "2"),
-        ("Linear (0)",            "0"),
-        ("Gamma (1)",             "1"),
+        ("0 — Off / HDR10",       "0"),
+        ("1 — On / scRGB",        "1"),
+        ("2 — Auto Upgrade",      "2"),
+    ];
+
+    /// <summary>
+    /// Valid value tokens for Unity entries — (DisplayLabel, StoredValue) pairs.
+    /// Format upgrade sizes use the same text as UE-Extended. Boolean and numeric settings
+    /// show named labels where applicable — the stored value is always the raw number.
+    /// </summary>
+    public static readonly (string Label, string Value)[] UnitySizeValuePairs =
+    [
+        // Upgrade format sizes
+        ("Output Size",               "Output Size"),
+        ("Output Ratio",              "Output Ratio"),
+        ("Any Size",                  "Any Size"),
+        // 0 — Off / HDR10 / no offset
+        ("0 — Off / HDR10",           "0"),
+        // 1 — On / Auto / scRGB / Gamma (Swapchain_Encoding labels are {"Linear", "Gamma"})
+        ("1 — On / Auto / scRGB / Gamma", "1"),
+        // 2 — On (Compat) / Auto Upgrade
+        ("2 — On Compat / Auto Upgrade", "2"),
+        // 3 — Scaling Only (Blit Copy Hack)
+        ("3 — Scaling Only",          "3"),
+        // 4 — offset value
+        ("4",                         "4"),
+        // 5 — offset value
+        ("5",                         "5"),
     ];
 
     /// <summary>
@@ -162,12 +186,17 @@ public class UnrealEntry : INotifyPropertyChanged
         }
         else
         {
-            // All pairs on one line (Unity format): consume backtick tokens in pairs
+            // All pairs on one line (Unity format): a key, optionally followed by a value.
+            // Keys can stand alone (`Upgrade_R11G11B10_FLOAT` `Use_Swapchain_Proxy` `1`),
+            // so only treat the next token as this key's value when it looks like a value —
+            // the same rule RHI uses when it reads these entries.
             var tokens = ParseBacktickTokens(Upgrades);
-            for (int i = 0; i < tokens.Count; i += 2)
+            for (int i = 0; i < tokens.Count; i++)
             {
                 var format = tokens[i];
-                var size   = i + 1 < tokens.Count ? tokens[i + 1] : "";
+                var size   = "";
+                if (i + 1 < tokens.Count && IsValueToken(tokens[i + 1]))
+                    size = tokens[++i];
                 result.Add((format, size));
             }
         }
@@ -187,6 +216,13 @@ public class UnrealEntry : INotifyPropertyChanged
             .ToList();
         return lines.Count == 0 ? null : string.Join(" ", lines);
     }
+
+    /// <summary>True for size words and plain numbers; anything else is a key.</summary>
+    private static bool IsValueToken(string token) =>
+        token.Equals("Output Size",  StringComparison.OrdinalIgnoreCase) ||
+        token.Equals("Output Ratio", StringComparison.OrdinalIgnoreCase) ||
+        token.Equals("Any Size",     StringComparison.OrdinalIgnoreCase) ||
+        (token.Length > 0 && token.All(char.IsDigit));
 
     private static List<string> ParseBacktickTokens(string s)
     {

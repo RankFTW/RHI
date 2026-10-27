@@ -14,14 +14,16 @@ public partial class DlssPresetService
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return 0;
 
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.GetPreset] Lock timeout for '{gameName}' — NVAPI may be hung. Returning 0.");
+            return 0;
+        }
         try
         {
             var profile = FindProfile(gameName, installPath);
             if (profile == null) return 0;
 
-            // Always use raw NVAPI for reads — NvAPIWrapper's profile.Settings collection
-            // holds stale values from session load and is NOT updated after SetSetting writes.
-            // Raw NVAPI reads directly from the live in-memory session state.
             var sessionHandle = GetHandlePtr(_session.Handle);
             var profileHandle = GetHandlePtr(profile.Handle);
             if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
@@ -38,6 +40,10 @@ public partial class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.GetPreset] Error for '{gameName}' — {ex.Message}");
             return 0;
         }
+        finally
+        {
+            _sessionLock.Release();
+        }
     }
 
     private bool SetPreset(string gameName, string installPath, uint settingId, uint preset)
@@ -45,6 +51,11 @@ public partial class DlssPresetService
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return false;
 
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.SetPreset] Lock timeout for '{gameName}' — NVAPI may be hung. Skipping.");
+            return false;
+        }
         try
         {
             var profile = FindProfile(gameName, installPath);
@@ -103,6 +114,10 @@ public partial class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.SetPreset] Error for '{gameName}' — {ex.Message}");
             return false;
         }
+        finally
+        {
+            _sessionLock.Release();
+        }
     }
 
     /// <summary>
@@ -113,6 +128,11 @@ public partial class DlssPresetService
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return false;
 
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.DeletePreset] Lock timeout for '{gameName}' — NVAPI may be hung. Skipping.");
+            return false;
+        }
         try
         {
             var profile = FindProfile(gameName, installPath);
@@ -122,13 +142,9 @@ public partial class DlssPresetService
             catch (Exception delEx)
             {
                 CrashReporter.Log($"[DlssPresetService.DeletePreset] DeleteSetting 0x{settingId:X8} failed for '{gameName}' — {delEx.Message}");
-                // Fallback: write the correct default value for this setting
-                // For settings where writing 0 would block global inheritance (MFG dynamic settings),
-                // skip the fallback entirely — a failed delete is better than writing an explicit Off.
                 var defaultValue = GetSettingDefaultValue(settingId);
                 if (defaultValue.HasValue)
-                    SetPreset(gameName, installPath, settingId, defaultValue.Value);
-                // else: no fallback — leave the setting as-is (or absent)
+                    SetPresetCore(profile, settingId, defaultValue.Value, gameName);
             }
             _session.Save();
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Deleted 0x{settingId:X8} for '{gameName}'");
@@ -138,6 +154,27 @@ public partial class DlssPresetService
         {
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Error for '{gameName}' — {ex.Message}");
             return false;
+        }
+        finally
+        {
+            _sessionLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Core set-and-save without acquiring the session lock — caller must hold _sessionLock.
+    /// Used by DeletePreset's fallback path to avoid re-entrant lock acquisition.
+    /// </summary>
+    private void SetPresetCore(DriverSettingsProfile profile, uint settingId, uint preset, string gameName)
+    {
+        try
+        {
+            profile.SetSetting(settingId, preset);
+            _session?.Save();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetPresetCore] Error 0x{settingId:X8} for '{gameName}' — {ex.Message}");
         }
     }
 
@@ -195,13 +232,13 @@ public partial class DlssPresetService
                 System.Text.Json.JsonSerializer.Serialize(_persistentProfileNameCache,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.SavePersistentProfileCache] Failed to write profile name cache — {ex.Message}"); }
     }
 
     public void ClearProfileNameCache()
     {
         _persistentProfileNameCache = new Dictionary<string, string?>();
-        try { if (File.Exists(ProfileNameCachePath)) File.Delete(ProfileNameCachePath); } catch { }
+        try { if (File.Exists(ProfileNameCachePath)) File.Delete(ProfileNameCachePath); } catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.ClearProfileNameCache] Failed to delete profile name cache — {ex.Message}"); }
         CrashReporter.Log("[DlssPresetService.ClearProfileNameCache] Persistent profile name cache cleared");
     }
 
@@ -427,7 +464,7 @@ public partial class DlssPresetService
                         .Select(Path.GetFileName)
                         .FirstOrDefault();
                 }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Failed to enumerate exes in '{installPath}' — {ex.Message}"); }
             }
 
             if (string.IsNullOrEmpty(gameExe)) return null;
@@ -461,14 +498,6 @@ public partial class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Failed for '{gameName}' — {ex.Message}");
             return null;
         }
-    }
-
-    /// <summary>
-    /// Public method: returns true if a profile already exists for this game, false if not.
-    /// </summary>
-    public bool HasProfile(string gameName, string installPath)
-    {
-        return FindProfile(gameName, installPath) != null;
     }
 
     /// <summary>

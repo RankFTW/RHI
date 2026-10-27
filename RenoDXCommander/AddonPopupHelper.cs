@@ -90,7 +90,7 @@ public static class AddonPopupHelper
                     UseShellExecute = true,
                 });
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[AddonPopupHelper.ShowAsync] Failed to open custom addon folder '{customFolderPath}' — {ex.Message}"); }
         };
         panel.Children.Add(folderLink);
 
@@ -274,7 +274,7 @@ public static class AddonPopupHelper
                         await addonPackService.DownloadAddonAsync(capturedEntry);
                         toggle.DispatcherQueue?.TryEnqueue(() => capturedTickMark.Visibility = Visibility.Visible);
                     }
-                    catch { }
+                    catch (Exception ex) { CrashReporter.Log($"[AddonPopupHelper.ShowAsync] Addon download failed for '{capturedEntry.PackageName}' — {ex.Message}"); }
                     finally
                     {
                         toggle.DispatcherQueue?.TryEnqueue(() => toggle.IsEnabled = !peerIsSelected);

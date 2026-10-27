@@ -22,6 +22,7 @@ public class DlssEnablerService
     private static readonly string GitHubApiUrl = "https://api.github.com/repos/RankFTW/rhi-repo/releases?per_page=100";
 
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
     private readonly ICrashReporter _crashReporter;
     private readonly IGameNameService _gameNameService;
     private readonly IOptiScalerService _optiScalerService;
@@ -33,9 +34,10 @@ public class DlssEnablerService
         HttpClient http,
         ICrashReporter crashReporter,
         IGameNameService gameNameService,
-        IOptiScalerService optiScalerService)
+        IOptiScalerService optiScalerService, GitHubETagCache etagCache)
     {
         _http = http;
+        _etagCache = etagCache;
         _crashReporter = crashReporter;
         _gameNameService = gameNameService;
         _optiScalerService = optiScalerService;
@@ -347,18 +349,12 @@ public class DlssEnablerService
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-            request.Headers.Add("User-Agent", "RHI");
-            request.Headers.Add("Accept", "application/vnd.github+json");
-
-            using var response = await _http.SendAsync(request).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
+            var json = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
+            if (json == null)
             {
-                _crashReporter.Log($"[DlssEnablerService] GitHub API returned {response.StatusCode}");
+                _crashReporter.Log($"[DlssEnablerService] GitHub API request failed");
                 return (null, null);
             }
-
-            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
 
             // Find the latest release with the DLSS-Enabler- tag prefix

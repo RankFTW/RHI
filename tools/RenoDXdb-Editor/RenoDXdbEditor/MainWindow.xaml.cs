@@ -33,6 +33,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _namedModsRemoteContent;
     private string? _unrealRemoteContent;
 
+    // Baseline content at load time — used as the "before" side of the push diff
+    private string? _fileBaselineContent;
+
     // ── Bindable properties ───────────────────────────────────────────────────
 
     private bool _hasFile;
@@ -209,27 +212,62 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 "Token Required", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (_isDirty)
+
+        // Auto-apply any pending editor changes before pushing
+        if (HasSelection)
         {
-            var save = MessageBox.Show("You have unsaved changes. Save before pushing?",
-                "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-            if (save == MessageBoxResult.Cancel) return;
-            if (save == MessageBoxResult.Yes) SaveToPath(_currentFilePath);
+            if (_isUnrealMode) ApplyUnrealChanges();
+            else               ApplyModChanges();
         }
 
+        // Save to disk first so the file is up to date
+        if (_isDirty)
+            SaveToPath(_currentFilePath);
+
+        // Build in-memory JSON of what we're about to push
+        var opts = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        };
+        string newContent;
+        if (_isUnrealMode)
+        {
+            newContent = _activeDb == DbType.Unity
+                ? JsonSerializer.Serialize(_allUnreal.Select(e2 => new UnityEntry(e2.Name, e2.Status, e2.Upgrades, e2.Comments)).ToList(), opts)
+                : JsonSerializer.Serialize(_allUnreal.ToList(), opts);
+        }
+        else
+            newContent = JsonSerializer.Serialize(_allMods.ToList(), opts);
+
+        // Use the file content as it was when loaded as the diff baseline
+        string oldContent = _fileBaselineContent ?? "";
+
+        // Show preview diff — user must confirm before we push
         var dbName = Path.GetFileName(_currentFilePath);
+        var preview = new DiffWindow(dbName, oldContent, newContent, DiffWindow.DiffMode.PreviewPush)
+        { Owner = this };
+        preview.ShowDialog();
+        if (!preview.UserChoseOverwrite) return;
+
         var msg = $"Update {dbName} via RenoDXdb-Editor";
-        var content = await File.ReadAllTextAsync(_currentFilePath);
 
         StatusBar.Text = "Pushing to GitHub…";
         PushBtn.IsEnabled = false;
         try
         {
-            var (success, error) = await DbSyncService.PushAsync(_activeDb, content, _githubToken, msg);
+            var (success, error) = await DbSyncService.PushAsync(_activeDb, newContent, _githubToken, msg);
             StatusBar.Text = success
                 ? $"✓ Pushed successfully at {DateTime.Now:HH:mm:ss}"
                 : $"✗ Push failed: {error}";
-            if (!success)
+            if (success)
+            {
+                // Update baseline and cached remote so future diffs/selector cards are correct
+                _fileBaselineContent = newContent;
+                if (_activeDb == DbType.NamedMods) _namedModsRemoteContent = newContent;
+                else if (_activeDb == DbType.Unreal) _unrealRemoteContent = newContent;
+            }
+            else
                 MessageBox.Show($"Push failed:\n{error}", "Push Failed",
                     MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -273,6 +311,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OpenNamedMods_Click(object sender, RoutedEventArgs e)
     {
+        if (_isDirty && !ConfirmDiscard()) return;
         _activeDb = DbType.NamedMods;
         var local = DbSyncService.LocalCachePath(DbType.NamedMods);
 
@@ -300,6 +339,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OpenUnreal_Click(object sender, RoutedEventArgs e)
     {
+        if (_isDirty && !ConfirmDiscard()) return;
         _activeDb = DbType.Unreal;
         var local = DbSyncService.LocalCachePath(DbType.Unreal);
 
@@ -327,6 +367,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OpenUnity_Click(object sender, RoutedEventArgs e)
     {
+        if (_isDirty && !ConfirmDiscard()) return;
         _activeDb = DbType.Unity;
         var local = DbSyncService.LocalCachePath(DbType.Unity);
 
@@ -385,6 +426,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var json = File.ReadAllText(path);
             var db   = dbOverride ?? _activeDb;
             _activeDb = db;
+            _fileBaselineContent = json; // snapshot for push diff
 
             if (db == DbType.Unreal || db == DbType.Unity)
             {
@@ -443,12 +485,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void SaveFile_Click(object sender, RoutedEventArgs e)
     {
+        // Auto-apply any pending editor changes before saving
+        if (HasSelection)
+        {
+            if (_isUnrealMode) ApplyUnrealChanges();
+            else               ApplyModChanges();
+        }
         if (_currentFilePath == null) { SaveFileAs_Click(sender, e); return; }
         SaveToPath(_currentFilePath);
     }
 
     private void SaveFileAs_Click(object sender, RoutedEventArgs e)
     {
+        // Auto-apply any pending editor changes before saving
+        if (HasSelection)
+        {
+            if (_isUnrealMode) ApplyUnrealChanges();
+            else               ApplyModChanges();
+        }
         var dlg = new SaveFileDialog
         {
             Filter   = "JSON files (*.json)|*.json",
@@ -635,12 +689,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatusLabel.Text  = "";
     }
 
-    private void Field_Changed(object sender, RoutedEventArgs e) { /* applied on button */ }
-
-    private void ApplyChanges_Click(object sender, RoutedEventArgs e)
+    private void Field_Changed(object sender, RoutedEventArgs e)
     {
-        if (_isUnrealMode)   ApplyUnrealChanges();
-        else                 ApplyModChanges();
+        if (!HasSelection) return;
+        _isDirty = true;
+        UpdateStatusBar();
     }
 
     private void ApplyModChanges()
@@ -674,7 +727,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         _isDirty = true;
-        ShowStatus("✓ Changes applied.");
         UpdateStatusBar();
     }
 
@@ -712,7 +764,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         _isDirty = true;
-        ShowStatus("✓ Changes applied.");
         UpdateStatusBar();
     }
 
@@ -761,8 +812,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            foreach (var v in UnrealEntry.SizeValues)
-                sizeCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
+            foreach (var (label, val) in UnrealEntry.SizeValues)
+                sizeCombo.Items.Add(new ComboBoxItem { Content = label, Tag = val });
         }
         SelectComboByTag(sizeCombo, size);
         Grid.SetColumn(sizeCombo, 2);

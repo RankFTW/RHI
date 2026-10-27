@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace RenoDXCommander.Services;
 
 public partial class OptiScalerService
@@ -68,6 +70,29 @@ public partial class OptiScalerService
         }
 
         CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {copied} Streamline file(s) from '{Path.GetFileName(sourceDir)}' to {installPath}");
+
+        // Also deploy the newest nvngx_dlssg.dll into the Streamline folder.
+        // This enables FG support within Streamline when using OptiScaler Nightly/DLSS NR.
+        // Use cached dll if already on disk; otherwise fire-and-forget download.
+        var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+        const string DlssgDll = "nvngx_dlssg.dll";
+        var dlssgDest = Path.Combine(destDir, DlssgDll);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var cachedDlssg = await dlssSvc.EnsureNewestDlssgCachedAsync().ConfigureAwait(false);
+                if (cachedDlssg != null && File.Exists(cachedDlssg))
+                {
+                    File.Copy(cachedDlssg, dlssgDest, overwrite: true);
+                    CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {DlssgDll} to Streamline folder in '{installPath}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Failed to deploy {DlssgDll} — {ex.Message}");
+            }
+        });
     }
 
     /// <summary>

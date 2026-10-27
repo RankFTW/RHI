@@ -18,6 +18,7 @@ public class DofFixService : IDofFixService
     private const string DefaultDownloadBaseUrl = "https://github.com/RankFTW/rhi-repo/releases/download";
 
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
     private readonly ICrashReporter _crashReporter;
     private readonly string _stagingDir;
     private readonly string _versionFile;
@@ -28,9 +29,10 @@ public class DofFixService : IDofFixService
     /// <summary>Games to force-enable DOF Fix eligibility regardless of engine detection.</summary>
     private List<string>? _forceGames;
 
-    public DofFixService(HttpClient http, ICrashReporter crashReporter)
+    public DofFixService(HttpClient http, ICrashReporter crashReporter, GitHubETagCache etagCache)
     {
         _http = http;
+        _etagCache = etagCache;
         _crashReporter = crashReporter;
         _stagingDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -237,42 +239,18 @@ public class DofFixService : IDofFixService
         return true;
     }
 
-    /// <summary>
-    /// Determines if a game is eligible for DOF Fix based on engine hint (static, no skip list).
-    /// </summary>
-    public static bool IsEligible(string? engineHint, bool is32Bit)
-    {
-        if (is32Bit) return false;
-        if (string.IsNullOrEmpty(engineHint)) return false;
-        if (!engineHint.Contains("Unreal Engine 5")) return false;
-        var idx = engineHint.IndexOf("5.", StringComparison.Ordinal);
-        if (idx < 0) return true; // Just "Unreal Engine 5" with no minor version — assume eligible
-        var afterFive = engineHint.Substring(idx + 2);
-        var dotIdx = afterFive.IndexOf('.');
-        var minorStr = dotIdx >= 0 ? afterFive.Substring(0, dotIdx) : afterFive.TrimEnd(' ', ')');
-        if (int.TryParse(minorStr, out var minor))
-            return minor >= 0 && minor <= 6;
-        return true;
-    }
-
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task<(string? version, string? downloadUrl, string? body)> FetchLatestReleaseInfoAsync()
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-            request.Headers.Add("User-Agent", "RHI");
-            request.Headers.Add("Accept", "application/vnd.github+json");
-
-            using var response = await _http.SendAsync(request).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
+            var json = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
+            if (json == null)
             {
-                _crashReporter.Log($"[DofFixService] GitHub API returned {response.StatusCode}");
+                _crashReporter.Log($"[DofFixService] GitHub API request failed");
                 return (null, null, null);
             }
-
-            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
 
             // Collect all matching releases, then pick the highest version
