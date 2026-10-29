@@ -8,17 +8,18 @@ namespace RenoDXCommander.Services;
 /// Caches GitHub API ETag values and response bodies to enable conditional requests.
 /// When a cached ETag is sent via If-None-Match and the resource hasn't changed,
 /// GitHub returns 304 Not Modified which doesn't count against the rate limit.
-/// The cache is saved to %LocalAppData%\RHI\github_etag_cache.json so the first requests of
-/// each launch are conditional too (previously every launch started empty and spent rate limit
-/// re-fetching unchanged release lists). Entries unused for 30 days are dropped on load.
+/// When the host supplies <c>load</c>/<c>save</c>, the cache survives restarts so the first
+/// requests of each launch are conditional too (Windows saves it to
+/// %LocalAppData%\RHI\github_etag_cache.json). Entries unused for 30 days are dropped on load.
 /// </summary>
 public class GitHubETagCache
 {
-    private readonly ConcurrentDictionary<string, (string etag, string body)> _cache = new();
+    private readonly Action<string> _log;
+    private readonly Func<string?> _getToken;
+    private readonly Func<Uri?, bool> _willAuthorize;
+    private readonly Action<Dictionary<string, SavedEntry>>? _save;
 
-    private static readonly string CachePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "github_etag_cache.json");
+    private readonly ConcurrentDictionary<string, (string etag, string body)> _cache = new();
 
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(30);
     private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(30);
@@ -34,9 +35,27 @@ public class GitHubETagCache
     // Last-saved time per URL, so old entries can be dropped.
     private readonly ConcurrentDictionary<string, DateTime> _savedUtc = new();
 
-    public GitHubETagCache()
+    /// <param name="log">Diagnostic log sink.</param>
+    /// <param name="getToken">
+    /// Token attached here for GitHub API requests only. Leave null when the HttpClient's own
+    /// handler attaches it (Windows uses GitHubTokenHandler).
+    /// </param>
+    /// <param name="willAuthorize">Reports whether the client's handler will authorize a request (logging only).</param>
+    /// <param name="load">Returns the persisted cache, or null when there is none.</param>
+    /// <param name="save">Persists the cache; batched to one write 2 s after the last change.</param>
+    public GitHubETagCache(
+        Action<string>? log = null,
+        Func<string?>? getToken = null,
+        Func<Uri?, bool>? willAuthorize = null,
+        Func<Dictionary<string, SavedEntry>?>? load = null,
+        Action<Dictionary<string, SavedEntry>>? save = null)
     {
-        var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(CachePath, out _);
+        _log = log ?? (_ => { });
+        _getToken = getToken ?? (() => null);
+        _willAuthorize = willAuthorize ?? (_ => false);
+        _save = save;
+
+        var saved = load?.Invoke();
         if (saved == null) return;
         var cutoff = DateTime.UtcNow - MaxAge;
         foreach (var (url, e) in saved)
@@ -45,7 +64,7 @@ public class GitHubETagCache
             _cache[url] = (e.ETag, e.Body);
             _savedUtc[url] = e.SavedUtc;
         }
-        CrashReporter.Log($"[GitHubETagCache] Loaded {_cache.Count} saved ETag(s)");
+        _log($"[GitHubETagCache] Loaded {_cache.Count} saved ETag(s)");
     }
 
     // Startup fires many API calls at once; batch their saves into one write 2 s after the last change.
@@ -54,6 +73,7 @@ public class GitHubETagCache
 
     private void Persist()
     {
+        if (_save == null) return;
         lock (_persistLock)
         {
             _persistTimer ??= new System.Threading.Timer(_ => WriteNow(), null, Timeout.Infinite, Timeout.Infinite);
@@ -71,7 +91,8 @@ public class GitHubETagCache
                 Body = kv.Value.body,
                 SavedUtc = _savedUtc.TryGetValue(kv.Key, out var t) ? t : DateTime.UtcNow,
             });
-        SafeJsonFile.Write(CachePath, snapshot, "GitHubETagCache.Persist");
+        try { _save!(snapshot); }
+        catch (Exception ex) { _log($"[GitHubETagCache.Persist] Failed to save — {ex.Message}"); }
     }
 
     /// <summary>Session-scoped flag — set when GitHub returns 403 (rate limited).</summary>
@@ -122,7 +143,7 @@ public class GitHubETagCache
         {
             if (_cache.TryGetValue(url, out var stale) && stale.body != null)
                 return stale.body;
-            CrashReporter.Log($"[GitHubETagCache] Rate limited — skipping {TruncateUrl(url)}");
+            _log($"[GitHubETagCache] Rate limited — skipping {TruncateUrl(url)}");
             return null;
         }
 
@@ -131,7 +152,11 @@ public class GitHubETagCache
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", "1.0"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
-        // The GitHub token (if any) is attached by GitHubTokenHandler for GitHub hosts only.
+        // The token raises the API rate limit (60 → 5000 req/hour). It goes to the GitHub API
+        // only: download hosts answer 404 to tokens they don't accept, and other hosts must never see it.
+        var token = _getToken();
+        if (!string.IsNullOrEmpty(token) && IsApiUrl(url))
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
 
         if (userAgent != null)
         {
@@ -153,14 +178,14 @@ public class GitHubETagCache
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {
-            CrashReporter.Log($"[GitHubETagCache] Timed out after {ApiTimeout.TotalSeconds:F0}s for {TruncateUrl(url)}");
+            _log($"[GitHubETagCache] Timed out after {ApiTimeout.TotalSeconds:F0}s for {TruncateUrl(url)}");
             return cached.body; // stale body if we have one, else null
         }
         using var _ = response;
 
         if (response.StatusCode == HttpStatusCode.NotModified && cached.body != null)
         {
-            CrashReporter.Log($"[GitHubETagCache] 304 Not Modified for {TruncateUrl(url)}");
+            _log($"[GitHubETagCache] 304 Not Modified for {TruncateUrl(url)}");
             _checkedUtc[url] = DateTime.UtcNow;
             return cached.body;
         }
@@ -175,16 +200,16 @@ public class GitHubETagCache
                 var remaining = response.Headers.TryGetValues("X-RateLimit-Remaining", out var vals)
                     ? vals.FirstOrDefault() : null;
                 bool actuallyRateLimited = remaining == "0";
-                var hasAuthHeader = GitHubTokenHandler.WillAuthorize(request.RequestUri);
+                var hasAuthHeader = request.Headers.Contains("Authorization") || _willAuthorize(request.RequestUri);
 
                 if (actuallyRateLimited && !_rateLimited && IsApiUrl(url))
                 {
                     _rateLimited = true;
-                    CrashReporter.Log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}");
+                    _log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}");
                 }
                 else if (!actuallyRateLimited)
                 {
-                    CrashReporter.Log($"[GitHubETagCache] 403 Forbidden for {TruncateUrl(url)} (not rate limited, remaining={remaining ?? "unknown"}, authenticated={hasAuthHeader}) — skipping this URL only");
+                    _log($"[GitHubETagCache] 403 Forbidden for {TruncateUrl(url)} (not rate limited, remaining={remaining ?? "unknown"}, authenticated={hasAuthHeader}) — skipping this URL only");
                 }
             }
 
@@ -194,7 +219,7 @@ public class GitHubETagCache
             // keeps the app working with slightly stale data.
             if (cached.body != null)
             {
-                CrashReporter.Log($"[GitHubETagCache] {response.StatusCode} for {TruncateUrl(url)} — returning cached body");
+                _log($"[GitHubETagCache] {response.StatusCode} for {TruncateUrl(url)} — returning cached body");
                 return cached.body;
             }
             return null; // Let caller handle the error

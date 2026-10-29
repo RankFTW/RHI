@@ -31,14 +31,14 @@ public class PeHeaderService : IPeHeaderService
             // Validate MZ signature at offset 0
             if (bytesRead < 2 || buffer[0] != (byte)'M' || buffer[1] != (byte)'Z')
             {
-                CrashReporter.Log($"[PeHeaderService] Invalid MZ signature in '{exePath}'");
+                CoreLog.Log($"[PeHeaderService] Invalid MZ signature in '{exePath}'");
                 return MachineType.Native;
             }
 
             // Read e_lfanew at offset 0x3C (Int32 — offset to PE header)
             if (bytesRead < 0x3C + 4)
             {
-                CrashReporter.Log($"[PeHeaderService] File too small to contain e_lfanew: '{exePath}'");
+                CoreLog.Log($"[PeHeaderService] File too small to contain e_lfanew: '{exePath}'");
                 return MachineType.Native;
             }
 
@@ -47,14 +47,14 @@ public class PeHeaderService : IPeHeaderService
             // Validate PE signature at peOffset (bytes 'P','E',0,0)
             if (peOffset < 0 || peOffset + 6 > bytesRead)
             {
-                CrashReporter.Log($"[PeHeaderService] PE offset out of range ({peOffset}) in '{exePath}'");
+                CoreLog.Log($"[PeHeaderService] PE offset out of range ({peOffset}) in '{exePath}'");
                 return MachineType.Native;
             }
 
             if (buffer[peOffset] != (byte)'P' || buffer[peOffset + 1] != (byte)'E' ||
                 buffer[peOffset + 2] != 0 || buffer[peOffset + 3] != 0)
             {
-                CrashReporter.Log($"[PeHeaderService] Invalid PE signature in '{exePath}'");
+                CoreLog.Log($"[PeHeaderService] Invalid PE signature in '{exePath}'");
                 return MachineType.Native;
             }
 
@@ -62,22 +62,22 @@ public class PeHeaderService : IPeHeaderService
             ushort machineValue = BitConverter.ToUInt16(buffer, peOffset + 4);
             var machineType = (MachineType)machineValue;
 
-            CrashReporter.Log($"[PeHeaderService] Detected {machineType} (0x{machineValue:X4}) for '{exePath}'");
+            CoreLog.Log($"[PeHeaderService] Detected {machineType} (0x{machineValue:X4}) for '{exePath}'");
             return machineType;
         }
         catch (FileNotFoundException)
         {
-            CrashReporter.Log($"[PeHeaderService] File not found: '{exePath}'");
+            CoreLog.Log($"[PeHeaderService] File not found: '{exePath}'");
             return MachineType.Native;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
-            CrashReporter.Log($"[PeHeaderService] I/O error reading '{exePath}': {ex.Message}");
+            CoreLog.Log($"[PeHeaderService] I/O error reading '{exePath}': {ex.Message}");
             return MachineType.Native;
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[PeHeaderService] Unexpected error reading '{exePath}': {ex.Message}");
+            CoreLog.Log($"[PeHeaderService] Unexpected error reading '{exePath}': {ex.Message}");
             return MachineType.Native;
         }
     }
@@ -94,14 +94,14 @@ public class PeHeaderService : IPeHeaderService
             var dir = new DirectoryInfo(installPath);
             if (!dir.Exists)
             {
-                CrashReporter.Log($"[PeHeaderService] Install directory does not exist: '{installPath}'");
+                CoreLog.Log($"[PeHeaderService] Install directory does not exist: '{installPath}'");
                 return null;
             }
 
             var exeFiles = dir.GetFiles("*.exe", SearchOption.TopDirectoryOnly);
             if (exeFiles.Length == 0)
             {
-                CrashReporter.Log($"[PeHeaderService] No .exe files found in '{installPath}'");
+                CoreLog.Log($"[PeHeaderService] No .exe files found in '{installPath}'");
                 return null;
             }
 
@@ -116,12 +116,12 @@ public class PeHeaderService : IPeHeaderService
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
-            CrashReporter.Log($"[PeHeaderService] Error accessing directory '{installPath}': {ex.Message}");
+            CoreLog.Log($"[PeHeaderService] Error accessing directory '{installPath}': {ex.Message}");
             return null;
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[PeHeaderService] Unexpected error scanning '{installPath}': {ex.Message}");
+            CoreLog.Log($"[PeHeaderService] Unexpected error scanning '{installPath}': {ex.Message}");
             return null;
         }
     }
@@ -135,7 +135,7 @@ public class PeHeaderService : IPeHeaderService
         string? exePath = FindGameExe(installPath);
         if (exePath is null)
         {
-            CrashReporter.Log($"[PeHeaderService] No game executable found in '{installPath}', defaulting to Native");
+            CoreLog.Log($"[PeHeaderService] No game executable found in '{installPath}', defaulting to Native");
             return MachineType.Native;
         }
 

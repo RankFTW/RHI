@@ -25,7 +25,7 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class DlssNrCostScalerService
 {
-    private const string GitHubApiUrl = "https://api.github.com/repos/xenmods/DLSSNR-Cost-Scaler/releases/latest";
+    private const string GitHubApiUrl = RHI.Core.Sources.CostScalerLatest;
 
     public const string ProxyDllName       = "nvngx_dlssnr.dll";
     public const string RealDllName        = "nvngx_dlssnr_real.dll";

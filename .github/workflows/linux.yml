@@ -1,0 +1,113 @@
+name: Linux build and release
+
+on:
+  push:
+    branches: [linux_port, main, master]
+    tags: ['linux-v*']
+  pull_request:
+    branches: [linux_port, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read SDK pin
+        id: sdk
+        run: |
+          source scripts/linux-dependencies.env
+          echo "version=$RHI_SDK_VERSION" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ steps.sdk.outputs.version }}
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 python3 xz-utils
+      - name: Test Linux tooling
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Build and launch from a fresh checkout
+        run: ./run-linux.sh --help
+      - name: Check standalone package
+        run: ./scripts/check-linux-package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RHI-linux-x64
+          path: |
+            artifacts/RHI-linux-x64.tar.gz
+            artifacts/RHI-linux-x64.tar.gz.sha256
+          if-no-files-found: error
+
+  fedora:
+    runs-on: ubuntu-22.04
+    container: fedora:44
+    timeout-minutes: 25
+    steps:
+      - name: Install build and desktop dependencies
+        run: >-
+          dnf install -y git curl tar gzip xz python3 findutils diffutils
+          glibc libgcc libstdc++ ca-certificates openssl-libs libicu krb5-libs zlib
+          libX11 libICE libSM fontconfig
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build, test, and publish on Fedora
+        run: ./scripts/build-linux.sh
+      - name: Check relocated package on Fedora
+        run: ./scripts/check-linux-package.sh
+      - name: Test Linux tooling
+        run: python3 -m unittest discover -s scripts/tests -v
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read SDK pin
+        id: sdk
+        shell: bash
+        run: |
+          source scripts/linux-dependencies.env
+          echo "version=$RHI_SDK_VERSION" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ steps.sdk.outputs.version }}
+      - name: Build Windows app with the shared core
+        run: dotnet build RenoDXCommander/RenoDXCommander.csproj -c Release -p:Platform=x64 -r win-x64 --nologo
+      - name: Run Windows tests
+        run: dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -c Release -p:Platform=x64 -r win-x64 --nologo
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/linux-v')
+    needs: [build, fedora, windows]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: RHI-linux-x64
+          path: artifacts
+      - name: Create draft Linux prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            artifacts/RHI-linux-x64.tar.gz artifacts/RHI-linux-x64.tar.gz.sha256 \
+            --verify-tag --draft --prerelease \
+            --title "RHI Linux ${RELEASE_TAG#linux-}" \
+            --notes-file docs/LINUX-RELEASE.md

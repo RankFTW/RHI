@@ -406,15 +406,11 @@ public partial class DlssStreamlineService
 
         var backup = targetPath + BackupExtension;
         bool hadBackup = File.Exists(backup);
-
-        // SentinelBackup handles all three cases:
-        //   file exists, no .original  → real backup (File.Move)
-        //   file exists, .original exists → no-op (preserve existing backup)
-        //   file absent → 0-byte sentinel so Restore knows to clean up entirely
-        AuxInstallService.SentinelBackup(targetPath);
         try
         {
-            File.Copy(sourcePath, targetPath, overwrite: true);
+            // Copies the original to .original (or writes a 0-byte sentinel), then replaces
+            // the target atomically, so a failed copy leaves the game's DLL in place.
+            SentinelFiles.Deploy(sourcePath, targetPath);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -425,18 +421,18 @@ public partial class DlssStreamlineService
     }
 
     /// <summary>
-    /// Reverses a backup made moments ago by <see cref="AuxInstallService.SentinelBackup"/>
-    /// after the replacement copy failed: moves the original back, or removes the 0-byte sentinel.
+    /// Discards a backup made moments ago by <see cref="SentinelFiles.Deploy"/> after the
+    /// replacement failed: the original is still in place, so the copy or sentinel is removed.
     /// </summary>
     private static void UndoBackup(string targetPath, string backup)
     {
         try
         {
-            if (!File.Exists(backup) || File.Exists(targetPath)) return;
-            if (new FileInfo(backup).Length > 0)
-                File.Move(backup, targetPath);
-            else
+            if (!File.Exists(backup)) return;
+            if (File.Exists(targetPath) || new FileInfo(backup).Length == 0)
                 File.Delete(backup);
+            else
+                File.Move(backup, targetPath);
             CrashReporter.Log($"[DlssStreamlineService.UndoBackup] Restored original after failed swap: '{targetPath}'");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -473,11 +469,11 @@ public partial class DlssStreamlineService
             using (var zip = ZipFile.OpenRead(tempZip))
             {
                 var entry = zip.Entries.FirstOrDefault(e =>
-                    string.Equals(Path.GetFileName(e.FullName), expectedDllName, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(DllArchive.EntryName(e), expectedDllName, StringComparison.OrdinalIgnoreCase));
 
                 if (entry != null)
                 {
-                    entry.ExtractToFile(Path.Combine(cacheDir, expectedDllName), overwrite: true);
+                    DllArchive.Extract(entry, Path.Combine(cacheDir, expectedDllName));
                     CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Cached {expectedDllName} to '{cacheDir}'");
                 }
                 else

@@ -1,0 +1,3054 @@
+{
+  "version": 1,
+  "fork_base_commit": "b4dcc9c497bd93ebbc1156bde4b2c96079902efc",
+  "reviewed_commit": "c1076d38520dce8d69e006194aad86fece7c26d0",
+  "review_scope": "Production source applicability and shared/adapted/deferred routing; not a claim of complete Windows/Linux feature parity. Each reason states the current Linux disposition.",
+  "files": {
+    "Directory.Build.props": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj",
+        "RHI.Linux.sln",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "Review project/framework/package and shared-source changes against both builds; Linux has a separate solution and host.",
+      "upstream_sha256": "516fb3e9a3c46d51d2d3bc676738bd18f7164f635333663bc5bc00fcacb641ce",
+      "local_sha256": "516fb3e9a3c46d51d2d3bc676738bd18f7164f635333663bc5bc00fcacb641ce"
+    },
+    "RHI.Core/CoreLog.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Shared assembly source/build registry used by both hosts; changes must build on both platforms.",
+      "upstream_sha256": null,
+      "local_sha256": "bff988ce9ec2f0bf23a6992c4f633b79100f113bce1a97d9fe70858d28cb38b1"
+    },
+    "RHI.Core/RHI.Core.csproj": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Shared assembly source/build registry used by both hosts; changes must build on both platforms.",
+      "upstream_sha256": null,
+      "local_sha256": "ffbfcbab1a8c58a453bd47eacf3af27c6cd7e744646b01605fa7f5dedf33b9e0"
+    },
+    "RHI.Core/SharedSources.props": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Shared assembly source/build registry used by both hosts; changes must build on both platforms.",
+      "upstream_sha256": null,
+      "local_sha256": "c8d84e3a1aa4d0bda994c9e906756e29f26d985eb375ee7d9aacb4f3f11b7e28"
+    },
+    "RHI.Core/Sources.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Shared assembly source/build registry used by both hosts; changes must build on both platforms. c1076d3 audit: Adds OptiScalerNightlyHistory (30 builds) used by Windows nightly build pinning; Linux keeps OptiScalerNightly.",
+      "upstream_sha256": null,
+      "local_sha256": "31aca933bbdf1e3fdf286619883492dc257b517237f5708f16054a8f0221142b"
+    },
+    "RHI.DropHelper/Program.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows native drag/drop helper is not launched or compiled into the Linux app.",
+      "upstream_sha256": "31401b9bfd4a2e1ae1bfab167041cf98cf485e5060fc72c8436743fa360bdfa1",
+      "local_sha256": "31401b9bfd4a2e1ae1bfab167041cf98cf485e5060fc72c8436743fa360bdfa1"
+    },
+    "RHI.DropHelper/RHI.DropHelper.csproj": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows native drag/drop helper is not launched or compiled into the Linux app.",
+      "upstream_sha256": "f41feccb77e6d5fcedd1face1aa6f7a3eed629cc92b50a310c70f817762b0f36",
+      "local_sha256": "f41feccb77e6d5fcedd1face1aa6f7a3eed629cc92b50a310c70f817762b0f36"
+    },
+    "RHI.DropHelper/app.manifest": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows native drag/drop helper is not launched or compiled into the Linux app.",
+      "upstream_sha256": "daf74c2f20d47422c587826c846fc5ab2e410f4696106c4cd5e62d38f43bf49c",
+      "local_sha256": "daf74c2f20d47422c587826c846fc5ab2e410f4696106c4cd5e62d38f43bf49c"
+    },
+    "RenoDXCommander.sln": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj",
+        "RHI.Linux.sln",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "Review project/framework/package and shared-source changes against both builds; Linux has a separate solution and host.",
+      "upstream_sha256": "400866c4d6e91e0fb2f24a0ef243ec24e86f3c1df8a023574811f1bc83f08939",
+      "local_sha256": "e1123494fbf061927ea7e217470e8dbdd4d71869df8a7eb7b10271c353a1f8af"
+    },
+    "RenoDXCommander/AddonManagerDialog.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux.Core/Downloads.cs"
+      ],
+      "reason": "Linux offers explicit whole-pack/local-addon installation; per-file shader selection, global inheritance and include auto-selection are not present. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "186cefbb3f06d0454b2a6c2bbc1860c703d30f39e288301d3982637cc7b0195f",
+      "local_sha256": "186cefbb3f06d0454b2a6c2bbc1860c703d30f39e288301d3982637cc7b0195f"
+    },
+    "RenoDXCommander/AddonPopupHelper.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux.Core/Downloads.cs"
+      ],
+      "reason": "Linux offers explicit whole-pack/local-addon installation; per-file shader selection, global inheritance and include auto-selection are not present. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "b78c8322e86636ec6e51603947356f704c20627cf57249e806e195cb400a3107",
+      "local_sha256": "b78c8322e86636ec6e51603947356f704c20627cf57249e806e195cb400a3107"
+    },
+    "RenoDXCommander/App.xaml": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "9e6d9c46bface741e74b6d6d9d7bc617af1ed0835c659ecdaefb23934ccdaeb3",
+      "local_sha256": "9e6d9c46bface741e74b6d6d9d7bc617af1ed0835c659ecdaefb23934ccdaeb3"
+    },
+    "RenoDXCommander/App.xaml.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Program.cs",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Linux has an Avalonia startup/service composition and first-run UI, without WinUI/Windows shell APIs. c1076d3 audit: Windows DI wiring: GitHubTokenHandler, WindowsAppSDK 2.5.1 and lifecycle fixes. Merge passes CrashReporter, GitHubTokenHandler.WillAuthorize and SafeJsonFile persistence to the shared GitHubETagCache. Linux startup is separate.",
+      "upstream_sha256": "fd67983497653adfccf6007da02b98fbc484d5d5ca15adbf36f03418851fb867",
+      "local_sha256": "2ea4bab8c0d1dbd3c61eb2456a2a17ca366670363586bbe8d49c73f99207be4a"
+    },
+    "RenoDXCommander/Collections/BatchObservableCollection.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "a899deed052a6a629c9ef409b86b46132bd9c78283ba66a838f0fa9d0e61ca5b",
+      "local_sha256": "a899deed052a6a629c9ef409b86b46132bd9c78283ba66a838f0fa9d0e61ca5b"
+    },
+    "RenoDXCommander/Controls/WrapPanel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "949bee74e5828654792af98ee60ae8a329364ed9dd8d3cddc502ac0c9201b84a",
+      "local_sha256": "949bee74e5828654792af98ee60ae8a329364ed9dd8d3cddc502ac0c9201b84a"
+    },
+    "RenoDXCommander/Converters/ValueConverters.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "f632547d4e78c1785c8a80af16bac882a2caae16a710fb04c02428935153cb93",
+      "local_sha256": "f632547d4e78c1785c8a80af16bac882a2caae16a710fb04c02428935153cb93"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Components.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "818454310daa485630233ebfb85404d19a63cb279ac4a0dfca5dfdfa7945d65c",
+      "local_sha256": "818454310daa485630233ebfb85404d19a63cb279ac4a0dfca5dfdfa7945d65c"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Extras.ApiWrappers.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from DetailPanelBuilder.Extras: DXVK row (Proton-owned) and standalone dgVoodoo2 row; standalone dgVoodoo2 is deferred (Linux deploys dgVoodoo2 only for the NR Feeder).",
+      "upstream_sha256": "1d86308fbb50830ab72bc6f788a143e724ab5ed5e66a6acd0e6106dcd6973830",
+      "local_sha256": "1d86308fbb50830ab72bc6f788a143e724ab5ed5e66a6acd0e6106dcd6973830"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Extras.AsiLoaders.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from DetailPanelBuilder.Extras: Ultimate ASI Loader and RTX Encore rows; both optional Windows addon workflows are deferred.",
+      "upstream_sha256": "4b2e21e80cd695c4ca0c1b00fdf13dfc8970398bb898c84e88ff944d145de3a2",
+      "local_sha256": "4b2e21e80cd695c4ca0c1b00fdf13dfc8970398bb898c84e88ff944d145de3a2"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Extras.FrameGen.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from DetailPanelBuilder.Extras: DLSSG 20/30 and RTX 40 MFG unlocker rows; deferred.",
+      "upstream_sha256": "df34b4c664453cbb5aa3a790a98d184fffef5059aee9bbf6f5c0357074faa09f",
+      "local_sha256": "df34b4c664453cbb5aa3a790a98d184fffef5059aee9bbf6f5c0357074faa09f"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Extras.Unlocks.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from DetailPanelBuilder.Extras: MFG Ada unlock and DLSS Enabler rows; deferred.",
+      "upstream_sha256": "f3f5c6ff1be4794d3d9f1f1843ffdaf5e9046e572ddf8cd77f6cee98304d17ef",
+      "local_sha256": "f3f5c6ff1be4794d3d9f1f1843ffdaf5e9046e572ddf8cd77f6cee98304d17ef"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Extras.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.OptiScaler.cs"
+      ],
+      "reason": "Linux mirrors OptiScaler controls for supported settings; unsupported Windows extras/presets remain deferred. cde8f9d audit: upstream change is a Windows extras button brush change; Linux uses its existing action theme. c1076d3 audit: Split into Extras.ApiWrappers/AsiLoaders/FrameGen/Unlocks (each mapped separately); the remaining OptiScaler rows add Windows nightly build pinning, F5 and deploy-INI warnings, which are deferred. Other changes are WinUI freeze fixes.",
+      "upstream_sha256": "ae39eabf4ac8ffefff03db658fb0356520b7c7c030d74f131420c9afcb8f61bc",
+      "local_sha256": "ae39eabf4ac8ffefff03db658fb0356520b7c7c030d74f131420c9afcb8f61bc"
+    },
+    "RenoDXCommander/DetailPanelBuilder.NeuralRendering.Feeder.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/NeuralRendering.Install.cs",
+        "RHI.Linux.Core/NeuralRendering.DgVoodoo.cs"
+      ],
+      "reason": "Split from DetailPanelBuilder.NeuralRendering: Feeder install with user-selected NR DLL version; Linux Feeder install uses prefs.NrDllVersion through DlssCatalog.",
+      "upstream_sha256": "f7fbf5e60621db7480af601fb39e5c946e4e6cb2015451345768110a8afb9c18",
+      "local_sha256": "f7fbf5e60621db7480af601fb39e5c946e4e6cb2015451345768110a8afb9c18"
+    },
+    "RenoDXCommander/DetailPanelBuilder.NeuralRendering.Install.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/NeuralRendering.Install.cs"
+      ],
+      "reason": "Split from DetailPanelBuilder.NeuralRendering: DLSS5 Tool/Bridge/ShortFuse installs with sentinel backups; Linux installs transactionally with Sentinel backups. ZZZ ShortFuse filename recognised.",
+      "upstream_sha256": "d0c70abdeae5eeeb5bb3315bc186ab90388f3ce5ad8d54e6b2f6b847a8a697b7",
+      "local_sha256": "d0c70abdeae5eeeb5bb3315bc186ab90388f3ce5ad8d54e6b2f6b847a8a697b7"
+    },
+    "RenoDXCommander/DetailPanelBuilder.NeuralRendering.SectionUi.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.NeuralRendering.cs"
+      ],
+      "reason": "Split from DetailPanelBuilder.NeuralRendering: section UI (freeze fixes, ZZZ toggle). Linux panel mirrors supported controls; ZZZ toggle deferred.",
+      "upstream_sha256": "6a2deb73009f1465c7ac636abcbeb1f18cff5108fbefd6da6430ea219f0156f8",
+      "local_sha256": "6a2deb73009f1465c7ac636abcbeb1f18cff5108fbefd6da6430ea219f0156f8"
+    },
+    "RenoDXCommander/DetailPanelBuilder.NeuralRendering.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.NeuralRendering.cs"
+      ],
+      "reason": "Mirrored Neural Rendering panel responsibilities, using Linux installers and detected game state. c1076d3 audit: Split into NeuralRendering.Feeder/Install/SectionUi (each mapped separately). The ZZZ Load Order toggle is deferred, but Linux recognises the zzz_ ShortFuse filename. NR DLL version fixes are already covered by the Linux user-selected NR version and sanitised cache folders.",
+      "upstream_sha256": "2932cb0adc9c613fa4d437d170b1f769d47e51a86488a999b6b7a45f3ef825cc",
+      "local_sha256": "2932cb0adc9c613fa4d437d170b1f769d47e51a86488a999b6b7a45f3ef825cc"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.Dlss.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Overrides.Dlss.cs",
+        "RHI.Linux/MainWindow.Overrides.DriverSettings.cs",
+        "RHI.Linux.Core/DlssProfile.cs"
+      ],
+      "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced. c1076d3 audit: DLSS version display exact-match and re-read after swap; Linux re-detects from disk after each swap (InvalidateDlss) and lists exact catalogue versions. Remaining changes are WinUI freeze fixes.",
+      "upstream_sha256": "464a5362531501138bad8dd7393c3eff40d0c028f6bf640a8a690be9ed6dbf39",
+      "local_sha256": "464a5362531501138bad8dd7393c3eff40d0c028f6bf640a8a690be9ed6dbf39"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.DriverSettings.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Overrides.Dlss.cs",
+        "RHI.Linux/MainWindow.Overrides.DriverSettings.cs",
+        "RHI.Linux.Core/DlssProfile.cs"
+      ],
+      "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced. cde8f9d audit: timing/logging split around WinUI AddToTree has no Avalonia driver-profile equivalent. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "8e3d38c5a43506f2438f7271ba465a6c04078e98bd5debf74c61573aa4813b6b",
+      "local_sha256": "8e3d38c5a43506f2438f7271ba465a6c04078e98bd5debf74c61573aa4813b6b"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.Dxvk.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer.",
+      "upstream_sha256": "c8e1f0c4644073fd5c995c59a19bff40d5ff657f615f4f908bd0c77c32227521",
+      "local_sha256": "c8e1f0c4644073fd5c995c59a19bff40d5ff657f615f4f908bd0c77c32227521"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.NvidiaProfile.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Overrides.Dlss.cs",
+        "RHI.Linux/MainWindow.Overrides.DriverSettings.cs",
+        "RHI.Linux.Core/DlssProfile.cs"
+      ],
+      "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "dcf1b9ae8515fdbbe2fc5e2c42d8e1698c722e2acf435717782cd5ee79908adb",
+      "local_sha256": "dcf1b9ae8515fdbbe2fc5e2c42d8e1698c722e2acf435717782cd5ee79908adb"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.RsChannel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused.",
+      "upstream_sha256": "48a850d6c85e4a46feda99e211f3e8314886e1c2b44e918500111952b2ad1a2d",
+      "local_sha256": "48a850d6c85e4a46feda99e211f3e8314886e1c2b44e918500111952b2ad1a2d"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.ShadersAddons.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux.Core/Downloads.cs"
+      ],
+      "reason": "Linux offers explicit whole-pack/local-addon installation; per-file shader selection, global inheritance and include auto-selection are not present. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "edeb0d0a485d3e062e3fed8400fd3b282b5dbb12cb4801db7340371e5ef2b32a",
+      "local_sha256": "edeb0d0a485d3e062e3fed8400fd3b282b5dbb12cb4801db7340371e5ef2b32a"
+    },
+    "RenoDXCommander/DetailPanelBuilder.Overrides.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: custom shader IDs are excluded from global-to-game inheritance upstream; Linux has no such inheritance or per-file picker. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "2e3df0c030669f07a2202d5b1aeec18b5b8cb5a4986be5932ba245e1bf429a28",
+      "local_sha256": "2e3df0c030669f07a2202d5b1aeec18b5b8cb5a4986be5932ba245e1bf429a28"
+    },
+    "RenoDXCommander/DetailPanelBuilder.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: Unity database status precedence is deferred with RenoDXDb integration; wiki status remains the Linux source. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "bcac374b59ec2f524dbb533d88d81186a114ce81ec5b5be60b25947d3a7427e7",
+      "local_sha256": "bcac374b59ec2f524dbb533d88d81186a114ce81ec5b5be60b25947d3a7427e7"
+    },
+    "RenoDXCommander/DialogService.Game.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: additional Unity database comments are deferred with database integration; Linux displays wiki notes. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "4b0e3207c6c387a35a5e3cffabe733128e2f4915f6ae19561981a8f7f448bb24",
+      "local_sha256": "4b0e3207c6c387a35a5e3cffabe733128e2f4915f6ae19561981a8f7f448bb24"
+    },
+    "RenoDXCommander/DialogService.Update.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "f542a88881972556266ebb03a36865f3e9e1489d1a66ca6273f7927da6e81b05",
+      "local_sha256": "f542a88881972556266ebb03a36865f3e9e1489d1a66ca6273f7927da6e81b05"
+    },
+    "RenoDXCommander/DialogService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "f223208ec1a31c268172691190b49e8d5d570f280b86531a0073b6d263c6bf81",
+      "local_sha256": "f223208ec1a31c268172691190b49e8d5d570f280b86531a0073b6d263c6bf81"
+    },
+    "RenoDXCommander/DisplayCommander.ini": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "4a4f0f84c81fe54e27119e2e05ba75559f0e6448084e1ddf8d36bf9f5c139687",
+      "local_sha256": "4a4f0f84c81fe54e27119e2e05ba75559f0e6448084e1ddf8d36bf9f5c139687"
+    },
+    "RenoDXCommander/DlssDefaultsDialog.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dlss.Defaults.cs"
+      ],
+      "reason": "Linux adapts MFG/default versions and apply-to-all dialogs to Avalonia and dxvk-nvapi.",
+      "upstream_sha256": "f83b9aaa7b7f52ad199ddd5406b63536bbee5445da28e8de54cf49e8224569bf",
+      "local_sha256": "f83b9aaa7b7f52ad199ddd5406b63536bbee5445da28e8de54cf49e8224569bf"
+    },
+    "RenoDXCommander/DragDropHandler.Addon.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files. c1076d3 audit: Non-RenoDX drag-drop no longer removes RenoDX mods; drag-drop remains deferred on Linux.",
+      "upstream_sha256": "bbbee597099a316ddfa3136c7998e76095d5681ebbc35b3817100655275014b9",
+      "local_sha256": "bbbee597099a316ddfa3136c7998e76095d5681ebbc35b3817100655275014b9"
+    },
+    "RenoDXCommander/DragDropHandler.Exe.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files.",
+      "upstream_sha256": "d0e0ed263b05c754d0d109d3824f73b1a5a9424be6613d96bb8bca558df73853",
+      "local_sha256": "d0e0ed263b05c754d0d109d3824f73b1a5a9424be6613d96bb8bca558df73853"
+    },
+    "RenoDXCommander/DragDropHandler.Luma.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows UI/model supports Luma or Nexus functionality that is not ported. c1076d3 audit: Luma drag-drop; deferred.",
+      "upstream_sha256": "cd6ce571f3eb4b103a0d553fa60e65e634a70dc8e85d13b06f1c150d06364628",
+      "local_sha256": "cd6ce571f3eb4b103a0d553fa60e65e634a70dc8e85d13b06f1c150d06364628"
+    },
+    "RenoDXCommander/DragDropHandler.Preset.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files.",
+      "upstream_sha256": "4e0c144cd3328aeb9abd55c9c281f7ade1fbb6bfa08322f23a02d57d77f3255f",
+      "local_sha256": "4e0c144cd3328aeb9abd55c9c281f7ade1fbb6bfa08322f23a02d57d77f3255f"
+    },
+    "RenoDXCommander/DragDropHandler.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files. c1076d3 audit: Archive cancel cleanup; drag-drop deferred.",
+      "upstream_sha256": "969bf31cc9d0e3e0ef0194963cf19417d300c68a0957a3ed1cac4b01c74ebfaa",
+      "local_sha256": "969bf31cc9d0e3e0ef0194963cf19417d300c68a0957a3ed1cac4b01c74ebfaa"
+    },
+    "RenoDXCommander/GameReportEncoder.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files.",
+      "upstream_sha256": "f43cae19e5852de32a2a2215352a45aabcf89ca8c366ee222b985d74f27bb8e2",
+      "local_sha256": "f43cae19e5852de32a2a2215352a45aabcf89ca8c366ee222b985d74f27bb8e2"
+    },
+    "RenoDXCommander/HotkeyManager.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows handles, P/Invoke and global window/hotkey management are replaced by Avalonia/desktop facilities.",
+      "upstream_sha256": "d517271f317bf3836dab0c1f8a186f5cfc7450300bdd8d81bb6b484e58204ce5",
+      "local_sha256": "d517271f317bf3836dab0c1f8a186f5cfc7450300bdd8d81bb6b484e58204ce5"
+    },
+    "RenoDXCommander/InstallEventHandler.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "0fad4f5966836b1529fadb6b549171652957af792b93f11d6594e82b46bcf715",
+      "local_sha256": "0fad4f5966836b1529fadb6b549171652957af792b93f11d6594e82b46bcf715"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.Dxvk.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from MainWindow.Events.Components: DXVK handlers; Proton owns DXVK.",
+      "upstream_sha256": "9494877c86cd3bbca01aaa2cf4b5bc9b19d09cd6e542cd0783c5d5622d7aeb9c",
+      "local_sha256": "9494877c86cd3bbca01aaa2cf4b5bc9b19d09cd6e542cd0783c5d5622d7aeb9c"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.FrameLimiters.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from MainWindow.Events.Components: ReLimiter/Display Commander handlers; not offered on Linux.",
+      "upstream_sha256": "6e9bd9832af7ffb5f7da03f90073c138aedbbc5f92aa186b282d9aec8692770f",
+      "local_sha256": "6e9bd9832af7ffb5f7da03f90073c138aedbbc5f92aa186b282d9aec8692770f"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.Hdr.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from MainWindow.Events.Components: Windows Auto HDR/RTX HDR handlers. Linux HDR is the separate native HDR/HDR launch-option feature.",
+      "upstream_sha256": "a2aa3374d3d00b495b34bca02f1684bc187b9e9c0ae747cf9f83c7eb0113a95a",
+      "local_sha256": "a2aa3374d3d00b495b34bca02f1684bc187b9e9c0ae747cf9f83c7eb0113a95a"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.OptiScaler.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.OptiScaler.cs"
+      ],
+      "reason": "Split from MainWindow.Events.Components: OptiScaler handlers; Linux mirrors supported OptiScaler actions (F5, nightly pin deferred).",
+      "upstream_sha256": "ec8e5283554a2efe166fda05708a7bdb1f1f96c602e01cc8d369fe9ed58389d2",
+      "local_sha256": "ec8e5283554a2efe166fda05708a7bdb1f1f96c602e01cc8d369fe9ed58389d2"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.Rdx.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Split from MainWindow.Events.Components: RenoDX/ReShade handlers; Linux adapts supported install/uninstall/update actions.",
+      "upstream_sha256": "6bedaa45a9891a86cd6c578065d4fece9ce06adaaa9178528247082b3db8bbe5",
+      "local_sha256": "6bedaa45a9891a86cd6c578065d4fece9ce06adaaa9178528247082b3db8bbe5"
+    },
+    "RenoDXCommander/MainWindow.Events.Components.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: Unity Tonemap_Offset/Scaling_Offset database toggle UI is deferred with Unity upgrade recipes. c1076d3 audit: Split into Components.Dxvk/FrameLimiters/Hdr/OptiScaler/Rdx (each mapped separately); the remainder is WinUI event wiring.",
+      "upstream_sha256": "d4c91f184e1e9657ed660a6dd49300ff6827d5640c312a24645e987d0fdadf22",
+      "local_sha256": "d4c91f184e1e9657ed660a6dd49300ff6827d5640c312a24645e987d0fdadf22"
+    },
+    "RenoDXCommander/MainWindow.Events.Install.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "95f8f40924884f800f82347eed67bc03d6cdeeb4c4b3d3121cef35f331eb056b",
+      "local_sha256": "95f8f40924884f800f82347eed67bc03d6cdeeb4c4b3d3121cef35f331eb056b"
+    },
+    "RenoDXCommander/MainWindow.Events.Settings.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux/AdvancedWindow.cs",
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Linux settings are Avalonia dialogs backed by XDG preferences; Windows-only settings are not offered. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "70f92cfefc07408dfc694ce96d6e89475bcb0b511c7cdd85ac73c63c95d8f385",
+      "local_sha256": "70f92cfefc07408dfc694ce96d6e89475bcb0b511c7cdd85ac73c63c95d8f385"
+    },
+    "RenoDXCommander/MainWindow.Events.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "cfed991ab26b76a2b1117909f22ee4df47c2ec70b39154f1eb66ac3250532e3a",
+      "local_sha256": "cfed991ab26b76a2b1117909f22ee4df47c2ec70b39154f1eb66ac3250532e3a"
+    },
+    "RenoDXCommander/MainWindow.FaqBuilder.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused.",
+      "upstream_sha256": "0c89fcb780139a81098fbaa8553d7d94b2ae2b78cc516b7d9537d2e784ab6430",
+      "local_sha256": "0c89fcb780139a81098fbaa8553d7d94b2ae2b78cc516b7d9537d2e784ab6430"
+    },
+    "RenoDXCommander/MainWindow.Skeleton.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "d8f2e457637457cb743675bdcf4ffd95d2603b4e1072a40ba68348776b4c4ef2",
+      "local_sha256": "d8f2e457637457cb743675bdcf4ffd95d2603b4e1072a40ba68348776b4c4ef2"
+    },
+    "RenoDXCommander/MainWindow.UISync.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "10be3975e8fe13ff8504567b15dd8a42beb578ad8ad95b5454aba9cf38148b9b",
+      "local_sha256": "10be3975e8fe13ff8504567b15dd8a42beb578ad8ad95b5454aba9cf38148b9b"
+    },
+    "RenoDXCommander/MainWindow.xaml": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "dd397785c90bb5978bd45d633fbda85f35d882e54ba893e652a531ccf66b42f3",
+      "local_sha256": "dd397785c90bb5978bd45d633fbda85f35d882e54ba893e652a531ccf66b42f3"
+    },
+    "RenoDXCommander/MainWindow.xaml.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "ae6c955208cdeb713a62f0ea6b6c99c0d494475a85705fbbd78411199fd81447",
+      "local_sha256": "ae6c955208cdeb713a62f0ea6b6c99c0d494475a85705fbbd78411199fd81447"
+    },
+    "RenoDXCommander/MassDeployHandler.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "General Windows mass deployment is not implemented; Linux only provides its documented update-all and DLSS-default application. c1076d3 audit: Windows mass deploy; deferred.",
+      "upstream_sha256": "bc1b792e3d25834c91eef7c278d6e8f98b36e636fc984b86c07149a7e1437ad1",
+      "local_sha256": "bc1b792e3d25834c91eef7c278d6e8f98b36e636fc984b86c07149a7e1437ad1"
+    },
+    "RenoDXCommander/MassDlssDeployDialog.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dlss.Defaults.cs"
+      ],
+      "reason": "Linux adapts MFG/default versions and apply-to-all dialogs to Avalonia and dxvk-nvapi. c1076d3 audit: Batch Deploy continues past failed games and reports them; the Linux \"Apply DLSS defaults\" batch already does this. Remaining changes are WinUI.",
+      "upstream_sha256": "319bc352d8dffd1f769362679035af32cb959874dc4e98c8f95e9b8a54272ca3",
+      "local_sha256": "319bc352d8dffd1f769362679035af32cb959874dc4e98c8f95e9b8a54272ca3"
+    },
+    "RenoDXCommander/MfgDialog.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dlss.Defaults.cs"
+      ],
+      "reason": "Linux adapts MFG/default versions and apply-to-all dialogs to Avalonia and dxvk-nvapi. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "5cd403f9d744e77b426016fa26185982e2fae7cc2f8d9054c7006c2fbc89ced5",
+      "local_sha256": "5cd403f9d744e77b426016fa26185982e2fae7cc2f8d9054c7006c2fbc89ced5"
+    },
+    "RenoDXCommander/Models/AddonEntry.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux represents addon payloads/ownership and information in its own models and dialogs.",
+      "upstream_sha256": "e3292fb4e6aa28626e3e46a0b4e16e49097df1dc49997f99ab6e24a8a8114dc8",
+      "local_sha256": "e3292fb4e6aa28626e3e46a0b4e16e49097df1dc49997f99ab6e24a8a8114dc8"
+    },
+    "RenoDXCommander/Models/AddonInfoResult.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux represents addon payloads/ownership and information in its own models and dialogs.",
+      "upstream_sha256": "19ef906e5ec3f0444efceda3693030a13db072493fe09316598e50a1dae41463",
+      "local_sha256": "19ef906e5ec3f0444efceda3693030a13db072493fe09316598e50a1dae41463"
+    },
+    "RenoDXCommander/Models/AddonType.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux represents addon payloads/ownership and information in its own models and dialogs.",
+      "upstream_sha256": "dc5012c066a10cf8de3100d17e5b00aa9faffabfba6472bd73d9020b4a01632a",
+      "local_sha256": "dc5012c066a10cf8de3100d17e5b00aa9faffabfba6472bd73d9020b4a01632a"
+    },
+    "RenoDXCommander/Models/AppPage.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Linux has its own navigation/filter/layout state; custom saved filters and every Windows page are not reproduced.",
+      "upstream_sha256": "3ecb9e8bd91c43616534f704742ae264637efec1f846e796f5a151b9908851c0",
+      "local_sha256": "3ecb9e8bd91c43616534f704742ae264637efec1f846e796f5a151b9908851c0"
+    },
+    "RenoDXCommander/Models/AuxInstalledRecord.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: Adds OsNightlyBuild for Windows nightly pinning; inherited unchanged, unused on Linux.",
+      "upstream_sha256": "a6d09fbfa66134bf438581777217dd69ef7c03c09b7bfb82196d43ebecb63e92",
+      "local_sha256": "a6d09fbfa66134bf438581777217dd69ef7c03c09b7bfb82196d43ebecb63e92"
+    },
+    "RenoDXCommander/Models/CustomFilter.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Linux has its own navigation/filter/layout state; custom saved filters and every Windows page are not reproduced.",
+      "upstream_sha256": "23acf564080faccb05ec57567df10c112d1f5ed6a545967d44b46d3df6a5a35c",
+      "local_sha256": "23acf564080faccb05ec57567df10c112d1f5ed6a545967d44b46d3df6a5a35c"
+    },
+    "RenoDXCommander/Models/DetectedGame.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux game identity, architecture, discovery and settings use Proton/XDG-aware models.",
+      "upstream_sha256": "4f3218e7878a566e0f8eced24005b9a2ce11a53d1cdc35c153e73427f3003997",
+      "local_sha256": "4f3218e7878a566e0f8eced24005b9a2ce11a53d1cdc35c153e73427f3003997"
+    },
+    "RenoDXCommander/Models/DllOverrideConfig.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "DLL override settings are encoded in Proton launch options rather than Windows records.",
+      "upstream_sha256": "93f985d372a4f9532b7811a0f4384bcd01271a053603f0fcd072f423739c321e",
+      "local_sha256": "93f985d372a4f9532b7811a0f4384bcd01271a053603f0fcd072f423739c321e"
+    },
+    "RenoDXCommander/Models/DllOverrideConstants.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "DLL override settings are encoded in Proton launch options rather than Windows records.",
+      "upstream_sha256": "4f214e83f20eee7b1219372d5fc4b46ac7a41fb2c031c8652af87d4a67f9b5aa",
+      "local_sha256": "4f214e83f20eee7b1219372d5fc4b46ac7a41fb2c031c8652af87d4a67f9b5aa"
+    },
+    "RenoDXCommander/Models/DxvkInstalledRecord.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton supplies DXVK; no Windows DXVK installation records are needed.",
+      "upstream_sha256": "f319ccc40cd2b41bf1fafc62501d26bf105ab4e45bf77c10a24f9ac14c41f3dd",
+      "local_sha256": "f319ccc40cd2b41bf1fafc62501d26bf105ab4e45bf77c10a24f9ac14c41f3dd"
+    },
+    "RenoDXCommander/Models/DxvkVariant.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton supplies DXVK; no Windows DXVK installation records are needed.",
+      "upstream_sha256": "0fcde3ad699a1842caa030962d7bc0a5008b578e494a9fde376304481e52235a",
+      "local_sha256": "0fcde3ad699a1842caa030962d7bc0a5008b578e494a9fde376304481e52235a"
+    },
+    "RenoDXCommander/Models/EngineType.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux game identity, architecture, discovery and settings use Proton/XDG-aware models.",
+      "upstream_sha256": "043a05a698fcaf96358c0b92cf478a8ac21b9e8e0fb14fa8ed8ba23a5d32b423",
+      "local_sha256": "043a05a698fcaf96358c0b92cf478a8ac21b9e8e0fb14fa8ed8ba23a5d32b423"
+    },
+    "RenoDXCommander/Models/ForceExternalEntry.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "56970e2e8870e878f45d018737cf8cf98c002589d7fe7f65566540c67ecd8e16",
+      "local_sha256": "56970e2e8870e878f45d018737cf8cf98c002589d7fe7f65566540c67ecd8e16"
+    },
+    "RenoDXCommander/Models/GameKey.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux game identity, architecture, discovery and settings use Proton/XDG-aware models.",
+      "upstream_sha256": "30f546dfb7fc38caa9e8ce879b2d3c4caa5d1e5864279b21378668668a5b5eca",
+      "local_sha256": "30f546dfb7fc38caa9e8ce879b2d3c4caa5d1e5864279b21378668668a5b5eca"
+    },
+    "RenoDXCommander/Models/GameMod.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "c4e11e4b208c03d6cbc0383e5fc9f6c8491da1e74dce51b6c901ac7870339f74",
+      "local_sha256": "c4e11e4b208c03d6cbc0383e5fc9f6c8491da1e74dce51b6c901ac7870339f74"
+    },
+    "RenoDXCommander/Models/GameNoteEntry.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "2f5079d280752f18c37b2549e8200743a797b6b3681c1d5a14733dfbf917e0e9",
+      "local_sha256": "2f5079d280752f18c37b2549e8200743a797b6b3681c1d5a14733dfbf917e0e9"
+    },
+    "RenoDXCommander/Models/GameStatus.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "fcf7f4b003ad86fa1b77980ea6ea25169911816df68d49f0abb6e405785faf72",
+      "local_sha256": "fcf7f4b003ad86fa1b77980ea6ea25169911816df68d49f0abb6e405785faf72"
+    },
+    "RenoDXCommander/Models/GraphicsApiType.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "9f7c7730574b771e0399f8c50e8fb9b0851bfbbd7e3a5f59966e905d848347e9",
+      "local_sha256": "9f7c7730574b771e0399f8c50e8fb9b0851bfbbd7e3a5f59966e905d848347e9"
+    },
+    "RenoDXCommander/Models/HdrModEntry.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "800094f80c05a7f5421b157ecd800b7d2637a8c04401799e06402acca78c5249",
+      "local_sha256": "800094f80c05a7f5421b157ecd800b7d2637a8c04401799e06402acca78c5249"
+    },
+    "RenoDXCommander/Models/InstalledModRecord.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/REFramework.cs",
+        "RHI.Linux.Core/OptiScaler.cs"
+      ],
+      "reason": "Linux uses hashed transaction records and reads Windows OptiScaler manifests for shared-library removal/reinstall interoperability. c1076d3 audit: Adds JSON-ignored PreviousVersion; persisted format unchanged.",
+      "upstream_sha256": "213956626ad135185a0e31e3c48a65ea1d748a62c2c30cfea03f681bd7be09a6",
+      "local_sha256": "213956626ad135185a0e31e3c48a65ea1d748a62c2c30cfea03f681bd7be09a6"
+    },
+    "RenoDXCommander/Models/LumaInstalledRecord.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma and Nexus workflows are not ported.",
+      "upstream_sha256": "3f32b839d2a6a4a9779443daec2015f560244306d04b9654eef8d317be1b6c28",
+      "local_sha256": "3f32b839d2a6a4a9779443daec2015f560244306d04b9654eef8d317be1b6c28"
+    },
+    "RenoDXCommander/Models/LumaMod.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma and Nexus workflows are not ported.",
+      "upstream_sha256": "2e7b172a0da19c35ff17fc28ccf5f432330cdf02adcfa290100ec3ee48a14d0b",
+      "local_sha256": "2e7b172a0da19c35ff17fc28ccf5f432330cdf02adcfa290100ec3ee48a14d0b"
+    },
+    "RenoDXCommander/Models/ManifestDllNames.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "c928180e834c801ce0735546493124fb13e81d3dc1073f5e3773a0e05d416878",
+      "local_sha256": "c928180e834c801ce0735546493124fb13e81d3dc1073f5e3773a0e05d416878"
+    },
+    "RenoDXCommander/Models/NexusModsGame.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma and Nexus workflows are not ported.",
+      "upstream_sha256": "6f1da63f395dff6a42e23ef155e0521fa3f011895a31aa42d7c0f6b8608ea701",
+      "local_sha256": "6f1da63f395dff6a42e23ef155e0521fa3f011895a31aa42d7c0f6b8608ea701"
+    },
+    "RenoDXCommander/Models/NvApiSettingsSnapshot.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows NVIDIA driver profile snapshots are not available through Proton; supported settings use dxvk-nvapi environment values.",
+      "upstream_sha256": "949b44b73ec2b35541f32d9d6a093192ec80ea61923e2bab6c4a576622066c43",
+      "local_sha256": "949b44b73ec2b35541f32d9d6a093192ec80ea61923e2bab6c4a576622066c43"
+    },
+    "RenoDXCommander/Models/OptiScalerWikiData.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "39246b655b0cdb731e4151f13353b906f01f08c2c89a026186da2aab3cb193b5",
+      "local_sha256": "39246b655b0cdb731e4151f13353b906f01f08c2c89a026186da2aab3cb193b5"
+    },
+    "RenoDXCommander/Models/OsPreset.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux. c1076d3 audit: Adds six OptiScaler preset fields; presets remain deferred.",
+      "upstream_sha256": "c7dc34921a2225880daaca0868a28317947dca3455ed370f58f3f4e439105ee9",
+      "local_sha256": "c7dc34921a2225880daaca0868a28317947dca3455ed370f58f3f4e439105ee9"
+    },
+    "RenoDXCommander/Models/PcgwApiInfo.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "1a36aaf4b3effea3a542b6cce9540616feb229422ad380b483438864ad179198",
+      "local_sha256": "1a36aaf4b3effea3a542b6cce9540616feb229422ad380b483438864ad179198"
+    },
+    "RenoDXCommander/Models/REFrameworkInstalledRecord.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/REFramework.cs",
+        "RHI.Linux.Core/OptiScaler.cs"
+      ],
+      "reason": "Linux uses hashed transaction records and reads Windows OptiScaler manifests for shared-library removal/reinstall interoperability.",
+      "upstream_sha256": "59473b38c5a8f855ce152389a795095e1faff0219c08c756cf3e1ef6c6bd9639",
+      "local_sha256": "59473b38c5a8f855ce152389a795095e1faff0219c08c756cf3e1ef6c6bd9639"
+    },
+    "RenoDXCommander/Models/RemoteManifest.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: Removes lumaDefaultGames/optiScalerDllOverrides (unused on Linux); adds dlssPathOverrides/streamlinePathOverrides (ported: Linux DlssScanner honours them) and authorRoles (Windows Donate dialog).",
+      "upstream_sha256": "65ed6d5c36fa2083a9868cc0efb90fa1909aafbbfcbb85a023d2211bfab19477",
+      "local_sha256": "65ed6d5c36fa2083a9868cc0efb90fa1909aafbbfcbb85a023d2211bfab19477"
+    },
+    "RenoDXCommander/Models/RenoDXDbUnityEntry.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "135d0060b8363a1bf85879f2fba59dbbb004d069a2feed08869377ff78e8bc46",
+      "local_sha256": "135d0060b8363a1bf85879f2fba59dbbb004d069a2feed08869377ff78e8bc46"
+    },
+    "RenoDXCommander/Models/RenoDXDbUnrealEntry.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "cccf7dbd0bf1d5f731f3872cbfbd658d3c826aa78cb1354c7f840f7a99050ae2",
+      "local_sha256": "cccf7dbd0bf1d5f731f3872cbfbd658d3c826aa78cb1354c7f840f7a99050ae2"
+    },
+    "RenoDXCommander/Models/RhiInstallManifest.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/REFramework.cs",
+        "RHI.Linux.Core/OptiScaler.cs"
+      ],
+      "reason": "Linux uses hashed transaction records and reads Windows OptiScaler manifests for shared-library removal/reinstall interoperability. c1076d3 audit: Comment on swallowed read; format unchanged (F5 variant handled by Linux Windows-import removal).",
+      "upstream_sha256": "aac0fcf54b52962845fab4785a27c441a5e6f2dcc1774d372f5969d9fced3aef",
+      "local_sha256": "aac0fcf54b52962845fab4785a27c441a5e6f2dcc1774d372f5969d9fced3aef"
+    },
+    "RenoDXCommander/Models/SavedGame.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux game identity, architecture, discovery and settings use Proton/XDG-aware models.",
+      "upstream_sha256": "750eb4ad429ee0610ac87130578d8c01fa3a9dec09edcd8532abe2d3644155f1",
+      "local_sha256": "750eb4ad429ee0610ac87130578d8c01fa3a9dec09edcd8532abe2d3644155f1"
+    },
+    "RenoDXCommander/Models/SavedGameLibrary.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux game identity, architecture, discovery and settings use Proton/XDG-aware models. c1076d3 audit: Adds engine folder stamps for Windows scan skipping.",
+      "upstream_sha256": "c6edb8426188bc23bb110b37266d918b79106c9016db3f3576f83da1b24fea59",
+      "local_sha256": "c6edb8426188bc23bb110b37266d918b79106c9016db3f3576f83da1b24fea59"
+    },
+    "RenoDXCommander/Models/ShaderProfile.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "38447e56eb306681d83ef97fae29e5cba907a56a6678767aed7868d6e69bc3ce",
+      "local_sha256": "38447e56eb306681d83ef97fae29e5cba907a56a6678767aed7868d6e69bc3ce"
+    },
+    "RenoDXCommander/Models/SteamStoreSearchResponse.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The corresponding database, preset profile, wiki-extra or Steam store-search feature is not implemented in Linux.",
+      "upstream_sha256": "15f1626a522387d45146dce40ad4568c569d6cf72a29e2d7cdab1b77207ea31f",
+      "local_sha256": "15f1626a522387d45146dce40ad4568c569d6cf72a29e2d7cdab1b77207ea31f"
+    },
+    "RenoDXCommander/Models/UpdateLogEntry.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Component update history log; not yet offered on Linux.",
+      "upstream_sha256": "bf1c9f68995e8ce8dbef515870edf19e9a8ce2a4d319aaff4731361ddb23348f",
+      "local_sha256": "bf1c9f68995e8ce8dbef515870edf19e9a8ce2a4d319aaff4731361ddb23348f"
+    },
+    "RenoDXCommander/Models/ViewLayout.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Linux has its own navigation/filter/layout state; custom saved filters and every Windows page are not reproduced.",
+      "upstream_sha256": "f722974b669f6a0ceadfd9e3bde5c07ca2e9fd15a868672a04e1ecd5d687d0fc",
+      "local_sha256": "f722974b669f6a0ceadfd9e3bde5c07ca2e9fd15a868672a04e1ecd5d687d0fc"
+    },
+    "RenoDXCommander/NativeInterop.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows handles, P/Invoke and global window/hotkey management are replaced by Avalonia/desktop facilities. cde8f9d audit: GetCurrentThreadId DLL import correction is Windows-only; Linux does not compile NativeInterop. c1076d3 audit: Win32 freeze diagnostics, tray and foreground interop.",
+      "upstream_sha256": "c51f263e81793c5533877341ca61f8dc95d1f21ecf191b4ac1f1f982bd63ef49",
+      "local_sha256": "c51f263e81793c5533877341ca61f8dc95d1f21ecf191b4ac1f1f982bd63ef49"
+    },
+    "RenoDXCommander/OptiScaler.amd-dlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "fa98579f18f321f700d1e92ba2cd57a71c54a2315bfafe7e9da4449b7b4be23b",
+      "local_sha256": "fa98579f18f321f700d1e92ba2cd57a71c54a2315bfafe7e9da4449b7b4be23b"
+    },
+    "RenoDXCommander/OptiScaler.amd-nodlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "a9ef7643ebacda5a5ece0e1c65c1a8bdbdd4e640f55d4010b8927883b548add1",
+      "local_sha256": "a9ef7643ebacda5a5ece0e1c65c1a8bdbdd4e640f55d4010b8927883b548add1"
+    },
+    "RenoDXCommander/OptiScaler.nvidia.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "fa98579f18f321f700d1e92ba2cd57a71c54a2315bfafe7e9da4449b7b4be23b",
+      "local_sha256": "fa98579f18f321f700d1e92ba2cd57a71c54a2315bfafe7e9da4449b7b4be23b"
+    },
+    "RenoDXCommander/OptiScaler_dlssnr.amd-dlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "884f5185ad63ce660c69ada612b0ffff670aac4c578b371b7aaaa7fd9738a0b1",
+      "local_sha256": "884f5185ad63ce660c69ada612b0ffff670aac4c578b371b7aaaa7fd9738a0b1"
+    },
+    "RenoDXCommander/OptiScaler_dlssnr.amd-nodlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "874d064f99a7df3f104899428f3cade67a2891b727631749c09188cb547e6338",
+      "local_sha256": "874d064f99a7df3f104899428f3cade67a2891b727631749c09188cb547e6338"
+    },
+    "RenoDXCommander/OptiScaler_dlssnr.nvidia.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "884f5185ad63ce660c69ada612b0ffff670aac4c578b371b7aaaa7fd9738a0b1",
+      "local_sha256": "884f5185ad63ce660c69ada612b0ffff670aac4c578b371b7aaaa7fd9738a0b1"
+    },
+    "RenoDXCommander/OptiScaler_f5.amd-dlss.ini": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "F5 DLSSNR variant template; Linux does not offer F5 (it only removes Windows F5 installs).",
+      "upstream_sha256": "5fae06dc48461a3b374535714a56831166dec691e40e0358f636017efa1f3f76",
+      "local_sha256": "5fae06dc48461a3b374535714a56831166dec691e40e0358f636017efa1f3f76"
+    },
+    "RenoDXCommander/OptiScaler_f5.amd-nodlss.ini": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "F5 DLSSNR variant template; Linux does not offer F5 (it only removes Windows F5 installs).",
+      "upstream_sha256": "77aea9cba1ec6d8a1d9f975330c4910112cc430cb904e1418ae827928e90343d",
+      "local_sha256": "77aea9cba1ec6d8a1d9f975330c4910112cc430cb904e1418ae827928e90343d"
+    },
+    "RenoDXCommander/OptiScaler_f5.nvidia.ini": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "F5 DLSSNR variant template; Linux does not offer F5 (it only removes Windows F5 installs).",
+      "upstream_sha256": "5fae06dc48461a3b374535714a56831166dec691e40e0358f636017efa1f3f76",
+      "local_sha256": "5fae06dc48461a3b374535714a56831166dec691e40e0358f636017efa1f3f76"
+    },
+    "RenoDXCommander/OptiScaler_nightly.amd-dlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a",
+      "local_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a"
+    },
+    "RenoDXCommander/OptiScaler_nightly.amd-nodlss.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a",
+      "local_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a"
+    },
+    "RenoDXCommander/OptiScaler_nightly.nvidia.ini": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "The exact upstream per-GPU template is bundled and seeded into the user-editable Linux templates directory.",
+      "upstream_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a",
+      "local_sha256": "cf3ca875b28d4b6dd9a0dda91a43cae8c6612a22cbe948182652cbb413b97f4a"
+    },
+    "RenoDXCommander/PresetPopupHelper.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows drag/drop, preset-import or report-export workflow is not implemented in Linux; explicit dialogs handle local files. c1076d3 audit: Preset UI; deferred.",
+      "upstream_sha256": "0394a2bdf052626667c5037ff64baad6342bacfe08e1f3195f1ed64d1052a38a",
+      "local_sha256": "0394a2bdf052626667c5037ff64baad6342bacfe08e1f3195f1ed64d1052a38a"
+    },
+    "RenoDXCommander/ReShade.Vulkan.ini": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "dd084a0c82d15e71924f93f07b5337f5ebd174b3b28a4d06ab153de345b36fcb",
+      "local_sha256": "dd084a0c82d15e71924f93f07b5337f5ebd174b3b28a4d06ab153de345b36fcb"
+    },
+    "RenoDXCommander/ReShade.ini": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/IniSettings.cs"
+      ],
+      "reason": "Linux constructs a Proton-compatible default INI and preserves user-edited keys; template changes require applicability review.",
+      "upstream_sha256": "1d933fd9d580c35b77c7d15284cccd9ff0909457f2a3ae68c4023e7e35686b0e",
+      "local_sha256": "1d933fd9d580c35b77c7d15284cccd9ff0909457f2a3ae68c4023e7e35686b0e"
+    },
+    "RenoDXCommander/ReShade64.json": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "dfdc50064270b24c8549a9c2960fccc966eb7326f9e6ca8b1abbac2859ab9dc1",
+      "local_sha256": "dfdc50064270b24c8549a9c2960fccc966eb7326f9e6ca8b1abbac2859ab9dc1"
+    },
+    "RenoDXCommander/RenoDXCommander.csproj": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj",
+        "RHI.Linux.sln",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "Review project/framework/package and shared-source changes against both builds; Linux has a separate solution and host. cde8f9d audit: upstream assembly/file release version bump to 2.7.9 is Windows release metadata; this Linux maintenance change does not claim that release version. c1076d3 audit: WindowsAppSDK 2.5.1, F5 INI content items and version bumps; RHI.Core project reference and shared-source removal preserved.",
+      "upstream_sha256": "3c7109c9239589268975dd968c6b9fb101f2b6938ffe4558d4154cef3d616304",
+      "local_sha256": "2d28aff171e7eae2693ce4b1d1354643df97462d7d5f89e909089f20397ceac5"
+    },
+    "RenoDXCommander/ResourceKeys.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "c4c570214edd19b41bec8b1eb2d96687948a8c42a086d1fb0c4a2e6d7552fbb7",
+      "local_sha256": "c4c570214edd19b41bec8b1eb2d96687948a8c42a086d1fb0c4a2e6d7552fbb7"
+    },
+    "RenoDXCommander/Services/AddonFileWatcher.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Automatic monitoring of browser downloads is not implemented; users explicitly choose local addon files.",
+      "upstream_sha256": "829bdd240b4e11744ac02597cb2bfdce5772b0ff080ce69abec28e3f4d6c2efd",
+      "local_sha256": "829bdd240b4e11744ac02597cb2bfdce5772b0ff080ce69abec28e3f4d6c2efd"
+    },
+    "RenoDXCommander/Services/AddonInfoResolver.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux shows catalogue notes and links in Avalonia dialogs; the Windows multi-source resolver is not shared. c1076d3 audit: Windows info-dialog wording/link changes.",
+      "upstream_sha256": "7840bc23247342f972bcb82dd9872b227d263ad775fd0efcd8c66dd51d988517",
+      "local_sha256": "7840bc23247342f972bcb82dd9872b227d263ad775fd0efcd8c66dd51d988517"
+    },
+    "RenoDXCommander/Services/AddonPackService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux downloads addon payloads and records transactional ownership; Windows deployment records and full addons.ini workflow are not shared. c1076d3 audit: Stages addon32+addon64, keeps /releases/latest, tracks deployments and update history; Linux has no manifest addon-pack manager (manual addon picker only).",
+      "upstream_sha256": "73e97a30c56984f67556b3792de299af506c9afd3579e6d3a9c504aef1127f32",
+      "local_sha256": "73e97a30c56984f67556b3792de299af506c9afd3579e6d3a9c504aef1127f32"
+    },
+    "RenoDXCommander/Services/AddonsIniParser.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux downloads addon payloads and records transactional ownership; Windows deployment records and full addons.ini workflow are not shared. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "4369e2188d4a38b58387500aa30e5da97a4ea14973c64cb3a0b4fc39d6f8bb62",
+      "local_sha256": "4369e2188d4a38b58387500aa30e5da97a4ea14973c64cb3a0b4fc39d6f8bb62"
+    },
+    "RenoDXCommander/Services/AppPaths.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/LinuxPaths.cs"
+      ],
+      "reason": "Windows exe-directory and bundled 7-Zip paths; Linux uses LinuxPaths and its bundled 7-Zip.",
+      "upstream_sha256": "c68521c71d7b10be8ec6aa06fb96a59b822fa3a1224f3707c92844231c1384ae",
+      "local_sha256": "c68521c71d7b10be8ec6aa06fb96a59b822fa3a1224f3707c92844231c1384ae"
+    },
+    "RenoDXCommander/Services/AsyncExtensions.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/CrashReporter.cs",
+        "RHI.Core/CoreLog.cs"
+      ],
+      "reason": "Linux reports asynchronous errors through its own logger; portable shared routines use CoreLog with a host-installed sink.",
+      "upstream_sha256": "347ed142de302483318a549e5a76f88b65d3850d49ae6b15d6955a3997fd9ed3",
+      "local_sha256": "347ed142de302483318a549e5a76f88b65d3850d49ae6b15d6955a3997fd9ed3"
+    },
+    "RenoDXCommander/Services/AutoHdrService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows Auto HDR registry settings.",
+      "upstream_sha256": "ac9ecac41005c217cb655ce098ca748f8133f44868e5e3b727666fcf3c677d05",
+      "local_sha256": "ac9ecac41005c217cb655ce098ca748f8133f44868e5e3b727666fcf3c677d05"
+    },
+    "RenoDXCommander/Services/AutoUpdateService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Linux ships manually replaceable portable releases; Windows executable self-update is not used. c1076d3 audit: Windows app self-update; Linux updates through release packages.",
+      "upstream_sha256": "cee0b00d8970412e8153b70f98a8b879ac0d9c20d4dd766037adcc385cf2063c",
+      "local_sha256": "cee0b00d8970412e8153b70f98a8b879ac0d9c20d4dd766037adcc385cf2063c"
+    },
+    "RenoDXCommander/Services/AuxInstallService.DllIdentification.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux uses transaction snapshots, hashes and case-safe game paths; Windows auxiliary installer is not called.",
+      "upstream_sha256": "80759b71c2b4abf396bb4c3e8d9c93ce8edbc211fb8db1c1a5714611fa40dd86",
+      "local_sha256": "80759b71c2b4abf396bb4c3e8d9c93ce8edbc211fb8db1c1a5714611fa40dd86"
+    },
+    "RenoDXCommander/Services/AuxInstallService.GacSymlink.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows GAC and junction deployment does not apply to Proton game-local payloads. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "6a2ca9cc8b1b3ef4523ef70a485eeeaac048d0f5e2dd3a986cb9a01468baaa64",
+      "local_sha256": "6a2ca9cc8b1b3ef4523ef70a485eeeaac048d0f5e2dd3a986cb9a01468baaa64"
+    },
+    "RenoDXCommander/Services/AuxInstallService.Ini.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/IniSettings.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux applies and restores managed INI keys; Unity database upgrade recipes and Windows-specific settings remain deferred. c1076d3 audit: Dead-code removal and logging; Linux INI handling unchanged.",
+      "upstream_sha256": "da1251c46b18e20171c5d0dbe9172dd10a85bfda233aa867ab0734cdfc0eb9a5",
+      "local_sha256": "da1251c46b18e20171c5d0dbe9172dd10a85bfda233aa867ab0734cdfc0eb9a5"
+    },
+    "RenoDXCommander/Services/AuxInstallService.Install.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux uses transaction snapshots, hashes and case-safe game paths; Windows auxiliary installer is not called. c1076d3 audit: SafeJsonFile locking and dead-code removal; Linux installation records are transactional.",
+      "upstream_sha256": "3998df400e2ec9d59518bae347e0edd64984b7a51b92a973d31cabb0c41c6409",
+      "local_sha256": "3998df400e2ec9d59518bae347e0edd64984b7a51b92a973d31cabb0c41c6409"
+    },
+    "RenoDXCommander/Services/AuxInstallService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux uses transaction snapshots, hashes and case-safe game paths; Windows auxiliary installer is not called. c1076d3 audit: Merge kept shared SentinelFiles restore; upstream added logging and AppPaths. No Linux behaviour change.",
+      "upstream_sha256": "5bf89af30ed69fa44a89bf4b5cfa7cddc4eca6d2c71f5cac868aff2aff159cf1",
+      "local_sha256": "2196b776de405ae092935c4a6ecc83b495ce699ad72bae9644922b3c825ac6bd"
+    },
+    "RenoDXCommander/Services/ControlUePostInstallService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Control UE mod post-install (OptiScaler FG, Streamline DLSSG); game-specific workflow not offered on Linux.",
+      "upstream_sha256": "6d53183aa64897eedfe43a296be431320055cf4b902d6a65c2d5c0467ea21ba9",
+      "local_sha256": "6d53183aa64897eedfe43a296be431320055cf4b902d6a65c2d5c0467ea21ba9"
+    },
+    "RenoDXCommander/Services/CrashReporter.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/CrashReporter.cs",
+        "RHI.Core/CoreLog.cs"
+      ],
+      "reason": "Linux reports asynchronous errors through its own logger; portable shared routines use CoreLog with a host-installed sink. c1076d3 audit: Windows freeze diagnostics, rolling 20 MB log and batched writes; Linux log is separate.",
+      "upstream_sha256": "d4ba84f88105d71f6674d1ec17089a66c1401967efa2d804c306be6015abf718",
+      "local_sha256": "d4ba84f88105d71f6674d1ec17089a66c1401967efa2d804c306be6015abf718"
+    },
+    "RenoDXCommander/Services/CrashReporterService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/CrashReporter.cs",
+        "RHI.Core/CoreLog.cs"
+      ],
+      "reason": "Linux reports asynchronous errors through its own logger; portable shared routines use CoreLog with a host-installed sink.",
+      "upstream_sha256": "1cb2163c916a8e3a5cac3aec0b6618d939dfa96792c78723985f197703426d27",
+      "local_sha256": "1cb2163c916a8e3a5cac3aec0b6618d939dfa96792c78723985f197703426d27"
+    },
+    "RenoDXCommander/Services/CustomReShadeHashService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/InstallationStatus.cs"
+      ],
+      "reason": "Linux validates local PE files and tracks installed file hashes rather than Windows custom-build registry records. c1076d3 audit: Logging only.",
+      "upstream_sha256": "9be0c66ca5817d9f0f6bbb40752eab16bb5b114ca7789286994716cedb05915f",
+      "local_sha256": "9be0c66ca5817d9f0f6bbb40752eab16bb5b114ca7789286994716cedb05915f"
+    },
+    "RenoDXCommander/Services/DevUnlockService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Windows developer unlock and remote UI feature gates are not applied to the Linux feature set. c1076d3 audit: GitHub token storage for Windows sign-in; Linux has no token UI.",
+      "upstream_sha256": "ba51a955a8998ebebb19d50aa729726ae8d73c93dfafd10bfb7f34f2041c5fcf",
+      "local_sha256": "ba51a955a8998ebebb19d50aa729726ae8d73c93dfafd10bfb7f34f2041c5fcf"
+    },
+    "RenoDXCommander/Services/DgVoodooService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/NeuralRendering.DgVoodoo.cs"
+      ],
+      "reason": "Linux stages the DX9 Feeder wrapper and Proton overrides; standalone Windows dgVoodoo workflows are not exposed. c1076d3 audit: d3d9.dll casing fix is already covered by Linux case-insensitive path resolution; standalone dgVoodoo2 install and update log are deferred.",
+      "upstream_sha256": "9e23cb9aa8ca13054c6b710ec61d052544b20820159e948bd64d224051cdb008",
+      "local_sha256": "9e23cb9aa8ca13054c6b710ec61d052544b20820159e948bd64d224051cdb008"
+    },
+    "RenoDXCommander/Services/DialogCoordinator.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "WinUI dialog gate.",
+      "upstream_sha256": "c466362d65783676af7d951728a74452849294fd936bc88d59f107b5ece1fb85",
+      "local_sha256": "c466362d65783676af7d951728a74452849294fd936bc88d59f107b5ece1fb85"
+    },
+    "RenoDXCommander/Services/DigitalVibranceService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows display/NVAPI control is outside the Linux app; the compositor and display settings remain user-controlled.",
+      "upstream_sha256": "df2381aeaccc7645ac938d5f396ed0c8c0545e27abe8248e7e43eaae409f5088",
+      "local_sha256": "df2381aeaccc7645ac938d5f396ed0c8c0545e27abe8248e7e43eaae409f5088"
+    },
+    "RenoDXCommander/Services/DldsrService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "NVIDIA DLDSR via Windows driver API.",
+      "upstream_sha256": "03dcea369b21e98ee8077aace600ef5a68e00a40f94647d973761fc17c618b73",
+      "local_sha256": "03dcea369b21e98ee8077aace600ef5a68e00a40f94647d973761fc17c618b73"
+    },
+    "RenoDXCommander/Services/DllArchive.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "bb5fd1329fdee39c892e12024b66a01769cb67862b70370a9e0231ae51381c5d"
+    },
+    "RenoDXCommander/Services/DllOverrideService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "Linux merges WINEDLLOVERRIDES into Proton launch options instead of editing Windows injection configuration. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "a150bfe9108a91848f1d33ef61d37ecb54287910e5f8c9c2438f4092692f1364",
+      "local_sha256": "a150bfe9108a91848f1d33ef61d37ecb54287910e5f8c9c2438f4092692f1364"
+    },
+    "RenoDXCommander/Services/DlssEnablerService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: ETag cache/logging; DLSS Enabler deferred.",
+      "upstream_sha256": "785c3f06758b250386a8acc4ade0f30a3f5b79d1ed8248c61cd8552c16258261",
+      "local_sha256": "785c3f06758b250386a8acc4ade0f30a3f5b79d1ed8248c61cd8552c16258261"
+    },
+    "RenoDXCommander/Services/DlssFileDiscovery.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "b5c1cfff11a5af72a5ae202e02ee1c57817acaffc59580df375d9a1c0ddee2be"
+    },
+    "RenoDXCommander/Services/DlssNrCostScalerService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/NeuralRendering.CostScaler.cs"
+      ],
+      "reason": "Linux stages and restores the Cost Scaler proxy using its own ownership transactions. c1076d3 audit: Uses the ETag cache and logs swallowed errors; Linux Cost Scaler staging is unaffected.",
+      "upstream_sha256": "e2d255f686a6b6bf15a7e7420a8a54feb7550fe450ed3b356b2f97be0d89c0f7",
+      "local_sha256": "143b4cd5d6f02567b993421578a7c464f3cd8c09bb61c3605af8a1bd736d0b7e"
+    },
+    "RenoDXCommander/Services/DlssPresetService.DriverSettings.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/DlssProfile.cs",
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "Supported DLSS presets, overrides and MFG settings become dxvk-nvapi launch environment; other NVIDIA profile controls are not available. c1076d3 audit: NVAPI driver-setting locking and ReBAR state display; Windows driver API only.",
+      "upstream_sha256": "6ecd5dc6b59f4f3d326072fcb4d119cb3b14799ed21bdab694bcda4cbe43d433",
+      "local_sha256": "6ecd5dc6b59f4f3d326072fcb4d119cb3b14799ed21bdab694bcda4cbe43d433"
+    },
+    "RenoDXCommander/Services/DlssPresetService.Export.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows NVIDIA profile export/matching/ReBAR has no equivalent driver-profile API under Proton. c1076d3 audit: NVAPI export locking.",
+      "upstream_sha256": "4244658a21f82632f55b0fe84223b846eebf50ddb0c3240a1a8b33b19686ea2c",
+      "local_sha256": "4244658a21f82632f55b0fe84223b846eebf50ddb0c3240a1a8b33b19686ea2c"
+    },
+    "RenoDXCommander/Services/DlssPresetService.ProfileMatching.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows NVIDIA profile export/matching/ReBAR has no equivalent driver-profile API under Proton. c1076d3 audit: NVAPI profile matching locking.",
+      "upstream_sha256": "b27704c00493ec66001f98653f1c5510b76cc4ae5cb5be27f0c5f2e19ba282ee",
+      "local_sha256": "b27704c00493ec66001f98653f1c5510b76cc4ae5cb5be27f0c5f2e19ba282ee"
+    },
+    "RenoDXCommander/Services/DlssPresetService.ReBar.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows NVIDIA profile export/matching/ReBAR has no equivalent driver-profile API under Proton. c1076d3 audit: NVAPI ReBAR dead code.",
+      "upstream_sha256": "34fad59d26e79aac59b18868d522693a2a7ecceba8c022d6810f8550bcbc6501",
+      "local_sha256": "34fad59d26e79aac59b18868d522693a2a7ecceba8c022d6810f8550bcbc6501"
+    },
+    "RenoDXCommander/Services/DlssPresetService.Reset.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/DlssProfile.cs",
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "Supported DLSS presets, overrides and MFG settings become dxvk-nvapi launch environment; other NVIDIA profile controls are not available. c1076d3 audit: NVAPI reset locking; Windows driver API only.",
+      "upstream_sha256": "73418e5c35a66ed5f55ffee6719b52fac9d0b22f5b36cb3789fbc3062f11cdd8",
+      "local_sha256": "73418e5c35a66ed5f55ffee6719b52fac9d0b22f5b36cb3789fbc3062f11cdd8"
+    },
+    "RenoDXCommander/Services/DlssPresetService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/DlssProfile.cs",
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "Supported DLSS presets, overrides and MFG settings become dxvk-nvapi launch environment; other NVIDIA profile controls are not available. c1076d3 audit: NVAPI session locking/timeouts for Windows freezes; Linux writes DXVK-NVAPI profile settings.",
+      "upstream_sha256": "67ad5d09d38d9672e33bcc2eb9748f52ce423838d07e5ff064fc603216faee9a",
+      "local_sha256": "67ad5d09d38d9672e33bcc2eb9748f52ce423838d07e5ff064fc603216faee9a"
+    },
+    "RenoDXCommander/Services/DlssStreamlineService.Detection.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs",
+        "RHI.Linux.Core/PeVersion.cs"
+      ],
+      "reason": "Linux adapts catalogue/download orchestration and case-safe paths; shared DlssFileDiscovery, DlssVersion, DllArchive and SentinelFiles supply portable detection/swap primitives. c1076d3 audit: Ported DetectFromExactPath as DlssScanner manifest path overrides (case-safe, falls back to the scan) with regression coverage; other changes are log comments.",
+      "upstream_sha256": "c940ea977657b5616f75f7704eed65f3fe777c4f1cf658c2e1b124cf118dd82c",
+      "local_sha256": "7fe39c22cb24b33176aa390017e23511cabacc31d8bf5faf3e927975471c97bf"
+    },
+    "RenoDXCommander/Services/DlssStreamlineService.Swap.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs",
+        "RHI.Linux.Core/PeVersion.cs"
+      ],
+      "reason": "Linux adapts catalogue/download orchestration and case-safe paths; shared DlssFileDiscovery, DlssVersion, DllArchive and SentinelFiles supply portable detection/swap primitives. c1076d3 audit: Failed swaps throw DlssSwapException and undo the backup (merged onto SentinelFiles.Deploy on Windows). Linux swaps already copy atomically via SentinelFiles and report failures; NR version folder sanitising already exists in DlssCatalog.Folder.",
+      "upstream_sha256": "51f492b2995c3d3d1c5661188951a1713f2b05ac254267ab6337e0640e3e18ae",
+      "local_sha256": "0f419c9eafb22ad09dc7bac66482fa20696216310afac4c0bb27ecaa815c81e8"
+    },
+    "RenoDXCommander/Services/DlssStreamlineService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs",
+        "RHI.Linux.Core/PeVersion.cs"
+      ],
+      "reason": "Linux adapts catalogue/download orchestration and case-safe paths; shared DlssFileDiscovery, DlssVersion, DllArchive and SentinelFiles supply portable detection/swap primitives. c1076d3 audit: Windows trusted-path cache and logging changes; Linux has no trusted-path cache.",
+      "upstream_sha256": "839d74501306bc4b672065613700f527b86d0839cb9b46c13a2d54ff780c60c3",
+      "local_sha256": "594e2bb03da34443c577465a985c23bdac6055c6a3839abc67b966a874e62850"
+    },
+    "RenoDXCommander/Services/DlssSwapException.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs"
+      ],
+      "reason": "Windows swap failure type; Linux surfaces IOException from DlssSwap with the original kept by atomic SentinelFiles copies.",
+      "upstream_sha256": "f7be9bca8e2efda2ca0a35af3a4e1dfccde2d9436b7d69ecb3f1c3fc1ac24847",
+      "local_sha256": "f7be9bca8e2efda2ca0a35af3a4e1dfccde2d9436b7d69ecb3f1c3fc1ac24847"
+    },
+    "RenoDXCommander/Services/DlssVersion.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "1b97aab16bbfdea89319190eef8ea905db865fcb3310f306c1564edcb4d22c94"
+    },
+    "RenoDXCommander/Services/Dlssg20_30Service.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: Startup redeploy fix; DLSSG 20/30 deferred.",
+      "upstream_sha256": "d6d2375f05e4c10c52a4f13775a1075c224656ce1d58738ef8c0f05ee2fd65d9",
+      "local_sha256": "d6d2375f05e4c10c52a4f13775a1075c224656ce1d58738ef8c0f05ee2fd65d9"
+    },
+    "RenoDXCommander/Services/DofFixService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: Dead-code removal; DOF Fix deferred.",
+      "upstream_sha256": "e9b2c95c1359f6b146e6e31539c34d80928bf77d39e89f7ec1ee40669c9c3cb2",
+      "local_sha256": "e9b2c95c1359f6b146e6e31539c34d80928bf77d39e89f7ec1ee40669c9c3cb2"
+    },
+    "RenoDXCommander/Services/DownloadPaths.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/LinuxPaths.cs"
+      ],
+      "reason": "Linux stores data and cache under XDG paths rather than Windows Downloads locations. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "2b779a2e665764e92eaa94b525dbdbf91a117d59bf94613834d3b70632ad5e6f",
+      "local_sha256": "2b779a2e665764e92eaa94b525dbdbf91a117d59bf94613834d3b70632ad5e6f"
+    },
+    "RenoDXCommander/Services/DownloadsMigrationService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Migration of historical Windows Downloads trees is not run on Linux. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "9e4c8ca20f6be36b5b22368aae4d4e2a78f951f5156b8243fdf23f8bde946684",
+      "local_sha256": "9e4c8ca20f6be36b5b22368aae4d4e2a78f951f5156b8243fdf23f8bde946684"
+    },
+    "RenoDXCommander/Services/DxvkService.Install.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: DXVK DX11 registration fixes; Proton owns DXVK.",
+      "upstream_sha256": "146ab4c8da2df0e4cfcf901f374d4caa816fd18af5ade4fc9f5f4a8a9ed813c5",
+      "local_sha256": "146ab4c8da2df0e4cfcf901f374d4caa816fd18af5ade4fc9f5f4a8a9ed813c5"
+    },
+    "RenoDXCommander/Services/DxvkService.Staging.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: ETag cache; Proton owns DXVK.",
+      "upstream_sha256": "80991c970537f2bc08e483b6a118a87b2988d7fc2e71f7a46ed7c1dfcdadfae2",
+      "local_sha256": "80991c970537f2bc08e483b6a118a87b2988d7fc2e71f7a46ed7c1dfcdadfae2"
+    },
+    "RenoDXCommander/Services/DxvkService.Tracking.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: SafeJsonFile locking; Proton owns DXVK.",
+      "upstream_sha256": "9ebfcd3ef483b7c307edd9d4c3896fbed115214cb99786082c3b8e410e26f7f8",
+      "local_sha256": "9ebfcd3ef483b7c307edd9d4c3896fbed115214cb99786082c3b8e410e26f7f8"
+    },
+    "RenoDXCommander/Services/DxvkService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "6e504ec147295538ea1386777de4df3c9b1de702f4a1b6e4bbcdfe211e4e2707",
+      "local_sha256": "6e504ec147295538ea1386777de4df3c9b1de702f4a1b6e4bbcdfe211e4e2707"
+    },
+    "RenoDXCommander/Services/EngineFolderStamp.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows engine-scan skip cache; Linux has no engine scan cache.",
+      "upstream_sha256": "1036fe01c4ac6009c6155b32c769ddbc4632dad229fc7a3a7fd5bd2412ccc3d5",
+      "local_sha256": "1036fe01c4ac6009c6155b32c769ddbc4632dad229fc7a3a7fd5bd2412ccc3d5"
+    },
+    "RenoDXCommander/Services/FeatureFlags.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Windows developer unlock and remote UI feature gates are not applied to the Linux feature set.",
+      "upstream_sha256": "27c6f1cb0a9d3d9ac0a29155fed83a944050948ed5896517eeb25379669fcd9f",
+      "local_sha256": "27c6f1cb0a9d3d9ac0a29155fed83a944050948ed5896517eeb25379669fcd9f"
+    },
+    "RenoDXCommander/Services/FileAssociationService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows shell/protocol/window-message/tray integration is not used by the Avalonia port.",
+      "upstream_sha256": "24756b8fc126264ef8420a994f601371edb450b251f8067cc8be5e3e27f764ee",
+      "local_sha256": "24756b8fc126264ef8420a994f601371edb450b251f8067cc8be5e3e27f764ee"
+    },
+    "RenoDXCommander/Services/FileHelper.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/LinuxPaths.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux applies case-safe resolution, traversal rejection, backups and transactions instead of Windows filesystem helpers. c1076d3 audit: Adds SafeCombine traversal guard and atomic writes; Linux already rejects traversal (LinuxPaths.ResolveCase, ShaderArchives) and writes JSON atomically.",
+      "upstream_sha256": "23e4343aafc80f8dbc3c9d17b95235c975e79e60ae70926185fa7e6bef4c6922",
+      "local_sha256": "23e4343aafc80f8dbc3c9d17b95235c975e79e60ae70926185fa7e6bef4c6922"
+    },
+    "RenoDXCommander/Services/ForegroundActivation.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Win32 foreground activation.",
+      "upstream_sha256": "7f40ab4d611a7dc2d012be19eddac47f92a04c2772c40838e54858d333ed84d8",
+      "local_sha256": "7f40ab4d611a7dc2d012be19eddac47f92a04c2772c40838e54858d333ed84d8"
+    },
+    "RenoDXCommander/Services/ForegroundActivationTarget.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Win32 foreground activation.",
+      "upstream_sha256": "f1d63fe10e1ac9de28b09c0aa06deebd2c46a49beeac4dac6fb4f2ec2666421e",
+      "local_sha256": "f1d63fe10e1ac9de28b09c0aa06deebd2c46a49beeac4dac6fb4f2ec2666421e"
+    },
+    "RenoDXCommander/Services/GameDetectionService.Epic.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Epic Games Launcher (new and legacy) discovery; Linux non-Steam automatic discovery remains deferred (manual games supported).",
+      "upstream_sha256": "766ccf87f82298213b589de2df87450cf8c187e12352aa518aa337ed1dce5de4",
+      "local_sha256": "766ccf87f82298213b589de2df87450cf8c187e12352aa518aa337ed1dce5de4"
+    },
+    "RenoDXCommander/Services/GameDetectionService.Platform.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows registry and launcher/Xbox installation discovery cannot discover Linux launchers; users add those games manually. c1076d3 audit: Windows store platform detection.",
+      "upstream_sha256": "db6f80fa9e9a55402b4eece11270399534c20d993c326cda7abded80d0b78917",
+      "local_sha256": "db6f80fa9e9a55402b4eece11270399534c20d993c326cda7abded80d0b78917"
+    },
+    "RenoDXCommander/Services/GameDetectionService.Steam.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux scans native/Flatpak/Snap Steam ACF libraries and manual games, then applies supported live manifest overrides; non-Steam automatic discovery remains deferred.",
+      "upstream_sha256": "cd5358909870a9e0b649ed2619cc9d92a5efe83d16fbcb2fd203290b8a92520e",
+      "local_sha256": "cd5358909870a9e0b649ed2619cc9d92a5efe83d16fbcb2fd203290b8a92520e"
+    },
+    "RenoDXCommander/Services/GameDetectionService.Xbox.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows registry and launcher/Xbox installation discovery cannot discover Linux launchers; users add those games manually.",
+      "upstream_sha256": "e6b273d3114e5a7ec44a101f7f690ad1085a22b3ce32b4dd00a54690a22def9d",
+      "local_sha256": "e6b273d3114e5a7ec44a101f7f690ad1085a22b3ce32b4dd00a54690a22def9d"
+    },
+    "RenoDXCommander/Services/GameDetectionService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux scans native/Flatpak/Snap Steam ACF libraries and manual games, then applies supported live manifest overrides; non-Steam automatic discovery remains deferred. c1076d3 audit: Epic detection for the new launcher and engine-scan skipping are Windows store discovery; Linux discovers Steam libraries and manual games.",
+      "upstream_sha256": "8aadd169dae0c76027756a9685b037c0207fd6368912db0979dd8f8b28e21512",
+      "local_sha256": "8aadd169dae0c76027756a9685b037c0207fd6368912db0979dd8f8b28e21512"
+    },
+    "RenoDXCommander/Services/GameInitializationService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux scans native/Flatpak/Snap Steam ACF libraries and manual games, then applies supported live manifest overrides; non-Steam automatic discovery remains deferred. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "2d6c91be1a3c6ed9013e613d8786360c112210aa46d0bc5ebc023e21f4eb7c39",
+      "local_sha256": "2d6c91be1a3c6ed9013e613d8786360c112210aa46d0bc5ebc023e21f4eb7c39"
+    },
+    "RenoDXCommander/Services/GameLibraryService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux stores library preferences and per-game selections in its own XDG settings schema. c1076d3 audit: Safe-save library writes; Linux library storage is separate.",
+      "upstream_sha256": "1ea3f1d87a82d7089aead6c366f9e1c2a707e022320a205500f2882400510082",
+      "local_sha256": "1ea3f1d87a82d7089aead6c366f9e1c2a707e022320a205500f2882400510082"
+    },
+    "RenoDXCommander/Services/GameNameService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux stores library preferences and per-game selections in its own XDG settings schema. c1076d3 audit: Settings-backed per-game state for Windows-only features (Auto HDR, dgVoodoo standalone, RTX Encore, nightly pin, ZZZ) and safe settings loads; Linux preferences are separate.",
+      "upstream_sha256": "9ee3df02cd0a5ff16e992e0e397b1a72b0e913ff97c98cbb96cf9cf069976479",
+      "local_sha256": "9ee3df02cd0a5ff16e992e0e397b1a72b0e913ff97c98cbb96cf9cf069976479"
+    },
+    "RenoDXCommander/Services/GitHubAuthService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "GitHub device-flow sign-in; Linux has no GitHub account UI.",
+      "upstream_sha256": "76918934ab26a81dc42110fd035e259004de2ce4d49e9c5e7f9c419a1eb34165",
+      "local_sha256": "76918934ab26a81dc42110fd035e259004de2ce4d49e9c5e7f9c419a1eb34165"
+    },
+    "RenoDXCommander/Services/GitHubETagCache.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: Merged upstream's persisted cache, 30 s API timeout, shared in-flight requests, 60 s freshness and API-only rate limiting; logging, token, authorization reporting and persistence stay injected. The Linux-injected token now goes to api.github.com only (upstream token-scoping fix). Linux runs without persistence.",
+      "upstream_sha256": "bebc745b59f0fc9d13a11e08c98ff03703be8a53496ff3d1c7caf3ace36c1b4f",
+      "local_sha256": "9d0d2f0fb9bef9cb84db4e4ab7cb5fd2333e63b7d8b418afb80abbf784376e92"
+    },
+    "RenoDXCommander/Services/GitHubTokenHandler.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Windows HTTP handler attaching the token to api.github.com only; the shared GitHubETagCache applies the same API-only rule for the Linux-injected token.",
+      "upstream_sha256": "99a593592eb6ca6f9320edb67b9017d0402af9ad89aa19c145730aa4650fbb4d",
+      "local_sha256": "99a593592eb6ca6f9320edb67b9017d0402af9ad89aa19c145730aa4650fbb4d"
+    },
+    "RenoDXCommander/Services/GraphicsApiDetector.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "dae13175da2c915f88fc2305874b74f6030a00458280aa54d8c514740ba869f0",
+      "local_sha256": "04ce1efb66528f5cb89f4322b79c3bf8ecb7c003dfc235d08f8fcefa534dab55"
+    },
+    "RenoDXCommander/Services/HdrDatabaseService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "RenoDX/HDR database integration, Unity upgrade recipes and database-specific status/comments are not ported; Linux currently uses the wiki catalogue.",
+      "upstream_sha256": "549e13e3ef0be94e21298a30d2dacab9ff332bdd0a89ff6a49a32c5401616bf9",
+      "local_sha256": "549e13e3ef0be94e21298a30d2dacab9ff332bdd0a89ff6a49a32c5401616bf9"
+    },
+    "RenoDXCommander/Services/HdrToggleService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows display/NVAPI control is outside the Linux app; the compositor and display settings remain user-controlled.",
+      "upstream_sha256": "4248a409aca4f00ef84135850acd4187c7da48725e48bf03bde4cbdb1c9499d7",
+      "local_sha256": "4248a409aca4f00ef84135850acd4187c7da48725e48bf03bde4cbdb1c9499d7"
+    },
+    "RenoDXCommander/Services/IAddonPackService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux downloads addon payloads and records transactional ownership; Windows deployment records and full addons.ini workflow are not shared. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "076aff79040bb9944877b1781138fd72cf7e4e014d0a1ae0c00e5ce62cde624c",
+      "local_sha256": "076aff79040bb9944877b1781138fd72cf7e4e014d0a1ae0c00e5ce62cde624c"
+    },
+    "RenoDXCommander/Services/IAutoHdrService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows Auto HDR interface.",
+      "upstream_sha256": "489201246a0b79dfa2c9303a61d4cad4e9f8bf1f65b8b47e9a8e7a36947ff352",
+      "local_sha256": "489201246a0b79dfa2c9303a61d4cad4e9f8bf1f65b8b47e9a8e7a36947ff352"
+    },
+    "RenoDXCommander/Services/IAuxFileService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux uses transaction snapshots, hashes and case-safe game paths; Windows auxiliary installer is not called.",
+      "upstream_sha256": "66a7d2c4a8e4829a232abf185e0338c53dc0335899ee74bfe908ed923ca729b0",
+      "local_sha256": "66a7d2c4a8e4829a232abf185e0338c53dc0335899ee74bfe908ed923ca729b0"
+    },
+    "RenoDXCommander/Services/IAuxInstallService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/InstallationStatus.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux uses transaction snapshots, hashes and case-safe game paths; Windows auxiliary installer is not called. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "20a42f6d7eef321a9966ca170fafbe9f605f0654fc3b5da892ebd55de4378c76",
+      "local_sha256": "20a42f6d7eef321a9966ca170fafbe9f605f0654fc3b5da892ebd55de4378c76"
+    },
+    "RenoDXCommander/Services/ICrashReporter.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/CrashReporter.cs",
+        "RHI.Core/CoreLog.cs"
+      ],
+      "reason": "Linux reports asynchronous errors through its own logger; portable shared routines use CoreLog with a host-installed sink.",
+      "upstream_sha256": "ca77a14075271bf84d85df75da5def9f162d8f53be1d7d9b00fc909b708e35dd",
+      "local_sha256": "ca77a14075271bf84d85df75da5def9f162d8f53be1d7d9b00fc909b708e35dd"
+    },
+    "RenoDXCommander/Services/IDldsrService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "DLDSR interface.",
+      "upstream_sha256": "843283a80b6f27967bc68423ccf96f441cb285b17f66f62eb5ae5d372413fc13",
+      "local_sha256": "843283a80b6f27967bc68423ccf96f441cb285b17f66f62eb5ae5d372413fc13"
+    },
+    "RenoDXCommander/Services/IDllOverrideService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Proton.cs"
+      ],
+      "reason": "Linux merges WINEDLLOVERRIDES into Proton launch options instead of editing Windows injection configuration. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "9191d7b866a33fd8365d125df9b792847357d9211a3bcbc03d43e4534822f2c5",
+      "local_sha256": "9191d7b866a33fd8365d125df9b792847357d9211a3bcbc03d43e4534822f2c5"
+    },
+    "RenoDXCommander/Services/IDlssStreamlineService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs",
+        "RHI.Linux.Core/PeVersion.cs"
+      ],
+      "reason": "Linux adapts catalogue/download orchestration and case-safe paths; shared DlssFileDiscovery, DlssVersion, DllArchive and SentinelFiles supply portable detection/swap primitives. c1076d3 audit: DetectFromExactPath/NR cache members; Linux equivalent ported in DlssScanner.",
+      "upstream_sha256": "a76ae3f2f45e9b4668606188163ccd383cebb4ceb80a4ee04678cb21d401ab92",
+      "local_sha256": "a76ae3f2f45e9b4668606188163ccd383cebb4ceb80a4ee04678cb21d401ab92"
+    },
+    "RenoDXCommander/Services/IDofFixService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port.",
+      "upstream_sha256": "e0b52b9a6aa0314d9a0723ca126a470923c4144020b187b4c86afa56a10d3d20",
+      "local_sha256": "e0b52b9a6aa0314d9a0723ca126a470923c4144020b187b4c86afa56a10d3d20"
+    },
+    "RenoDXCommander/Services/IDxvkService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: DXVK interface.",
+      "upstream_sha256": "baeaac91963d383e34abff239d33d37dc41ff264f4d118f40869583c1272c972",
+      "local_sha256": "baeaac91963d383e34abff239d33d37dc41ff264f4d118f40869583c1272c972"
+    },
+    "RenoDXCommander/Services/IGameDetectionService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux scans native/Flatpak/Snap Steam ACF libraries and manual games, then applies supported live manifest overrides; non-Steam automatic discovery remains deferred. c1076d3 audit: Epic launcher interface member; Windows store discovery.",
+      "upstream_sha256": "27f8f2ad0c20ef569badf5d52658f9f19fe7c32638a3b609471283950b7df981",
+      "local_sha256": "27f8f2ad0c20ef569badf5d52658f9f19fe7c32638a3b609471283950b7df981"
+    },
+    "RenoDXCommander/Services/IGameInitializationService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux scans native/Flatpak/Snap Steam ACF libraries and manual games, then applies supported live manifest overrides; non-Steam automatic discovery remains deferred.",
+      "upstream_sha256": "70a4b89e1542a1d668e8635c2a3e6b756f1377da5a27b492f6acd2f597532050",
+      "local_sha256": "70a4b89e1542a1d668e8635c2a3e6b756f1377da5a27b492f6acd2f597532050"
+    },
+    "RenoDXCommander/Services/IGameLibraryService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux stores library preferences and per-game selections in its own XDG settings schema. c1076d3 audit: Safe-save interface change.",
+      "upstream_sha256": "71c9efdc983858cbe22f910fa81a766954869820c7a237552d23ed4e6e6fb014",
+      "local_sha256": "71c9efdc983858cbe22f910fa81a766954869820c7a237552d23ed4e6e6fb014"
+    },
+    "RenoDXCommander/Services/IGameNameService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux stores library preferences and per-game selections in its own XDG settings schema. c1076d3 audit: Interface for the Windows per-game settings above.",
+      "upstream_sha256": "20ce2eab6c0d8d93eefe08299f4dd3491841195377a5253995bacacfd1f8a947",
+      "local_sha256": "20ce2eab6c0d8d93eefe08299f4dd3491841195377a5253995bacacfd1f8a947"
+    },
+    "RenoDXCommander/Services/ILumaService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma deployment and seen-mod tracking are outside the current Linux feature set.",
+      "upstream_sha256": "886602926e6da637a92994c05dd81330fe504fd36c9f268c4f4e513878a571c8",
+      "local_sha256": "886602926e6da637a92994c05dd81330fe504fd36c9f268c4f4e513878a571c8"
+    },
+    "RenoDXCommander/Services/IManifestService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Catalog.cs",
+        "RHI.Core/Sources.cs"
+      ],
+      "reason": "Linux fetches the upstream manifest with validated atomic cache and bundled offline fallback; only documented Linux override keys are applied.",
+      "upstream_sha256": "2a997c275184b62d9e9d843d28e2f06400b216fd97d90b149f5f603f5eafd408",
+      "local_sha256": "2a997c275184b62d9e9d843d28e2f06400b216fd97d90b149f5f603f5eafd408"
+    },
+    "RenoDXCommander/Services/IModInstallService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameSetup.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux installs RenoDX/ReShade into Proton games with transaction snapshots; Windows view models and deployment orchestration are not shared.",
+      "upstream_sha256": "c001e78bc8c1ef63f08284c93e632361673af83ad7491ddddd889958fca313ad",
+      "local_sha256": "c001e78bc8c1ef63f08284c93e632361673af83ad7491ddddd889958fca313ad"
+    },
+    "RenoDXCommander/Services/INexusModsService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Nexus account, browser SSO, download and update workflows are not ported.",
+      "upstream_sha256": "04191a94f27b1e0c72f8e426fb808f5fdf6e4893decfd486b1e44042d9b7b97a",
+      "local_sha256": "04191a94f27b1e0c72f8e426fb808f5fdf6e4893decfd486b1e44042d9b7b97a"
+    },
+    "RenoDXCommander/Services/INormalReShadeUpdateService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux obtains stable/nightly/local ReShade payloads and deploys them transactionally; shared Sources holds upstream URLs.",
+      "upstream_sha256": "ef5c26d1732391dcdfebf5a2b36cbfbe5c65d1a2854bc5ab55f8ac5c962400b0",
+      "local_sha256": "ef5c26d1732391dcdfebf5a2b36cbfbe5c65d1a2854bc5ab55f8ac5c962400b0"
+    },
+    "RenoDXCommander/Services/IOptiScalerGame.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "2e559c07b6a99c30e8e94090f320bacf348a38ceaf55ac79708a14012d26517f"
+    },
+    "RenoDXCommander/Services/IOptiScalerService.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. cde8f9d audit: optional legacy variant hint is not needed by Linux ownership-record updates; Windows upstream signature evolution must be reconciled on a future main merge. c1076d3 audit: Adds Windows nightly build pinning and F5 staging members; Linux does not implement this Windows service interface.",
+      "upstream_sha256": "23faa5684e8dfbd2d5156bd2d8eaa0f716c0470226410707e9c7de473f16b714",
+      "local_sha256": "52bedb30ec47650fc730d7ee7f4d063f95db577f7afdbe8b6b5405f2308096e9"
+    },
+    "RenoDXCommander/Services/IPcgwService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "PCGamingWiki API/database integration is not implemented in Linux. c1076d3 audit: Engine-hint skip; PCGW deferred.",
+      "upstream_sha256": "fe3fab8f6c2c44ba0d9defb88ed5a1384df907ce54237e74d964b845e0848eb9",
+      "local_sha256": "fe3fab8f6c2c44ba0d9defb88ed5a1384df907ce54237e74d964b845e0848eb9"
+    },
+    "RenoDXCommander/Services/IPeHeaderService.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "6f3d56d69865567c3e125b6546909a2c619ea0bc46e931a82928e81ad7d7cd7c",
+      "local_sha256": "6f3d56d69865567c3e125b6546909a2c619ea0bc46e931a82928e81ad7d7cd7c"
+    },
+    "RenoDXCommander/Services/IREFrameworkService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/REFramework.cs"
+      ],
+      "reason": "Both platforms use REFrameworkArchive selection/extraction and shared GitHub ETag cache; Linux retains game-local transaction/proxy integration. PD-Upscaler is not exposed.",
+      "upstream_sha256": "582cdd597eb505e1d3a63562a3022151545f6fc9a8494cad1a32411618c076db",
+      "local_sha256": "582cdd597eb505e1d3a63562a3022151545f6fc9a8494cad1a32411618c076db"
+    },
+    "RenoDXCommander/Services/IReShadeUpdateService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux obtains stable/nightly/local ReShade payloads and deploys them transactionally; shared Sources holds upstream URLs.",
+      "upstream_sha256": "ffa2d61bc4316253a308cf342dfc34e55fba36271b336001397916089cb2afd8",
+      "local_sha256": "ffa2d61bc4316253a308cf342dfc34e55fba36271b336001397916089cb2afd8"
+    },
+    "RenoDXCommander/Services/IRenoDXDbService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "RenoDX/HDR database integration, Unity upgrade recipes and database-specific status/comments are not ported; Linux currently uses the wiki catalogue. c1076d3 audit: Dead-code removal; RenoDXDb deferred.",
+      "upstream_sha256": "286b979e1a9b26b48987278535f0de4eda7e6e7387c071bf6cc3df984d5ff940",
+      "local_sha256": "286b979e1a9b26b48987278535f0de4eda7e6e7387c071bf6cc3df984d5ff940"
+    },
+    "RenoDXCommander/Services/ISevenZipExtractor.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/ArchiveTools.cs",
+        "RHI.Linux.Core/Downloads.cs",
+        "scripts/bundle-linux-dependencies.sh"
+      ],
+      "reason": "Linux resolves the packaged static 7zz before optional system extractors; archives remain validated by Linux installers.",
+      "upstream_sha256": "508ad1b9340d83e37dce70284e500956f41f13ad03c85a1656e57f0908e5e88e",
+      "local_sha256": "508ad1b9340d83e37dce70284e500956f41f13ad03c85a1656e57f0908e5e88e"
+    },
+    "RenoDXCommander/Services/IShaderPackService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Both platforms consume ShaderPackCatalog definitions; Linux ZIP/path validation and transaction ownership remain separate from the Windows installer. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "6cbfd0d61de78e8ed7366ad69639806a43b48171303940b03a3218ad2de90870",
+      "local_sha256": "6cbfd0d61de78e8ed7366ad69639806a43b48171303940b03a3218ad2de90870"
+    },
+    "RenoDXCommander/Services/ISteamAppIdResolver.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux reads Steam app IDs directly from ACF manifests; Windows store-search fallback for arbitrary games is not implemented.",
+      "upstream_sha256": "1be7dff0402d136605548de2b62278d5f9ffe6c06222b5d0373f48a479dca2ee",
+      "local_sha256": "1be7dff0402d136605548de2b62278d5f9ffe6c06222b5d0373f48a479dca2ee"
+    },
+    "RenoDXCommander/Services/IUltraPlusService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port.",
+      "upstream_sha256": "5a5a58f3cc2c0e03c9336f4de89bdb13a4aba16679861383367b7ddbad4d9155",
+      "local_sha256": "5a5a58f3cc2c0e03c9336f4de89bdb13a4aba16679861383367b7ddbad4d9155"
+    },
+    "RenoDXCommander/Services/IUltrawideFixService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port.",
+      "upstream_sha256": "77fc808e1b874f116cb526b8b53b2c3d5ec8bf714335b9d7c903fd992137feaa",
+      "local_sha256": "77fc808e1b874f116cb526b8b53b2c3d5ec8bf714335b9d7c903fd992137feaa"
+    },
+    "RenoDXCommander/Services/IUpdateLogService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Update history log interface; deferred.",
+      "upstream_sha256": "0b84ff942a12f3557faf882ad802a5acc9dd909ca457e67ddd469a5fb9ca91b9",
+      "local_sha256": "0b84ff942a12f3557faf882ad802a5acc9dd909ca457e67ddd469a5fb9ca91b9"
+    },
+    "RenoDXCommander/Services/IUpdateOrchestrationService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux Update All uses installed ownership records and saved channels. Database-driven Unity upgrades, Nexus/Luma and Windows-specific update paths remain deferred.",
+      "upstream_sha256": "02cbd891cb25d0e1231162dfbb397e43421ea7a7bc069b82769720ff0d60b7b9",
+      "local_sha256": "02cbd891cb25d0e1231162dfbb397e43421ea7a7bc069b82769720ff0d60b7b9"
+    },
+    "RenoDXCommander/Services/IUpdateService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Windows application update orchestration is replaced by manual portable-package replacement on Linux. c1076d3 audit: Windows app update; deferred.",
+      "upstream_sha256": "2ac5920f0d09cf43edcb7b402ebd475627477ad9eee4c6958363e2fe10bf44cf",
+      "local_sha256": "2ac5920f0d09cf43edcb7b402ebd475627477ad9eee4c6958363e2fe10bf44cf"
+    },
+    "RenoDXCommander/Services/IWikiService.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "d3f8255f2bc795ab13ff4e39db91231b161b6a29d3945cf2faa56962919b1b26",
+      "local_sha256": "d3f8255f2bc795ab13ff4e39db91231b161b6a29d3945cf2faa56962919b1b26"
+    },
+    "RenoDXCommander/Services/LumaService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma deployment and seen-mod tracking are outside the current Linux feature set. c1076d3 audit: Nexus-only Luma checks, TAA rename fix; Luma deferred.",
+      "upstream_sha256": "52f51b6a1e8821fe4b2b96633ccff63d5cb2deb5737802ca9b1b77d372c3f501",
+      "local_sha256": "52f51b6a1e8821fe4b2b96633ccff63d5cb2deb5737802ca9b1b77d372c3f501"
+    },
+    "RenoDXCommander/Services/ManifestService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Catalog.cs",
+        "RHI.Core/Sources.cs"
+      ],
+      "reason": "Linux fetches the upstream manifest with validated atomic cache and bundled offline fallback; only documented Linux override keys are applied. c1076d3 audit: Case-insensitive dlssPathOverrides/streamlinePathOverrides; Linux lookup is case-insensitive too.",
+      "upstream_sha256": "3ebb1b8af90f9959f62bdf22aa29e407eb557c4393eb6b37d18629d11369e75b",
+      "local_sha256": "92003c0e216cdf0fb1d8d75e6e378d8f77cad35c595576d58207c7dac49ffb17"
+    },
+    "RenoDXCommander/Services/ModInstallService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameSetup.cs",
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Linux installs RenoDX/ReShade into Proton games with transaction snapshots; Windows view models and deployment orchestration are not shared. c1076d3 audit: RenoDX snapshot ETag checks, update-log previous version and response disposal; Linux install semantics unchanged (ETag check is a bandwidth optimisation).",
+      "upstream_sha256": "df2e9a791fcea1f4b57d71f7329ed21bef5d10d93bcbdb76deed3c5ccb837a4a",
+      "local_sha256": "df2e9a791fcea1f4b57d71f7329ed21bef5d10d93bcbdb76deed3c5ccb837a4a"
+    },
+    "RenoDXCommander/Services/MotdService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Message-of-the-day fetching is not part of the Linux UI. c1076d3 audit: MOTD; deferred.",
+      "upstream_sha256": "4f6f7aff85a6a189010db572c94856d27c14946fded607a0f183fc9249304239",
+      "local_sha256": "4f6f7aff85a6a189010db572c94856d27c14946fded607a0f183fc9249304239"
+    },
+    "RenoDXCommander/Services/NexusDownloadService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Nexus account, browser SSO, download and update workflows are not ported. c1076d3 audit: Nexus requirements/logging; deferred.",
+      "upstream_sha256": "14a5fb78456d327d28c2f1c036f91138741049757df07a1aae64d2abf1e17849",
+      "local_sha256": "14a5fb78456d327d28c2f1c036f91138741049757df07a1aae64d2abf1e17849"
+    },
+    "RenoDXCommander/Services/NexusModsService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Nexus account, browser SSO, download and update workflows are not ported. c1076d3 audit: Dead-code removal; deferred.",
+      "upstream_sha256": "c91629009bd1646cfcc8ae491bbe17ba2a7bed80192aeea46b235068b77db492",
+      "local_sha256": "c91629009bd1646cfcc8ae491bbe17ba2a7bed80192aeea46b235068b77db492"
+    },
+    "RenoDXCommander/Services/NexusSsoService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Nexus account, browser SSO, download and update workflows are not ported.",
+      "upstream_sha256": "079e93bda46984c2cfca5421f414bde572787bd507ceca8a6da7d5e5dddb2f72",
+      "local_sha256": "079e93bda46984c2cfca5421f414bde572787bd507ceca8a6da7d5e5dddb2f72"
+    },
+    "RenoDXCommander/Services/NexusUpdateService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Nexus account, browser SSO, download and update workflows are not ported.",
+      "upstream_sha256": "e58e8563ab83cdc4ae19d5672339972befa036ae70521a539dd40d3ff00af377",
+      "local_sha256": "e58e8563ab83cdc4ae19d5672339972befa036ae70521a539dd40d3ff00af377"
+    },
+    "RenoDXCommander/Services/NormalReShadeUpdateService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux obtains stable/nightly/local ReShade payloads and deploys them transactionally; shared Sources holds upstream URLs. c1076d3 audit: Response disposal and update log.",
+      "upstream_sha256": "9cf1e2dca6db6d8a0786e7e36e813657ee962913189579a12db686275a903cde",
+      "local_sha256": "9cf1e2dca6db6d8a0786e7e36e813657ee962913189579a12db686275a903cde"
+    },
+    "RenoDXCommander/Services/NvColorService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows display/NVAPI control is outside the Linux app; the compositor and display settings remain user-controlled. c1076d3 audit: NVAPI output colour settings.",
+      "upstream_sha256": "e3c16d9d64c9db505e3e9b4bc380a0018e8a70127498387621f1e3d4c53f3404",
+      "local_sha256": "e3c16d9d64c9db505e3e9b4bc380a0018e8a70127498387621f1e3d4c53f3404"
+    },
+    "RenoDXCommander/Services/NxmProtocolHandler.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows shell/protocol/window-message/tray integration is not used by the Avalonia port.",
+      "upstream_sha256": "0b049af1a00d80586a4388370692ff7deced1a6bc851aba6d87d7c6db6ca7a28",
+      "local_sha256": "0b049af1a00d80586a4388370692ff7deced1a6bc851aba6d87d7c6db6ca7a28"
+    },
+    "RenoDXCommander/Services/OptiScalerPolicy.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: Adds upstream's F5 template suffix; Linux never selects F5.",
+      "upstream_sha256": null,
+      "local_sha256": "d35643c7de55b47b945ae0c8ef040a1d0c3dd2f984fd227cfbd82ae80b54764a"
+    },
+    "RenoDXCommander/Services/OptiScalerService.Coexist.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.Coexist.cs"
+      ],
+      "reason": "Linux mirrors this upstream partial responsibility while retaining transactional ownership and Proton launch handling; review upstream changes explicitly.",
+      "upstream_sha256": "cbaf496903bd3c85cd1dba42b7e530b6663ea00b18b365bb5e360f4c337119d8",
+      "local_sha256": "e601ddc6b9349b7d4d4680802d0da7affe1f099c518a31b3b5e65251d64d95de"
+    },
+    "RenoDXCommander/Services/OptiScalerService.Install.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.Install.cs"
+      ],
+      "reason": "Linux mirrors this upstream partial responsibility while retaining transactional ownership and Proton launch handling; review upstream changes explicitly. cde8f9d audit: Linux UpdateAll only updates when the owned record variant matches saved preferences; Windows-only installations require explicit adoption/reinstall and are not auto-updated with a default variant. c1076d3 audit: Ported: Windows-import removal keeps game-owned plugins/ contents (CET/RED4ext) and removes only OptiPatcher; F5 records remove their NR runtime like DLSS NR. Regression tests added. F5 install and nightly pinning remain deferred.",
+      "upstream_sha256": "18ccd5a471f4001e8cf110cfe9974bca58d8d59c44d687c35466ddfac2fbe067",
+      "local_sha256": "9cc261305afcdb60ca9408d9db30da6b261c226fee3fd749a957aa7d14b450bf"
+    },
+    "RenoDXCommander/Services/OptiScalerService.Staging.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.Staging.cs"
+      ],
+      "reason": "Linux mirrors this upstream partial responsibility while retaining transactional ownership and Proton launch handling; review upstream changes explicitly. c1076d3 audit: Nightly build pinning, dated staging layout and F5 asset selection; deferred features. Stable/Nightly/DLSS NR asset selection unchanged.",
+      "upstream_sha256": "f351e87fe41901f8c6a900977e8c317f9a7e60a5b099a60ec853c30b26b1c38f",
+      "local_sha256": "f351e87fe41901f8c6a900977e8c317f9a7e60a5b099a60ec853c30b26b1c38f"
+    },
+    "RenoDXCommander/Services/OptiScalerService.Streamline.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.Streamline.cs"
+      ],
+      "reason": "Linux mirrors this upstream partial responsibility while retaining transactional ownership and Proton launch handling; review upstream changes explicitly. c1076d3 audit: Ported: the newest nvngx_dlssg.dll is deployed beside OptiScaler's Streamline (fetched before deployment, optional on failure). Linux DLSS detection now skips the OptiScaler/ folder so these copies are not shown as game DLSS.",
+      "upstream_sha256": "7ea14478e825ef7f56878d166266d93f11e277408c9d65fcba1f8bfadcb192f7",
+      "local_sha256": "7ea14478e825ef7f56878d166266d93f11e277408c9d65fcba1f8bfadcb192f7"
+    },
+    "RenoDXCommander/Services/OptiScalerService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/OptiScaler.cs"
+      ],
+      "reason": "Linux retains its Proton-specific installer; shared IOptiScalerGame/IOptiScalerService remove Windows UI types and shared OptiScalerPolicy supplies filename/template rules. c1076d3 audit: Adds F5 and nightly-pinning staging state and the OptiScaler false-positive guard for Windows binary detection; Linux never binary-scans for untracked OptiScaler.",
+      "upstream_sha256": "6f65e62ce3ddca66ec200ca956372848536ce7259f141ebfe2468cc68eb169a4",
+      "local_sha256": "c1d9c8e6f60b5a76040c13fcbdabf01ea1cb144c0696c38bb5afb2220d936a70"
+    },
+    "RenoDXCommander/Services/OptiScalerWikiService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "OptiScaler wiki-driven extras and saved preset slots are not implemented in Linux.",
+      "upstream_sha256": "e806d86538d9e07a72d2356e08e865911268db31b2eb82d4e39ffb4a368dbc3d",
+      "local_sha256": "e806d86538d9e07a72d2356e08e865911268db31b2eb82d4e39ffb4a368dbc3d"
+    },
+    "RenoDXCommander/Services/OsPresetService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "OptiScaler wiki-driven extras and saved preset slots are not implemented in Linux.",
+      "upstream_sha256": "7bed8ee94c050b863b0402382a10f9ce26691dbb57914d836fe01493de7c9203",
+      "local_sha256": "7bed8ee94c050b863b0402382a10f9ce26691dbb57914d836fe01493de7c9203"
+    },
+    "RenoDXCommander/Services/PcgwService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "PCGamingWiki API/database integration is not implemented in Linux. c1076d3 audit: Engine-hint skip and dead code; PCGW deferred.",
+      "upstream_sha256": "55a35bba5031c5fa2ed02f63366d9725a10620c74546d1ffac48a11a1e27b444",
+      "local_sha256": "55a35bba5031c5fa2ed02f63366d9725a10620c74546d1ffac48a11a1e27b444"
+    },
+    "RenoDXCommander/Services/PeHeaderService.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": "d5d69e22c7f4ef567d3448bdb4af6aaaf7e72de4dcc1fe2f45da37d308a859dd",
+      "local_sha256": "42c5e42f3eee5dbd6ed4e831163f02dcfb7dc58a399e4d8b6c75deb7739e517e"
+    },
+    "RenoDXCommander/Services/PresetValidator.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Shader preset import/export/profiles and automatic dependency resolution are not exposed; Linux installs explicitly selected whole shader packs.",
+      "upstream_sha256": "1ca6db14eb6113f4ef9c8f18b8e280460dfc6bbf4732a9b1c32f437e7d44f685",
+      "local_sha256": "1ca6db14eb6113f4ef9c8f18b8e280460dfc6bbf4732a9b1c32f437e7d44f685"
+    },
+    "RenoDXCommander/Services/REFrameworkArchive.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "836f5161e21a3d5434145664d6084289e3fbf38aebdbc2a1df7aef3bed2e7076"
+    },
+    "RenoDXCommander/Services/REFrameworkService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/REFramework.cs"
+      ],
+      "reason": "Both platforms use REFrameworkArchive selection/extraction and shared GitHub ETag cache; Linux retains game-local transaction/proxy integration. PD-Upscaler is not exposed. c1076d3 audit: Record writes take the SafeJsonFile lock; Linux REFramework records are per-game and transactional.",
+      "upstream_sha256": "66311b1aeb0e775f52edfb09d0734df56db445de2c860f6c5326b5615501003c",
+      "local_sha256": "ead0e33d7a6ddbaf902b3f6fe0c2a4efd597fae5ea1e5f74895fe42e471cff3e"
+    },
+    "RenoDXCommander/Services/ReShadeNightlyService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux obtains stable/nightly/local ReShade payloads and deploys them transactionally; shared Sources holds upstream URLs. c1076d3 audit: Size check uses a ranged GET instead of HEAD; Linux does not stage ReShade nightly.",
+      "upstream_sha256": "22e0fcaee7e040884e243b750a3712c42155fa4fee83e9890d745ed65a8a3586",
+      "local_sha256": "67c96ebe8ac192aaa8e4b96928fdbb393afcff7ce505accd8ee03402524f1f5c"
+    },
+    "RenoDXCommander/Services/ReShadeUpdateService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux obtains stable/nightly/local ReShade payloads and deploys them transactionally; shared Sources holds upstream URLs. c1076d3 audit: Response disposal and update log.",
+      "upstream_sha256": "dfa88fa02351b011bbf9088e9bfdd1a9dde0bde6cf083449d6cc448020d47d59",
+      "local_sha256": "dfa88fa02351b011bbf9088e9bfdd1a9dde0bde6cf083449d6cc448020d47d59"
+    },
+    "RenoDXCommander/Services/RenoDXDbService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "RenoDX/HDR database integration, Unity upgrade recipes and database-specific status/comments are not ported; Linux currently uses the wiki catalogue. c1076d3 audit: Dead-code removal; deferred.",
+      "upstream_sha256": "bb84b594849e24c92afa0201614ffe28e6f1225df7ffcd8fd2d2bf97454ac2ab",
+      "local_sha256": "bb84b594849e24c92afa0201614ffe28e6f1225df7ffcd8fd2d2bf97454ac2ab"
+    },
+    "RenoDXCommander/Services/Renodx5AddonService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/NeuralRendering.Staging.cs",
+        "RHI.Linux.Core/NeuralRendering.Install.cs"
+      ],
+      "reason": "Linux implements addon release lists and installation for all four NR methods; uses natural numeric prerelease sorting. Windows-installed NR can be removed/reinstalled but is not automatically updated until adopted into Linux ownership records. cde8f9d audit: Linux already naturally sorts rc10 above rc5 and stable above RC. Windows-manifest NR auto-redeploy remains deferred: Linux auto-updates only Linux-owned NrRecord installations. c1076d3 audit: Ported recognition of Windows' zzz_renodx-dlss.addon64 (detection, legacy removal, no duplicate on Linux reinstall) with a regression test; the ZZZ Load Order toggle itself is deferred. ETag cache use is Windows-only.",
+      "upstream_sha256": "8939aedada54672d7dcc01f2b0a6fc9054953c5b4f8f73203c2685f1a74d55f7",
+      "local_sha256": "4c1d9e1affe0d5fd43760059d32251551c14d9d360329bb94f939d31e97f3006"
+    },
+    "RenoDXCommander/Services/ResolutionToggleService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows display/NVAPI control is outside the Linux app; the compositor and display settings remain user-controlled. c1076d3 audit: Windows display API.",
+      "upstream_sha256": "5f994b445f19c99122f7277455e5a6714682212ca0f6c27c98567f6963851ce5",
+      "local_sha256": "5f994b445f19c99122f7277455e5a6714682212ca0f6c27c98567f6963851ce5"
+    },
+    "RenoDXCommander/Services/Rtx40MfgService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: MFGUnlocker.dll rename and content-based redeploy; RTX 40 MFG unlocker deferred.",
+      "upstream_sha256": "6fdb2bb2d7d4045d71dfbd37abd7caf1cc3eca1e003a5132d0b494ac435fba6b",
+      "local_sha256": "6fdb2bb2d7d4045d71dfbd37abd7caf1cc3eca1e003a5132d0b494ac435fba6b"
+    },
+    "RenoDXCommander/Services/RtxEncoreService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "RTX Encore integration; optional Windows addon workflow deferred.",
+      "upstream_sha256": "576523a0e0882dbfad3a7001caf9950326023e433359265fa361a1d61bf6cf20",
+      "local_sha256": "576523a0e0882dbfad3a7001caf9950326023e433359265fa361a1d61bf6cf20"
+    },
+    "RenoDXCommander/Services/SafeJsonFile.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/LinuxPaths.cs"
+      ],
+      "reason": "Windows crash-safe JSON with .bak recovery; Linux writes JSON atomically via LinuxPaths. Also supplies Windows persistence for the shared GitHubETagCache.",
+      "upstream_sha256": "b558017bdf29391b0d0e336a833af51db289b79940cf7690a9ef8985f261d331",
+      "local_sha256": "b558017bdf29391b0d0e336a833af51db289b79940cf7690a9ef8985f261d331"
+    },
+    "RenoDXCommander/Services/SeenLumaModsService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Luma deployment and seen-mod tracking are outside the current Linux feature set. c1076d3 audit: Luma; deferred.",
+      "upstream_sha256": "fb48691dc4a6459e0b183991e2fc6d1e4ffce1ab2fd9e3640afc7a971203b7c7",
+      "local_sha256": "fb48691dc4a6459e0b183991e2fc6d1e4ffce1ab2fd9e3640afc7a971203b7c7"
+    },
+    "RenoDXCommander/Services/SeenUltraPlusModsService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "UltraPlus deployment/seen tracking is not part of the Linux feature set.",
+      "upstream_sha256": "94878fc3245113ef6f8d9c9ab396aa49bb35aff675bab56844bafaa504676415",
+      "local_sha256": "94878fc3245113ef6f8d9c9ab396aa49bb35aff675bab56844bafaa504676415"
+    },
+    "RenoDXCommander/Services/SeenWikiModsService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Catalog.cs",
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Linux persists catalogue and per-game choices; Windows new-mod badges/seen tracking are not reproduced.",
+      "upstream_sha256": "f544f209dc7f79a3b2dec283c260e44fc3fe87f212913d341423f578723260cc",
+      "local_sha256": "f544f209dc7f79a3b2dec283c260e44fc3fe87f212913d341423f578723260cc"
+    },
+    "RenoDXCommander/Services/SentinelFiles.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly.",
+      "upstream_sha256": null,
+      "local_sha256": "e54c21622ecb82f245afd8b80ecca119d0a73bbf464fcea356706fa37ffaa4da"
+    },
+    "RenoDXCommander/Services/SettingsFile.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Windows settings.json snapshot/update; Linux preferences are separate XDG JSON.",
+      "upstream_sha256": "bb595cfabd9e0d2530d86a81bedabfb0a6d9f371d075a2b69e3f22d93c968edf",
+      "local_sha256": "bb595cfabd9e0d2530d86a81bedabfb0a6d9f371d075a2b69e3f22d93c968edf"
+    },
+    "RenoDXCommander/Services/SevenZipExtractor.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/ArchiveTools.cs",
+        "RHI.Linux.Core/Downloads.cs",
+        "scripts/bundle-linux-dependencies.sh"
+      ],
+      "reason": "Linux resolves the packaged static 7zz before optional system extractors; archives remain validated by Linux installers. c1076d3 audit: Dead-code removal; Linux bundles its own pinned 7-Zip.",
+      "upstream_sha256": "342040ccc40a85700bfda7903baf67a7d194540d1091117ca8a53025ac9b399f",
+      "local_sha256": "342040ccc40a85700bfda7903baf67a7d194540d1091117ca8a53025ac9b399f"
+    },
+    "RenoDXCommander/Services/ShaderPackCatalog.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: ResolveRelease returns the release tag as Version (upstream's shader version token change) and keeps the asset Name that Linux uses for archive detection.",
+      "upstream_sha256": null,
+      "local_sha256": "70197d8f706c4ab380ed3b3ce586a6587ce03bf3aea9be443e3b83415c6ad29e"
+    },
+    "RenoDXCommander/Services/ShaderPackService.Deploy.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/ShaderArchives.cs"
+      ],
+      "reason": "Both platforms consume ShaderPackCatalog definitions and its release asset/zipball selector. Linux reads bounded ZIP/7z/direct-shader payloads and retains transactional ownership; its UI exposes explicit whole-pack selection. c1076d3 audit: Settings snapshot reads and mirror-based sync; Linux whole-pack installation is transactional.",
+      "upstream_sha256": "5bb6032f55941155a8b24d2e676f16ec64ce4c4387f8c8c0631e9dcabaf96205",
+      "local_sha256": "5bb6032f55941155a8b24d2e676f16ec64ce4c4387f8c8c0631e9dcabaf96205"
+    },
+    "RenoDXCommander/Services/ShaderPackService.Download.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/ShaderArchives.cs"
+      ],
+      "reason": "Both platforms consume ShaderPackCatalog definitions and its release asset/zipball selector. Linux reads bounded ZIP/7z/direct-shader payloads and retains transactional ownership; its UI exposes explicit whole-pack selection. c1076d3 audit: Path traversal guard (Linux ShaderArchives already rejects traversal) and tag version token (shared ResolveRelease).",
+      "upstream_sha256": "5466353ce7180c889d077663cf2194843d429c797c4842ca5d2ddddc00dc5e78",
+      "local_sha256": "e40929e6abf9d431ec647f48ace3485267b805aaa97f032d1ef398b211b767d4"
+    },
+    "RenoDXCommander/Services/ShaderPackService.IncludeScan.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "The Linux whole-pack installer has no per-file include dependency scanner or automatic custom-file selection. c1076d3 audit: Per-file include scan; Linux uses whole-pack selection.",
+      "upstream_sha256": "52d4828edc3ddc9d0d2efa80d09048ca2afb8fc91e77204db23ece9a8277c32a",
+      "local_sha256": "52d4828edc3ddc9d0d2efa80d09048ca2afb8fc91e77204db23ece9a8277c32a"
+    },
+    "RenoDXCommander/Services/ShaderPackService.Mirror.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Installation.cs"
+      ],
+      "reason": "Windows mirror-based shader sync; Linux installs selected whole packs transactionally.",
+      "upstream_sha256": "55466b14a905b44bb790fc13270a81b836040b1b845418a90579f810026b848d",
+      "local_sha256": "55466b14a905b44bb790fc13270a81b836040b1b845418a90579f810026b848d"
+    },
+    "RenoDXCommander/Services/ShaderPackService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/Downloads.cs",
+        "RHI.Linux.Core/Installation.cs",
+        "RHI.Linux.Core/ShaderArchives.cs"
+      ],
+      "reason": "Both platforms consume ShaderPackCatalog definitions and its release asset/zipball selector. Linux reads bounded ZIP/7z/direct-shader payloads and retains transactional ownership; its UI exposes explicit whole-pack selection.",
+      "upstream_sha256": "c6ecbaea762e1a677865c506d40ad1965fa8af457b74cb502d077fe352451bd8",
+      "local_sha256": "6b7d2f31f06eeda6a1444bb7eaecb7ed27d875d3fa86178aa5318144f7d722e0"
+    },
+    "RenoDXCommander/Services/ShaderProfileService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Shader preset import/export/profiles and automatic dependency resolution are not exposed; Linux installs explicitly selected whole shader packs. c1076d3 audit: Shader profiles; deferred.",
+      "upstream_sha256": "599550681f8c6e8e08ec4b592714fa7f4c3718ff977905fd70c86492965b4e31",
+      "local_sha256": "599550681f8c6e8e08ec4b592714fa7f4c3718ff977905fd70c86492965b4e31"
+    },
+    "RenoDXCommander/Services/ShaderResolver.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Shader preset import/export/profiles and automatic dependency resolution are not exposed; Linux installs explicitly selected whole shader packs.",
+      "upstream_sha256": "334d4759100009e2a1b49aa285d22bd25dd75235be237538d2d414b83d48279f",
+      "local_sha256": "334d4759100009e2a1b49aa285d22bd25dd75235be237538d2d414b83d48279f"
+    },
+    "RenoDXCommander/Services/ShortcutService.cs": {
+      "status": "adapted",
+      "linux": [
+        "scripts/install-linux-desktop.sh"
+      ],
+      "reason": "Windows desktop/Steam shortcuts; Linux provides its own desktop entries (linux_port desktop shortcut feature).",
+      "upstream_sha256": "349a4e04a5eddb9ef9902674de1f762c10e0710ccf3c76a124f51903822f585b",
+      "local_sha256": "349a4e04a5eddb9ef9902674de1f762c10e0710ccf3c76a124f51903822f585b"
+    },
+    "RenoDXCommander/Services/SingleInstanceService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows shell/protocol/window-message/tray integration is not used by the Avalonia port. c1076d3 audit: Win32 single instance/foreground activation.",
+      "upstream_sha256": "92acc2f889949a528dc6f962de4b2ff5c3422fdef70492bb0a535f681d314703",
+      "local_sha256": "92acc2f889949a528dc6f962de4b2ff5c3422fdef70492bb0a535f681d314703"
+    },
+    "RenoDXCommander/Services/SteamAppIdResolver.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux.Core/GameDiscovery.cs"
+      ],
+      "reason": "Linux reads Steam app IDs directly from ACF manifests; Windows store-search fallback for arbitrary games is not implemented. c1076d3 audit: Response disposal.",
+      "upstream_sha256": "e29202325037975bdd084073fd158606fd6c670f9f24a3610aba4df5c3c46cde",
+      "local_sha256": "e29202325037975bdd084073fd158606fd6c670f9f24a3610aba4df5c3c46cde"
+    },
+    "RenoDXCommander/Services/TechniquesParser.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Shader preset import/export/profiles and automatic dependency resolution are not exposed; Linux installs explicitly selected whole shader packs.",
+      "upstream_sha256": "325583bcbccd72a392422e3cca7b8ea9841ea340cc7c81a331b0608b01d2054c",
+      "local_sha256": "325583bcbccd72a392422e3cca7b8ea9841ea340cc7c81a331b0608b01d2054c"
+    },
+    "RenoDXCommander/Services/TrayIconService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows shell/protocol/window-message/tray integration is not used by the Avalonia port. c1076d3 audit: Win32 tray icon.",
+      "upstream_sha256": "40787263098f30cddc5c79fc3cd03b743c3dfcd4e00dfb314cb4784e6f82246a",
+      "local_sha256": "40787263098f30cddc5c79fc3cd03b743c3dfcd4e00dfb314cb4784e6f82246a"
+    },
+    "RenoDXCommander/Services/UiDispatch.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "WinUI dispatcher helper.",
+      "upstream_sha256": "93574905e8b5993a020d411ac9c4c6023c25f33273671ddd3b936830d860b6a1",
+      "local_sha256": "93574905e8b5993a020d411ac9c4c6023c25f33273671ddd3b936830d860b6a1"
+    },
+    "RenoDXCommander/Services/UltimateAsiLoaderService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: ASI Loader updates reach games; ASI Loader deferred.",
+      "upstream_sha256": "be2404934557f22c1283554ffcb189bd09a57d0fc61ab6ef507b6ac8d6116dab",
+      "local_sha256": "be2404934557f22c1283554ffcb189bd09a57d0fc61ab6ef507b6ac8d6116dab"
+    },
+    "RenoDXCommander/Services/UltraPlusService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: Ultra+; deferred.",
+      "upstream_sha256": "6479f9ccb753e41ae77baf9371e735fc3a32258fe7749a1f821e0cd97347b6df",
+      "local_sha256": "6479f9ccb753e41ae77baf9371e735fc3a32258fe7749a1f821e0cd97347b6df"
+    },
+    "RenoDXCommander/Services/UltrawideFixService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This optional Windows addon workflow is not exposed in Linux; archive/install semantics must be reviewed before a future port. c1076d3 audit: Ultrawide fix; deferred.",
+      "upstream_sha256": "c7e7a1b2f10cf0f994061dc96406ff9897687f5a75a9829917d2148326b5218c",
+      "local_sha256": "c7e7a1b2f10cf0f994061dc96406ff9897687f5a75a9829917d2148326b5218c"
+    },
+    "RenoDXCommander/Services/UpdateLogService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Update history log; deferred.",
+      "upstream_sha256": "20ad1d6ec4712f5f4c4228024f345e625c184ce146c5da60d357374c88daccbc",
+      "local_sha256": "20ad1d6ec4712f5f4c4228024f345e625c184ce146c5da60d357374c88daccbc"
+    },
+    "RenoDXCommander/Services/UpdateOrchestrationService.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/GameSetup.cs"
+      ],
+      "reason": "Linux Update All uses installed ownership records and saved channels. Database-driven Unity upgrades, Nexus/Luma and Windows-specific update paths remain deferred. cde8f9d audit: ungating Unity database upgrade recipes is deferred because Linux has no RenoDXDb upgrade pipeline. c1076d3 audit: Automatic-update gating for running/outdated games; Linux updates are user-initiated.",
+      "upstream_sha256": "e73ce9620184b6ce360a8f5ef79d3a5cfdb30fd52bc1a8064e264e68d4da51d5",
+      "local_sha256": "e73ce9620184b6ce360a8f5ef79d3a5cfdb30fd52bc1a8064e264e68d4da51d5"
+    },
+    "RenoDXCommander/Services/UpdateService.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Windows application update orchestration is replaced by manual portable-package replacement on Linux. c1076d3 audit: Windows app update; deferred.",
+      "upstream_sha256": "1c918012b48c4107d0697395df7170a782c660b4b48e650a39874f9f059dc703",
+      "local_sha256": "1c918012b48c4107d0697395df7170a782c660b4b48e650a39874f9f059dc703"
+    },
+    "RenoDXCommander/Services/VulkanFootprintService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages.",
+      "upstream_sha256": "0e996fa89f38e5114467f75e7110f7921bfb43e521674cc70ae55cf163c0a7f2",
+      "local_sha256": "0e996fa89f38e5114467f75e7110f7921bfb43e521674cc70ae55cf163c0a7f2"
+    },
+    "RenoDXCommander/Services/VulkanLayerService.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Proton owns DXVK/VKD3D and Vulkan loading; Linux does not install Windows global Vulkan layers or Windows DXVK packages. c1076d3 audit: Windows Vulkan layer registry.",
+      "upstream_sha256": "1259f3fbd7704e9df10238f839369763c280e7cbb7b76546a1c62046f05db0f1",
+      "local_sha256": "1259f3fbd7704e9df10238f839369763c280e7cbb7b76546a1c62046f05db0f1"
+    },
+    "RenoDXCommander/Services/WikiService.cs": {
+      "status": "shared",
+      "linux": [
+        "RHI.Core/SharedSources.props",
+        "RHI.Core/RHI.Core.csproj"
+      ],
+      "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. c1076d3 audit: Response disposal and dead-code removal only; inherited.",
+      "upstream_sha256": "7847286383cf73063f543c023c535e141b68ca1dffe3cfdcda8956205d43bf45",
+      "local_sha256": "d3531d3ed57c53a94f150c3deda14a5afce36c24974192af1017e37044c745c8"
+    },
+    "RenoDXCommander/SettingsHandler.Accounts.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from SettingsHandler: GitHub/Nexus account status; Linux has no account UI.",
+      "upstream_sha256": "6006cd6bdd0e84c5b483662bf749c549bb1724cdc54a2173de619306fc5267ee",
+      "local_sha256": "6006cd6bdd0e84c5b483662bf749c549bb1724cdc54a2173de619306fc5267ee"
+    },
+    "RenoDXCommander/SettingsHandler.Channels.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from SettingsHandler: elevated Windows copies for ReShade channels.",
+      "upstream_sha256": "2cbc4d04e0e266754e0778a6c8680ee7d2fc8db10a0f2d365f31588c69838773",
+      "local_sha256": "2cbc4d04e0e266754e0778a6c8680ee7d2fc8db10a0f2d365f31588c69838773"
+    },
+    "RenoDXCommander/SettingsHandler.DataTools.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from SettingsHandler: game data export tools; deferred.",
+      "upstream_sha256": "95feaa1f4b5c97fcc498034d87bd7d631f578af1531834c874b53fe5ec47c4db",
+      "local_sha256": "95feaa1f4b5c97fcc498034d87bd7d631f578af1531834c874b53fe5ec47c4db"
+    },
+    "RenoDXCommander/SettingsHandler.General.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from SettingsHandler: DLDSR, NVIDIA global settings, admin task, screenshots; Windows driver/OS features.",
+      "upstream_sha256": "fe32f87f9d837635c2872f520eb79e0ab0a87d4237aee3c3071f50c34cfa61a5",
+      "local_sha256": "fe32f87f9d837635c2872f520eb79e0ab0a87d4237aee3c3071f50c34cfa61a5"
+    },
+    "RenoDXCommander/SettingsHandler.Hotkeys.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.OptiScaler.cs"
+      ],
+      "reason": "Split from SettingsHandler: overlay hotkeys; Linux exposes OptiScaler hotkeys via shared OptiScalerPolicy.",
+      "upstream_sha256": "84ff6cdee7c61a79f38df59dc7278c49ebba0cea8bd5ae8171535efbce240894",
+      "local_sha256": "84ff6cdee7c61a79f38df59dc7278c49ebba0cea8bd5ae8171535efbce240894"
+    },
+    "RenoDXCommander/SettingsHandler.ReLimiterOptiScaler.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from SettingsHandler: ReLimiter target FPS and global update summary; ReLimiter not offered on Linux.",
+      "upstream_sha256": "8b86abf7b7d5f4d2183b4cc5d58ab3f41e9ff4bc93eda7f3decf8c0823c15ce6",
+      "local_sha256": "8b86abf7b7d5f4d2183b4cc5d58ab3f41e9ff4bc93eda7f3decf8c0823c15ce6"
+    },
+    "RenoDXCommander/SettingsHandler.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux/AdvancedWindow.cs",
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Linux settings are Avalonia dialogs backed by XDG preferences; Windows-only settings are not offered. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "e9c35fb034983970d40f2549d76dab5e3da18a18d3cc1f161c7b8ee2c013c191",
+      "local_sha256": "e9c35fb034983970d40f2549d76dab5e3da18a18d3cc1f161c7b8ee2c013c191"
+    },
+    "RenoDXCommander/SetupWindow.xaml": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "89e1f40041db86b251c2514fba22530f50dd988f7536479d2a8ac1b6ca6991ea",
+      "local_sha256": "89e1f40041db86b251c2514fba22530f50dd988f7536479d2a8ac1b6ca6991ea"
+    },
+    "RenoDXCommander/SetupWindow.xaml.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Program.cs",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Linux has an Avalonia startup/service composition and first-run UI, without WinUI/Windows shell APIs. c1076d3 audit: WinUI layout/freeze fixes, update-history recording and dead-code removal; Linux Avalonia UI is separate.",
+      "upstream_sha256": "ac1d55a4c3db41d53c4c0c7fea4634d8b2de14b7f62acbfbf8ca6011411341d1",
+      "local_sha256": "ac1d55a4c3db41d53c4c0c7fea4634d8b2de14b7f62acbfbf8ca6011411341d1"
+    },
+    "RenoDXCommander/ShaderPopupHelper.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux.Core/Downloads.cs"
+      ],
+      "reason": "Linux offers explicit whole-pack/local-addon installation; per-file shader selection, global inheritance and include auto-selection are not present. cde8f9d audit: exclusion of custom files from include dependency auto-selection does not apply to explicit whole-pack Linux installation.",
+      "upstream_sha256": "46d173b583472cc9817eea010e615f0941acc2ac64f6738555c8f30ae5f5a65f",
+      "local_sha256": "46d173b583472cc9817eea010e615f0941acc2ac64f6738555c8f30ae5f5a65f"
+    },
+    "RenoDXCommander/Themes/DarkTheme.xaml": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "25e277e52d85ef1ce8d38e92c26827aad2c93481465998fe2051315410614dc2",
+      "local_sha256": "25e277e52d85ef1ce8d38e92c26827aad2c93481465998fe2051315410614dc2"
+    },
+    "RenoDXCommander/UIFactory.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/Theme.axaml",
+        "RHI.Linux/MainWindow.cs"
+      ],
+      "reason": "Avalonia provides Linux controls, layout, theme and collection behavior; WinUI resources cannot be linked directly.",
+      "upstream_sha256": "b329e0484a716525eb94dcb62571b2bb4c2c22a2c17eb1713263903a85dd8c2b",
+      "local_sha256": "b329e0484a716525eb94dcb62571b2bb4c2c22a2c17eb1713263903a85dd8c2b"
+    },
+    "RenoDXCommander/UpdateInclusionHelper.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux/MainWindow.Dialogs.cs"
+      ],
+      "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused.",
+      "upstream_sha256": "5f0b4dff1ab3e14ae54becd4063d4015136861de74be4a3289b64a8ecc9ce367",
+      "local_sha256": "5f0b4dff1ab3e14ae54becd4063d4015136861de74be4a3289b64a8ecc9ce367"
+    },
+    "RenoDXCommander/UpdateLogWindow.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Update history window; deferred.",
+      "upstream_sha256": "7d4abc1482b287ee96bddc00bdb552f558c3ec2ccbf0a48a185d2fc262b81675",
+      "local_sha256": "7d4abc1482b287ee96bddc00bdb552f558c3ec2ccbf0a48a185d2fc262b81675"
+    },
+    "RenoDXCommander/ViewModels/FilterViewModel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred.",
+      "upstream_sha256": "30300b8eb29c8b1d944b891f0ee9519431978650bad3d1293f615a0ea07c5950",
+      "local_sha256": "30300b8eb29c8b1d944b891f0ee9519431978650bad3d1293f615a0ea07c5950"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.DisplayCommander.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer.",
+      "upstream_sha256": "32262411917274d6942e98054b6062decc7a12dc68d46c59ba9b8e2089b94a93",
+      "local_sha256": "32262411917274d6942e98054b6062decc7a12dc68d46c59ba9b8e2089b94a93"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.DlssStreamline.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Overrides.Dlss.cs",
+        "RHI.Linux/MainWindow.Overrides.DriverSettings.cs",
+        "RHI.Linux.Core/DlssProfile.cs"
+      ],
+      "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced.",
+      "upstream_sha256": "96e5a0557b4a8fb3a5f5e29d8ea81b51c999a284abe65e59eb7358a9a49ca357",
+      "local_sha256": "96e5a0557b4a8fb3a5f5e29d8ea81b51c999a284abe65e59eb7358a9a49ca357"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.DofFix.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer.",
+      "upstream_sha256": "e656de4c0e49e91689542e679c7cf41afccaf1fe9807fe7623b0a9b2f432d494",
+      "local_sha256": "e656de4c0e49e91689542e679c7cf41afccaf1fe9807fe7623b0a9b2f432d494"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.Dxvk.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer. cde8f9d audit: Windows DX11 DXVK toggle eligibility does not apply; Proton selects/manages DXVK. c1076d3 audit: DXVK DX11 card state; DXVK is Proton-owned.",
+      "upstream_sha256": "a69baed1a79b5492a85a02ebe57851f82fa709301c304066c655922497d90a85",
+      "local_sha256": "a69baed1a79b5492a85a02ebe57851f82fa709301c304066c655922497d90a85"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.Luma.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows UI/model supports Luma or Nexus functionality that is not ported. c1076d3 audit: Luma; deferred.",
+      "upstream_sha256": "d176300e98e66adbef79226b5685a9360fa30c0b310072e62d0951db7c4fb98b",
+      "local_sha256": "d176300e98e66adbef79226b5685a9360fa30c0b310072e62d0951db7c4fb98b"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.NormalReShade.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred.",
+      "upstream_sha256": "7c567838d4444a5813a54f11c4852406abc4539914d1e43816719ae413f0d18e",
+      "local_sha256": "7c567838d4444a5813a54f11c4852406abc4539914d1e43816719ae413f0d18e"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.NvidiaProfile.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Overrides.Dlss.cs",
+        "RHI.Linux/MainWindow.Overrides.DriverSettings.cs",
+        "RHI.Linux.Core/DlssProfile.cs"
+      ],
+      "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "bb32413cbc6d6bed2aea63a135bff9b5ed1e74d261905015815bfecb53829bcb",
+      "local_sha256": "bb32413cbc6d6bed2aea63a135bff9b5ed1e74d261905015815bfecb53829bcb"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.OptiScaler.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.OptiScaler.cs"
+      ],
+      "reason": "Linux mirrors OptiScaler controls for supported settings; unsupported Windows extras/presets remain deferred.",
+      "upstream_sha256": "2ffe5c4d44829e3c8f14e8378df291187d9d18f53f2db97736ff8353ac02f857",
+      "local_sha256": "2ffe5c4d44829e3c8f14e8378df291187d9d18f53f2db97736ff8353ac02f857"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.REFramework.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred.",
+      "upstream_sha256": "b738d7b3044128d52b3ef80ee08608cbd46324de99de0583a0aac85af1a6d416",
+      "local_sha256": "b738d7b3044128d52b3ef80ee08608cbd46324de99de0583a0aac85af1a6d416"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.ReShade.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Dead-code removal.",
+      "upstream_sha256": "394b298a9b47b18a43cb7ac09218f8ab27035f86cfeb6eb7d44600fac4dd91f6",
+      "local_sha256": "394b298a9b47b18a43cb7ac09218f8ab27035f86cfeb6eb7d44600fac4dd91f6"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.RenoDX.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows card state.",
+      "upstream_sha256": "34e9eaa3942752e8eaa6cdcefa8d197905bfdfb5871bb626169debc7034f79d8",
+      "local_sha256": "34e9eaa3942752e8eaa6cdcefa8d197905bfdfb5871bb626169debc7034f79d8"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.UI.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows card bindings for new features.",
+      "upstream_sha256": "ea35cea51a2f115f7c8975e8d7491ba3003650877b18b590cf3823740497128a",
+      "local_sha256": "ea35cea51a2f115f7c8975e8d7491ba3003650877b18b590cf3823740497128a"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.UltraLimiter.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer.",
+      "upstream_sha256": "5603e5c57ee020779a491d52804ebb28e13d9ea18baa4ddd32ccaefd76f601ec",
+      "local_sha256": "5603e5c57ee020779a491d52804ebb28e13d9ea18baa4ddd32ccaefd76f601ec"
+    },
+    "RenoDXCommander/ViewModels/GameCardViewModel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows card state for new features.",
+      "upstream_sha256": "deef37037607a0c17f50c5877b985f027fc45fd05d290a858e5306a7c297c5f5",
+      "local_sha256": "562ba592dc3f61b89ed2a3e4f724e186c54e7cf358e1b43a0980548a863a2d0f"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.BackgroundScan.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows background scan/engine-stamp changes.",
+      "upstream_sha256": "d4efbbae743c4732525bbd55b629503337fbe5141d7df93c1af72df391c0effc",
+      "local_sha256": "d4efbbae743c4732525bbd55b629503337fbe5141d7df93c1af72df391c0effc"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.BuildCards.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: DLSS manifest path overrides ported to Linux DlssScanner; engine-scan skipping and Windows card state are not applicable.",
+      "upstream_sha256": "ec6a359ad0d618f1447b9d254f1512b1038542f0de4c51babbdc98a0bdbd5f0c",
+      "local_sha256": "ec6a359ad0d618f1447b9d254f1512b1038542f0de4c51babbdc98a0bdbd5f0c"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.CacheLoad.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows cache phase and engine-stamp reuse.",
+      "upstream_sha256": "15f683b370d2d4c6d2a7ce4797801cd4c3456f76bd88b81605d6d736325d5727",
+      "local_sha256": "15f683b370d2d4c6d2a7ce4797801cd4c3456f76bd88b81605d6d736325d5727"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Dxvk.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer. c1076d3 audit: DXVK DX11 install fixes; DXVK is Proton-owned.",
+      "upstream_sha256": "6262f627d0c5f67a71fb683ccba64f478ef10f68181e362d8226de71667686b8",
+      "local_sha256": "6262f627d0c5f67a71fb683ccba64f478ef10f68181e362d8226de71667686b8"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.GameMatching.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Minor Windows matching tweak.",
+      "upstream_sha256": "7204a51123e925e124f04073aa0a129389ea272febaaef2b2609eb89940a3482",
+      "local_sha256": "7204a51123e925e124f04073aa0a129389ea272febaaef2b2609eb89940a3482"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Init.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: explicit Linux refresh must bypass the addon release cache; see RefreshDlssCatalogs and its force argument. c1076d3 audit: Windows startup ordering and single addon check.",
+      "upstream_sha256": "20d04506bbd57290e36e9ca439fa476a93cdad50e9c9a1e64615ea612f83ce59",
+      "local_sha256": "20d04506bbd57290e36e9ca439fa476a93cdad50e9c9a1e64615ea612f83ce59"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Install.Components.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows component install wiring.",
+      "upstream_sha256": "cd15aeff8733c5c04986234c8b6526e589426c02e5d0eabc571159e3463c7a91",
+      "local_sha256": "cd15aeff8733c5c04986234c8b6526e589426c02e5d0eabc571159e3463c7a91"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Install.Luma.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows UI/model supports Luma or Nexus functionality that is not ported. c1076d3 audit: Luma; deferred.",
+      "upstream_sha256": "5d525deb328179440cdd88e6503c0d11b74ecd40eb571c1294af79d372c8b1ff",
+      "local_sha256": "5d525deb328179440cdd88e6503c0d11b74ecd40eb571c1294af79d372c8b1ff"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Install.Nexus.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "This Windows UI/model supports Luma or Nexus functionality that is not ported. c1076d3 audit: Nexus; deferred.",
+      "upstream_sha256": "1799ef7ddffb71f75858ff2dc828f5f8bb17070ffbb7ae758d188f5f23eaf7b2",
+      "local_sha256": "1799ef7ddffb71f75858ff2dc828f5f8bb17070ffbb7ae758d188f5f23eaf7b2"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Install.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: Unity database upgrade ungating is deferred with that unported feature. c1076d3 audit: Windows install wiring and update log.",
+      "upstream_sha256": "e9933d4529d701038ebc157e58c5fca78afcea85e44fa3b0549e20c2fa028ead",
+      "local_sha256": "e9933d4529d701038ebc157e58c5fca78afcea85e44fa3b0549e20c2fa028ead"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Settings.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux/AdvancedWindow.cs",
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Linux settings are Avalonia dialogs backed by XDG preferences; Windows-only settings are not offered. c1076d3 audit: Windows per-game settings for new features (ZZZ, Auto HDR, nightly pin).",
+      "upstream_sha256": "e2dc7fe1717ba56612d2f4452058a9c0339599a306d4886db19db3dcfd0c1daa",
+      "local_sha256": "e2dc7fe1717ba56612d2f4452058a9c0339599a306d4886db19db3dcfd0c1daa"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.All.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs"
+      ],
+      "reason": "Split from MainViewModel.Update: Update All (skip missing Custom DLLs, no re-copy when unchanged); Linux Update All uses its own ownership records.",
+      "upstream_sha256": "eda15768a8b4b28393c088edea9c761a2d0e4c423bfedc0100ed787c01c048f0",
+      "local_sha256": "eda15768a8b4b28393c088edea9c761a2d0e4c423bfedc0100ed787c01c048f0"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.Check.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Game.cs"
+      ],
+      "reason": "Split from MainViewModel.Update: update checks via the ETag cache and Luma Nexus checks; Linux checks supported components only.",
+      "upstream_sha256": "630a3af48f1e17de99a1954809e7e4b5fc1fb3b6575b653d60811062def4c540",
+      "local_sha256": "630a3af48f1e17de99a1954809e7e4b5fc1fb3b6575b653d60811062def4c540"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.Heartbeat.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from MainViewModel.Update: freeze heartbeat timer.",
+      "upstream_sha256": "c407d25ded5d78b3a17957fb068340588761fa5094f3e51027adf5309384417f",
+      "local_sha256": "c407d25ded5d78b3a17957fb068340588761fa5094f3e51027adf5309384417f"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.NativeStack.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Split from MainViewModel.Update: native UI-thread stack capture.",
+      "upstream_sha256": "0f1810c5e472ee359e55adbfabb7fc63e92c69ce315807da9866f1ef556edbdd",
+      "local_sha256": "0f1810c5e472ee359e55adbfabb7fc63e92c69ce315807da9866f1ef556edbdd"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.ReLimiterDc.cs": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Split from MainViewModel.Update: ReLimiter/Display Commander update checks; not offered on Linux.",
+      "upstream_sha256": "68b3fc424d82ba1ebb1e827d4df0d81469b6a78242db2f50401a4c9f4340ea8e",
+      "local_sha256": "68b3fc424d82ba1ebb1e827d4df0d81469b6a78242db2f50401a4c9f4340ea8e"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.Update.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: Linux update requires an owned record and a matching saved variant; Windows-manifest installations are explicitly reinstalled/adopted before automated updates. c1076d3 audit: Split into Update.All/Check/Heartbeat/NativeStack/ReLimiterDc partials; remaining changes are Windows update orchestration.",
+      "upstream_sha256": "316b2f555b96a59f3e8964d34db9266ec7cb41f4749542ea253039bfbf497a74",
+      "local_sha256": "316b2f555b96a59f3e8964d34db9266ec7cb41f4749542ea253039bfbf497a74"
+    },
+    "RenoDXCommander/ViewModels/MainViewModel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.cs",
+        "RHI.Linux/MainWindow.Game.cs",
+        "RHI.Linux.Core/Game.cs",
+        "RHI.Linux.Core/Catalog.cs"
+      ],
+      "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. c1076d3 audit: Windows view-model wiring for update log, Auto HDR and RTX Encore.",
+      "upstream_sha256": "9462d7f9b8d80b1af608a562698b7b937fc8a7091ae4397b0c72dc62fec8880f",
+      "local_sha256": "9462d7f9b8d80b1af608a562698b7b937fc8a7091ae4397b0c72dc62fec8880f"
+    },
+    "RenoDXCommander/ViewModels/SettingsViewModel.cs": {
+      "status": "adapted",
+      "linux": [
+        "RHI.Linux/MainWindow.Dialogs.cs",
+        "RHI.Linux/AdvancedWindow.cs",
+        "RHI.Linux.Core/Game.cs"
+      ],
+      "reason": "Linux settings are Avalonia dialogs backed by XDG preferences; Windows-only settings are not offered. c1076d3 audit: Safe settings load/save and new Windows settings.",
+      "upstream_sha256": "bfa05fee22d0688cbe081241ed8e442bf5a5c77cb2e827fe0328b003c2079ceb",
+      "local_sha256": "bfa05fee22d0688cbe081241ed8e442bf5a5c77cb2e827fe0328b003c2079ceb"
+    },
+    "RenoDXCommander/WindowStateManager.cs": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows handles, P/Invoke and global window/hotkey management are replaced by Avalonia/desktop facilities. c1076d3 audit: WinUI window placement.",
+      "upstream_sha256": "74218778eedbfc28365989963eba679b74a1d2bf1915705589b14e5fad0c516b",
+      "local_sha256": "74218778eedbfc28365989963eba679b74a1d2bf1915705589b14e5fad0c516b"
+    },
+    "RenoDXCommander/app.manifest": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "0a022b747e71408e218f6b47c011ad756e2f453c22e13c70172d24379b2ea97f",
+      "local_sha256": "0a022b747e71408e218f6b47c011ad756e2f453c22e13c70172d24379b2ea97f"
+    },
+    "RenoDXCommander/dxvk.conf": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "492043b2a8cbb89232a0824b3120d8630aec6ef2ca2eb19c62cb81fce52a57c5",
+      "local_sha256": "492043b2a8cbb89232a0824b3120d8630aec6ef2ca2eb19c62cb81fce52a57c5"
+    },
+    "RenoDXCommander/relimiter.ini": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "909a602c4110e7a11e172390dd453e1b6ab690996ef9ee423cb33ec2df75f9ed",
+      "local_sha256": "909a602c4110e7a11e172390dd453e1b6ab690996ef9ee423cb33ec2df75f9ed"
+    },
+    "RenoDXCommander/reshade.rdr2.ini": {
+      "status": "windows-only",
+      "linux": [],
+      "reason": "Windows application manifest, Vulkan layer, DXVK or optional addon configuration is not deployed automatically by Linux.",
+      "upstream_sha256": "5858aa5aff2901f50e9efad6430ce2ac562eea393f8b34196cbf996e2d1bbd9c",
+      "local_sha256": "5858aa5aff2901f50e9efad6430ce2ac562eea393f8b34196cbf996e2d1bbd9c"
+    },
+    "database/RenoDXdb-unity.json": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support.",
+      "upstream_sha256": "987a0e35c6518ca41aa825d30d244839774d098a410d50437c0e82011358af14",
+      "local_sha256": "987a0e35c6518ca41aa825d30d244839774d098a410d50437c0e82011358af14"
+    },
+    "database/pcgw_data.json": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support. c1076d3 audit: PCGW-Editor data refreshes only; PCGW integration remains deferred on Linux.",
+      "upstream_sha256": "ba8665924cc819c9530a6cb74f29df5d76f7eee639abf821ced0630e20f3a694",
+      "local_sha256": "ba8665924cc819c9530a6cb74f29df5d76f7eee639abf821ced0630e20f3a694"
+    },
+    "dlss_manifest.json": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/Dlss.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "Both apps consume this catalogue; Linux bundles an offline fallback and fetches live versions at runtime. c1076d3 audit: New DLSS/DLSSD/DLSSG/NR 310.9.16 and Streamline 2.14.16.0-v2 entries are consumed by the existing Linux DLSS catalogue.",
+      "upstream_sha256": "f881d0b6c04d6fe383852d24ab6e2c1271718f427c25cfce53e94f191ddefc1a",
+      "local_sha256": "f881d0b6c04d6fe383852d24ab6e2c1271718f427c25cfce53e94f191ddefc1a"
+    },
+    "docs/RenoDXdb.json": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support.",
+      "upstream_sha256": "d653817ffca643c11328ca734430e5c6e4659b23d84c01cd8426a63d060372ea",
+      "local_sha256": "d653817ffca643c11328ca734430e5c6e4659b23d84c01cd8426a63d060372ea"
+    },
+    "engine-files/black-myth-wukong.ini": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support.",
+      "upstream_sha256": "8cda6b6ebd2a89feea3cb4fc8fb317fcf7e3bd230498d1f5fde42ec2ec06118a",
+      "local_sha256": "8cda6b6ebd2a89feea3cb4fc8fb317fcf7e3bd230498d1f5fde42ec2ec06118a"
+    },
+    "game-db/game_db.json": {
+      "status": "deferred",
+      "linux": [],
+      "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support.",
+      "upstream_sha256": "fd3e7dc48ad95611e427663bc07081d850c70c455e162ba2063fcdc290a9a554",
+      "local_sha256": "fd3e7dc48ad95611e427663bc07081d850c70c455e162ba2063fcdc290a9a554"
+    },
+    "manifest.json": {
+      "status": "data",
+      "linux": [
+        "RHI.Linux.Core/Catalog.cs",
+        "RHI.Linux.Core/RHI.Linux.Core.csproj"
+      ],
+      "reason": "Both apps consume this catalogue; Linux bundles an offline fallback and fetches live versions at runtime. c1076d3 audit: Consumed live/bundled by Linux. New dlssPathOverrides/streamlinePathOverrides are honoured by the Linux DLSS scanner; dlssPresets fg C arrives through the existing preset merge; authorRoles is Windows UI only; removed lumaDefaultGames/optiScalerDllOverrides were unused.",
+      "upstream_sha256": "468cf3a9e60ade9bb31b74a24befb183ef23707ba789a557f1f56323baf2be82",
+      "local_sha256": "468cf3a9e60ade9bb31b74a24befb183ef23707ba789a557f1f56323baf2be82"
+    }
+  }
+}

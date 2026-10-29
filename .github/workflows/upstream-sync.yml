@@ -1,0 +1,31 @@
+name: Linux upstream review
+
+on:
+  push:
+    branches: [linux_port]
+  pull_request:
+    branches: [linux_port]
+  schedule:
+    - cron: '37 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          # Scheduled workflows run from the default branch; audit the maintained port.
+          ref: ${{ github.event_name == 'schedule' && 'linux_port' || github.ref }}
+      - name: Test the review guard
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Fetch upstream production code
+        run: git fetch --no-tags https://github.com/RankFTW/RHI.git main:refs/remotes/rhi-review/main
+      - name: Require explicit Linux decisions for upstream changes
+        run: python3 scripts/check-upstream-sync.py --upstream refs/remotes/rhi-review/main

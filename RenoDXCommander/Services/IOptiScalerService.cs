@@ -1,5 +1,4 @@
 using RenoDXCommander.Models;
-using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
 
@@ -143,7 +142,7 @@ public interface IOptiScalerService
     /// companion file deployment, and ReShade coexistence.
     /// </summary>
     Task<AuxInstalledRecord?> InstallAsync(
-        GameCardViewModel card,
+        IOptiScalerGame card,
         IProgress<(string message, double percent)>? progress = null,
         string gpuType = "NVIDIA",
         bool dlssInputs = true,
@@ -155,13 +154,13 @@ public interface IOptiScalerService
     /// Uninstalls OptiScaler from the specified game folder.
     /// Removes DLL, INI, companion files, restores ReShade filename, removes tracking record.
     /// </summary>
-    void Uninstall(GameCardViewModel card);
+    void Uninstall(IOptiScalerGame card);
 
     /// <summary>
     /// Updates OptiScaler in a game folder: replaces DLL and companions, preserves INI.
     /// </summary>
     Task UpdateAsync(
-        GameCardViewModel card,
+        IOptiScalerGame card,
         IProgress<(string message, double percent)>? progress = null,
         string? variantHint = null,
         string? nightlyBuildHint = null);
@@ -178,7 +177,7 @@ public interface IOptiScalerService
     /// Copies OptiScaler.ini from the INIs_Folder to the game folder,
     /// enforcing LoadReshade=true.
     /// </summary>
-    void CopyIniToGame(GameCardViewModel card, string? hotkey = null);
+    void CopyIniToGame(IOptiScalerGame card, string? hotkey = null);
 
     // ── Detection ─────────────────────────────────────────────────────────────
 

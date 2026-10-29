@@ -1,5 +1,4 @@
 using RenoDXCommander.Models;
-using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
 
@@ -11,7 +10,7 @@ public partial class OptiScalerService
     /// Resolves the correct ReShade filename to restore when OptiScaler is uninstalled.
     /// Priority: user DLL override > manifest override > auto-detected API > dxgi.dll default.
     /// </summary>
-    internal string ResolveReShadeFilename(GameCardViewModel card)
+    internal string ResolveReShadeFilename(IOptiScalerGame card)
     {
         // 1. User DLL override for ReShade
         var userRsName = _dllOverrideService.GetEffectiveRsName(card.GameName);
@@ -51,20 +50,6 @@ public partial class OptiScalerService
         string? manifestOverride,
         string? detectedApi)
     {
-        if (!string.IsNullOrWhiteSpace(userOverride))
-            return userOverride!;
-        if (!string.IsNullOrWhiteSpace(manifestOverride))
-            return manifestOverride!;
-        if (!string.IsNullOrWhiteSpace(detectedApi))
-        {
-            return detectedApi!.ToLowerInvariant() switch
-            {
-                "dx9" or "directx9" => "d3d9.dll",
-                "opengl" => "opengl32.dll",
-                "dx11" or "dx12" or "directx11" or "directx12" => "dxgi.dll",
-                _ => AuxInstallService.RsNormalName,
-            };
-        }
-        return AuxInstallService.RsNormalName; // dxgi.dll
+        return OptiScalerPolicy.ResolveReShadeFilename(userOverride, manifestOverride, detectedApi);
     }
 }

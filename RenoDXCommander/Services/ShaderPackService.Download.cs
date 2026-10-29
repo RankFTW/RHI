@@ -477,32 +477,9 @@ public partial class ShaderPackService
             }
 
             using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("assets", out var assets))
-            {
-                // Always use tag_name as the version token — gives clean readable versions (e.g. "v4.2", "2026.09.10")
-                // The asset filename is only used to find the download URL.
-                var tagName = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "unknown" : "unknown";
-                foreach (var asset in assets.EnumerateArray())
-                {
-                    var name = asset.GetProperty("name").GetString() ?? "";
-                    var url = asset.GetProperty("browser_download_url").GetString() ?? "";
-                    bool matches = pack.AssetExt == null ||
-                                   name.EndsWith(pack.AssetExt, StringComparison.OrdinalIgnoreCase);
-                    if (matches && !string.IsNullOrEmpty(url))
-                        return (url, tagName);
-                }
-            }
-
-            // Fall back to source code zipball
-            if (root.TryGetProperty("zipball_url", out var zb))
-            {
-                var tagName = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "unknown" : "unknown";
-                var zbUrl = zb.GetString();
-                if (!string.IsNullOrEmpty(zbUrl))
-                    return (zbUrl, tagName);
-            }
+            var selected = ResolveRelease(doc.RootElement, pack.AssetExt);
+            // Always use tag_name as the version token; the asset filename only locates the download URL.
+            if (selected.Url != null) return (selected.Url, selected.Version);
 
             CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] No suitable asset found");
             return (null, "");

@@ -26,7 +26,7 @@ public class ManifestService : IManifestService
 
     /// <summary>Fallback raw URL — uses GitHub CDN (may be up to ~5 min behind HEAD).</summary>
     private const string RawFallbackUrl =
-        "https://raw.githubusercontent.com/RankFTW/RHI/main/manifest.json";
+        RHI.Core.Sources.Manifest;
 
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

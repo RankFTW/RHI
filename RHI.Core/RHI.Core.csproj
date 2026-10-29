@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="SharedSources.props" />
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+    <Compile Include="@(RhiSharedSource)" Link="Upstream/%(Filename)%(Extension)" />
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>RenoDXCommander.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

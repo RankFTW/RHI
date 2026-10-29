@@ -9,10 +9,10 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class ReShadeNightlyService
 {
-    private const string Nightly64Url =
-        "https://nightly.link/crosire/reshade/workflows/build/main/ReShade%20(64-bit).zip";
-    private const string Nightly32Url =
-        "https://nightly.link/crosire/reshade/workflows/build/main/ReShade%20(32-bit).zip";
+    private static readonly string Nightly64Url =
+        RHI.Core.Sources.ReShadeNightly(64);
+    private static readonly string Nightly32Url =
+        RHI.Core.Sources.ReShadeNightly(32);
 
     private static readonly string CacheDir = AuxInstallService.RsNightlyStagingDir;
     private static readonly string VersionFile = Path.Combine(CacheDir, "reshade_version.txt");

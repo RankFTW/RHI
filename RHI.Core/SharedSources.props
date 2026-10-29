@@ -1,0 +1,28 @@
+<Project>
+  <!-- One source list feeds the shared assembly and excludes duplicate Windows types. -->
+  <ItemGroup>
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/GameMod.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/GraphicsApiType.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/AuxInstalledRecord.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/GameStatus.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/RemoteManifest.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/GameNoteEntry.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/ForceExternalEntry.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Models/ManifestDllNames.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/GraphicsApiDetector.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/PeHeaderService.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/IPeHeaderService.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/WikiService.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/IWikiService.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/IOptiScalerGame.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/OptiScalerPolicy.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/GitHubETagCache.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/REFrameworkArchive.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/ShaderPackCatalog.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/DlssVersion.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/DllArchive.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/SentinelFiles.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/DlssFileDiscovery.cs" />
+    <RhiSharedSource Include="$(MSBuildThisFileDirectory)../RenoDXCommander/Services/IOptiScalerService.cs" />
+  </ItemGroup>
+</Project>

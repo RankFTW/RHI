@@ -199,4 +199,9 @@
     <PackageReference Include="SharpCompress" Version="0.37.2" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
+  <Import Project="../RHI.Core/SharedSources.props" />
+  <ItemGroup>
+    <Compile Remove="@(RhiSharedSource)" />
+    <ProjectReference Include="../RHI.Core/RHI.Core.csproj" />
+  </ItemGroup>
 </Project>
