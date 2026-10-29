@@ -7,54 +7,61 @@
 
 **Use a token rather than the "Sign in with GitHub" button.** Signing in is unreliable (sessions can expire without RHI noticing) and will likely be removed in a future update. If you currently use Sign in with GitHub, switch to a token.
 
-## v2.8.8 Beta 2
+## v2.8.8
 
 ### Changes
 
-- Epic games are now detected when you use the new Epic Games Launcher (preview). Switching to it removes the game list RHI used to read, so Epic games stopped showing up.
-- Faster game list loading at startup. Games on engines without special handling in RHI (such as Frostbite, RAGE or Northlight) are no longer fully scanned on every launch: RHI uses the engine listed on PCGamingWiki, and otherwise only scans again when the game's folder changes (for example after an update) or when you use Full Refresh.
-- Much less data used by update checks. RHI no longer downloads every installed RenoDX addon in full on each update check just to see whether it changed (several hundred MB per check with the generic Unity or UE-Extended addons installed). Unchanged addons are now confirmed with a tiny request; only addons that actually changed are downloaded.
-- "Available HDR Mods" is now "Available Mods" and also lists Ultra+ mods, in a new Ultra+ column, plus the Source engine games supported by RenoDX's generic Source addon. Installing the Source addon from RHI will come in a future update. The Download column is gone: click any tick to open that mod's page. The top of the window now shows how many RenoDX, Luma and Ultra+ mods are available. Type RenoDX, Luma or Ultra+ in the search box to show only games with that mod (add a game name after it to narrow it further, e.g. "luma dead").
+**Available Mods**
+- "Available HDR Mods" is now "Available Mods" and also lists Ultra+ mods, in a new Ultra+ column.
+- Source engine games supported by RenoDX's Source addon are now listed. Installing the Source addon from RHI will come in a future update.
+- The Download column is gone: click any tick to open that mod's page.
+- The top of the window shows how many RenoDX, Luma and Ultra+ mods are available.
+- Type RenoDX, Luma or Ultra+ in the search box to show only games with that mod. Add a game name after it to narrow it down, e.g. "luma dead".
+
+**Other changes**
+- Epic games are now detected if you use the new Epic Games Launcher (preview). Before, they disappeared from RHI after switching to it.
+- Faster startup. Games on engines RHI has no special handling for (such as Frostbite, RAGE or Northlight) are no longer fully scanned on every launch. RHI uses the engine listed on PCGamingWiki, and otherwise only scans a game again when its folder changes (for example after a game update) or when you use Full Refresh.
+- Update checks use far less data. RHI used to download every installed RenoDX addon in full on each check just to see whether it had changed (several hundred MB with the generic Unity or UE-Extended addons installed). Now only addons that have actually changed are downloaded.
 
 ### Bug Fixes
 
 **NVIDIA profile**
-- Fixed DLSS presets and other driver settings being written to the wrong NVIDIA profile for games that RHI had matched before a profile fix was added for them (for example Metro 2033 Redux going to the Metro: Last Light Redux profile). Profile fixes now apply straight away, with no Full Refresh needed.
+- Fixed DLSS presets and other driver settings going to the wrong NVIDIA profile for some games (for example Metro 2033 Redux going to the Metro: Last Light Redux profile). Profile fixes now take effect straight away, with no Full Refresh needed.
 
 **Shaders**
-- Fixed RHI deleting and re-copying the shaders in every ReShade game's `reshade-shaders` folder on each launch and Refresh, even when nothing had changed. Only new or changed shaders are now copied and only removed ones deleted, so games that are running keep their shaders.
+- Fixed RHI deleting and re-copying every ReShade game's shaders on each launch and Refresh, even when nothing had changed. Only new or changed shaders are copied now, so running games keep their shaders.
 
 **Downloads and GitHub requests**
 - Fixed the ReShade nightly build being downloaded again on every launch even when it hadn't changed.
-- Fixed RHI using far more GitHub requests than needed, which made it easier to hit GitHub's hourly limit (when that happens, downloads and update checks stop working for a while). RHI now remembers what it has already checked, even after it's closed, and only downloads release information again when something has changed. The addon update check also no longer runs twice at startup.
-- Fixed a slow or stuck GitHub request being able to hold up the startup update checks for minutes. Requests now give up after 30 seconds.
+- Fixed RHI using far more GitHub requests than needed, which made it easy to hit GitHub's hourly limit (when that happens, downloads and update checks stop working for a while). RHI now remembers what it has already checked, even after a restart, and the addon update check no longer runs twice at startup.
+- Fixed a slow GitHub request being able to hold up the startup update checks for minutes. Requests now give up after 30 seconds.
 - Fixed hitting GitHub's request limit also stopping RHI's game database from updating.
 
-**DLSS / Streamline version display**
-- Fixed swapping to an older DLSS or Streamline version still showing the newer version number afterwards. RHI now always shows the version that's actually in the game folder.
-- Fixed the version dropdown sometimes showing the wrong version when two versions start the same way (for example, 310.9.1 being shown as 310.9.16).
-- Fixed RHI showing a crash report when a DLSS or Streamline version couldn't be changed — for example on Game Pass games after the game updated, when the game is running, or when Windows blocks access to the folder. RHI now explains what went wrong and puts the dropdown back to the version that's actually installed.
-- Fixed a failed DLSS swap sometimes leaving the game without its DLSS file. The original file is now put back if the new one can't be copied in.
-- Fixed Batch Deploy stopping partway when one game failed. It now carries on with the remaining games and lists any that failed, with the reason, in the summary.
+**DLSS / Streamline**
+- Fixed swapping to an older DLSS or Streamline version still showing the newer version number. RHI now always shows the version that's actually in the game folder.
+- Fixed the version dropdown sometimes showing the wrong version when two versions start the same way (for example 310.9.1 shown as 310.9.16).
+- Fixed a crash report appearing when a DLSS or Streamline version couldn't be changed (for example on a Game Pass game after it updated, while the game is running, or when Windows blocks access to the folder). RHI now explains what went wrong and sets the dropdown back to the installed version.
+- Fixed a failed DLSS swap sometimes leaving the game without its DLSS file. The original file is now put back.
+- Fixed Batch Deploy stopping when one game failed. It now carries on and lists any failed games, with the reason, in the summary.
 
 **OptiScaler F5 DLSSNR**
 - Fixed F5 updates failing on the first attempt with a "Could not find a part of the path" error.
-- Fixed F5 games showing the old version number after updating, and no longer showing an update badge for newer releases.
+- Fixed F5 games showing the old version number after updating, which also stopped the update badge appearing for later releases.
 - Fixed updating an F5 or DLSS NR install forgetting which OptiScaler variant the game uses.
 
 **RTX 40 MFG Unlock**
-- Fixed RTX 40 MFG updates showing the new version in RHI while games kept running the old file. Since v1.5 the mod's file has a different name (`MFGUnlocker.dll`), which RHI wasn't picking up. RHI now updates every game with RTX 40 MFG installed automatically, with no reinstall needed.
-- Games that miss an update (for example because the game was running) are now caught up the next time RHI starts.
+- Fixed RTX 40 MFG updates showing the new version in RHI while games kept the old file. Since v1.5 the mod's file is called `MFGUnlocker.dll`, which RHI wasn't picking up. Every game with RTX 40 MFG installed is now updated automatically, with no reinstall needed.
+- Games that miss an update (for example because the game was running) are now updated the next time RHI starts.
 
 **MFG Ada Unlock and other addons**
-- Fixed addon updates (such as MFG Ada Unlock) not reaching a game if the game was running when the update downloaded. RHI showed the new version but the game kept the old file. Outdated copies are now refreshed every time RHI starts.
+- Fixed addon updates (such as MFG Ada Unlock) not reaching a game that was running when the update downloaded. Outdated copies are now refreshed every time RHI starts.
 - Fixed MFG Ada Unlock installed from the Extras section sometimes not receiving updates.
-- Fixed MFG Ada Unlock being put back into a game after it was removed, the next time it updated.
+- Fixed MFG Ada Unlock coming back into a game after you removed it, the next time it updated.
 - Fixed some addons (such as ReShade Screenshot Discord Fix) being copied into games again on every launch even when they hadn't changed.
-- Fixed MFG Ada Unlock and addons from the addon picker being installed to the game folder when the game's `reshade.ini` has an `AddonPath` set. ReShade only loads addons from that folder, so the addon didn't load, or an older copy there kept loading instead. RHI now installs them into the `AddonPath` folder and removes the old copy it had put in the game folder.
+- Fixed addons going into the game folder when the game's `reshade.ini` has an `AddonPath` set, so ReShade didn't load them (or kept loading an older copy). RHI now installs them into the `AddonPath` folder and removes the copy it had put in the game folder.
 
 **Luma**
-- Fixed Luma mods that are now only available on Nexus Mods (such as Mass Effect: Andromeda) showing an update that Update All couldn't install, leaving the buttons purple. These mods are now checked against Nexus Mods, so they only show an update when a newer version is posted there, and the Update button opens the Nexus download page.
+- Fixed Luma mods that are now only on Nexus Mods (such as Mass Effect: Andromeda) showing an update that Update All couldn't install, leaving the buttons purple. These mods are now checked against Nexus Mods, and the Update button opens the Nexus download page.
 
 **Update History**
 - Fixed Luma updates not appearing in Update History.
@@ -63,50 +70,47 @@
 **NR Cost Scaler / DLSS FG 20/30**
 - Fixed updates to NR Cost Scaler and DLSS FG for RTX 20/30 not being copied into game folders when found at startup.
 
-**Automatic Updates**
-- Fixed Automatic Updates repeating the same update work once for every game that had an update, and reinstalling ReShade into every game rather than just the outdated ones.
-- Fixed Automatic Updates also updating games that were running, which could fail and show a crash report. Running games are now updated once they close, as intended.
-- Fixed Update All showing a crash report for a game set to the Custom ReShade channel when its ReShade DLL had been removed from the Custom folder. The game is now skipped and the card shows why.
+**Automatic Updates and Update All**
+- Fixed Automatic Updates repeating the same work once for every game with an update, and reinstalling ReShade into every game instead of only the outdated ones.
+- Fixed Automatic Updates updating games that were running, which could fail and show a crash report. Running games are now updated once they close.
+- Fixed Update All showing a crash report for a game on the Custom ReShade channel whose ReShade DLL had been removed from the Custom folder. The game is now skipped and its card shows why.
 
 **Ultimate ASI Loader**
-- Fixed ASI Loader updates never reaching games: RHI downloaded new versions but didn't copy them into game folders. Games with the ASI Loader installed are now brought up to date automatically at startup, including games that were running when an update arrived.
+- Fixed ASI Loader updates never reaching games: RHI downloaded new versions but didn't copy them into game folders. Games with the ASI Loader are now brought up to date automatically at startup.
 - Fixed the 64-bit ASI Loader being downloaded again on every launch, and the 32-bit copy never updating.
 
 **Settings and install records**
-- Fixed all settings being reset (with the first-time setup screen shown again) if the settings file was damaged, for example by a crash or power cut while it was being saved. RHI now keeps a backup copy and restores it automatically. The damaged file is kept beside it as `settings.json.corrupt-…`.
-- Fixed settings sometimes being lost when they were saved at the same moment as a shader pack update, or while a setting was being changed.
-- Fixed RHI losing track of installed mods (no update badges, uninstall unable to restore the original files) if an install record file was damaged. The records for RenoDX, ReShade and other addons, Luma, RE Framework and DXVK now keep a backup and recover from it.
+- Fixed all settings being reset (and the first-time setup shown again) if the settings file was damaged, for example by a crash or power cut while saving. RHI now keeps a backup and restores it automatically. The damaged file is kept as `settings.json.corrupt-…`.
+- Fixed settings sometimes being lost when saved at the same moment as a shader pack update, or while a setting was being changed.
+- Fixed RHI losing track of installed mods (no update badges, and uninstall unable to restore original files) if an install record file was damaged. Records for RenoDX, ReShade and other addons, Luma, RE Framework and DXVK now keep a backup and recover from it.
 - Fixed two installs or uninstalls finishing at the same time sometimes forgetting one of them.
 - Fixed renaming a game losing its Luma TAA setting.
-- Fixed clearing the last OptiScaler Streamline version, OptiScaler NR runtime or ASI Loader install name coming back the next time RHI started.
+- Fixed a cleared OptiScaler Streamline version, OptiScaler NR runtime or ASI Loader install name coming back the next time RHI started.
 
 **Security**
-- Fixed your GitHub sign-in token being sent along with downloads from non-GitHub sites (such as ReShade, Nexus Mods and PCGamingWiki). It is now only ever sent to GitHub.
-- Fixed some shader packs failing to download or update ("Not Found") for users signed in to GitHub or using a personal access token.
-- Fixed a crafted Luma, shader pack or shader profile archive being able to place files outside the game or shader folder. Luma uninstall also no longer deletes anything outside the game folder.
+- Fixed your GitHub token being sent with downloads from other sites (such as ReShade, Nexus Mods and PCGamingWiki). It is now only ever sent to GitHub. Tokens made the recommended way (no scopes ticked) can't access your account, so no action is needed. If you pasted a token with extra permissions, consider replacing it with a new one.
+- Fixed some shader packs failing to download or update ("Not Found") when a GitHub token or sign-in was set up.
+- Fixed a specially made Luma, shader pack or shader profile archive being able to place files outside the game or shader folder. Luma uninstall also no longer deletes anything outside the game folder.
 
 ### Maintenance
 
-- Fixed many errors being silently ignored instead of written to the log, making problems easier to diagnose from your session logs.
+- Fixed many errors being silently ignored instead of written to the log, so problems are easier to diagnose from session logs.
 - Fixed some unexpected errors in buttons and settings showing a crash report instead of being logged and recovered from.
-- Fixed session logs filling up with a "UI responsive" line every second, which made them harder to read when reporting a problem.
-- Fixed the automatic restart after a UI freeze being able to start more than one copy of RHI.
+- Fixed session logs filling up with a "UI responsive" line every second.
+- Fixed the automatic restart after a UI freeze being able to open more than one copy of RHI.
 - Removed about 3,000 lines of unused code.
 
 ### Manifest Updates
 
-- Added DLSS SR / RR / FG 310.9.16 and Streamline 2.14.16.0.
-- Added Streamline 2.14.16.0-v2 (NVIDIA's updated build of 2.14.16.0), replacing the original 2.14.16.0 build in the version list.
+- Added DLSS SR / RR / FG / NR 310.9.16.
+- Added Streamline 2.14.16.0 (NVIDIA's updated v2 build).
 - Added ShortFuse DLSS Tool 26.1016.1304.
-- Added DLSS NR 310.9.16.
 - Added DLSS FG Preset C.
-- Added Depth3D Cursor Add-on as a managed addon.
-- Added engine version for Valor Mortis (Unreal Engine 5.7.3).
-- Added SD Shaders by Starodubysko as a managed shader pack (Extra): colour grading shaders for SDR and HDR.
+- Added the Depth3D Cursor Add-on to the addon list.
+- Added SD Shaders by Starodubysko to the shader packs (Extra): colour grading shaders for SDR and HDR.
+- Added engine versions for Valor Mortis (Unreal Engine 5.7.3), DAEMON X MACHINA (Unreal Engine 4.20.3) and Phantom Blade Zero (Unreal Engine 5.7.4).
 - Fixed Metro 2033 Redux not matching its NVIDIA driver profile (Metro Redux).
-- Added engine version for DAEMON X MACHINA (Unreal Engine 4.20.3).
 - Fixed Portal installing mods to the wrong folder. They now go into the game's `bin` folder.
-- Added engine version for Phantom Blade Zero (Unreal Engine 5.7.4).
 
 ---
 
