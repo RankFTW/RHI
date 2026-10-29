@@ -1,8 +1,11 @@
-⚠ **If you were already connected to GitHub, please sign in again after this update** — a bug in previous versions caused expired sessions to go undetected, which is now fixed, but your stored session may already be stale.
+⚠ **Add a GitHub Personal Access Token (PAT) — strongly recommended.** Almost everything RHI downloads comes from GitHub: ReShade, RenoDX, OptiScaler, DLSS versions, shader packs, Luma mods, manifests and update checks. Without a token, RHI is limited to **60 GitHub requests per hour**. That runs out quickly, and when it does, installs fail, update checks are skipped and components show as unavailable. A token raises the limit to **5,000 requests per hour**.
 
-⚠ **Sign in with GitHub — strongly recommended** — almost everything RHI downloads comes from GitHub: ReShade, RenoDX, OptiScaler, DLSS versions, shader packs, Luma mods, manifests, update checks, and more. Without a GitHub account connected, all of this shares a single limit of **60 requests per hour**. That quota runs out fast, and when it does, downloads silently fail — installs abort, update checks are skipped, and staging shows as unavailable with no obvious reason why. Signing in raises the limit to **5,000 requests per hour**.
+**How to add one (about a minute):**
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**.
+2. Give it any name, pick an expiry, and leave every scope unticked. It doesn't need any permissions.
+3. Copy the token, then in RHI open **Settings → GitHub API**, paste it into the token box and click **Save**.
 
-To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. Takes about 30 seconds. Or paste a Personal Access Token (PAT) — no scopes needed, just generate one at [github.com/settings/tokens](https://github.com/settings/tokens) and paste it in.
+**Use a token rather than the "Sign in with GitHub" button.** Signing in is unreliable (sessions can expire without RHI noticing) and will likely be removed in a future update. If you currently use Sign in with GitHub, switch to a token.
 
 ## v2.8.8 Beta 2
 
@@ -11,7 +14,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Epic games are now detected when you use the new Epic Games Launcher (preview). Switching to it removes the game list RHI used to read, so Epic games stopped showing up.
 - Faster game list loading at startup. Games on engines without special handling in RHI (such as Frostbite, RAGE or Northlight) are no longer fully scanned on every launch: RHI uses the engine listed on PCGamingWiki, and otherwise only scans again when the game's folder changes (for example after an update) or when you use Full Refresh.
 - Much less data used by update checks. RHI no longer downloads every installed RenoDX addon in full on each update check just to see whether it changed (several hundred MB per check with the generic Unity or UE-Extended addons installed). Unchanged addons are now confirmed with a tiny request; only addons that actually changed are downloaded.
-- "Available HDR Mods" is now "Available Mods" and also lists Ultra+ mods, in a new Ultra+ column. The Download column is gone: click any tick to open that mod's page. The top of the window now shows how many RenoDX, Luma and Ultra+ mods are available. Type RenoDX, Luma or Ultra+ in the search box to show only games with that mod (add a game name after it to narrow it further, e.g. "luma dead").
+- "Available HDR Mods" is now "Available Mods" and also lists Ultra+ mods, in a new Ultra+ column, plus the Source engine games supported by RenoDX's generic Source addon. Installing the Source addon from RHI will come in a future update. The Download column is gone: click any tick to open that mod's page. The top of the window now shows how many RenoDX, Luma and Ultra+ mods are available. Type RenoDX, Luma or Ultra+ in the search box to show only games with that mod (add a game name after it to narrow it further, e.g. "luma dead").
 
 ### Bug Fixes
 

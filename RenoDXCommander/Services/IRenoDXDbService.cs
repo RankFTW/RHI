@@ -4,18 +4,19 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Result of a FetchAllAsync call. Contains named mods, UE-Extended entries,
-/// and Unity entries fetched from the three RenoDXdb JSON files.
+/// Unity entries and Source entries fetched from the four RenoDXdb JSON files.
 /// </summary>
 public record DbFetchResult(
     List<GameMod> Mods,
     Dictionary<string, RenoDXDbUnrealEntry> UnrealEntries,
-    Dictionary<string, RenoDXDbUnityEntry> UnityEntries);
+    Dictionary<string, RenoDXDbUnityEntry> UnityEntries,
+    Dictionary<string, RenoDXDbSourceEntry> SourceEntries);
 
 public interface IRenoDXDbService
 {
     /// <summary>
     /// Fetches RenoDXdb.json (named mods), RenoDXdb-unreal.json (UE-Extended games),
-    /// and RenoDXdb-unity.json (Unity games).
+    /// RenoDXdb-unity.json (Unity games) and RenoDXdb-source.json (Source engine games).
     /// Uses ETag caching — returns cached data on 304 Not Modified.
     /// </summary>
     Task<DbFetchResult> FetchAllAsync();

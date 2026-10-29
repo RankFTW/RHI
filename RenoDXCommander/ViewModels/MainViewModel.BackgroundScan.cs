@@ -63,7 +63,7 @@ public partial class MainViewModel
             var manifestTask    = _manifestService.FetchAsync();
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
-                : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
+                : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -257,12 +257,13 @@ public partial class MainViewModel
                 _dbMods = dbResult.Mods;
                 _dbUnrealEntries = dbResult.UnrealEntries;
                 _dbUnityEntries  = dbResult.UnityEntries;
-                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries");
+                _dbSourceEntries = dbResult.SourceEntries;
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries, {_dbSourceEntries.Count} Source entries");
             }
             catch (Exception ex)
             {
                 _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch failed — {ex.Message}");
-                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase); _dbUnityEntries = new(StringComparer.OrdinalIgnoreCase);
+                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase); _dbUnityEntries = new(StringComparer.OrdinalIgnoreCase); _dbSourceEntries = new(StringComparer.OrdinalIgnoreCase);
             }
             MergeDbSources();
             try

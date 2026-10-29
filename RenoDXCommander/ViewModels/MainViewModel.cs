@@ -441,6 +441,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Unity entries from the last DB fetch. Empty when source is WikiOnly or dev-locked.</summary>
     private Dictionary<string, RenoDXDbUnityEntry> _dbUnityEntries =
         new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Source engine entries from the last DB fetch. Only listed in Available Mods for now.</summary>
+    private Dictionary<string, RenoDXDbSourceEntry> _dbSourceEntries =
+        new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Returns the effective UE-Extended db entry for a game, or null when source is WikiOnly
     /// or the game isn't in the db.
@@ -577,6 +580,21 @@ public partial class MainViewModel : ObservableObject
             dict[kv.Key] = new HdrModEntry(
                 Name:        kv.Value.Name,
                 RenoDXStatus: unityStatus,
+                RenoDXUrl:   null,
+                LumaStatus:  null,
+                LumaUrl:     null);
+        }
+
+        // Source engine entries — same RenoDX column (generic Source addon is a RenoDX mod)
+        foreach (var kv in _dbSourceEntries)
+        {
+            if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+            if (dict.ContainsKey(kv.Key)) continue; // named mod already covers it
+            var sourceStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
+                ? "WIP" : "Done";
+            dict[kv.Key] = new HdrModEntry(
+                Name:        kv.Value.Name,
+                RenoDXStatus: sourceStatus,
                 RenoDXUrl:   null,
                 LumaStatus:  null,
                 LumaUrl:     null);
