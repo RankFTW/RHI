@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55854,
-  "generated": "2026-10-28T14:48:22Z",
+  "game_count": 55878,
+  "generated": "2026-10-29T15:09:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -2458,6 +2458,9 @@
     },
     "A Pixel Story": {
       "steam_appid": 339460
+    },
+    "A Place for Every Potion": {
+      "steam_appid": 5189500
     },
     "A Place for the Unwilling": {
       "steam_appid": 1064310
@@ -18704,6 +18707,11 @@
       "steam_appid": 711260
     },
     "BHunter": {},
+    "Biathlon 2002": {},
+    "Biathlon 2003": {},
+    "Biathlon 2004": {},
+    "Biathlon 2005": {},
+    "Biathlon 2006: Go For Gold": {},
     "Biathlon Battle VR": {
       "steam_appid": 1004200
     },
@@ -36667,7 +36675,7 @@
       "steam_appid": 2101960,
       "dx12": true,
       "vulkan": true,
-      "config_path": "%LOCALAPPDATA%\\Cronos\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%/Cronos/Saved/Config/Windows/",
       "engine": "Unreal Engine 5"
     },
     "Crooked Waters": {
@@ -50837,6 +50845,10 @@
     "Dungeons & Darkness": {
       "steam_appid": 479990
     },
+    "Dungeons & Degenerate Gamblers": {
+      "steam_appid": 2400510,
+      "engine": "Godot"
+    },
     "Dungeons & Dragons Online": {
       "steam_appid": 206480,
       "dx9": true,
@@ -52728,7 +52740,7 @@
       "steam_appid": 289280,
       "dx9": true,
       "config_path": "<path-to-game>\\PROFILES\\<user-id>\\core.ini",
-      "engine": "MAX-FX"
+      "engine": "Typhoon 2"
     },
     "El Ministerio del Tiempo VR: El tiempo en tus manos": {
       "steam_appid": 646360
@@ -65465,6 +65477,7 @@
     "Fur Up": {
       "steam_appid": 681800
     },
+    "Furby: Big Fun In Furbyland": {},
     "Fureraba: Friend to Lover": {
       "steam_appid": 822760
     },
@@ -65929,6 +65942,7 @@
       "steam_appid": 1034120
     },
     "Gadget & The Gadgetinis": {},
+    "Gadget Tycoon": {},
     "Gadget ÔÇô Invention, Travel, & Adventure": {},
     "Gadgeteer": {
       "steam_appid": 746560
@@ -79499,7 +79513,8 @@
     },
     "Hot Wheels: Crash!": {},
     "Hot Wheels: Infinite Rush": {
-      "steam_appid": 2821390
+      "steam_appid": 2821390,
+      "engine": "Unreal Engine 5"
     },
     "Hot Wheels: Jetz": {},
     "Hot Wheels: Mechanix": {},
@@ -83792,6 +83807,7 @@
       "steam_appid": 453830,
       "engine": "GameMaker"
     },
+    "Innova Disc Golf": {},
     "Ino": {
       "steam_appid": 398140
     },
@@ -100061,6 +100077,11 @@
     "Marburgh": {
       "steam_appid": 1139660
     },
+    "Marc Eckō's Getting Up: Contents Under Pressure": {
+      "steam_appid": 260190,
+      "config_path": "<path-to-game>\\engine\\*.cfg",
+      "engine": "Slayer"
+    },
     "Marc Eck┼ì's Getting Up: Contents Under Pressure": {
       "steam_appid": 260190,
       "config_path": "<path-to-game>\\engine\\*.cfg",
@@ -106016,6 +106037,7 @@
     "Monopoly (1995)": {
       "config_path": "<path-to-game>\\MONOPOLY.INI"
     },
+    "Monopoly (1999)": {},
     "Monopoly (2002)": {},
     "Monopoly (2012)": {
       "steam_appid": 221300
@@ -106025,6 +106047,7 @@
       "opengl": true
     },
     "Monopoly Casino": {},
+    "Monopoly Casino: Vegas Edition": {},
     "Monopoly Deluxe": {
       "config_path": "N/A"
     },
@@ -110977,7 +111000,7 @@
     "Necrodome": {
       "steam_appid": 2464680,
       "config_path": "<path-to-game>\\NECRO.CFG",
-      "engine": "Vampire"
+      "engine": "Raven engine"
     },
     "Necrofugitive": {
       "steam_appid": 1166890
@@ -121993,6 +122016,8 @@
     },
     "Phantom Blade Zero": {
       "steam_appid": 4115450,
+      "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\ProjectPBZ\\Saved\\Config\\Windows\\, <path-to-game>\\ProjectPBZ\\Saved\\",
       "engine": "Unreal Engine 5"
     },
     "Phantom Brave PC": {
@@ -124208,7 +124233,9 @@
       "steam_appid": 882070
     },
     "Platoon (1987)": {},
-    "Platoon (2002)": {},
+    "Platoon (2002)": {
+      "engine": "Walker 1"
+    },
     "Platoon Leader": {},
     "Platro": {
       "steam_appid": 527550
@@ -133796,6 +133823,10 @@
       "config_path": "<path-to-game>\\re7_config.ini",
       "engine": "RE Engine"
     },
+    "Resident Evil Code: Veronica X": {
+      "dx11": true,
+      "dx12": true
+    },
     "Resident Evil HD Remaster": {
       "steam_appid": 304240,
       "dx9": true,
@@ -138066,6 +138097,7 @@
     "RTAG rise": {
       "steam_appid": 800680
     },
+    "RTL Biathlon 2007": {},
     "RTL Biathlon 2008": {},
     "RTL Biathlon 2009": {
       "steam_appid": 374090,
@@ -146579,6 +146611,9 @@
       "steam_appid": 1361670
     },
     "Skate or Die": {},
+    "Skate Shop Simulator": {
+      "steam_appid": 1919480
+    },
     "Skate Story": {
       "steam_appid": 1263240,
       "dx11": true,
@@ -152652,6 +152687,9 @@
       "config_path": "%LOCALAPPDATA%\\SpiritCity\\Saved\\SaveGames\\",
       "engine": "Unreal Engine 5"
     },
+    "Spirit Crossing": {
+      "steam_appid": 2321960
+    },
     "Spirit Fighters": {
       "steam_appid": 1149200
     },
@@ -154293,6 +154331,7 @@
     "Star Wars: DroidWorks": {
       "engine": "Sith"
     },
+    "Star Wars: Early Learning Activity Center": {},
     "Star Wars: Empire at War": {
       "steam_appid": 32470,
       "dx9": true,
@@ -154302,7 +154341,8 @@
     },
     "Star Wars: Episode I - Battle for Naboo": {},
     "Star Wars: Episode I - Jedi Power Battles": {
-      "steam_appid": 2443630
+      "steam_appid": 2443630,
+      "dx12": true
     },
     "Star Wars: Episode I - Racer": {
       "steam_appid": 808910,
@@ -154341,6 +154381,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Fantasy Flight Games\\Legends of the Alliance\\",
       "engine": "Unity"
     },
+    "Star Wars: Jar Jar's Journey": {},
     "Star Wars: Jedi Knight - Dark Forces II": {
       "steam_appid": 32380,
       "config_path": "HKEY_LOCAL_MACHINE\\SOFTWARE\\LucasArts Entertainment Company\\JediKnight\\v1.0, <path-to-game>\\Controls\\",
@@ -154462,6 +154503,7 @@
     "Star Wars: Yoda Stories": {
       "config_path": "%WINDIR%\\Yodesk.ini"
     },
+    "Star Wars: Yoda's Challenge Activity Center": {},
     "Star Wars: Zero Company": {
       "steam_appid": 2075800,
       "dx12": true,
@@ -163320,6 +163362,9 @@
     },
     "Tenis PC3": {
       "config_path": "C:\\pc3\\drakssen\\tennis\\keywiz.cfg"
+    },
+    "Tenjutsu": {
+      "steam_appid": 1363940
     },
     "Tenkyu": {
       "steam_appid": 818350
@@ -175451,6 +175496,7 @@
       "steam_appid": 668560
     },
     "Thomas & Friends: Building the New Line": {},
+    "Thomas & Friends: Railway Adventures": {},
     "Thomas & Friends: The Great Festival Adventure": {},
     "Thomas & Friends: Thomas Saves the Day": {},
     "Thomas & Friends: Trouble on the Tracks": {},
@@ -175822,7 +175868,9 @@
     "Thundering Skies": {
       "steam_appid": 725660
     },
-    "Thunderscape": {},
+    "Thunderscape": {
+      "engine": "Raven engine"
+    },
     "ThunderWheels": {
       "steam_appid": 296790
     },
@@ -188208,7 +188256,9 @@
     "Wall Street Junior": {
       "steam_appid": 715520
     },
+    "Wall Street Trader 2000": {},
     "Wall Street Trader 2001": {},
+    "Wall Street Trader 98": {},
     "Wall Street Tycoon": {
       "steam_appid": 985710
     },
@@ -194142,8 +194192,8 @@
     "Wuchang: Fallen Feathers": {
       "steam_appid": 2277560,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Project_Plague\\Saved\\<user-id>\\GameConfig\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\Project_Plague\\Saved\\<user-id>\\GameConfig\\",
+      "config_path": "%LOCALAPPDATA%\\Project_Plague\\Saved\\<user-id>\\GameConfig\\, %LOCALAPPDATA%\\Project_Plague\\Saved\\Config\\Windows\\",
+      "config_path_xbox": "%LOCALAPPDATA%\\Project_Plague\\Saved\\<user-id>\\GameConfig\\, %LOCALAPPDATA%\\Project_Plague\\Saved\\Config\\WinGDK\\",
       "engine": "Unreal Engine 5"
     },
     "Wulverblade": {
