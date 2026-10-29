@@ -19737,8 +19737,6 @@
     "Black Mesa": {
       "steam_appid": 362890,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\bms\\cfg\\, <path-to-game>\\bms\\save\\",
       "engine": "Source"
     },
@@ -35190,8 +35188,6 @@
     "Counter-Strike: Source": {
       "steam_appid": 240,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\cstrike\\cfg\\, HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\cstrike",
       "engine": "Source"
     },
@@ -40694,7 +40690,6 @@
     "Day of Defeat: Source": {
       "steam_appid": 300,
       "dx9": true,
-      "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\dod\\Settings",
       "engine": "Source"
     },
@@ -54529,13 +54524,13 @@
     },
     "Entropy: Zero": {
       "steam_appid": 714070,
+      "dx9": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\EntropyZero\\Settings, <path-to-game>\\Entropy Zero\\Entropy Zero\\EntropyZero\\cfg",
       "engine": "Source"
     },
     "Entropy: Zero 2": {
       "steam_appid": 1583720,
       "dx9": true,
-      "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\EntropyZero2\\Settings",
       "engine": "Source"
     },
@@ -66900,7 +66895,6 @@
     "Garry's Mod": {
       "steam_appid": 4000,
       "dx9": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\garrysmod\\cfg\\",
       "engine": "Source"
     },
@@ -73286,8 +73280,6 @@
     "Half-Life 2": {
       "steam_appid": 220,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\hl2_complete\\Settings, HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Source\\hl2\\Settings",
       "engine": "Source"
     },
@@ -92699,15 +92691,12 @@
     "Left 4 Dead": {
       "steam_appid": 500,
       "dx9": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\left4dead\\cfg\\config.cfg, <path-to-game>\\left4dead\\cfg\\video.txt",
       "engine": "Source"
     },
     "Left 4 Dead 2": {
       "steam_appid": 550,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\left4dead2\\cfg\\config.cfg",
       "engine": "Source"
     },
@@ -113810,7 +113799,6 @@
     "No More Room in Hell": {
       "steam_appid": 224260,
       "dx9": true,
-      "vulkan": true,
       "config_path": "<path-to-game>/nmrih/cfg",
       "engine": "Source"
     },
@@ -125395,8 +125383,6 @@
     "Portal": {
       "steam_appid": 400,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Valve\\Source\\portal\\Settings",
       "engine": "Source"
     },
@@ -125404,8 +125390,6 @@
     "Portal 2": {
       "steam_appid": 620,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\portal2\\cfg\\, <path-to-game>\\portal2_dlc2\\cfg\\, <path-to-game>\\update\\cfg\\",
       "engine": "Source"
     },
@@ -162795,8 +162779,6 @@
     "Team Fortress 2": {
       "steam_appid": 440,
       "dx9": true,
-      "vulkan": true,
-      "opengl": true,
       "config_path": "<path-to-game>\\tf\\cfg\\",
       "engine": "Source"
     },
