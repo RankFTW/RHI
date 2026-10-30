@@ -203,3 +203,6 @@ if (card.InstalledRecord != null) {
 }
 ```
 Any future per-game toggle fields must also be preserved here.
+
+## Hidden games
+- **Hidden games are left alone**: every automatic update or bulk "apply to all" loop over `_allCards` / `AllCards` must skip `card.IsHidden` (Update All, AutoUpdateService, DLSS/Streamline auto-update, RTX 40 MFG, 20/30 FG, RTX Encore, NR Cost Scaler, ASI Loader, DLSS Enabler, custom ReShade redeploy, startup shader sync, Streamline redeploy, Settings "apply to all" buttons). Detection and update checks (read-only) still include hidden games. Exception: Vulkan per-game override propagation (shared global layer state). Decided Oct 2026; before that only Update All skipped them.

@@ -158,6 +158,7 @@ public class CustomReShadeHashService
         foreach (var card in allCards)
         {
             if (card.RsStatus == GameStatus.NotInstalled) continue;
+            if (card.IsHidden) continue; // hidden games are left alone
 
             var channel = card.RsRecord?.Channel;
             if (!string.Equals(channel, AuxInstallService.ChannelCustom, StringComparison.OrdinalIgnoreCase))

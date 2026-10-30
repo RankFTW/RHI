@@ -360,6 +360,7 @@ public class UltimateAsiLoaderService
         foreach (var card in cards.ToList())
         {
             if (string.IsNullOrEmpty(card.InstallPath)) continue;
+            if (card.IsHidden) continue; // hidden games are left alone
             var record = records.FirstOrDefault(r =>
                 r.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)
                 && r.InstallPath.Equals(card.InstallPath, StringComparison.OrdinalIgnoreCase));

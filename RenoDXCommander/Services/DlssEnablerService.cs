@@ -327,6 +327,7 @@ public class DlssEnablerService
         foreach (var card in cards)
         {
             if (string.IsNullOrEmpty(card.InstallPath)) continue;
+            if (card.IsHidden) continue; // hidden games are left alone
             var installedAs = viewModel.GetDeInstalledAs(card.GameName, card.Source ?? "");
             if (string.IsNullOrEmpty(installedAs)) continue;
             var dest = Path.Combine(card.InstallPath, installedAs);

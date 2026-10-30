@@ -453,7 +453,7 @@ public partial class MainViewModel
                 try
                 {
                     if (_nrCostScalerService.IsStagingReady)
-                        foreach (var c in _allCards.Where(c => !string.IsNullOrEmpty(c.InstallPath)
+                        foreach (var c in _allCards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)
                             && DlssNrCostScalerService.IsInstalled(c.InstallPath)
                             && nrCostScalerUpdated))
                             _nrCostScalerService.Install(c.InstallPath);
@@ -561,7 +561,7 @@ public partial class MainViewModel
                 // Redeploy Streamline to all games where it's enabled (after OptiScaler staging is ready)
                 try
                 {
-                    foreach (var card in _allCards.Where(c => c.IsOsInstalled && !string.IsNullOrEmpty(c.InstallPath)
+                    foreach (var card in _allCards.Where(c => c.IsOsInstalled && !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)
                         && GetOsDeployStreamline(c.GameName, c.Source ?? "")))
                     {
                         try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!, GetOsStreamlineVersion(card.GameName, card.Source ?? "")); }
@@ -584,7 +584,7 @@ public partial class MainViewModel
                 try
                 {
                     var rsCards = _allCards
-                        .Where(card => !string.IsNullOrEmpty(card.InstallPath))
+                        .Where(card => !card.IsHidden && !string.IsNullOrEmpty(card.InstallPath))
                         .Where(card => card.RequiresVulkanInstall
                             ? VulkanFootprintService.Exists(card.InstallPath)
                             : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable)

@@ -16,7 +16,7 @@
 - Removed the GPU generation setting. The mod now detects RTX 20 and 30 cards by itself.
 
 **Component settings (⚙)**
-- Every component's ⚙ window now has the same layout: the same width, setting names on the left with the option beside them, a short explanation under every setting, matching section headings and buttons, and a scroll bar when there's a lot to show.
+- Every component's ⚙ window now has the same layout: the same width, setting names on the left with the option beside them, a short explanation under each setting, matching section headings and buttons, and a scroll bar when there's a lot to show. OptiScaler and RenoDX's compatibility settings keep their compact two-per-row layout, with explanations when you hover a setting.
 - Messages (for example "Deployed ReShade.ini" or an error) now appear inside the ⚙ window instead of on the game behind it.
 - Settings save as soon as you change them everywhere, including dgVoodoo2, RTX Encore and ShortFuse DLSS Tool, which used to need an Apply or Save button. RTX HDR and Auto HDR keep their Apply button because they use sliders.
 - New buttons: Open relimiter.ini, Open DisplayCommander.ini and Open OptiScaler.ini.
@@ -46,6 +46,9 @@
 - Fixed the RE Framework "Delete _storage_ folder" button getting stuck on "Deleting...".
 - Fixed applying a ReShade hotkey saying "Applied!" when the game had no reshade.ini to change.
 - Fixed an invalid ReLimiter custom FPS being ignored without a message.
+
+**Hidden games**
+- Fixed hidden games still being changed in the background. RHI already left them out of Update All; now the automatic DLSS / Streamline, RTX 40 MFG, 20/30 FG Unlock, RTX Encore, NR Cost Scaler, ASI Loader and DLSS Enabler updates skip them too, along with the "apply to all" settings (screenshot path, peak nits, ReLimiter and OptiScaler hotkeys, deploy all addons and shaders). Show a game again, or use its own buttons, to update it.
 
 **Tooltips**
 - Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.

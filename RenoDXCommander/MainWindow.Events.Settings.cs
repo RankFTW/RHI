@@ -425,6 +425,7 @@ public sealed partial class MainWindow
             foreach (var card in ViewModel.AllCards)
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (card.IsHidden) continue; // hidden games are left alone
                 if (card.UlStatus == Models.GameStatus.Installed || card.DcStatus == Models.GameStatus.Installed)
                 {
                     try { presetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }

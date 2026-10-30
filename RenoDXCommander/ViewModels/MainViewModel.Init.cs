@@ -870,7 +870,7 @@ public partial class MainViewModel
                 try
                 {
                     var rsCards = _allCards
-                        .Where(card => !string.IsNullOrEmpty(card.InstallPath))
+                        .Where(card => !card.IsHidden && !string.IsNullOrEmpty(card.InstallPath))
                         .Where(card => card.RequiresVulkanInstall
                             ? VulkanFootprintService.Exists(card.InstallPath)
                             : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable)

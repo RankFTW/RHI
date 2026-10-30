@@ -241,7 +241,7 @@ public partial class MainViewModel
                     {
                         await _nrCostScalerService.EnsureStagingAsync();
                         if (_nrCostScalerService.IsStagingReady)
-                            foreach (var c in _allCards.Where(c => !string.IsNullOrEmpty(c.InstallPath)
+                            foreach (var c in _allCards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)
                                 && DlssNrCostScalerService.IsInstalled(c.InstallPath)))
                                 _nrCostScalerService.Install(c.InstallPath);
                     }
@@ -274,7 +274,7 @@ public partial class MainViewModel
                     {
                         await rtxEncoreSvc.EnsureStagingAsync();
                         if (rtxEncoreSvc.IsStagingReady)
-                            foreach (var c in _allCards.Where(c => !string.IsNullOrEmpty(c.InstallPath)))
+                            foreach (var c in _allCards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)))
                             {
                                 var installedAs = GetRtxEncoreInstalledAs(c.GameName, c.Source ?? "");
                                 if (!string.IsNullOrEmpty(installedAs) && rtxEncoreSvc.IsInstalledIn(c.InstallPath!, installedAs))

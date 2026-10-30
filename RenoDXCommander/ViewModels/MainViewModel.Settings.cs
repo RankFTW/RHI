@@ -780,6 +780,7 @@ public partial class MainViewModel
         foreach (var c in _allCards.ToList())
         {
             if (string.IsNullOrEmpty(c.InstallPath)) continue;
+            if (c.IsHidden) continue; // hidden games are left alone
             var installedAs = GetRtx40MfgInstalledAs(c.GameName, c.Source ?? "");
             if (!string.IsNullOrEmpty(installedAs)) installs.Add((c.InstallPath, installedAs));
         }
@@ -841,6 +842,7 @@ public partial class MainViewModel
         foreach (var c in _allCards.ToList())
         {
             if (string.IsNullOrEmpty(c.InstallPath)) continue;
+            if (c.IsHidden) continue; // hidden games are left alone
             var installedAs = GetDlssg2030InstalledAs(c.GameName, c.Source ?? "");
             if (string.IsNullOrEmpty(installedAs) || !File.Exists(Path.Combine(c.InstallPath, installedAs))) continue;
             if (!_dlssg2030Service.NeedsUpdate(c.InstallPath, installedAs)) continue;
@@ -1534,6 +1536,7 @@ public partial class MainViewModel
                 foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                    if (card.IsHidden) continue; // hidden games are left alone
 
                     bool rsInstalled = card.RequiresVulkanInstall
                         ? VulkanFootprintService.Exists(card.InstallPath)
@@ -2029,6 +2032,7 @@ public partial class MainViewModel
         foreach (var card in _allCards)
         {
             if (card.DlssDetection == null || !card.HasAnyDlssStreamline) continue;
+            if (card.IsHidden) continue; // hidden games are left alone
 
             // ── DLSS Auto-Update (SR, RR, FG all use the same version set) ──
             if (_settingsViewModel.AutoUpdateDlss && dlssHasNewVersion)

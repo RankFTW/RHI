@@ -304,6 +304,7 @@ public partial class MainViewModel : ObservableObject
                 foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                    if (card.IsHidden) continue; // hidden games are left alone
                     bool rsInstalled = card.RequiresVulkanInstall
                         ? VulkanFootprintService.Exists(card.InstallPath)
                         : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
@@ -319,6 +320,7 @@ public partial class MainViewModel : ObservableObject
                 foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                    if (card.IsHidden) continue; // hidden games are left alone
 
                     bool rsInstalled = card.RequiresVulkanInstall
                         ? VulkanFootprintService.Exists(card.InstallPath)

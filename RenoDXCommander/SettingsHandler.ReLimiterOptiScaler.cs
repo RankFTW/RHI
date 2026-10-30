@@ -302,6 +302,7 @@ public partial class SettingsHandler
             foreach (var card in ViewModel.AllCards)
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (card.IsHidden) continue; // hidden games are left alone
                 if (!card.IsOsInstalled) continue;
 
                 var gameIniPath = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);

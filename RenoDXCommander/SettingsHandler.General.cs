@@ -168,6 +168,7 @@ public partial class SettingsHandler
                 foreach (var card in allCards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                    if (card.IsHidden) continue; // hidden games are left alone
                     if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
                     // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
@@ -285,6 +286,7 @@ public partial class SettingsHandler
                 foreach (var card in allCards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                    if (card.IsHidden) continue; // hidden games are left alone
                     if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
                     var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
