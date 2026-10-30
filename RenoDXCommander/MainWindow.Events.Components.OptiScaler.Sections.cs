@@ -1,6 +1,7 @@
 // MainWindow.Events.Components.OptiScaler.Sections.cs — OptiScaler cog dialog sections shown for the
 // Nightly, DLSS NR and F5 variants: Frame Generation, Additional Settings, Engine.ini (Unreal only)
 // and Neural Rendering (DLSS NR / F5 only). Every setting applies as soon as it changes.
+// Each section builds its cells first (OsComboCell), then lays them out two per row (AddOsGrid).
 
 using System;
 using System.IO;
@@ -27,7 +28,7 @@ public sealed partial class MainWindow
         // FG Enabled — master on/off
         var fgEnabledItems = new[] { "Auto (false)", "True" };
         var currentFgEnabled = ReadOsIniSectionValue(card.InstallPath, "FrameGen", "Enabled", "");
-        ctx.FgEnabledCombo = cog.AddCombo("FG Enabled",
+        var fgEnabledCell = OsComboCell(cog, "FG Enabled",
             "Turns OptiScaler frame generation on. Auto leaves it off.",
             fgEnabledItems, currentFgEnabled.Equals("true", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
             i =>
@@ -52,7 +53,7 @@ public sealed partial class MainWindow
         bool combinedOn = ViewModel.GetOsDeployStreamline(card.GameName, store);
         ComboBox? slVersionCombo = null;
         var yesNo = new[] { "No", "Yes" };
-        ctx.CombinedCombo = cog.AddCombo("Streamline/DLSS Enabler",
+        var combinedCell = OsComboCell(cog, "Streamline/DLSS Enabler",
             "Yes copies Streamline and DLSS Enabler into the game's OptiScaler folder; needed for DLSS Frame Generation through OptiScaler. No removes them.",
             yesNo, combinedOn ? 1 : 0,
             i =>
@@ -90,7 +91,7 @@ public sealed partial class MainWindow
                 }
             });
 
-        slVersionCombo = cog.AddCombo("Streamline Version",
+        var slVersionCell = OsComboCell(cog, "Streamline Version",
             "Streamline version used when Streamline/DLSS Enabler is set to Yes. Swapped in the game straight away.",
             slVersionItems, OsIndexOf(slVersionItems, slVersionDefault),
             i =>
@@ -103,10 +104,11 @@ public sealed partial class MainWindow
                     dlssStreamlineSvc.SwapStreamlineAsync(slFolder, selectedVer).SafeFireAndForget("OsCog.SwapStreamline");
                 }
             }, isEnabled: combinedOn);
+        slVersionCombo = slVersionCell.Combo;
 
         // FG Input
         var fgInputItems = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" };
-        ctx.FgInputCombo = cog.AddCombo("FG Input",
+        var fgInputCell = OsComboCell(cog, "FG Input",
             "Frame generation input OptiScaler hooks (FGInput). Auto lets OptiScaler decide.",
             fgInputItems, OsIndexOf(fgInputItems, OsIniToFgInput(ViewModel.GetOsFgInput(card.GameName, store))),
             i =>
@@ -127,7 +129,7 @@ public sealed partial class MainWindow
         }
 
         var fgOutputItems = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" };
-        var fgOutputCombo = cog.AddCombo("FG Output",
+        var fgOutputCell = OsComboCell(cog, "FG Output",
             "Frame generation OptiScaler runs (FGOutput). Auto lets OptiScaler decide.",
             fgOutputItems, OsIndexOf(fgOutputItems, OsIniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, store))),
             i =>
@@ -140,7 +142,7 @@ public sealed partial class MainWindow
             });
 
         var nvngxItems = new[] { "None (Real DLSSG)", "Nukem's", "Enabler", "FSR 3/4 FG", "Combo" };
-        fgNvngxCombo = cog.AddCombo("FG Nvngx Override",
+        var fgNvngxCell = OsComboCell(cog, "FG Nvngx Override",
             "Only used when FG Output is DLSSG: what stands in for NVIDIA's DLSSG. Enabler needs Streamline/DLSS Enabler set to Yes.",
             nvngxItems, OsIndexOf(nvngxItems, OsIniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, store)), 0),
             i =>
@@ -150,9 +152,10 @@ public sealed partial class MainWindow
                 if (!string.IsNullOrEmpty(card.InstallPath) && string.Equals(ViewModel.GetOsFgOutput(card.GameName, store), "dlssg", StringComparison.OrdinalIgnoreCase))
                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", v);
             });
-        ctx.FgOutputCombo = fgOutputCombo;
+        fgNvngxCombo = fgNvngxCell.Combo;
+        ctx.FgOutputCombo = fgOutputCell.Combo;
         ctx.FgNvngxCombo = fgNvngxCombo;
-        SetNvngxUsable(fgOutputCombo.SelectedItem as string == "DLSSG");
+        SetNvngxUsable(fgOutputCell.Combo.SelectedItem as string == "DLSSG");
 
         // HUD Fix — [OptiFG] HUDFix
         var hudFixCurrent = ReadOsIniSectionValue(card.InstallPath, "OptiFG", "HUDFix", "auto");
@@ -160,7 +163,7 @@ public sealed partial class MainWindow
         var hudFixSelected = hudFixCurrent.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
                            : hudFixCurrent.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
                            : "Default";
-        ctx.HudFixCombo = cog.AddCombo("HUD Fix",
+        var hudFixCell = OsComboCell(cog, "HUD Fix",
             "Hudless resource tracking for frame generation (HUDFix in [OptiFG]). Default leaves it to OptiScaler.",
             hudFixItems, OsIndexOf(hudFixItems, hudFixSelected),
             i =>
@@ -173,7 +176,7 @@ public sealed partial class MainWindow
         // Force Reflex — [fakenvapi] ForceReflex
         var forceReflexItems = new[] { "Auto (0)", "Force Disable (1)", "Force Enable (2)" };
         var currentForceReflex = ReadOsIniSectionValue(card.InstallPath, "fakenvapi", "ForceReflex", "");
-        ctx.ForceReflexCombo = cog.AddCombo("Force Reflex",
+        var forceReflexCell = OsComboCell(cog, "Force Reflex",
             "Reflex state when using DLSS FG (ForceReflex in [fakenvapi]). Auto follows the in-game setting.",
             forceReflexItems, currentForceReflex switch { "1" => 1, "2" => 2, _ => 0 },
             i =>
@@ -185,7 +188,7 @@ public sealed partial class MainWindow
         // Use Games Reflex Markers — [DLSSG] UseGamesReflexMarkers
         var markersItems = new[] { "True", "False" };
         var currentReflexMarkers = ReadOsIniSectionValue(card.InstallPath, "DLSSG", "UseGamesReflexMarkers", "");
-        ctx.ReflexMarkersCombo = cog.AddCombo("Use Games Reflex Markers",
+        var markersCell = OsComboCell(cog, "Use Games Reflex Markers",
             "Use the game's own Reflex markers to time frame generation. Default is True.",
             markersItems, currentReflexMarkers.Equals("false", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
             i =>
@@ -193,6 +196,21 @@ public sealed partial class MainWindow
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSG", "UseGamesReflexMarkers", markersItems[i] == "False" ? "false" : "true");
             });
+
+        ctx.FgEnabledCombo = fgEnabledCell.Combo;
+        ctx.CombinedCombo = combinedCell.Combo;
+        ctx.FgInputCombo = fgInputCell.Combo;
+        ctx.HudFixCombo = hudFixCell.Combo;
+        ctx.ForceReflexCombo = forceReflexCell.Combo;
+        ctx.ReflexMarkersCombo = markersCell.Combo;
+
+        // FG Nvngx Override sits under FG Output, the setting it depends on.
+        AddOsGrid(ctx,
+            fgEnabledCell, hudFixCell,
+            combinedCell, slVersionCell,
+            fgInputCell, fgOutputCell,
+            null, fgNvngxCell,
+            forceReflexCell, markersCell);
     }
 
     // ── Additional Settings ──────────────────────────────────────────────────────
@@ -207,7 +225,7 @@ public sealed partial class MainWindow
         // DLSS SR preset
         var srItems = OsSrPresetMap.Select(p => p.Label).ToArray();
         var srCurrent = ReadOsIniSectionValue(card.InstallPath, "DLSS", "RenderPresetForAll", "auto");
-        ctx.SrPresetCombo = cog.AddCombo("DLSS SR Preset",
+        var srCell = OsComboCell(cog, "DLSS SR Preset",
             "DLSS Super Resolution render preset. J to M are the recommended modern presets. Default leaves the choice to DLSS.",
             srItems, Math.Max(0, Array.FindIndex(OsSrPresetMap, p => p.Value == srCurrent)),
             i =>
@@ -221,7 +239,7 @@ public sealed partial class MainWindow
         // DLSS RR preset
         var rrItems = OsRrPresetMap.Select(p => p.Label).ToArray();
         var rrCurrent = ReadOsIniSectionValue(card.InstallPath, "DLSSD", "RenderPresetForAll", "auto");
-        ctx.RrPresetCombo = cog.AddCombo("DLSS RR Preset",
+        var rrCell = OsComboCell(cog, "DLSS RR Preset",
             "DLSS Ray Reconstruction render preset. Default leaves the choice to DLSS.",
             rrItems, Math.Max(0, Array.FindIndex(OsRrPresetMap, p => p.Value == rrCurrent)),
             i =>
@@ -243,7 +261,7 @@ public sealed partial class MainWindow
             var match = OsRenderScaleMap.Skip(1).FirstOrDefault(p => Math.Abs(p.Ratio - rsVal) < 0.01f);
             if (match.Label != null) rsSelected = match.Label;
         }
-        ctx.RsCombo = cog.AddCombo("Render Scale",
+        var rsCell = OsComboCell(cog, "Render Scale",
             "Overrides the internal render resolution, as a percentage of the output resolution. Off uses the game's quality mode as it is.",
             rsItems, OsIndexOf(rsItems, rsSelected),
             i =>
@@ -264,7 +282,7 @@ public sealed partial class MainWindow
         // Disable Flip Metering — [NvApi] DisableFlipMetering
         var flipItems = new[] { "Default", "On" };
         var flipCurrent = ReadOsIniSectionValue(card.InstallPath, "NvApi", "DisableFlipMetering", "auto");
-        ctx.FlipCombo = cog.AddCombo("Disable Flip Metering",
+        var flipCell = OsComboCell(cog, "Disable Flip Metering",
             "On sets DisableFlipMetering=true. Fixes a thick frame-time graph with Nukem's FG and fakenvapi.",
             flipItems, flipCurrent == "true" ? 1 : 0,
             i =>
@@ -272,6 +290,14 @@ public sealed partial class MainWindow
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "NvApi", "DisableFlipMetering", flipItems[i] == "On" ? "true" : "false");
             });
+
+        ctx.SrPresetCombo = srCell.Combo;
+        ctx.RrPresetCombo = rrCell.Combo;
+        ctx.RsCombo = rsCell.Combo;
+        ctx.FlipCombo = flipCell.Combo;
+        AddOsGrid(ctx,
+            srCell, rrCell,
+            rsCell, flipCell);
     }
 
     // ── Engine.ini (Unreal Engine only) ──────────────────────────────────────────
@@ -301,7 +327,7 @@ public sealed partial class MainWindow
 
         // Dilated Motion Vectors
         var dmvItems = new[] { "Default", "Off" };
-        cog.AddCombo("Dilated Motion Vectors",
+        var dmvCell = OsComboCell(cog, "Dilated Motion Vectors",
             "Off adds r.NGX.DLSS.DilateMotionVectors=0 and r.Streamline.DilateMotionVectors=0 to Engine.ini. Default removes them.",
             dmvItems, ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, store) ? 1 : 0,
             i =>
@@ -317,7 +343,7 @@ public sealed partial class MainWindow
 
         // FSR Crash Fix
         var fsrItems = new[] { "None", "FSR2", "FSR3", "FSR3.1" };
-        cog.AddCombo("FSR Crash Fix",
+        var fsrFixCell = OsComboCell(cog, "FSR Crash Fix",
             "Adds the native DX12 key for the chosen FSR version to Engine.ini (FSR3.1 also sets r.FidelityFX.FSR3.UseRHI=0). None removes them.",
             fsrItems, OsIndexOf(fsrItems, ViewModel.GetOsFsrCrashFix(card.GameName, store)),
             i =>
@@ -353,7 +379,7 @@ public sealed partial class MainWindow
 
         // FSR-FG Swapchain
         var onItems = new[] { "Default", "On" };
-        cog.AddCombo("FSR-FG Swapchain",
+        var swapchainCell = OsComboCell(cog, "FSR-FG Swapchain",
             "On adds r.FidelityFX.FI.OverrideSwapChainDX12=1 to Engine.ini. Default removes it.",
             onItems, ViewModel.GetOsFsrFgSwapchain(card.GameName, store) ? 1 : 0,
             i =>
@@ -364,7 +390,7 @@ public sealed partial class MainWindow
             });
 
         // Upscaler Plugin
-        cog.AddCombo("Upscaler Plugin",
+        var pluginCell = OsComboCell(cog, "Upscaler Plugin",
             "On adds r.AntiAliasingMethod=4 and r.TemporalAA.Upscaler=1 to Engine.ini. Default removes them.",
             onItems, ViewModel.GetOsUpscalerPlugin(card.GameName, store) ? 1 : 0,
             i =>
@@ -377,6 +403,11 @@ public sealed partial class MainWindow
                     ("SystemSettings", "r.TemporalAA.Upscaler", "1"),
                 }, "upscaler plugin");
             });
+
+        // The two FSR fixes share a row.
+        AddOsGrid(ctx,
+            pluginCell, dmvCell,
+            fsrFixCell, swapchainCell);
     }
 
     // ── Neural Rendering (DLSS NR and F5 variants) ───────────────────────────────
@@ -405,7 +436,7 @@ public sealed partial class MainWindow
             currentNrRuntime = nrVersions[0];
         if (!string.IsNullOrEmpty(currentNrRuntime) && !nrVersions.Contains(currentNrRuntime))
             nrVersions.Insert(0, currentNrRuntime);
-        ctx.NrRuntimeCombo = cog.AddCombo("NR Runtime",
+        var nrRuntimeCell = OsComboCell(cog, "NR Runtime",
             "Version of nvngx_dlssnr.dll. 310.8.2 is NVIDIA's original (RTX 50). 310.8.SF-v2 is ShortFuse's cross-gen build (RTX 20/30/40). Swapped in the game folder straight away.",
             nrVersions, OsIndexOf(nrVersions, currentNrRuntime),
             i =>
@@ -442,7 +473,7 @@ public sealed partial class MainWindow
             });
 
         // NR Enabled
-        ctx.NrEnabledCombo = cog.AddCombo("NR Enabled",
+        var nrEnabledCell = OsComboCell(cog, "NR Enabled",
             "Turns DLSS Neural Rendering on or off. Needs nvngx_dlssnr.dll and nvngx.dll_dlssnr.dll in the game folder.",
             defaultOnOff, DefaultOnOffIndex(ReadNrIni("Enabled")),
             i =>
@@ -452,7 +483,7 @@ public sealed partial class MainWindow
             });
 
         // Run Before SR
-        ctx.NrRunBeforeSrCombo = cog.AddCombo("Run Before SR",
+        var nrRunBeforeSrCell = OsComboCell(cog, "Run Before SR",
             "On runs NR before upscaling (Super Resolution). Off runs it after.",
             defaultOnOff, DefaultOnOffIndex(ReadNrIni("RunBeforeSR")),
             i =>
@@ -464,7 +495,7 @@ public sealed partial class MainWindow
         // Passes
         var passesItems = new[] { "Default", "1", "2", "3" };
         var nrPassesRaw = ReadNrIni("Passes");
-        ctx.NrPassesCombo = cog.AddCombo("Passes",
+        var nrPassesCell = OsComboCell(cog, "Passes",
             "Number of NR model passes. Each extra pass costs about twice the model time and improves quality.",
             passesItems, OsIndexOf(passesItems, nrPassesRaw is "1" or "2" or "3" ? nrPassesRaw : "Default"),
             i =>
@@ -477,7 +508,7 @@ public sealed partial class MainWindow
         // Working Scale
         var scaleItems = OsNrScaleMap.Select(p => p.Label).ToArray();
         var nrScaleRaw = ReadNrIni("WorkingScale");
-        ctx.NrWorkingScaleCombo = cog.AddCombo("Working Scale",
+        var nrScaleCell = OsComboCell(cog, "Working Scale",
             "Resolution the NR model works at, as a fraction of the frame size. Lower is faster; above 1.0 supersamples.",
             scaleItems, Math.Max(0, Array.FindIndex(OsNrScaleMap, p => p.Value == nrScaleRaw)),
             i =>
@@ -488,7 +519,7 @@ public sealed partial class MainWindow
 
         // Apply to Finished Picture
         var finishedItems = new[] { "Default", "On" };
-        ctx.NrFinishedPicCombo = cog.AddCombo("Apply to Finished Picture",
+        var nrFinishedCell = OsComboCell(cog, "Apply to Finished Picture",
             "Applies NR to the finished picture, after all of the game's lighting and effects. Helps with green noise. Native DX12 only.",
             finishedItems, ReadNrIni("FinishedPicture").Equals("true", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
             i =>
@@ -496,5 +527,16 @@ public sealed partial class MainWindow
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "FinishedPicture", finishedItems[i] == "On" ? "true" : "false");
             });
+
+        ctx.NrRuntimeCombo = nrRuntimeCell.Combo;
+        ctx.NrEnabledCombo = nrEnabledCell.Combo;
+        ctx.NrRunBeforeSrCombo = nrRunBeforeSrCell.Combo;
+        ctx.NrPassesCombo = nrPassesCell.Combo;
+        ctx.NrWorkingScaleCombo = nrScaleCell.Combo;
+        ctx.NrFinishedPicCombo = nrFinishedCell.Combo;
+        AddOsGrid(ctx,
+            nrEnabledCell, nrRuntimeCell,
+            nrRunBeforeSrCell, nrPassesCell,
+            nrScaleCell, nrFinishedCell);
     }
 }

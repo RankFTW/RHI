@@ -496,7 +496,7 @@ public sealed partial class MainWindow
             grid.Children.Add(label);
             grid.Children.Add(combo);
         }
-        cog.Body.Children.Add(grid);
+        cog.AddContent(grid);
     }
 
     /// <summary>

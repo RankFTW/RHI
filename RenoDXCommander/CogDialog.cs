@@ -425,6 +425,13 @@ internal sealed class CogDialog
         return b;
     }
 
+    /// <summary>Adds custom content (e.g. a compact grid) and counts it as content for section dividers.</summary>
+    public T AddContent<T>(T element) where T : UIElement
+    {
+        Add(element);
+        return element;
+    }
+
     // ── Internals ────────────────────────────────────────────────────────────────
 
     private void Add(UIElement e)

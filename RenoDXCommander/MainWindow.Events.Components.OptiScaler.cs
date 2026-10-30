@@ -1,6 +1,8 @@
 // MainWindow.Events.Components.OptiScaler.cs — OptiScaler cog dialog handler (OsCogButton_Click).
-// Built with the shared CogDialog layout. Sections live in .OptiScaler.Sections.cs, the pinned
-// footer (presets + Deploy OptiScaler.ini) in .OptiScaler.Footer.cs.
+// Uses the CogDialog shell (title, sections, buttons, status line) with a compact two-per-row
+// settings grid (AddOsGrid) because OptiScaler has many settings; explanations are tooltips.
+// Sections live in .OptiScaler.Sections.cs, the pinned footer (presets + Deploy OptiScaler.ini)
+// in .OptiScaler.Footer.cs.
 
 using System;
 using System.IO;
@@ -31,6 +33,9 @@ public sealed partial class MainWindow
         public object Sender { get; }
         public RoutedEventArgs Args { get; }
         public string Store => Card.Source ?? "";
+
+        /// <summary>Elements that stay usable when OptiScaler isn't installed (version, nightly build).</summary>
+        public List<UIElement> Ungated { get; } = new();
 
         // Top rows (always present)
         public ComboBox? VariantCombo;
@@ -202,6 +207,100 @@ public sealed partial class MainWindow
         return i >= 0 ? i : fallback;
     }
 
+    // ── Compact settings grid ────────────────────────────────────────────────────
+
+    /// <summary>One label + control cell of the compact grid. Help is shown as a tooltip on both.</summary>
+    private sealed record OsCell(string Label, string? Help, FrameworkElement Control, bool Ungated = false)
+    {
+        public ComboBox Combo => (ComboBox)Control;
+    }
+
+    private const double OsComboColumnWidth = 160;
+
+    /// <summary>
+    /// A dropdown cell that calls <paramref name="onChanged"/> when the user picks an item (never during
+    /// construction). Returning false, or throwing, reverts the pick; errors show in the dialog's status line.
+    /// </summary>
+    private static OsCell OsComboCell(CogDialog cog, string label, string help, IList<string> items, int selectedIndex,
+        Func<int, bool> onChanged, bool isEnabled = true)
+    {
+        var combo = CogDialog.MakeCombo(items, selectedIndex, isEnabled);
+        int last = combo.SelectedIndex;
+        bool reverting = false;
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (reverting || combo.SelectedIndex < 0 || combo.SelectedIndex == last) return;
+            bool keep;
+            try { keep = onChanged(combo.SelectedIndex); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MainWindow.OsComboCell] '{label}' change failed — {ex.Message}");
+                cog.SetError($"Couldn't change {label}: {ex.Message}");
+                keep = false;
+            }
+            if (keep) { last = combo.SelectedIndex; return; }
+            reverting = true;
+            combo.SelectedIndex = last;
+            reverting = false;
+        };
+        return new OsCell(label, help, combo);
+    }
+
+    /// <summary>Same as the Func overload, for callbacks that always keep the pick.</summary>
+    private static OsCell OsComboCell(CogDialog cog, string label, string help, IList<string> items, int selectedIndex,
+        Action<int> onChanged, bool isEnabled = true)
+        => OsComboCell(cog, label, help, items, selectedIndex, i => { onChanged(i); return true; }, isEnabled);
+
+    /// <summary>
+    /// Adds settings two per row (label | dropdown | gap | label | dropdown) to the dialog body.
+    /// A null cell leaves that slot empty (keeps a related setting in the column it belongs to).
+    /// </summary>
+    private static void AddOsGrid(OsCogContext ctx, params OsCell?[] cells)
+    {
+        if (cells.Length == 0) return;
+        var grid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(OsComboColumnWidth) });
+        // Zero-width spacer: with ColumnSpacing it puts a 24 px gap between the two pairs.
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(OsComboColumnWidth) });
+        for (int r = 0; r < (cells.Length + 1) / 2; r++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        for (int i = 0; i < cells.Length; i++)
+        {
+            var cell = cells[i];
+            if (cell == null) continue;
+            int row = i / 2, col = i % 2 == 0 ? 0 : 3;
+
+            var label = new TextBlock
+            {
+                Text = cell.Label,
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            };
+            var control = cell.Control;
+            control.HorizontalAlignment = HorizontalAlignment.Stretch;
+            control.VerticalAlignment = VerticalAlignment.Center;
+            if (!string.IsNullOrWhiteSpace(cell.Help))
+            {
+                // Disabled controls don't show tooltips, so the label carries it too.
+                ToolTipService.SetToolTip(label, cell.Help);
+                ToolTipService.SetToolTip(control, cell.Help);
+            }
+
+            Grid.SetRow(label, row); Grid.SetColumn(label, col);
+            Grid.SetRow(control, row); Grid.SetColumn(control, col + 1);
+            grid.Children.Add(label);
+            grid.Children.Add(control);
+            if (cell.Ungated) { ctx.Ungated.Add(label); ctx.Ungated.Add(control); }
+        }
+        ctx.Cog.AddContent(grid);
+    }
+
     /// <summary>
     /// Closes the dialog and opens it again with fresh content (after a variant change or preset apply).
     /// DispatcherTimer rather than TryEnqueue(async lambda): the lambda detaches after the first await,
@@ -232,10 +331,10 @@ public sealed partial class MainWindow
             var cog = new CogDialog("OptiScaler", Content.XamlRoot);
             var ctx = new OsCogContext(card, cog, sender, e);
 
-            // Rows that stay usable when OptiScaler isn't installed on this game.
-            var ungated = new List<UIElement>();
+            // Intro and warning stay readable when OptiScaler isn't installed on this game.
+            ctx.Ungated.Add(cog.AddIntro("Settings are written to this game's OptiScaler.ini as soon as you change them. Hover a setting for an explanation."));
             if (!isInstalled)
-                ungated.Add(cog.AddWarning(isNightly
+                ctx.Ungated.Add(cog.AddWarning(isNightly
                     ? "Install OptiScaler on this game to change these settings. The version and nightly build can be chosen before installing."
                     : "Install OptiScaler on this game to change these settings. The version can be chosen before installing."));
 
@@ -244,9 +343,10 @@ public sealed partial class MainWindow
             var variantDisplay = variant switch { "DlssNr" => "DLSS NR", "F5" => "F5 DLSSNR", _ => variant };
             var variantCombo = CogDialog.MakeCombo(variantItems, OsIndexOf(variantItems, variantDisplay));
             ctx.VariantCombo = variantCombo;
-            ungated.Add(cog.AddRow("OptiScaler Version", variantCombo,
+            var variantCell = new OsCell("OptiScaler Version",
                 "Stable is the official release. Nightly is the daily build. DLSS NR is a fork with multi-pass Neural Rendering support. " +
-                "F5 DLSSNR is the F5 multi-pass NR fork with a bundled forwarder. Changing it uninstalls OptiScaler from this game; install it again afterwards."));
+                "F5 DLSSNR is the F5 multi-pass NR fork with a bundled forwarder. Changing it uninstalls OptiScaler from this game; install it again afterwards.",
+                variantCombo, Ungated: true);
             variantCombo.SelectionChanged += (s, ev) =>
             {
                 var selected = variantCombo.SelectedItem as string ?? "Stable";
@@ -261,13 +361,9 @@ public sealed partial class MainWindow
                 ReopenOsCog(ctx);
             };
 
-            // ── Nightly build (Nightly only) ─────────────────────────────────
-            if (isNightly)
-                ungated.Add(AddOsNightlyBuildRow(ctx, isInstalled));
-
             // ── Framerate limit ──────────────────────────────────────────────
             var fpsLabels = new[] { "Off" }.Concat(OsVrrPresets.Select(p => p.Label)).ToArray();
-            ctx.FpsLimitCombo = cog.AddCombo("Framerate Limit",
+            var fpsCell = OsComboCell(cog, "Framerate Limit",
                 "Caps the frame rate, using Reflex where possible. Each value sits a few fps under a common refresh rate for VRR. Off removes the cap.",
                 fpsLabels, OsIndexOf(fpsLabels, ReadOsFramerateLabel(card.InstallPath)),
                 i =>
@@ -283,6 +379,7 @@ public sealed partial class MainWindow
                             OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit", FormatOsFloat(match.Fps));
                     }
                 });
+            ctx.FpsLimitCombo = fpsCell.Combo;
 
             // ── Upscaler: API selector + upscaler for that API ───────────────
             // Default the API combo to the game's detected graphics API
@@ -312,10 +409,16 @@ public sealed partial class MainWindow
             }
             RefreshUpscalerCombo(apiDefault);
 
-            cog.AddRow("Upscaler API", apiCombo,
-                "Which graphics API the Upscaler setting below applies to. Starts on the API detected for this game.");
-            cog.AddRow("Upscaler", apiUpscalerCombo,
-                "Upscaler OptiScaler uses for the selected API. Auto lets OptiScaler choose based on your GPU.");
+            var apiCell = new OsCell("Upscaler API",
+                "Which graphics API the Upscaler setting applies to. Starts on the API detected for this game.", apiCombo);
+            var upscalerCell = new OsCell("Upscaler",
+                "Upscaler OptiScaler uses for the selected API. Auto lets OptiScaler choose based on your GPU.", apiUpscalerCombo);
+
+            // Nightly: version and build share a row (both usable before installing), framerate limit goes last.
+            if (isNightly)
+                AddOsGrid(ctx, variantCell, BuildOsNightlyBuildCell(ctx, isInstalled), apiCell, upscalerCell, fpsCell, null);
+            else
+                AddOsGrid(ctx, variantCell, fpsCell, apiCell, upscalerCell);
 
             apiCombo.SelectionChanged += (s, ev) => RefreshUpscalerCombo(apiCombo.SelectedItem as string ?? "DX11");
             apiUpscalerCombo.SelectionChanged += (s, ev) =>
@@ -349,11 +452,22 @@ public sealed partial class MainWindow
             // Not installed: only the version (and nightly build) stay usable
             if (!isInstalled)
             {
+                static void Dim(FrameworkElement fe)
+                {
+                    fe.IsHitTestVisible = false;
+                    fe.Opacity = CogDialog.DisabledOpacity;
+                }
                 foreach (var child in cog.Body.Children.OfType<FrameworkElement>())
                 {
-                    if (ungated.Contains(child)) continue;
-                    child.IsHitTestVisible = false;
-                    child.Opacity = CogDialog.DisabledOpacity;
+                    if (ctx.Ungated.Contains(child)) continue;
+                    // Settings grids mix usable and unusable cells: dim cell by cell
+                    if (child is Grid grid && grid.Children.Any(c => ctx.Ungated.Contains(c)))
+                    {
+                        foreach (var cell in grid.Children.OfType<FrameworkElement>())
+                            if (!ctx.Ungated.Contains(cell)) Dim(cell);
+                        continue;
+                    }
+                    Dim(child);
                 }
             }
 
@@ -366,8 +480,8 @@ public sealed partial class MainWindow
         }
     }
 
-    /// <summary>Nightly Build row: pin a nightly build (only changeable while OptiScaler isn't installed).</summary>
-    private FrameworkElement AddOsNightlyBuildRow(OsCogContext ctx, bool isInstalled)
+    /// <summary>Nightly Build cell: pin a nightly build (only changeable while OptiScaler isn't installed).</summary>
+    private OsCell BuildOsNightlyBuildCell(OsCogContext ctx, bool isInstalled)
     {
         var card = ctx.Card;
         var store = ctx.Store;
@@ -390,9 +504,10 @@ public sealed partial class MainWindow
         var buildCombo = CogDialog.MakeCombo(buildItems, OsIndexOf(buildItems, selectedBuildItem, 0), isEnabled: !isInstalled);
         buildCombo.Opacity = isInstalled ? CogDialog.DisabledOpacity : 1.0;
 
-        var row = ctx.Cog.AddRow("Nightly Build", buildCombo, isInstalled
+        var cell = new OsCell("Nightly Build", isInstalled
             ? "Uninstall OptiScaler first to change the build."
-            : "Pin a specific nightly build. Pinned games are skipped by auto-update. Latest always uses the newest build.");
+            : "Pin a specific nightly build. Pinned games are skipped by auto-update. Latest always uses the newest build.",
+            buildCombo, Ungated: true);
 
         buildCombo.SelectionChanged += async (s, ev) =>
         {
@@ -422,6 +537,6 @@ public sealed partial class MainWindow
                 ctx.Cog.SetError($"Couldn't pin the nightly build: {ex.Message}");
             }
         };
-        return row;
+        return cell;
     }
 }

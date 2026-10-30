@@ -52,8 +52,7 @@ public sealed partial class MainWindow
         }
 
         footer.Children.Add(MakeOsFooterNote(
-            "Settings above apply as soon as you change them. Only deploy an ini if the game folder has no OptiScaler.ini yet, " +
-            "or you want a fresh one: it replaces the file and doesn't keep most of the settings above."));
+            "Deploy only if the game has no OptiScaler.ini yet or you want a fresh one: it replaces the file and resets most settings above."));
 
         var iniPath = string.IsNullOrEmpty(card.InstallPath) ? null : Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
         var openBtn = ctx.Cog.MakeOpenFileButton("Open OptiScaler.ini", iniPath);
@@ -68,8 +67,7 @@ public sealed partial class MainWindow
         footer.Children.Add(buttons);
 
         footer.Children.Add(MakeOsFooterNote(
-            "If the game crashes with both ReShade and OptiScaler installed, try renaming ReShade to d3d12.dll (or another DLL name) " +
-            "with DLL Naming Overrides in the Overrides panel."));
+            "Crashing with ReShade and OptiScaler both installed? Rename ReShade (e.g. to d3d12.dll) with DLL Naming Overrides in the Overrides panel."));
 
         // Not installed: presets and Deploy are unavailable
         if (!isInstalled)
