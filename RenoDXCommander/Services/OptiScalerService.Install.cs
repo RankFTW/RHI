@@ -1453,29 +1453,21 @@ public partial class OptiScalerService
     }
 
     /// <inheritdoc />
-    public void CopyIniToGame(GameCardViewModel card, string? hotkey = null)
+    public void CopyIniToGame(GameCardViewModel card, string? hotkey = null, string gpuType = "NVIDIA", bool dlssInputs = true)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
-        // Determine variant from tracking record
+        // Variant from the tracking record ("Nightly", "DlssNr", "F5"; null = Stable)
         var record = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AddonType);
         var variant = record?.OsVariant ?? "Stable";
 
-        // Use global GPU settings to pick the right user INI
-        // (Settings are injected via the service locator pattern — read from global state)
-        // Fall back to nvidia/stable if we can't determine
-        var sourceIni = OsIniPath; // default fallback
-        foreach (var candidate in AllUserIniPaths())
-        {
-            // Pick the one matching the variant
-            bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
-            bool candidateIsNightly = Path.GetFileName(candidate).Contains("_nightly", StringComparison.OrdinalIgnoreCase);
-            if (isNightly == candidateIsNightly && File.Exists(candidate))
-            {
-                sourceIni = candidate;
-                break;
-            }
-        }
+        // Same template the install uses (GPU type + DLSS inputs + variant), then the
+        // variant's NVIDIA template, then the legacy single OptiScaler.ini.
+        var sourceIni = GetUserIniPath(gpuType, dlssInputs, variant);
+        if (!File.Exists(sourceIni))
+            sourceIni = GetUserIniPath("NVIDIA", true, variant);
+        if (!File.Exists(sourceIni))
+            sourceIni = OsIniPath;
 
         if (!File.Exists(sourceIni))
         {

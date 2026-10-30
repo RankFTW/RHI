@@ -472,7 +472,7 @@ public partial class DetailPanelBuilder
         {
             ToolTipService.SetToolTip(installBtn, isInstalled
                 ? $"Reinstall RTX 40 MFG Unlock (currently deployed as {currentDllName})"
-                : "Install RTX 40 MFG Unlock — deploys RTXMFG.dll under a name you choose");
+                : "Install RTX 40 MFG Unlock — deploys the unlock DLL under a name you choose");
         }
 
         installBtn.Click += async (s, e) =>
@@ -683,7 +683,7 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename to deploy RTXMFG.dll as. Choose a name the game loads early, and avoid names already used by other mods.",
+                        Text = "Select the filename to deploy the RTX 40 MFG Unlock DLL as. Choose a name the game loads early, and avoid names already used by other mods.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,

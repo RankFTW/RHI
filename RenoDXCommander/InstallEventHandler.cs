@@ -417,7 +417,8 @@ public class InstallEventHandler
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey);
+            _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey,
+                ViewModel.Settings.OsGpuType, ViewModel.Settings.OsDlssInputs);
             // Apply persisted FG settings after copying the INI
             var fgInput = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
             var fgOutput = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");

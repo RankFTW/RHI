@@ -115,7 +115,7 @@ public sealed partial class MainWindow
 
             // ── Target FPS Setting ────────────────────────────────────────────────
             bool ulIniExists = !string.IsNullOrEmpty(card.InstallPath)
-                && File.Exists(Path.Combine(card.InstallPath, "relimiter.ini"));
+                && File.Exists(Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini"));
 
             content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
             content.Children.Add(new TextBlock
@@ -168,7 +168,7 @@ public sealed partial class MainWindow
             int currentTargetFps = 0;
             if (!string.IsNullOrEmpty(card.InstallPath))
             {
-                var ulIniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                 if (File.Exists(ulIniFile))
                 {
                     try
@@ -275,7 +275,7 @@ public sealed partial class MainWindow
                 else
                     return; // Custom label item — don't set
 
-                var iniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                 if (File.Exists(iniFile))
                 {
                     try
@@ -297,7 +297,7 @@ public sealed partial class MainWindow
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
                 if (int.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
                 {
-                    var iniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                    var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                     if (File.Exists(iniFile))
                     {
                         try
@@ -320,7 +320,7 @@ public sealed partial class MainWindow
                     if (string.IsNullOrEmpty(card.InstallPath)) return;
                     if (int.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
                     {
-                        var iniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                        var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                         if (File.Exists(iniFile))
                         {
                             try
@@ -385,7 +385,7 @@ public sealed partial class MainWindow
             bool currentDlssHooks = ViewModel.Settings.UlDlssHooks; // default to global
             if (!string.IsNullOrEmpty(card.InstallPath))
             {
-                var ulIniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                 if (File.Exists(ulIniFile))
                 {
                     try
@@ -404,7 +404,7 @@ public sealed partial class MainWindow
             dlssHooksCombo.SelectionChanged += (s, ev) =>
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
-                var ulIniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
                 if (File.Exists(ulIniFile))
                 {
                     try

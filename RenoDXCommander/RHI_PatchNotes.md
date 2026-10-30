@@ -48,6 +48,16 @@
 - Fixed F5 updates failing on the first attempt with a "Could not find a part of the path" error.
 - Fixed F5 games showing the old version number after updating, which also stopped the update badge appearing for later releases.
 - Fixed updating an F5 or DLSS NR install forgetting which OptiScaler variant the game uses.
+- Fixed applying an OptiScaler preset saved on F5 DLSSNR not switching the game to F5.
+
+**OptiScaler**
+- Fixed "Deploy OptiScaler.ini" (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
+
+**ReLimiter**
+- Fixed the ReLimiter ⚙ Target FPS and DLSS Hooks settings staying greyed out (or not applying) on games whose `reshade.ini` sets an `AddonPath`. They now use the `relimiter.ini` in the addon folder, where RHI installs it.
+
+**Tooltips**
+- Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.
 
 **RTX 40 MFG Unlock**
 - Fixed RTX 40 MFG updates showing the new version in RHI while games kept the old file. Since v1.5 the mod's file is called `MFGUnlocker.dll`, which RHI wasn't picking up. Every game with RTX 40 MFG installed is now updated automatically, with no reinstall needed.

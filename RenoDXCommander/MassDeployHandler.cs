@@ -181,13 +181,15 @@ public class MassDeployHandler
             if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
             var osHotkey = _window.ViewModel.Settings.OsHotkey;
+            var osGpuType = _window.ViewModel.Settings.OsGpuType;
+            var osDlssInputs = _window.ViewModel.Settings.OsDlssInputs;
             await Task.Run(() =>
             {
                 foreach (var card in eligible)
                 {
                     try
                     {
-                        _optiScalerService.CopyIniToGame(card, osHotkey);
+                        _optiScalerService.CopyIniToGame(card, osHotkey, osGpuType, osDlssInputs);
                         count++;
                     }
                     catch (Exception ex)
