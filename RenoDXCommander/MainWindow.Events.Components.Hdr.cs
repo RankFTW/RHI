@@ -1,4 +1,6 @@
 // MainWindow.Events.Components.Hdr.cs — RTX HDR and Auto HDR config dialog handlers.
+// Both are slider dialogs built with CogDialog in Apply / Cancel mode: values are only
+// written (NVIDIA profile / registry) when the user clicks Apply.
 
 using System;
 using System.IO;
@@ -17,6 +19,45 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
+    // ── Cog dialog helpers for the slider rows below ──
+
+    /// <summary>Value readout shown to the right of a slider in a cog dialog row.</summary>
+    private static TextBlock HdrCogValueText(string text, double width = 48) => new()
+    {
+        Text = text,
+        FontSize = 12,
+        Width = width,
+        TextAlignment = TextAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center,
+        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+    };
+
+    /// <summary>Small text aligned with the control column of a cog dialog row (warnings, readouts).</summary>
+    private static TextBlock HdrCogControlText(string text, string brushKey, double opacity = 1.0) => new()
+    {
+        Text = text,
+        FontSize = 11,
+        TextWrapping = TextWrapping.Wrap,
+        Foreground = UIFactory.Brush(brushKey),
+        Opacity = opacity,
+        Margin = new Thickness(CogDialog.LabelColumnWidth + CogDialog.ColumnGap, -4, 0, 0),
+    };
+
+    /// <summary>Horizontal row of compact preset buttons aligned with the control column.</summary>
+    private static StackPanel HdrCogPresetRow(params Button[] buttons)
+    {
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Margin = new Thickness(CogDialog.LabelColumnWidth + CogDialog.ColumnGap, -2, 0, 0),
+        };
+        foreach (var b in buttons) panel.Children.Add(b);
+        return panel;
+    }
+
+    private static string HdrCogSigned(int val) => $"{(val > 0 ? "+" : "")}{val}";
+
     internal async void RtxHdrConfigButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -26,7 +67,6 @@ public sealed partial class MainWindow
             if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
             var dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
-            var content = new StackPanel { Spacing = 6 };
 
             // Read current values off the UI thread — these call _sessionLock.Wait(5000) and
             // will block the UI thread for up to 25s total if NVAPI is hung (e.g. after GPU sleep/wake).
@@ -45,58 +85,44 @@ public sealed partial class MainWindow
             int peakBrightnessDisplay = currentPeakBrightness > 0 ? currentPeakBrightness : ViewModel.Settings.PeakNits;
             if (peakBrightnessDisplay < 400) peakBrightnessDisplay = 510; // fallback default
 
+            var cog = new CogDialog("RTX HDR", Content.XamlRoot);
+            cog.UseApplyButton();
+            cog.AddIntro("These settings are written to the game's NVIDIA driver profile when you click Apply.");
+
+            cog.AddSection("Picture");
+
             // ── Peak Brightness ───────────────────────────────────────────────────
-            var nitsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            var nitsLabel = new TextBlock { Text = $"Peak Brightness: {peakBrightnessDisplay} nits", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
-            var nitsWarning = new TextBlock { Text = "⚠ High values may look unnatural", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = peakBrightnessDisplay > 600 ? 1.0 : 0.0 };
-            nitsRow.Children.Add(nitsLabel);
-            nitsRow.Children.Add(nitsWarning);
-            var nitsSlider = new Slider { Minimum = 400, Maximum = 2000, StepFrequency = 10, Value = peakBrightnessDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
+            var nitsSlider = new Slider { Minimum = 400, Maximum = 2000, StepFrequency = 10, Value = peakBrightnessDisplay };
+            var nitsValue = HdrCogValueText($"{peakBrightnessDisplay} nits", 64);
+            cog.AddRow("Peak Brightness", CogDialog.Inline(nitsSlider, nitsValue),
+                "Set this to your display's peak brightness in nits.");
+            var nitsWarning = HdrCogControlText("High values may look unnatural", ResourceKeys.AccentAmberBrush,
+                peakBrightnessDisplay > 600 ? 1.0 : 0.0);
+            cog.Body.Children.Add(nitsWarning);
             nitsSlider.ValueChanged += (s, ev) =>
             {
-                nitsLabel.Text = $"Peak Brightness: {(int)nitsSlider.Value} nits";
+                nitsValue.Text = $"{(int)nitsSlider.Value} nits";
                 nitsWarning.Opacity = (int)nitsSlider.Value > 600 ? 1.0 : 0.0;
             };
-            content.Children.Add(nitsRow);
-            content.Children.Add(nitsSlider);
 
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
             // ── Contrast ──────────────────────────────────────────────────────────
-            string ContrastLabel(int val) => val switch
-            {
-                0 => "Contrast: 0 — Gamma 2.0 (Default)",
-                25 => "Contrast: +25 — Gamma 2.2",
-                50 => "Contrast: +50 — Gamma 2.4",
-                _ => $"Contrast: {(val >= 0 ? "+" : "")}{val}",
-            };
-            var contrastLabel = new TextBlock { Text = ContrastLabel(contrastDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            var contrastSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = contrastDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-            contrastSlider.ValueChanged += (s, ev) => contrastLabel.Text = ContrastLabel((int)contrastSlider.Value);
-            content.Children.Add(contrastLabel);
-            content.Children.Add(contrastSlider);
+            var contrastSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = contrastDisplay };
+            var contrastValue = HdrCogValueText(HdrCogSigned(contrastDisplay));
+            contrastSlider.ValueChanged += (s, ev) => contrastValue.Text = HdrCogSigned((int)contrastSlider.Value);
+            cog.AddRow("Contrast", CogDialog.Inline(contrastSlider, contrastValue),
+                "0 is gamma 2.0 (default), +25 is gamma 2.2 and +50 is gamma 2.4. Higher values give deeper shadows.");
 
-            // ── Gamma preset buttons ──────────────────────────────────────────────
-            var gammaPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
+            // Gamma preset buttons
+            var gammaButtons = new List<Button>();
             foreach (var (label, value) in new[] { ("Gamma 2.0", 0), ("Gamma 2.2", 25), ("Gamma 2.4", 50) })
             {
-                var btn = new Button
-                {
-                    Content = label,
-                    FontSize = 11,
-                    Padding = new Thickness(10, 4, 10, 4),
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                };
+                var btn = CogDialog.StyledButton(label, CogButtonKind.Secondary, compact: true);
                 var capturedValue = value;
-                btn.Click += (s, ev) =>
-                {
-                    contrastSlider.Value = capturedValue;
-                    contrastLabel.Text = ContrastLabel(capturedValue);
-                };
-                gammaPanel.Children.Add(btn);
+                btn.Click += (s, ev) => contrastSlider.Value = capturedValue;
+                gammaButtons.Add(btn);
             }
-            content.Children.Add(gammaPanel);
+            cog.Body.Children.Add(HdrCogPresetRow(gammaButtons.ToArray()));
 
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
             // ── Middle Grey ───────────────────────────────────────────────────────
             // ITU-recommended paper white nits per peak brightness (interpolated for values between table entries)
             // Source: https://www.rtings.com/tv/learn/rtx-hdr (table from community research)
@@ -122,120 +148,90 @@ public sealed partial class MainWindow
                 }
                 return 203; // fallback
             }
-            static int CalcAutoMiddleGrey(double peakNits, int contrastVal)
+            static double GammaFor(int contrastVal)
             {
                 double gamma = contrastVal switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
                 // For non-preset contrast values interpolate gamma linearly between anchors
                 if (contrastVal != 0 && contrastVal != 25 && contrastVal != 50)
                     gamma = 2.0 + (contrastVal / 100.0) * 0.4; // rough linear: 0→2.0, 100→2.4
+                return gamma;
+            }
+            static int CalcAutoMiddleGrey(double peakNits, int contrastVal)
+            {
                 var pw = CalcPaperWhiteNits(peakNits);
-                var mg = pw * Math.Pow(0.5, gamma);
+                var mg = pw * Math.Pow(0.5, GammaFor(contrastVal));
                 return Math.Clamp((int)Math.Round(mg), 10, 100);
             }
+            // Perceived paperwhite from middle grey and gamma: paperwhite = midGrey / (0.5 ^ gamma)
+            static int CalcPerceivedPaperwhite(int midGrey, int contrastVal)
+                => (int)Math.Round(midGrey / Math.Pow(0.5, GammaFor(contrastVal)));
 
-            var middleGreyValues = new int[] { 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
             int mgInitial = (currentMiddleGrey >= 10 && currentMiddleGrey <= 100) ? currentMiddleGrey : 50;
-            
-            // Calculate perceived paperwhite from middle grey and gamma
-            // Formula: paperwhite = midGrey / (0.5 ^ gamma)
-            int CalcPerceivedPaperwhite(int midGrey, int contrastVal)
-            {
-                double gamma = contrastVal switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
-                if (contrastVal != 0 && contrastVal != 25 && contrastVal != 50)
-                    gamma = 2.0 + (contrastVal / 100.0) * 0.4;
-                var pw = midGrey / Math.Pow(0.5, gamma);
-                return (int)Math.Round(pw);
-            }
-            
-            string MiddleGreyLabel(int val, int contrastVal)
-            {
-                var perceivedPw = CalcPerceivedPaperwhite(val, contrastVal);
-                return $"Middle Grey: {val} ({perceivedPw} nits)";
-            }
-            
-            int mgInitialPw = CalcPerceivedPaperwhite(mgInitial, (int)contrastSlider.Value);
-            var mgRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial, (int)contrastSlider.Value), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
-            var mgWarning = new TextBlock { Text = "⚠ High values may look washed out", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = mgInitialPw > 203 ? 1.0 : 0.0 };
-            mgRow.Children.Add(mgLabel);
-            mgRow.Children.Add(mgWarning);
-            var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial, HorizontalAlignment = HorizontalAlignment.Stretch };
-            mgSlider.ValueChanged += (s, ev) =>
-            {
-                mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
-                mgWarning.Opacity = CalcPerceivedPaperwhite((int)mgSlider.Value, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
-            };
-            // Also update when contrast changes (gamma affects perceived paperwhite)
-            contrastSlider.ValueChanged += (s, ev) =>
-            {
-                mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
-                mgWarning.Opacity = CalcPerceivedPaperwhite((int)mgSlider.Value, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
-            };
-            content.Children.Add(mgRow);
-            content.Children.Add(mgSlider);
 
-            // Auto button + preset buttons — calculates correct Middle Grey or uses predefined values
-            var mgButtonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
-            var autoMgBtn = new Button
+            var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial };
+            var mgValue = HdrCogValueText(mgInitial.ToString());
+            cog.AddRow("Middle Grey", CogDialog.Inline(mgSlider, mgValue),
+                "Sets how bright mid-tones and paper white look. Auto works it out from Peak Brightness and Contrast; the number buttons aim for that paper white in nits.");
+
+            // Paper white readout + washed-out warning, aligned with the control column
+            var mgInfoPanel = new StackPanel
             {
-                Content = "Auto",
-                FontSize = 11,
-                Padding = new Thickness(10, 4, 10, 4),
+                Orientation = Orientation.Horizontal,
+                Spacing = 10,
+                Margin = new Thickness(CogDialog.LabelColumnWidth + CogDialog.ColumnGap, -4, 0, 0),
             };
+            var mgPaperWhite = new TextBlock { FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+            var mgWarning = new TextBlock { Text = "High values may look washed out", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush) };
+            mgInfoPanel.Children.Add(mgPaperWhite);
+            mgInfoPanel.Children.Add(mgWarning);
+            cog.Body.Children.Add(mgInfoPanel);
+
+            void UpdateMiddleGreyReadout()
+            {
+                int mg = (int)mgSlider.Value;
+                int pw = CalcPerceivedPaperwhite(mg, (int)contrastSlider.Value);
+                mgValue.Text = mg.ToString();
+                mgPaperWhite.Text = $"Paper white about {pw} nits";
+                mgWarning.Opacity = pw > 203 ? 1.0 : 0.0;
+            }
+            UpdateMiddleGreyReadout();
+            mgSlider.ValueChanged += (s, ev) => UpdateMiddleGreyReadout();
+            // Also update when contrast changes (gamma affects perceived paperwhite)
+            contrastSlider.ValueChanged += (s, ev) => UpdateMiddleGreyReadout();
+
+            // Auto button + paper white preset buttons
+            var mgButtons = new List<Button>();
+            var autoMgBtn = CogDialog.StyledButton("Auto", CogButtonKind.Secondary, compact: true);
             ToolTipService.SetToolTip(autoMgBtn, "Calculate Middle Grey from Peak Brightness and Gamma using the ITU formula");
             autoMgBtn.Click += (s, ev) =>
             {
-                var autoVal = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
-                mgSlider.Value = autoVal;
-                mgLabel.Text = MiddleGreyLabel(autoVal, (int)contrastSlider.Value);
-                mgWarning.Opacity = CalcPerceivedPaperwhite(autoVal, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
+                mgSlider.Value = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
+                UpdateMiddleGreyReadout();
             };
-            mgButtonsPanel.Children.Add(autoMgBtn);
-            
-            // Separator
-            mgButtonsPanel.Children.Add(new TextBlock { Text = "|", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 4, 0) });
-            
-            // Preset buttons for common paperwhite values (100-200 nits range)
+            mgButtons.Add(autoMgBtn);
             foreach (var presetPw in new[] { 100, 125, 150, 175, 200 })
             {
-                var presetBtn = new Button
-                {
-                    Content = presetPw.ToString(),
-                    FontSize = 11,
-                    Padding = new Thickness(8, 4, 8, 4),
-                    MinWidth = 36,
-                };
+                var presetBtn = CogDialog.StyledButton(presetPw.ToString(), CogButtonKind.Secondary, compact: true);
                 var capturedPw = presetPw;
-                ToolTipService.SetToolTip(presetBtn, $"Set Middle Grey to achieve ~{presetPw} nits paperwhite");
+                ToolTipService.SetToolTip(presetBtn, $"Set Middle Grey to achieve about {presetPw} nits paper white");
                 presetBtn.Click += (s, ev) =>
                 {
                     // Reverse formula: midGrey = paperwhite × (0.5 ^ gamma)
-                    double gamma = (int)contrastSlider.Value switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
-                    if ((int)contrastSlider.Value != 0 && (int)contrastSlider.Value != 25 && (int)contrastSlider.Value != 50)
-                        gamma = 2.0 + ((int)contrastSlider.Value / 100.0) * 0.4;
-                    var mgVal = Math.Clamp((int)Math.Round(capturedPw * Math.Pow(0.5, gamma)), 10, 100);
-                    mgSlider.Value = mgVal;
-                    mgLabel.Text = MiddleGreyLabel(mgVal, (int)contrastSlider.Value);
-                    mgWarning.Opacity = CalcPerceivedPaperwhite(mgVal, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
+                    var gamma = GammaFor((int)contrastSlider.Value);
+                    mgSlider.Value = Math.Clamp((int)Math.Round(capturedPw * Math.Pow(0.5, gamma)), 10, 100);
+                    UpdateMiddleGreyReadout();
                 };
-                mgButtonsPanel.Children.Add(presetBtn);
+                mgButtons.Add(presetBtn);
             }
-            content.Children.Add(mgButtonsPanel);
+            cog.Body.Children.Add(HdrCogPresetRow(mgButtons.ToArray()));
 
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
             // ── Saturation ────────────────────────────────────────────────────────
-            string SaturationLabel(int val) => val switch
-            {
-                -25 => "Saturation: -25 — Neutral Saturation",
-                _ => $"Saturation: {(val >= 0 ? "+" : "")}{val}",
-            };
-            var satLabel = new TextBlock { Text = SaturationLabel(saturationDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-            satSlider.ValueChanged += (s, ev) => satLabel.Text = SaturationLabel((int)satSlider.Value);
-            content.Children.Add(satLabel);
-            content.Children.Add(satSlider);
+            var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay };
+            var satValue = HdrCogValueText(HdrCogSigned(saturationDisplay));
+            satSlider.ValueChanged += (s, ev) => satValue.Text = HdrCogSigned((int)satSlider.Value);
+            cog.AddRow("Saturation", CogDialog.Inline(satSlider, satValue),
+                "-25 gives neutral saturation. Higher values make colours more vivid, lower values more muted.");
 
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
             // ── Debanding ─────────────────────────────────────────────────────────
             var debandingOptions = new (string name, uint value)[]
             {
@@ -246,25 +242,15 @@ public sealed partial class MainWindow
                 ("High Debanding (Indicator + Debug)", 0x23),
             };
             bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
-            var debandingCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = isAdmin, Opacity = isAdmin ? 1.0 : 0.4 };
             int selectedDbIndex = 0;
             for (int i = 0; i < debandingOptions.Length; i++)
-            {
-                debandingCombo.Items.Add(debandingOptions[i].name);
                 if (currentDebanding == (int)debandingOptions[i].value) selectedDbIndex = i;
-            }
-            debandingCombo.SelectedIndex = selectedDbIndex;
-            var dbLabel = new TextBlock { Text = "Debanding", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            content.Children.Add(dbLabel);
-            content.Children.Add(debandingCombo);
+            var debandingCombo = CogDialog.MakeCombo(debandingOptions.Select(o => o.name).ToList(), selectedDbIndex, isAdmin);
+            debandingCombo.Opacity = isAdmin ? 1.0 : CogDialog.DisabledOpacity;
+            cog.AddRow("Debanding", debandingCombo,
+                "Smooths colour banding in gradients. The Indicator options add an on-screen indicator, useful for testing.");
             if (!isAdmin)
-                content.Children.Add(new TextBlock
-                {
-                    Text = "Requires admin mode to change",
-                    FontSize = 10,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    Margin = new Thickness(0, -4, 0, 0),
-                });
+                cog.Body.Children.Add(HdrCogControlText("Requires admin mode to change.", ResourceKeys.AccentAmberBrush));
 
             // ── Default preset buttons ────────────────────────────────────────────
             var defaultsPath = System.IO.Path.Combine(
@@ -274,24 +260,14 @@ public sealed partial class MainWindow
             // Load current defaults (if any) to show whether "Set Default" is available
             bool hasDefaults = File.Exists(defaultsPath);
 
-            var defaultsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
-            var saveDefaultBtn = new Button
-            {
-                Content = "Save as Default",
-                FontSize = 11,
-                Padding = new Thickness(12, 6, 12, 6),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
+            cog.AddSection("Defaults");
+            cog.AddNote("Save as Default stores these values as your RTX HDR preset. Set Default loads that preset into the sliders; click Apply to write it.");
+
+            var saveDefaultBtn = CogDialog.StyledButton("Save as Default", CogButtonKind.Secondary);
             ToolTipService.SetToolTip(saveDefaultBtn, "Save current slider values as your default RTX HDR preset");
-            var setDefaultBtn = new Button
-            {
-                Content = "Set Default",
-                FontSize = 11,
-                Padding = new Thickness(12, 6, 12, 6),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                IsEnabled = hasDefaults,
-            };
-            ToolTipService.SetToolTip(setDefaultBtn, hasDefaults ? "Apply your saved default preset to the sliders" : "No default saved yet — use 'Save as Default' first");
+            var setDefaultBtn = CogDialog.StyledButton("Set Default", CogButtonKind.Secondary);
+            setDefaultBtn.IsEnabled = hasDefaults;
+            ToolTipService.SetToolTip(setDefaultBtn, hasDefaults ? "Apply your saved default preset to the sliders" : "No default saved yet. Use Save as Default first.");
 
             saveDefaultBtn.Click += (s, ev) =>
             {
@@ -303,16 +279,20 @@ public sealed partial class MainWindow
                         ["Contrast"]       = (int)contrastSlider.Value,
                         ["Saturation"]     = (int)satSlider.Value,
                         ["MiddleGrey"]     = (int)mgSlider.Value,
-                        ["Debanding"]      = (int)debandingOptions[debandingCombo.SelectedIndex].value,
+                        ["Debanding"]      = (int)debandingOptions[Math.Max(0, debandingCombo.SelectedIndex)].value,
                     };
                     Directory.CreateDirectory(Path.GetDirectoryName(defaultsPath)!);
                     File.WriteAllText(defaultsPath, JsonSerializer.Serialize(defaults,
                         new JsonSerializerOptions { WriteIndented = true }));
                     setDefaultBtn.IsEnabled = true;
                     ToolTipService.SetToolTip(setDefaultBtn, "Apply your saved default preset to the sliders");
-                    saveDefaultBtn.Content = "Saved!";
+                    cog.SetSuccess("Saved as your default RTX HDR preset.");
                 }
-                catch (Exception ex) { CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to save defaults — {ex.Message}"); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+                {
+                    CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to save defaults — {ex.Message}");
+                    cog.SetError($"Couldn't save the default preset: {ex.Message}");
+                }
             };
 
             setDefaultBtn.Click += (s, ev) =>
@@ -339,26 +319,21 @@ public sealed partial class MainWindow
                             if ((int)debandingOptions[i].value == dbVal) { debandingCombo.SelectedIndex = i; break; }
                         }
                     }
+                    UpdateMiddleGreyReadout();
+                    cog.SetStatus("Default preset loaded. Click Apply to write it.");
                 }
-                catch (Exception ex) { CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to apply defaults — {ex.Message}"); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException
+                                              or InvalidOperationException or FormatException)
+                {
+                    CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to apply defaults — {ex.Message}");
+                    cog.SetError($"Couldn't load the default preset: {ex.Message}");
+                }
             };
 
-            defaultsPanel.Children.Add(saveDefaultBtn);
-            defaultsPanel.Children.Add(setDefaultBtn);
-            content.Children.Add(defaultsPanel);
+            cog.AddButtons(saveDefaultBtn, setDefaultBtn);
 
             // ── Dialog ────────────────────────────────────────────────────────────
-            var dialog = new ContentDialog
-            {
-                Title = "RTX HDR Settings",
-                Content = new ScrollViewer { Content = content, MaxHeight = 600, Padding = new Thickness(0, 0, 16, 0) },
-                PrimaryButtonText = "Apply",
-                CloseButtonText = "Cancel",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(dialog);
+            var result = await cog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
 
             // Write all values on a background thread — NVAPI profile writes are kernel-mode calls
@@ -366,7 +341,7 @@ public sealed partial class MainWindow
             var contrastStored = (uint)(100 + (int)contrastSlider.Value);
             var satStored = (uint)(100 + (int)satSlider.Value);
             var middleGrey = (uint)mgSlider.Value;
-            var debanding = debandingOptions[debandingCombo.SelectedIndex].value;
+            var debanding = debandingOptions[Math.Max(0, debandingCombo.SelectedIndex)].value;
 
             _ = Task.Run(() =>
             {
@@ -415,118 +390,41 @@ public sealed partial class MainWindow
                 currentStrength = card.AutoHdrStrength;
             }
 
-            var content = new StackPanel { Spacing = 6 };
+            var cog = new CogDialog("Auto HDR", Content.XamlRoot);
+            cog.UseApplyButton();
+            cog.AddIntro("Windows Auto HDR settings for this game. Changes take effect on the next game launch.");
 
             // ── Brightness / Intensity ────────────────────────────────────────────
-            string StrengthLabel(int val)
-            {
-                if (val == 0)   return "Brightness: 0 — off (no boost)";
-                if (val == 50)  return "Brightness: 50 — default";
-                if (val == 100) return "Brightness: 100 — maximum (~1000 nits peak)";
-                return $"Brightness: {val}";
-            }
-
-            var strengthRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            var strengthLabel = new TextBlock
-            {
-                Text = StrengthLabel(currentStrength),
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                MinWidth = 220,
-            };
-            var strengthWarning = new TextBlock
-            {
-                Text = "⚠ High values may look unnatural",
-                FontSize = 10,
-                Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-                Opacity = currentStrength > 75 ? 1.0 : 0.0,
-            };
-            strengthRow.Children.Add(strengthLabel);
-            strengthRow.Children.Add(strengthWarning);
-
-            var strengthSlider = new Slider
-            {
-                Minimum = 0,
-                Maximum = 100,
-                StepFrequency = 1,
-                Value = currentStrength,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
+            var strengthSlider = new Slider { Minimum = 0, Maximum = 100, StepFrequency = 1, Value = currentStrength };
+            var strengthValue = HdrCogValueText(currentStrength.ToString());
+            cog.AddRow("Brightness", CogDialog.Inline(strengthSlider, strengthValue),
+                "How much Auto HDR brightens the game. 0 is no boost, 50 is the default and 100 is the maximum (about 1000 nits peak).");
+            var strengthWarning = HdrCogControlText("High values may look unnatural", ResourceKeys.AccentAmberBrush,
+                currentStrength > 75 ? 1.0 : 0.0);
+            cog.Body.Children.Add(strengthWarning);
             strengthSlider.ValueChanged += (s, ev) =>
             {
-                strengthLabel.Text  = StrengthLabel((int)strengthSlider.Value);
+                strengthValue.Text = ((int)strengthSlider.Value).ToString();
                 strengthWarning.Opacity = (int)strengthSlider.Value > 75 ? 1.0 : 0.0;
             };
-            content.Children.Add(strengthRow);
-            content.Children.Add(strengthSlider);
 
             // ── Preset buttons ────────────────────────────────────────────────────
-            var presetsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
+            var presetButtons = new List<Button>();
             foreach (var (label, value) in new[] { ("Low (25)", 25), ("Default (50)", 50), ("High (75)", 75), ("Max (100)", 100) })
             {
-                var btn = new Button
-                {
-                    Content = label,
-                    FontSize = 11,
-                    Padding = new Thickness(10, 4, 10, 4),
-                };
+                var btn = CogDialog.StyledButton(label, CogButtonKind.Secondary, compact: true);
                 var capturedValue = value;
-                btn.Click += (s, ev) =>
-                {
-                    strengthSlider.Value = capturedValue;
-                    strengthLabel.Text   = StrengthLabel(capturedValue);
-                    strengthWarning.Opacity = capturedValue > 75 ? 1.0 : 0.0;
-                };
-                presetsPanel.Children.Add(btn);
+                btn.Click += (s, ev) => strengthSlider.Value = capturedValue;
+                presetButtons.Add(btn);
             }
-            content.Children.Add(presetsPanel);
-
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
-
-            // ── Info note ─────────────────────────────────────────────────────────
-            content.Children.Add(new TextBlock
-            {
-                Text = "Changes take effect on the next game launch.",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            });
+            cog.Body.Children.Add(HdrCogPresetRow(presetButtons.ToArray()));
 
             if (string.IsNullOrEmpty(exePath))
-            {
-                content.Children.Add(new TextBlock
-                {
-                    Text = "⚠ Could not resolve game exe path — registry will not be written.",
-                    FontSize = 11,
-                    Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    Margin = new Thickness(0, 4, 0, 0),
-                });
-            }
+                cog.AddWarning("Couldn't find the game's exe, so this setting won't be written to the Windows registry.");
             else
-            {
-                content.Children.Add(new TextBlock
-                {
-                    Text = $"Exe: {exePath}",
-                    FontSize = 10,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    Margin = new Thickness(0, 2, 0, 0),
-                });
-            }
+                cog.AddNote($"Exe: {exePath}");
 
-            var dialog = new ContentDialog
-            {
-                Title = "Auto HDR Settings",
-                Content = new ScrollViewer { Content = content, MaxHeight = 600, Padding = new Thickness(0, 0, 16, 0) },
-                PrimaryButtonText = "Apply",
-                CloseButtonText   = "Cancel",
-                XamlRoot          = Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(dialog);
+            var result = await cog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
 
             int newStrength = (int)strengthSlider.Value;

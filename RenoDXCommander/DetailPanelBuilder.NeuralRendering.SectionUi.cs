@@ -966,74 +966,38 @@ public partial class DetailPanelBuilder
         };
 
         // Cog button — always shown, opens method-specific settings
-        var sfCogBtn = new Button
-        {
-            Width = 36, Height = 34,
-            Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(8),
-            BorderThickness = new Thickness(1),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-            Visibility = effectiveMethod == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed,
-        };
-        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse DLSS Tool settings — auto-configure ReShade for FrameGen");
+        var sfCogBtn = CogDialog.MakeCogButton("ShortFuse DLSS Tool settings");
+        sfCogBtn.Height = 34; // matches the 34 px install and remove buttons in this row
+        sfCogBtn.Visibility = effectiveMethod == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed;
         sfCogBtn.Click += async (s, e) =>
         {
-            bool currentEnabled = _window.ViewModel.GetSfAutoConfigEnabled(gameName, store);
-            bool newEnabled = currentEnabled;
-
-            var toggleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-            var togLabel = new TextBlock
+            try
             {
-                Text = "Auto-configure ReShade for FrameGen",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            var tog = new ToggleSwitch
+                bool currentEnabled = _window.ViewModel.GetSfAutoConfigEnabled(gameName, store);
+
+                var cog = new CogDialog("ShortFuse DLSS Tool", _window.Content.XamlRoot);
+                cog.AddCombo("Auto-configure ReShade for FrameGen",
+                    "When On, installing ShortFuse DLSS Tool also sets ReShade up so FrameGen works correctly after ReShade. " +
+                    "Not needed on ShortFuse DLSS Tool v0.54 and above.",
+                    new[] { "Off", "On" }, currentEnabled ? 1 : 0, i =>
+                    {
+                        bool enabled = i == 1;
+                        _window.ViewModel.SetSfAutoConfigEnabled(gameName, enabled, store);
+                        CrashReporter.Log($"[DetailPanelBuilder.SfCog] Auto-configure ReShade for FrameGen = {enabled} for '{gameName}'");
+                        cog.SetSuccess(enabled
+                            ? "Saved. Applies the next time ShortFuse DLSS Tool is installed or updated."
+                            : "Saved.");
+                    });
+                cog.AddNote("When On, installing ShortFuse DLSS Tool will:");
+                cog.AddNote("• Rename ReShade to Reshade64.asi");
+                cog.AddNote("• Install ASI Loader (winmm, then version, then dinput8)");
+                cog.AddNote("• Write HookStreamline=1 and HookDirectX=1 to reshade.ini");
+                await cog.ShowAsync();
+            }
+            catch (Exception ex)
             {
-                IsOn = currentEnabled,
-                OnContent = "On",
-                OffContent = "Off",
-                VerticalAlignment = VerticalAlignment.Center,
-                MinWidth = 0,
-            };
-            toggleRow.Children.Add(togLabel);
-            toggleRow.Children.Add(tog);
-
-            var desc = new TextBlock
-            {
-                Text = "When On, RHI will automatically configure ReShade when installing ShortFuse DLSS Tool:\n" +
-                       "• Rename ReShade to Reshade64.asi\n" +
-                       "• Install ASI Loader (winmm → version → dinput8)\n" +
-                       "• Write HookStreamline=1 and HookDirectX=1 to reshade.ini\n\n" +
-                       "These steps are needed for FrameGen to work correctly after ReShade.\n\n" +
-                       "Note: no longer required on ShortFuse DLSS Tool v0.54 and above.",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 8, 0, 0),
-            };
-
-            var content = new StackPanel { Spacing = 4 };
-            content.Children.Add(toggleRow);
-            content.Children.Add(desc);
-
-            tog.Toggled += (ts, te) => newEnabled = tog.IsOn;
-
-            var dlg = new ContentDialog
-            {
-                Title = "ShortFuse DLSS Tool Settings",
-                Content = content,
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
-                XamlRoot = _window.Content.XamlRoot,
-            };
-            var result = await DialogService.ShowSafeAsync(dlg);
-            if (result == ContentDialogResult.Primary && newEnabled != currentEnabled)
-                _window.ViewModel.SetSfAutoConfigEnabled(gameName, newEnabled, store);
+                CrashReporter.Log($"[DetailPanelBuilder.SfCog] Settings dialog failed — {ex.Message}");
+            }
         };
 
         void UpdateInstallBtnAppearance()

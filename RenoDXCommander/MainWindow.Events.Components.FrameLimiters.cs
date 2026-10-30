@@ -22,28 +22,16 @@ public sealed partial class MainWindow
         try
         {
             if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-            var content = new StackPanel { Spacing = 8 };
-            var deployBtn = new Button
-            {
-                Content = "Deploy relimiter.ini",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            };
-            deployBtn.Click += (s, ev) =>
-            {
-                if (string.IsNullOrEmpty(card.InstallPath)) return;
-                try
-                {
-                    AuxInstallService.CopyUlIni(card.InstallPath);
-                    card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
-                }
-                catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
-            };
-            content.Children.Add(deployBtn);
+            // relimiter.ini lives in the addon deploy path (honours AddonPath in reshade.ini)
+            string? ulIniFile = string.IsNullOrEmpty(card.InstallPath)
+                ? null
+                : Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
+            bool ulIniExists = ulIniFile != null && File.Exists(ulIniFile);
+
+            // Re-resolved on every write, as before (AddonPath may change while the dialog is open)
+            string? CurrentUlIniFile() => string.IsNullOrEmpty(card.InstallPath)
+                ? null
+                : Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
 
             // Find the relimiter log file (relimiter_*.log)
             string? logFile = null;
@@ -56,93 +44,31 @@ public sealed partial class MainWindow
                 catch (Exception ex) { CrashReporter.Log($"[MainWindow.UlCogButton_Click] Failed to locate relimiter log file — {ex.Message}"); }
             }
 
-            var logName = logFile != null ? Path.GetFileName(logFile) : "relimiter_*.log";
-
-            // Open relimiter log
-            var openLogBtn = new Button
+            // Read current per-game values from the game's relimiter.ini
+            int currentTargetFps = 0;
+            bool currentDlssHooks = ViewModel.Settings.UlDlssHooks; // default to global
+            if (ulIniExists)
             {
-                Content = "Open ReLimiter log",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = logFile != null,
-            };
-            openLogBtn.Click += async (s, ev) =>
-            {
-                if (logFile != null && File.Exists(logFile))
-                    await Windows.System.Launcher.LaunchUriAsync(new Uri(logFile));
-            };
-            content.Children.Add(openLogBtn);
-
-            // Copy relimiter log to clipboard (as file with correct name)
-            var copyLogBtn = new Button
-            {
-                Content = "Copy ReLimiter log to clipboard",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = logFile != null,
-            };
-            copyLogBtn.Click += async (s, ev) =>
-            {
-                if (logFile != null && File.Exists(logFile))
+                try
                 {
-                    try
+                    var ulIni = AuxInstallService.ParseIni(File.ReadAllLines(ulIniFile!));
+                    if (ulIni.TryGetValue("FrameLimiter", out var flSection))
                     {
-                        var tempDir = Path.Combine(Path.GetTempPath(), "RHI_clipboard");
-                        Directory.CreateDirectory(tempDir);
-                        var tempFile = Path.Combine(tempDir, Path.GetFileName(logFile));
-                        File.Copy(logFile, tempFile, overwrite: true);
-
-                        var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
-                        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                        dataPackage.SetStorageItems(new[] { storageFile });
-                        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-                        Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
-                        card.UlActionMessage = $"✅ {Path.GetFileName(logFile)} copied to clipboard.";
-                        card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
+                        if (flSection.TryGetValue("target_fps", out var fpsVal) && int.TryParse(fpsVal, out var parsedFps))
+                            currentTargetFps = parsedFps;
+                        if (flSection.TryGetValue("dlss_info_hooks", out var hooksVal))
+                            currentDlssHooks = hooksVal.Equals("true", StringComparison.OrdinalIgnoreCase);
                     }
-                    catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
                 }
-            };
-            content.Children.Add(copyLogBtn);
+                catch (Exception ex) { CrashReporter.Log($"[MainWindow.UlCogButton_Click] Failed to read relimiter.ini, using defaults — {ex.Message}"); }
+            }
 
-            // ── Target FPS Setting ────────────────────────────────────────────────
-            bool ulIniExists = !string.IsNullOrEmpty(card.InstallPath)
-                && File.Exists(Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini"));
+            var cog = new CogDialog("ReLimiter", Content.XamlRoot);
 
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
-            content.Children.Add(new TextBlock
-            {
-                Text = "Frame Limiter",
-                FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 4, 0, 0),
-            });
-
-            // Target FPS per-game control
-            var targetFpsPanel = new Grid { ColumnSpacing = 12 };
-            targetFpsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            targetFpsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var targetFpsLabel = new TextBlock
-            {
-                Text = "Target FPS",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(targetFpsLabel, 0);
-            targetFpsPanel.Children.Add(targetFpsLabel);
-            var targetFpsCombo = new ComboBox { FontSize = 12, MinWidth = 140, HorizontalAlignment = HorizontalAlignment.Right };
-            ToolTipService.SetToolTip(targetFpsCombo, "FPS cap for this game. Select a VRR preset or Custom for a manual value.");
-            Grid.SetColumn(targetFpsCombo, 1);
-            targetFpsPanel.Children.Add(targetFpsCombo);
+            // ── Frame Limiter ─────────────────────────────────────────────────────
+            cog.AddSection("Frame Limiter");
+            if (!ulIniExists)
+                cog.AddWarning("Deploy relimiter.ini (under Files) to change these settings.");
 
             // VRR preset options (same as global settings)
             var vrrPresets = new (int Fps, string Label)[]
@@ -164,87 +90,73 @@ public sealed partial class MainWindow
             };
             var vrrFpsSet = new HashSet<int>(vrrPresets.Select(p => p.Fps));
 
-            // Read current per-game value from the game's relimiter.ini
-            int currentTargetFps = 0;
-            if (!string.IsNullOrEmpty(card.InstallPath))
+            // Items: Off, presets, "<n> (Custom)" when the current value isn't a preset, "Custom..."
+            List<string> BuildFpsItems(int fps)
             {
-                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                if (File.Exists(ulIniFile))
-                {
-                    try
-                    {
-                        var ulIni = AuxInstallService.ParseIni(File.ReadAllLines(ulIniFile));
-                        if (ulIni.TryGetValue("FrameLimiter", out var flSection)
-                            && flSection.TryGetValue("target_fps", out var fpsVal)
-                            && int.TryParse(fpsVal, out var parsedFps))
-                        {
-                            currentTargetFps = parsedFps;
-                        }
-                    }
-                    catch (Exception ex) { CrashReporter.Log($"[MainWindow.UlCogButton_Click] Failed to read target_fps from ini, using default — {ex.Message}"); }
-                }
+                var items = new List<string> { "Off" };
+                items.AddRange(vrrPresets.Select(p => p.Label));
+                if (fps > 0 && !vrrFpsSet.Contains(fps))
+                    items.Add($"{fps} (Custom)");
+                items.Add("Custom...");
+                return items;
+            }
+            int FpsIndex(List<string> items, int fps)
+            {
+                if (fps == 0) return 0; // Off
+                int matchIdx = Array.FindIndex(vrrPresets, p => p.Fps == fps);
+                return matchIdx >= 0 ? matchIdx + 1 : items.Count - 2; // +1 for "Off"; custom item sits before "Custom..."
             }
 
-            // Inline custom FPS input (shown when "Custom..." is selected)
-            var customFpsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
-            var customFpsBox = new TextBox { PlaceholderText = "20-1000", FontSize = 12, MinWidth = 100 };
-            var customFpsBtn = new Button { Content = "Set", FontSize = 12 };
-            customFpsPanel.Children.Add(customFpsBox);
-            customFpsPanel.Children.Add(customFpsBtn);
+            var fpsItems = BuildFpsItems(currentTargetFps);
+            var targetFpsCombo = CogDialog.MakeCombo(fpsItems, FpsIndex(fpsItems, currentTargetFps));
+            bool suppressFpsChange = false;
 
-            // Populate combo
-            bool suppressFpsChange = true;
-            targetFpsCombo.Items.Add("Off");
-            foreach (var preset in vrrPresets)
-                targetFpsCombo.Items.Add(preset.Label);
+            var targetFpsRow = cog.AddRow("Target FPS", targetFpsCombo,
+                "Frame rate cap for this game, saved in its relimiter.ini. Each VRR preset sits just under that refresh rate. " +
+                "Off removes the cap; Custom... lets you type your own value.");
 
-            // If current value is a custom FPS (not in presets), insert it before "Custom..."
-            if (currentTargetFps > 0 && !vrrFpsSet.Contains(currentTargetFps))
-                targetFpsCombo.Items.Add($"{currentTargetFps} (Custom)");
+            // Inline custom FPS input (shown when "Custom..." is selected; no nested dialogs)
+            var customFpsBox = CogDialog.MakeTextBox("", "20-1000");
+            var customFpsBtn = CogDialog.StyledButton("Set", CogButtonKind.Secondary, compact: true);
+            var customFpsRow = cog.AddRow("Custom FPS", CogDialog.Inline(customFpsBox, customFpsBtn),
+                "Type a frame rate from 20 to 1000, then press Set or Enter.");
+            customFpsRow.Visibility = Visibility.Collapsed;
 
-            targetFpsCombo.Items.Add("Custom...");
-
-            // Select based on current value
-            if (currentTargetFps == 0)
-                targetFpsCombo.SelectedIndex = 0; // Off
-            else
-            {
-                int matchIdx = Array.FindIndex(vrrPresets, p => p.Fps == currentTargetFps);
-                if (matchIdx >= 0)
-                    targetFpsCombo.SelectedIndex = matchIdx + 1; // +1 for "Off" at index 0
-                else
-                {
-                    // Custom value — select the "(Custom)" item
-                    targetFpsCombo.SelectedIndex = targetFpsCombo.Items.Count - 2; // before "Custom..."
-                }
-            }
-            suppressFpsChange = false;
-
-            // Helper to refresh combo after setting custom value
+            // Rebuild the combo after setting a custom value
             void RefreshFpsCombo(int newFps)
             {
                 suppressFpsChange = true;
                 currentTargetFps = newFps;
-                targetFpsCombo.Items.Clear();
-                targetFpsCombo.Items.Add("Off");
-                foreach (var preset in vrrPresets)
-                    targetFpsCombo.Items.Add(preset.Label);
-                if (newFps > 0 && !vrrFpsSet.Contains(newFps))
-                    targetFpsCombo.Items.Add($"{newFps} (Custom)");
-                targetFpsCombo.Items.Add("Custom...");
-
-                if (newFps == 0)
-                    targetFpsCombo.SelectedIndex = 0;
-                else
-                {
-                    int idx = Array.FindIndex(vrrPresets, p => p.Fps == newFps);
-                    if (idx >= 0)
-                        targetFpsCombo.SelectedIndex = idx + 1;
-                    else
-                        targetFpsCombo.SelectedIndex = targetFpsCombo.Items.Count - 2; // Custom item
-                }
-                customFpsPanel.Visibility = Visibility.Collapsed;
+                var items = BuildFpsItems(newFps);
+                targetFpsCombo.ItemsSource = items;
+                targetFpsCombo.SelectedIndex = FpsIndex(items, newFps);
+                customFpsRow.Visibility = Visibility.Collapsed;
                 suppressFpsChange = false;
+            }
+
+            // Writes target_fps; returns false (with the error shown) on failure
+            bool WriteTargetFps(int fps)
+            {
+                var iniFile = CurrentUlIniFile();
+                if (iniFile == null || !File.Exists(iniFile))
+                {
+                    cog.SetError("relimiter.ini wasn't found. Deploy it first.");
+                    return false;
+                }
+                try
+                {
+                    AuxInstallService.ApplyUlTargetFps(iniFile, fps);
+                    currentTargetFps = fps;
+                    cog.SetSuccess(fps == 0 ? "Target FPS turned off for this game." : $"Target FPS set to {fps} for this game.");
+                    CrashReporter.Log($"[MainWindow.UlCogButton_Click] target_fps={fps} for '{card.GameName}'");
+                    return true;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    cog.SetError($"Couldn't save Target FPS: {ex.Message}");
+                    CrashReporter.Log($"[MainWindow.UlCogButton_Click] target_fps write failed — {ex.Message}");
+                    return false;
+                }
             }
 
             targetFpsCombo.SelectionChanged += (s, ev) =>
@@ -254,186 +166,120 @@ public sealed partial class MainWindow
 
                 var selectedText = targetFpsCombo.SelectedItem as string ?? "";
 
-                // "Custom..." shows inline TextBox for manual entry
+                // "Custom..." shows the inline TextBox for manual entry
                 if (selectedText == "Custom...")
                 {
-                    customFpsPanel.Visibility = Visibility.Visible;
+                    customFpsRow.Visibility = Visibility.Visible;
                     customFpsBox.Text = "";
                     customFpsBox.Focus(FocusState.Programmatic);
                     return;
                 }
 
-                customFpsPanel.Visibility = Visibility.Collapsed;
+                customFpsRow.Visibility = Visibility.Collapsed;
 
                 // Handle preset/Off selection
                 int newFps;
                 var idx = targetFpsCombo.SelectedIndex;
                 if (idx == 0)
                     newFps = 0; // Off
-                else if (idx - 1 < vrrPresets.Length)
+                else if (idx > 0 && idx - 1 < vrrPresets.Length)
                     newFps = vrrPresets[idx - 1].Fps;
                 else
                     return; // Custom label item — don't set
 
-                var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                if (File.Exists(iniFile))
-                {
-                    try
-                    {
-                        AuxInstallService.ApplyUlTargetFps(iniFile, newFps);
-                        currentTargetFps = newFps;
-                        card.UlActionMessage = newFps == 0
-                            ? "✅ Target FPS disabled for this game."
-                            : $"✅ Target FPS set to {newFps} for this game.";
-                        card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
-                    }
-                    catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
-                }
+                WriteTargetFps(newFps);
             };
 
-            // Custom FPS "Set" button handler
-            customFpsBtn.Click += (s, ev) =>
+            void SetCustomFps()
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
-                if (int.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
+                if (!int.TryParse(customFpsBox.Text, out var customFps) || customFps < 20 || customFps > 1000)
                 {
-                    var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                    if (File.Exists(iniFile))
-                    {
-                        try
-                        {
-                            AuxInstallService.ApplyUlTargetFps(iniFile, customFps);
-                            card.UlActionMessage = $"✅ Target FPS set to {customFps} for this game.";
-                            card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
-                            RefreshFpsCombo(customFps);
-                        }
-                        catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
-                    }
+                    cog.SetError("Enter a whole number from 20 to 1000.");
+                    return;
                 }
-            };
-
-            // Enter key also sets custom value
+                if (WriteTargetFps(customFps))
+                    RefreshFpsCombo(customFps);
+            }
+            customFpsBtn.Click += (s, ev) => SetCustomFps();
             customFpsBox.KeyDown += (s, ev) =>
             {
                 if (ev.Key == Windows.System.VirtualKey.Enter)
                 {
-                    if (string.IsNullOrEmpty(card.InstallPath)) return;
-                    if (int.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
-                    {
-                        var iniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                        if (File.Exists(iniFile))
-                        {
-                            try
-                            {
-                                AuxInstallService.ApplyUlTargetFps(iniFile, customFps);
-                                card.UlActionMessage = $"✅ Target FPS set to {customFps} for this game.";
-                                card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
-                                RefreshFpsCombo(customFps);
-                            }
-                            catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
-                        }
-                    }
+                    ev.Handled = true;
+                    SetCustomFps();
                 }
             };
 
-            content.Children.Add(targetFpsPanel);
-            content.Children.Add(customFpsPanel);
-            if (!ulIniExists)
-            {
-                targetFpsPanel.Opacity = 0.4;
-                targetFpsPanel.IsHitTestVisible = false;
-                content.Children.Add(new TextBlock
+            // ── Compatibility ─────────────────────────────────────────────────────
+            cog.AddSection("Compatibility");
+            var dlssHooksCombo = cog.AddCombo("DLSS Hooks",
+                "Shows DLSS version and preset info on the ReLimiter overlay. Turn it off if the game crashes with it on.",
+                new[] { "Off", "On" }, currentDlssHooks ? 1 : 0, i =>
                 {
-                    Text = "Deploy relimiter.ini to enable these settings",
-                    FontSize = 10,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    Margin = new Thickness(0, -2, 0, 0),
-                });
-            }
-
-            // ── Compatibility Settings ────────────────────────────────────────────
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
-            content.Children.Add(new TextBlock
-            {
-                Text = "Compatibility Settings",
-                FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 4, 0, 0),
-            });
-
-            // DLSS Hooks per-game toggle
-            var dlssHooksPanel = new Grid { ColumnSpacing = 12 };
-            dlssHooksPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            dlssHooksPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var dlssHooksLabel = new TextBlock
-            {
-                Text = "DLSS Hooks",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(dlssHooksLabel, 0);
-            dlssHooksPanel.Children.Add(dlssHooksLabel);
-            var dlssHooksCombo = new ComboBox { FontSize = 12, MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
-            dlssHooksCombo.Items.Add("Off");
-            dlssHooksCombo.Items.Add("On");
-            ToolTipService.SetToolTip(dlssHooksCombo, "Shows DLSS version/preset info on the ReLimiter OSD. Disable if causing crashes.");
-            Grid.SetColumn(dlssHooksCombo, 1);
-            dlssHooksPanel.Children.Add(dlssHooksCombo);
-
-            // Read current per-game value from the game's relimiter.ini
-            bool currentDlssHooks = ViewModel.Settings.UlDlssHooks; // default to global
-            if (!string.IsNullOrEmpty(card.InstallPath))
-            {
-                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                if (File.Exists(ulIniFile))
-                {
+                    var iniFile = CurrentUlIniFile();
+                    if (iniFile == null || !File.Exists(iniFile))
+                    {
+                        cog.SetError("relimiter.ini wasn't found. Deploy it first.");
+                        return false;
+                    }
                     try
                     {
-                        var ulIni = AuxInstallService.ParseIni(File.ReadAllLines(ulIniFile));
-                        if (ulIni.TryGetValue("FrameLimiter", out var flSection)
-                            && flSection.TryGetValue("dlss_info_hooks", out var hooksVal))
-                        {
-                            currentDlssHooks = hooksVal.Equals("true", StringComparison.OrdinalIgnoreCase);
-                        }
+                        AuxInstallService.ApplyUlDlssHooks(iniFile, i == 1);
+                        cog.SetSuccess(i == 1 ? "DLSS Hooks turned on for this game." : "DLSS Hooks turned off for this game.");
+                        CrashReporter.Log($"[MainWindow.UlCogButton_Click] dlss_info_hooks={(i == 1)} for '{card.GameName}'");
+                        return true;
                     }
-                    catch (Exception ex) { CrashReporter.Log($"[MainWindow.UlCogButton_Click] Failed to read dlss_info_hooks from ini, using global default — {ex.Message}"); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        cog.SetError($"Couldn't save DLSS Hooks: {ex.Message}");
+                        CrashReporter.Log($"[MainWindow.UlCogButton_Click] dlss_info_hooks write failed — {ex.Message}");
+                        return false;
+                    }
+                });
+
+            // Greyed out until relimiter.ini exists (rows stay in place so the layout doesn't jump)
+            if (!ulIniExists)
+            {
+                // AddCombo returns the ComboBox; its row is combo → label grid → row panel
+                var dlssHooksRow = ((dlssHooksCombo.Parent as FrameworkElement)?.Parent as FrameworkElement) ?? dlssHooksCombo;
+                foreach (var row in new[] { targetFpsRow, dlssHooksRow })
+                {
+                    row.Opacity = CogDialog.DisabledOpacity;
+                    row.IsHitTestVisible = false;
                 }
+                targetFpsCombo.IsTabStop = false;
+                dlssHooksCombo.IsTabStop = false;
             }
-            dlssHooksCombo.SelectedIndex = currentDlssHooks ? 1 : 0;
-            dlssHooksCombo.SelectionChanged += (s, ev) =>
+
+            // ── Files ─────────────────────────────────────────────────────────────
+            cog.AddSection("Files");
+            var openIniBtn = cog.MakeOpenFileButton("Open relimiter.ini", ulIniFile);
+            var deployBtn = cog.MakeButton("Deploy relimiter.ini", CogButtonKind.Primary, () =>
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
-                var ulIniFile = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "relimiter.ini");
-                if (File.Exists(ulIniFile))
-                {
-                    try
-                    {
-                        AuxInstallService.ApplyUlDlssHooks(ulIniFile, dlssHooksCombo.SelectedIndex == 1);
-                        card.UlActionMessage = dlssHooksCombo.SelectedIndex == 1
-                            ? "✅ DLSS Hooks enabled for this game."
-                            : "✅ DLSS Hooks disabled for this game.";
-                        card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
-                    }
-                    catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
-                }
-            };
-            content.Children.Add(dlssHooksPanel);
-            if (!ulIniExists)
-            {
-                dlssHooksPanel.Opacity = 0.4;
-                dlssHooksPanel.IsHitTestVisible = false;
-            }
+                AuxInstallService.CopyUlIni(card.InstallPath);
+                openIniBtn.IsEnabled = ulIniFile != null && File.Exists(ulIniFile);
+                cog.SetSuccess("relimiter.ini copied to the game folder. Close and reopen this dialog to change its settings.");
+                CrashReporter.Log($"[MainWindow.UlCogButton_Click] Deployed relimiter.ini for '{card.GameName}'");
+            }, "Copies RHI's relimiter.ini template into the game folder, replacing the game's current one.");
 
-            var dialog = new ContentDialog
+            var openLogBtn = cog.MakeOpenFileButton("Open ReLimiter log", logFile);
+
+            // Copied as a file (not text) so Discord shows the log's real name
+            var copyLogBtn = cog.MakeButton("Copy ReLimiter log", CogButtonKind.Secondary, async () =>
             {
-                Title = "ReLimiter Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+                if (logFile == null || !File.Exists(logFile)) { cog.SetError("The ReLimiter log wasn't found."); return; }
+                await CopyFileToClipboardAsFileAsync(logFile);
+                cog.SetSuccess($"Copied {Path.GetFileName(logFile)} to the clipboard. Paste it into Discord to attach it.");
+            }, "Copies the ReLimiter log to the clipboard as a file.");
+            copyLogBtn.IsEnabled = logFile != null;
+
+            cog.AddButtons(deployBtn, openIniBtn, openLogBtn, copyLogBtn);
+
+            // No default button: Enter in the key/number boxes must not close the dialog
+            cog.Build().DefaultButton = ContentDialogButton.None;
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {
@@ -446,39 +292,25 @@ public sealed partial class MainWindow
         try
         {
             if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-            var content = new StackPanel { Spacing = 12 };
-            var deployBtn = new Button
-            {
-                Content = "Deploy DisplayCommander.ini",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            };
-            deployBtn.Click += (s, ev) =>
+            // DisplayCommander.ini lives in the addon deploy path (honours AddonPath in reshade.ini), same as CopyDcIni
+            string? dcIniFile = string.IsNullOrEmpty(card.InstallPath)
+                ? null
+                : Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "DisplayCommander.ini");
+
+            var cog = new CogDialog("Display Commander", Content.XamlRoot);
+            cog.AddSection("Files");
+            var openIniBtn = cog.MakeOpenFileButton("Open DisplayCommander.ini", dcIniFile);
+            var deployBtn = cog.MakeButton("Deploy DisplayCommander.ini", CogButtonKind.Primary, () =>
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
-                try
-                {
-                    AuxInstallService.CopyDcIni(card.InstallPath);
-                    card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
-                    card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
-                }
-                catch (Exception ex) { card.DcActionMessage = $"❌ {ex.Message}"; }
-            };
-            content.Children.Add(deployBtn);
+                AuxInstallService.CopyDcIni(card.InstallPath);
+                openIniBtn.IsEnabled = dcIniFile != null && File.Exists(dcIniFile);
+                cog.SetSuccess("DisplayCommander.ini copied to the game folder.");
+                CrashReporter.Log($"[MainWindow.DcCogButton_Click] Deployed DisplayCommander.ini for '{card.GameName}'");
+            }, "Copies RHI's DisplayCommander.ini template into the game folder, replacing the game's current one.");
+            cog.AddButtons(deployBtn, openIniBtn);
 
-            var dialog = new ContentDialog
-            {
-                Title = "Display Commander Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {

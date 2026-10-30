@@ -396,19 +396,9 @@ public sealed partial class MainWindow
     {
         try
         {
-            var dialog = new ContentDialog
-            {
-                Title = "DOF Fix Settings",
-                Content = new TextBlock
-                {
-                    Text = "No configurable settings available for this component.",
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                },
-                CloseButtonText = "OK",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+            var cog = new CogDialog("DOF Fix", Content.XamlRoot);
+            cog.AddEmpty();
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {

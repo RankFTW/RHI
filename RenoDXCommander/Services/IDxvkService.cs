@@ -79,8 +79,9 @@ public interface IDxvkService
 
     /// <summary>
     /// Copies the dxvk.conf template from the INI presets directory to the game folder.
+    /// Returns null on success, otherwise a short reason it failed.
     /// </summary>
-    void CopyConfToGame(GameCardViewModel card);
+    string? CopyConfToGame(GameCardViewModel card);
 
     // ── Detection ──────────────────────────────────────────────────────
 

@@ -411,28 +411,6 @@ public class InstallEventHandler
         });
     }
 
-    public void CopyOsIniButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey,
-                ViewModel.Settings.OsGpuType, ViewModel.Settings.OsDlssInputs);
-            // Apply persisted FG settings after copying the INI
-            var fgInput = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
-            var fgOutput = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
-            var fgNvngx = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
-            OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput, fgOutput, fgNvngx);
-            card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
-            card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
-        }
-        catch (Exception ex)
-        {
-            card.OsActionMessage = $"❌ {ex.Message}";
-        }
-    }
-
     public async void InstallRefButton_Click(object sender, RoutedEventArgs e)
     {
         try

@@ -822,7 +822,7 @@
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Luma Settings">
-                                        <TextBlock Text="⚙" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailLumaDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallLumaButton_Click"

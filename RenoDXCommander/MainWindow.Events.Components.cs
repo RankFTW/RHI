@@ -59,337 +59,172 @@ public sealed partial class MainWindow
                 }
             });
 
-            var content = new StackPanel { Spacing = 8 };
+            var reshadeIniPath = Path.Combine(installPath, "reshade.ini");
+            var reshadeLogPath = Path.Combine(installPath, "ReShade.log");
+            var cog = new CogDialog("ReShade", Content.XamlRoot);
 
-            // Deploy ReShade.ini
-            var deployIniBtn = new Button
-            {
-                Content = "Deploy ReShade.ini",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            };
-            deployIniBtn.Click += (s, ev) =>
-            {
-                try
-                {
-                    var screenshotPath = BuildScreenshotSavePath(card.GameName);
-                    var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-                    var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-                    if (card.RequiresVulkanInstall)
-                    {
-                        AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                        VulkanFootprintService.Create(card.InstallPath);
-                        ViewModel.DeployShadersForCard(card.GameName);
-                    }
-                    else
-                        AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
-
-                    if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                        AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
-
-                    // Force-apply manifest [renodx] INI overrides on redeploy
-                    if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
-                        && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var cogIniOvr))
-                        AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, cogIniOvr, forceOverwrite: true);
-
-                    card.RsActionMessage = "✅ ReShade.ini deployed.";
-                }
-                catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
-            };
-            content.Children.Add(deployIniBtn);
-
-            // Deploy ReShadePreset.ini
-            var deployPresetBtn = new Button
-            {
-                Content = "Deploy ReShadePreset.ini",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = rsPresetExists,
-            };
-            deployPresetBtn.Click += (s, ev) =>
-            {
-                try
-                {
-                    AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
-                    card.RsActionMessage = "✅ ReShadePreset.ini deployed.";
-                }
-                catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
-            };
-            if (!rsPresetExists)
-                ToolTipService.SetToolTip(deployPresetBtn, "No ReShadePreset.ini found in RHI config folder");
-            content.Children.Add(deployPresetBtn);
-
-            // Open ReShade.ini
-            var openIniBtn = new Button
-            {
-                Content = "Open ReShade.ini",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = reshadeIniExists,
-            };
-            openIniBtn.Click += async (s, ev) =>
-            {
-                var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-                if (File.Exists(iniPath))
-                    await Windows.System.Launcher.LaunchUriAsync(new Uri(iniPath));
-            };
-            content.Children.Add(openIniBtn);
-
-            // Open ReShade.log
-            var openLogBtn = new Button
-            {
-                Content = "Open ReShade.log",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = reshadeLogExists,
-            };
-            openLogBtn.Click += async (s, ev) =>
-            {
-                var logPath = Path.Combine(card.InstallPath, "ReShade.log");
-                if (File.Exists(logPath))
-                    await Windows.System.Launcher.LaunchUriAsync(new Uri(logPath));
-            };
-            content.Children.Add(openLogBtn);
-
-            // Copy ReShade.log to clipboard (as file, so Discord shows "ReShade.log")
-            var copyLogBtn = new Button
-            {
-                Content = "Copy ReShade.log to clipboard",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-                IsEnabled = reshadeLogExists,
-            };
-            copyLogBtn.Click += async (s, ev) =>
-            {
-                var logPath = Path.Combine(card.InstallPath, "ReShade.log");
-                if (File.Exists(logPath))
-                {
-                    try
-                    {
-                        // Copy to temp as "ReShade.log" so clipboard file has the correct name
-                        var tempDir = Path.Combine(Path.GetTempPath(), "RHI_clipboard");
-                        Directory.CreateDirectory(tempDir);
-                        var tempFile = Path.Combine(tempDir, "ReShade.log");
-                        File.Copy(logPath, tempFile, overwrite: true);
-
-                        var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
-                        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                        dataPackage.SetStorageItems(new[] { storageFile });
-                        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-                        Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
-                        card.RsActionMessage = "✅ ReShade.log copied to clipboard.";
-                        card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
-                    }
-                    catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
-                }
-            };
-            content.Children.Add(copyLogBtn);
-
-            // ── Overlay Key ───────────────────────────────────────────────────────
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 6) });
-
-            // ── Overlay Key + Screenshot Key — side by side ───────────────────────
+            // ── Hotkeys ───────────────────────────────────────────────────────────
+            // Capture box + Apply per key: a key press only fills the box, Apply writes it.
+            cog.AddSection("Hotkeys");
             var hotkeyString = currentHotkey;
             var screenshotHotkeyString = currentScreenshotHotkey;
 
-            var hotkeyBox = new TextBox
+            TextBox MakeHotkeyBox(Func<string> getValue, Action<string> setValue)
             {
-                Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString),
-                IsReadOnly = true,
-                PlaceholderText = "Click then press a key...",
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(hotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
-            hotkeyBox.GotFocus  += (s, ev) => hotkeyBox.Text = "Press a key...";
-            hotkeyBox.KeyDown   += (s, ev) =>
-            {
-                var vk = (int)ev.Key;
-                if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return;
-                bool shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                bool ctrl  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                bool alt   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                hotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
-                hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
-                ev.Handled = true;
-            };
-            hotkeyBox.LostFocus += (s, ev) => { if (hotkeyBox.Text == "Press a key...") hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString); };
+                var box = CogDialog.MakeTextBox(HotkeyManager.FormatHotkeyDisplay(getValue()), "Click then press a key...");
+                box.IsReadOnly = true;
+                box.GotFocus += (s, ev) => box.Text = "Press a key...";
+                box.KeyDown += (s, ev) =>
+                {
+                    var vk = (int)ev.Key;
+                    if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return;
+                    bool shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+                    bool ctrl  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+                    bool alt   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+                    setValue(HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt));
+                    box.Text = HotkeyManager.FormatHotkeyDisplay(getValue());
+                    ev.Handled = true;
+                };
+                box.LostFocus += (s, ev) => { if (box.Text == "Press a key...") box.Text = HotkeyManager.FormatHotkeyDisplay(getValue()); };
+                return box;
+            }
 
-            var applyKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
+            // Writes the key to every reshade*.ini in the game folder.
+            async Task ApplyHotkeyAsync(string keyLabel, string hotkey, Action<string, string> applyToIni)
+            {
+                var gamePath = card.InstallPath;
+                if (string.IsNullOrEmpty(gamePath)) return;
+                var (count, error) = await Task.Run(() =>
+                {
+                    try
+                    {
+                        var iniFiles = Directory.EnumerateFiles(gamePath, "reshade*.ini")
+                            .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
+                                     && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        foreach (var file in iniFiles)
+                            applyToIni(file, hotkey);
+                        return (iniFiles.Count, (string?)null);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                    {
+                        return (0, ex.Message);
+                    }
+                });
+                if (error != null)
+                {
+                    cog.SetError($"Couldn't set the {keyLabel.ToLowerInvariant()}: {error}");
+                    _crashReporter.Log($"[RsCogButton_Click] Failed to apply {keyLabel.ToLowerInvariant()} for '{card.GameName}' — {error}");
+                    return;
+                }
+                if (count == 0)
+                {
+                    cog.SetStatus("No reshade.ini in the game folder, so nothing was changed.");
+                    return;
+                }
+                cog.SetSuccess($"{keyLabel} set to {HotkeyManager.FormatHotkeyDisplay(hotkey)} in {count} ini file(s).");
+                _crashReporter.Log($"[RsCogButton_Click] Applied {keyLabel.ToLowerInvariant()} '{hotkey}' to {count} ini file(s) for '{card.GameName}'");
+            }
+
+            var hotkeyBox = MakeHotkeyBox(() => hotkeyString, v => hotkeyString = v);
+            var applyKeyBtn = CogDialog.StyledButton("Apply", CogButtonKind.Secondary, compact: true);
             applyKeyBtn.Click += async (s, ev) =>
             {
-                if (string.IsNullOrEmpty(card.InstallPath)) return;
-                try
+                try { await ApplyHotkeyAsync("Overlay key", hotkeyString, AuxInstallService.ApplyOverlayHotkey); }
+                catch (Exception ex)
                 {
-                    var installPath = card.InstallPath;
-                    var hotkey = hotkeyString;
-                    var (count, error) = await Task.Run(() =>
-                    {
-                        try
-                        {
-                            var iniFiles = Directory.EnumerateFiles(installPath, "reshade*.ini")
-                                .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                                         && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-                                .ToList();
-                            foreach (var file in iniFiles)
-                                AuxInstallService.ApplyOverlayHotkey(file, hotkey);
-                            return (iniFiles.Count, (string?)null);
-                        }
-                        catch (Exception ex) { return (0, ex.Message); }
-                    });
-                    if (error != null) { card.RsActionMessage = $"❌ {error}"; return; }
-                    applyKeyBtn.Content = "Applied!";
-                    _crashReporter.Log($"[RsCogButton_Click] Applied overlay key '{hotkeyString}' to {count} ini file(s) for '{card.GameName}'");
+                    cog.SetError($"Couldn't set the overlay key: {ex.Message}");
+                    _crashReporter.Log($"[RsCogButton_Click] Overlay key apply failed — {ex}");
                 }
-                catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
             };
+            cog.AddRow("Overlay Key", CogDialog.Inline(hotkeyBox, applyKeyBtn),
+                "Opens the ReShade overlay in game. Click the box, press a key, then Apply. Saved to every reshade*.ini in the game folder.");
 
-            var screenshotHotkeyBox = new TextBox
-            {
-                Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString),
-                IsReadOnly = true,
-                PlaceholderText = "Click then press a key...",
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(screenshotHotkeyBox, "Press a key to assign it, or Backspace to clear it. Written to all reshade*.ini files for this game.");
-            screenshotHotkeyBox.GotFocus  += (s, ev) => screenshotHotkeyBox.Text = "Press a key...";
-            screenshotHotkeyBox.KeyDown   += (s, ev) =>
-            {
-                var vk2 = (int)ev.Key;
-                if (vk2 == 0 || vk2 == 16 || vk2 == 17 || vk2 == 18) return;
-                bool shift2 = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                bool ctrl2  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                bool alt2   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                screenshotHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk2, shift2, ctrl2, alt2);
-                screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
-                ev.Handled = true;
-            };
-            screenshotHotkeyBox.LostFocus += (s, ev) => { if (screenshotHotkeyBox.Text == "Press a key...") screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString); };
-
-            var applyScreenshotKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
+            var screenshotHotkeyBox = MakeHotkeyBox(() => screenshotHotkeyString, v => screenshotHotkeyString = v);
+            var applyScreenshotKeyBtn = CogDialog.StyledButton("Apply", CogButtonKind.Secondary, compact: true);
             applyScreenshotKeyBtn.Click += async (s, ev) =>
             {
-                if (string.IsNullOrEmpty(card.InstallPath)) return;
-                try
+                try { await ApplyHotkeyAsync("Screenshot key", screenshotHotkeyString, AuxInstallService.ApplyScreenshotHotkey); }
+                catch (Exception ex)
                 {
-                    var installPath = card.InstallPath;
-                    var hotkey = screenshotHotkeyString;
-                    var (count, error) = await Task.Run(() =>
-                    {
-                        try
-                        {
-                            var iniFiles2 = Directory.EnumerateFiles(installPath, "reshade*.ini")
-                                .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                                         && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-                                .ToList();
-                            foreach (var file in iniFiles2)
-                                AuxInstallService.ApplyScreenshotHotkey(file, hotkey);
-                            return (iniFiles2.Count, (string?)null);
-                        }
-                        catch (Exception ex) { return (0, ex.Message); }
-                    });
-                    if (error != null) { card.RsActionMessage = $"❌ {error}"; return; }
-                    applyScreenshotKeyBtn.Content = "Applied!";
-                    _crashReporter.Log($"[RsCogButton_Click] Applied screenshot key '{screenshotHotkeyString}' to {count} ini file(s) for '{card.GameName}'");
+                    cog.SetError($"Couldn't set the screenshot key: {ex.Message}");
+                    _crashReporter.Log($"[RsCogButton_Click] Screenshot key apply failed — {ex}");
                 }
-                catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
             };
-
-            // Side-by-side layout: [Overlay label+box+btn] | [gap] | [Screenshot label+box+btn]
-            var hotkeysGrid = new Grid { ColumnSpacing = 16 };
-            hotkeysGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            hotkeysGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            var overlayCol = new StackPanel { Spacing = 4 };
-            overlayCol.Children.Add(new TextBlock { Text = "Overlay Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
-            var overlayRow = new Grid { ColumnSpacing = 8 };
-            overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(hotkeyBox, 0); Grid.SetColumn(applyKeyBtn, 1);
-            overlayRow.Children.Add(hotkeyBox); overlayRow.Children.Add(applyKeyBtn);
-            overlayCol.Children.Add(overlayRow);
-
-            var screenshotCol = new StackPanel { Spacing = 4 };
-            screenshotCol.Children.Add(new TextBlock { Text = "Screenshot Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
-            var screenshotRow = new Grid { ColumnSpacing = 8 };
-            screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(screenshotHotkeyBox, 0); Grid.SetColumn(applyScreenshotKeyBtn, 1);
-            screenshotRow.Children.Add(screenshotHotkeyBox); screenshotRow.Children.Add(applyScreenshotKeyBtn);
-            screenshotCol.Children.Add(screenshotRow);
-
-            Grid.SetColumn(overlayCol, 0); Grid.SetColumn(screenshotCol, 1);
-            hotkeysGrid.Children.Add(overlayCol); hotkeysGrid.Children.Add(screenshotCol);
-            content.Children.Add(hotkeysGrid);
+            cog.AddRow("Screenshot Key", CogDialog.Inline(screenshotHotkeyBox, applyScreenshotKeyBtn),
+                "Takes a ReShade screenshot. Click the box, press a key (Backspace for none), then Apply. Saved to every reshade*.ini in the game folder.");
 
             // ── Keep ReShade.ini Updated ──────────────────────────────────────────
-            content.Children.Add(new Border
-            {
-                Height = 1, Margin = new Thickness(0, 8, 0, 8),
-                Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-            });
-
-            var keepUpdatedLabel = new TextBlock
-            {
-                Text = "Keep ReShade.ini Updated",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 4),
-            };
-            content.Children.Add(keepUpdatedLabel);
-
-            var keepUpdatedCombo = new ComboBox
-            {
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(keepUpdatedCombo, "When No, RHI will not automatically update this game's reshade.ini on ReShade install, update, or Apply to All Games.");
-            keepUpdatedCombo.Items.Add("Yes");
-            keepUpdatedCombo.Items.Add("No");
-
-            bool keepUpdatedInitializing = true;
+            cog.AddSection("ReShade.ini");
             var capturedKeepGameName = card.GameName;
             var capturedKeepSource = card.Source ?? "";
-            keepUpdatedCombo.SelectedIndex = ViewModel.GetKeepRsIniUpdated(capturedKeepGameName, capturedKeepSource) ? 0 : 1;
-            keepUpdatedCombo.SelectionChanged += (s, ev) =>
-            {
-                if (keepUpdatedInitializing) return;
-                ViewModel.SetKeepRsIniUpdated(capturedKeepGameName, keepUpdatedCombo.SelectedIndex == 0, capturedKeepSource);
-            };
-            keepUpdatedInitializing = false;
-            content.Children.Add(keepUpdatedCombo);
+            cog.AddCombo("Keep ReShade.ini Updated",
+                "No stops RHI from changing this game's reshade.ini when ReShade is installed or updated, or when you use Apply to All Games.",
+                new[] { "Yes", "No" },
+                ViewModel.GetKeepRsIniUpdated(capturedKeepGameName, capturedKeepSource) ? 0 : 1,
+                i =>
+                {
+                    ViewModel.SetKeepRsIniUpdated(capturedKeepGameName, i == 0, capturedKeepSource);
+                    cog.SetSuccess(i == 0
+                        ? "RHI will keep this game's reshade.ini updated."
+                        : "RHI will leave this game's reshade.ini alone.");
+                });
 
-            var dialog = new ContentDialog
+            // ── Files ─────────────────────────────────────────────────────────────
+            cog.AddSection("Files");
+            var openIniBtn = cog.MakeOpenFileButton("Open ReShade.ini", reshadeIniPath);
+
+            var deployIniBtn = cog.MakeButton("Deploy ReShade.ini", CogButtonKind.Primary, () =>
             {
-                Title = "ReShade Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+                var screenshotPath = BuildScreenshotSavePath(card.GameName);
+                var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+                var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+                if (card.RequiresVulkanInstall)
+                {
+                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                    VulkanFootprintService.Create(card.InstallPath);
+                    ViewModel.DeployShadersForCard(card.GameName);
+                }
+                else
+                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
+                if (card.UseUeExtended && card.Status == GameStatus.Installed)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
+                // Force-apply manifest [renodx] INI overrides on redeploy
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var cogIniOvr))
+                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, cogIniOvr, forceOverwrite: true);
+
+                openIniBtn.IsEnabled = File.Exists(reshadeIniPath);
+                cog.SetSuccess("ReShade.ini deployed.");
+                _crashReporter.Log($"[RsCogButton_Click] Deployed ReShade.ini for '{card.GameName}'");
+            }, "Merges RHI's ReShade.ini template into this game's reshade.ini. Template values replace existing ones; other settings are kept.");
+
+            var deployPresetBtn = cog.MakeButton("Deploy ReShadePreset.ini", CogButtonKind.Primary, () =>
+            {
+                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+                cog.SetSuccess("ReShadePreset.ini deployed.");
+                _crashReporter.Log($"[RsCogButton_Click] Deployed ReShadePreset.ini for '{card.GameName}'");
+            }, rsPresetExists ? "Copies ReShadePreset.ini from RHI's config folder into the game folder." : "No ReShadePreset.ini found in RHI config folder");
+            deployPresetBtn.IsEnabled = rsPresetExists;
+
+            var openLogBtn = cog.MakeOpenFileButton("Open ReShade.log", reshadeLogPath);
+
+            // Copied as a file (not text) so Discord shows "ReShade.log"
+            var copyLogBtn = cog.MakeButton("Copy ReShade.log", CogButtonKind.Secondary, async () =>
+            {
+                if (!File.Exists(reshadeLogPath)) { cog.SetError("ReShade.log wasn't found."); return; }
+                await CopyFileToClipboardAsFileAsync(reshadeLogPath);
+                cog.SetSuccess("Copied ReShade.log to the clipboard. Paste it into Discord to attach it.");
+            }, "Copies ReShade.log to the clipboard as a file.");
+            copyLogBtn.IsEnabled = reshadeLogExists;
+
+            cog.AddButtons(deployIniBtn, deployPresetBtn, openIniBtn, openLogBtn, copyLogBtn);
+
+            // No default button: Enter in the key/number boxes must not close the dialog
+            cog.Build().DefaultButton = ContentDialogButton.None;
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {
@@ -405,72 +240,66 @@ public sealed partial class MainWindow
             if (string.IsNullOrEmpty(card.InstallPath)) return;
 
             var installPath = card.InstallPath;
-            var content = new StackPanel { Spacing = 12 };
+            var storageDir = Path.Combine(installPath, "_storage_");
+            bool storageExists = Directory.Exists(storageDir);
 
-            // Delete _storage_ folder
-            var storageDir = System.IO.Path.Combine(installPath, "_storage_");
-            bool storageExists = System.IO.Directory.Exists(storageDir);
+            var cog = new CogDialog("RE Framework", Content.XamlRoot);
+            cog.AddSection("Files");
+            cog.AddIntro("The _storage_ folder in the game folder holds data saved by RE Framework and its scripts. Deleting it clears that data.");
+            var foundNote = cog.AddNote(storageExists ? $"Found: {storageDir}" : "No _storage_ folder in the game folder.");
 
-            var deleteStorageBtn = new Button
+            const string deleteText = "Delete _storage_ folder";
+            Button? deleteStorageBtn = null;
+            deleteStorageBtn = cog.MakeButton(deleteText, CogButtonKind.Danger, async () =>
             {
-                Content = "Delete _storage_ folder",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(12, 7, 12, 7),
-                FontSize = 12,
-                IsEnabled = storageExists,
-                Opacity = storageExists ? 1.0 : 0.45,
-            };
-            var statusText = new TextBlock
-            {
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                Text = storageExists ? $"Found: {storageDir}" : "_storage_ folder not found in game directory.",
-                TextWrapping = TextWrapping.Wrap,
-            };
-
-            deleteStorageBtn.Click += async (s, ev) =>
-            {
-                deleteStorageBtn.IsEnabled = false;
-                deleteStorageBtn.Content = "Deleting...";
+                var btn = deleteStorageBtn!;
+                btn.IsEnabled = false;
+                btn.Content = "Deleting...";
                 try
                 {
-                    await Task.Run(() => System.IO.Directory.Delete(storageDir, recursive: true));
-                    statusText.Text = "✅ _storage_ folder deleted.";
-                    statusText.Foreground = UIFactory.GetBrush("#5ECB7D");
+                    await Task.Run(() => Directory.Delete(storageDir, recursive: true));
+                    btn.Content = deleteText;
+                    btn.Opacity = CogDialog.DisabledOpacity;
+                    foundNote.Text = "No _storage_ folder in the game folder.";
+                    cog.SetSuccess("_storage_ folder deleted.");
                     CrashReporter.Log($"[RefCogButton_Click] Deleted _storage_ folder: '{storageDir}'");
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    statusText.Text = $"❌ {ex.Message}";
-                    statusText.Foreground = UIFactory.GetBrush("#E85050");
-                    deleteStorageBtn.IsEnabled = true;
-                    deleteStorageBtn.Content = "Delete _storage_ folder";
+                    btn.IsEnabled = true;
+                    btn.Content = deleteText;
+                    cog.SetError($"Couldn't delete the _storage_ folder: {ex.Message}");
                     CrashReporter.Log($"[RefCogButton_Click] Failed to delete _storage_ folder: {ex.Message}");
                 }
-            };
+            });
+            deleteStorageBtn.IsEnabled = storageExists;
+            deleteStorageBtn.Opacity = storageExists ? 1.0 : CogDialog.DisabledOpacity;
+            cog.AddButtons(deleteStorageBtn);
 
-            content.Children.Add(deleteStorageBtn);
-            content.Children.Add(statusText);
-
-            var dialog = new ContentDialog
-            {
-                Title = "RE Framework Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[MainWindow.RefCogButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
+    }
+
+    /// <summary>
+    /// Copies a file (e.g. a log) to the clipboard as a file rather than text, so pasting it into
+    /// Discord attaches it under its real name. Used by the ReShade and ReLimiter cog dialogs.
+    /// </summary>
+    private static async Task CopyFileToClipboardAsFileAsync(string path)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "RHI_clipboard");
+        Directory.CreateDirectory(tempDir);
+        var tempFile = Path.Combine(tempDir, Path.GetFileName(path));
+        File.Copy(path, tempFile, overwrite: true);
+
+        var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
+        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        dataPackage.SetStorageItems(new[] { storageFile });
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
     }
 
     private void SupportGuide_Click(object sender, RoutedEventArgs e)

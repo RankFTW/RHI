@@ -114,22 +114,10 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog button
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-            Tag = card,
-            IsEnabled = !isDisabled,
-            Opacity = isDisabled ? 0.35 : 1.0,
-        };
-        ToolTipService.SetToolTip(cogBtn, "DXVK Settings");
+        var cogBtn = CogDialog.MakeCogButton("DXVK Settings");
+        cogBtn.Tag = card;
+        cogBtn.IsEnabled = !isDisabled;
+        cogBtn.Opacity = isDisabled ? 0.35 : 1.0;
         cogBtn.Click += (s, e) => _window.DxvkCogButton_Click(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -347,100 +335,82 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-        };
-        ToolTipService.SetToolTip(cogBtn, "dgVoodoo2 Settings");
+        var cogBtn = CogDialog.MakeCogButton("dgVoodoo2 Settings");
         cogBtn.Click += async (s, ev) =>
         {
-            // Build version list from manifest
-            var versions = manifest?.DgVoodooVersions?.Keys.ToList() ?? new List<string>();
-            if (versions.Count == 0)
+            try
             {
-                var noVerDlg = new ContentDialog
+                var cog = new CogDialog("dgVoodoo2", _window.Content.XamlRoot);
+
+                // Build version list from manifest
+                var versions = manifest?.DgVoodooVersions?.Keys.ToList() ?? new List<string>();
+                if (versions.Count == 0)
                 {
-                    Title = "dgVoodoo2 Settings",
-                    Content = new TextBlock { Text = "No versions available in manifest.", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) },
-                    CloseButtonText = "Close",
-                    XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
-                await DialogService.ShowSafeAsync(noVerDlg);
-                return;
+                    cog.AddEmpty("No dgVoodoo2 versions are available in the manifest.");
+                    await cog.ShowAsync();
+                    return;
+                }
+
+                var currentVersion = _window.ViewModel.GetDgVoodooVersion(gameName, store) ?? versions[0];
+                int currentIdx = versions.IndexOf(currentVersion);
+                if (currentIdx < 0) currentIdx = 0;
+
+                ComboBox? versionCombo = null;
+
+                // Picking a version saves it and, if dgVoodoo2 is installed, redeploys it straight away
+                async Task RedeployAsync(string selectedVersion, string versionUrl)
+                {
+                    if (versionCombo != null) versionCombo.IsEnabled = false;
+                    cog.SetStatus($"Deploying dgVoodoo2 v{selectedVersion}...");
+                    try
+                    {
+                        await Task.Run(() => dgSvc.EnsureStagedAsync(selectedVersion, versionUrl));
+                        var redeployed = await Task.Run(() => dgSvc.DeployToGame(installPath, selectedVersion, is64Bit: !card.Is32Bit));
+                        if (redeployed.Count > 0)
+                        {
+                            CrashReporter.Log($"[BuildDgVoodooRow] Redeployed dgVoodoo2 v{selectedVersion} for '{gameName}'");
+                            cog.SetSuccess($"dgVoodoo2 v{selectedVersion} deployed to the game folder.");
+                        }
+                        else
+                        {
+                            CrashReporter.Log($"[BuildDgVoodooRow] Redeploy of v{selectedVersion} deployed no files for '{gameName}'");
+                            cog.SetError($"dgVoodoo2 v{selectedVersion} couldn't be deployed. See the log for details.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[BuildDgVoodooRow] Redeploy failed — {ex.Message}");
+                        cog.SetError($"dgVoodoo2 v{selectedVersion} couldn't be deployed: {ex.Message}");
+                    }
+                    finally
+                    {
+                        if (versionCombo != null) versionCombo.IsEnabled = true;
+                    }
+                    RequestExtrasRebuild(card);
+                }
+
+                versionCombo = cog.AddCombo("Version",
+                    "The dgVoodoo2 version used for this game. Older versions can work better with some games (e.g. 2.87.3 for Mass Effect).",
+                    versions, currentIdx, i =>
+                    {
+                        var selectedVersion = versions[i];
+                        _window.ViewModel.SetDgVoodooVersion(gameName, selectedVersion, store);
+
+                        // Redeploy if already installed
+                        if (isInstalled && manifest?.DgVoodooVersions?.TryGetValue(selectedVersion, out var versionUrl) == true)
+                            _ = RedeployAsync(selectedVersion, versionUrl);
+                        else
+                            cog.SetSuccess($"Version set to {selectedVersion}. It will be used when you install dgVoodoo2.");
+                    });
+                versionCombo.MaxDropDownHeight = 300;
+
+                cog.AddNote("If dgVoodoo2 is installed on this game, picking a version redeploys it to the game folder straight away.");
+
+                await cog.ShowAsync();
             }
-
-            var currentVersion = _window.ViewModel.GetDgVoodooVersion(gameName, store) ?? versions[0];
-
-            var versionStack = new StackPanel { Spacing = 6 };
-            versionStack.Children.Add(new TextBlock
+            catch (Exception ex)
             {
-                Text = "Version",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
-            var versionCombo = new ComboBox
-            {
-                ItemsSource = versions,
-                SelectedItem = versions.Contains(currentVersion) ? currentVersion : versions[0],
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                MaxDropDownHeight = 300,
-            };
-            ToolTipService.SetToolTip(versionCombo,
-                "dgVoodoo2 version to deploy. Older versions may work better with certain games (e.g. 2.87.3 for Mass Effect).");
-            versionStack.Children.Add(versionCombo);
-
-            versionStack.Children.Add(new TextBlock
-            {
-                Text = "Changing version will immediately redeploy dgVoodoo2 to the game folder.",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 4, 0, 0),
-            });
-
-            var cogDlg = new ContentDialog
-            {
-                Title = "dgVoodoo2 Settings",
-                Content = versionStack,
-                PrimaryButtonText = "Apply",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(cogDlg);
-            if (result != ContentDialogResult.Primary) return;
-
-            var selectedVersion = versionCombo.SelectedItem as string;
-            if (string.IsNullOrEmpty(selectedVersion)) return;
-
-            _window.ViewModel.SetDgVoodooVersion(gameName, selectedVersion, store);
-
-            // Redeploy if already installed
-            if (isInstalled && manifest?.DgVoodooVersions?.TryGetValue(selectedVersion, out var versionUrl) == true)
-            {
-                try
-                {
-                    await dgSvc.EnsureStagedAsync(selectedVersion, versionUrl).ConfigureAwait(false);
-                    var redeployed = await Task.Run(() => dgSvc.DeployToGame(installPath, selectedVersion, is64Bit: !card.Is32Bit));
-                    if (redeployed.Count > 0)
-                        CrashReporter.Log($"[BuildDgVoodooRow] Redeployed dgVoodoo2 v{selectedVersion} for '{gameName}'");
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[BuildDgVoodooRow] Redeploy failed — {ex.Message}");
-                }
-                RequestExtrasRebuild(card);
+                CrashReporter.Log($"[BuildDgVoodooRow] dgVoodoo2 settings dialog failed for '{gameName}' — {ex.Message}");
             }
         };
         Grid.SetColumn(cogBtn, 4);

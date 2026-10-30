@@ -190,40 +190,23 @@ public partial class DetailPanelBuilder
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
 
-        // Col 4 — Cog (placeholder for consistency)
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-        };
-        ToolTipService.SetToolTip(cogBtn, "MFG Ada Unlock settings");
+        // Col 4 — Cog
+        var cogBtn = CogDialog.MakeCogButton("MFG Ada Unlock settings");
         cogBtn.Click += async (s, e) =>
         {
-            var dlg = new ContentDialog
+            try
             {
-                Title = "MFG Ada Unlock",
-                Content = new TextBlock
-                {
-                    Text = "MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.\n\n" +
-                           "Configure via the ReShade overlay in-game.",
-                    FontSize = 12,
-                    TextWrapping = TextWrapping.Wrap,
-                },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText = "Close",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            var result = await DialogService.ShowSafeAsync(dlg);
-            if (result == ContentDialogResult.Primary)
-                _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx"));
+                var cog = new CogDialog("MFG Ada Unlock", _window.Content.XamlRoot);
+                cog.AddIntro("MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.");
+                cog.AddNote("Configure it in the ReShade overlay in-game.");
+                cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
+                    async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx")); }));
+                await cog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Settings dialog failed — {ex.Message}");
+            }
         };
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -485,33 +468,22 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog button
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-            IsEnabled = !osConflict,
-            IsHitTestVisible = !osConflict,
-            Opacity = osConflict ? 0.35 : 1.0,
-        };
-        ToolTipService.SetToolTip(cogBtn, osConflict ? "Cannot install alongside OptiScaler" : "DLSS Enabler settings");
+        var cogBtn = CogDialog.MakeCogButton(osConflict ? "Cannot install alongside OptiScaler" : "DLSS Enabler settings");
+        cogBtn.IsEnabled = !osConflict;
+        cogBtn.IsHitTestVisible = !osConflict;
+        cogBtn.Opacity = osConflict ? 0.35 : 1.0;
         cogBtn.Click += async (s, e) =>
         {
-            var dlg = new ContentDialog
+            try
             {
-                Title   = "DLSS Enabler Settings",
-                Content = new TextBlock { Text = "No settings available.", FontSize = 12 },
-                CloseButtonText   = "Close",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dlg);
+                var cog = new CogDialog("DLSS Enabler", _window.Content.XamlRoot);
+                cog.AddEmpty();
+                await cog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[BuildDlssEnablerRow] Settings dialog failed — {ex.Message}");
+            }
         };
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);

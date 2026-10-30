@@ -1,4 +1,5 @@
 // MainWindow.Events.Components.Dxvk.cs — DXVK cog dialog handler (DxvkCogButton_Click).
+// Built with CogDialog: every setting applies as soon as it changes; results show in the dialog.
 
 using System;
 using System.IO;
@@ -22,17 +23,19 @@ public sealed partial class MainWindow
         try
         {
             if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-            var content = new StackPanel { Spacing = 12 };
             var gameName = card.GameName;
             var store    = card.Source ?? "";
 
-            // ── Variant selector ──────────────────────────────────────────────────
-            var variantGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
-            variantGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            variantGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140, GridUnitType.Pixel) });
-            variantGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            variantGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            // Pre-fetch both values off the UI thread — each calls _sessionLock.Wait(5000)
+            // and will block the UI thread if NVAPI is hung after GPU sleep/wake.
+            var (currentPresentMethod, currentPresentFlags) = await Task.Run(() => (
+                _dlssPresetService.GetVulkanPresentMethod(card.GameName, card.InstallPath ?? ""),
+                _dlssPresetService.GetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "")
+            ));
 
+            var cog = new CogDialog("DXVK", Content.XamlRoot);
+
+            // ── Variant selector ──────────────────────────────────────────────────
             // Resolve current variant — Lilium HDR is default when no override is set
             var currentOverride = ViewModel.GetDxvkVariantOverride(gameName, store);
             string currentVariantDisplay;
@@ -61,256 +64,210 @@ public sealed partial class MainWindow
                 currentVariantDisplay = "Lilium HDR";
             }
 
-            var variantLabel = new TextBlock
-            {
-                Text = "Variant",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTipService.SetToolTip(variantLabel, "Development: latest nightly build. Stable: last stable release. Lilium HDR: HDR-optimised variant (default).");
-            Grid.SetRow(variantLabel, 0); Grid.SetColumn(variantLabel, 0);
-            variantGrid.Children.Add(variantLabel);
+            var variantItems = new List<string> { "Lilium HDR", "Development", "Stable" };
+            int variantIdx = variantItems.IndexOf(currentVariantDisplay);
+            if (variantIdx < 0) variantIdx = 0;
 
-            var variantCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
-            variantCombo.Items.Add("Lilium HDR");
-            variantCombo.Items.Add("Development");
-            variantCombo.Items.Add("Stable");
-            variantCombo.SelectedItem = currentVariantDisplay;
-            if (variantCombo.SelectedIndex < 0) variantCombo.SelectedIndex = 0;
+            cog.AddSection("DXVK");
 
-            Grid.SetRow(variantCombo, 0); Grid.SetColumn(variantCombo, 1);
-            variantGrid.Children.Add(variantCombo);
+            FrameworkElement? liliumPresetRow = null;
+            ComboBox? variantCombo = null;
+            variantCombo = cog.AddCombo("Variant",
+                "Lilium HDR (default) is an HDR-focused build. Development is the latest nightly build, Stable the last release. " +
+                "Changing it on a game with DXVK installed uninstalls DXVK so you can install the new variant.",
+                variantItems, variantIdx, i =>
+                {
+                    var selected = variantItems[i];
+                    if (liliumPresetRow != null)
+                        liliumPresetRow.Visibility = selected == "Lilium HDR" ? Visibility.Visible : Visibility.Collapsed;
+                    if (variantCombo != null)
+                        _ = DxvkCogChangeVariantAsync(cog, card, variantCombo, selected);
+                    return true;
+                });
 
-            // ── Lilium HDR Preset row (row 1, shown when Lilium selected) ─────────
-            bool isLiliumSelected = (variantCombo.SelectedItem as string) == "Lilium HDR";
+            // ── Lilium HDR Preset row (shown when Lilium selected) ─────────────────
+            bool isLiliumSelected = variantItems[variantIdx] == "Lilium HDR";
             var isDx9Api = card.DxvkRecord?.InstalledDlls?.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)) == true
                            || card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
             var presetArray = isDx9Api ? DxvkService.LiliumD3d9Presets : DxvkService.LiliumD3d11Presets;
             var presetNames = presetArray.Select(p => p.Name).ToList();
             int currentPresetIdx = ViewModel.GetLiliumPreset(gameName, store);
 
-            var liliumPresetLabel = new TextBlock
-            {
-                Text = "Lilium Preset",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-                Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed,
-            };
-            ToolTipService.SetToolTip(liliumPresetLabel,
-                "Safest = swap chain only (near 100% compatible).\nHigher tiers upgrade back buffers and render targets — better HDR but may cause visual issues.");
-            Grid.SetRow(liliumPresetLabel, 1); Grid.SetColumn(liliumPresetLabel, 0);
-            variantGrid.Children.Add(liliumPresetLabel);
-
-            var liliumPresetCombo = new ComboBox
-            {
-                FontSize = 11,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                ItemsSource = presetNames,
-                SelectedIndex = currentPresetIdx >= 0 && currentPresetIdx < presetNames.Count ? currentPresetIdx : 0,
-                Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed,
-            };
-            Grid.SetRow(liliumPresetCombo, 1); Grid.SetColumn(liliumPresetCombo, 1);
-            variantGrid.Children.Add(liliumPresetCombo);
-            content.Children.Add(variantGrid);
-
-            // Wire variant combo — show/hide Lilium preset, save override, set DxvkVariantPending
-            var variantComboInit = true;
-            variantCombo.SelectionChanged += async (s, ev) =>
-            {
-                if (variantComboInit) return;
-                var selected = variantCombo.SelectedItem as string;
-                bool liliumNow = selected == "Lilium HDR";
-                liliumPresetLabel.Visibility = liliumNow ? Visibility.Visible : Visibility.Collapsed;
-                liliumPresetCombo.Visibility = liliumNow ? Visibility.Visible : Visibility.Collapsed;
-
-                string? variantValue = selected switch
+            var liliumPresetCombo = cog.AddCombo("Lilium Preset",
+                "Safest only upgrades the swap chain and works almost everywhere. Higher tiers also upgrade back buffers and " +
+                "render targets for better HDR, but may cause visual issues. Changing it rewrites dxvk.conf.",
+                presetNames,
+                currentPresetIdx >= 0 && currentPresetIdx < presetNames.Count ? currentPresetIdx : 0,
+                idx =>
                 {
-                    "Lilium HDR"  => "LiliumHdr",
-                    "Development" => "Development",
-                    "Stable"      => "Stable",
-                    _             => "LiliumHdr",
-                };
-                ViewModel.SetDxvkVariantOverride(gameName, variantValue, store);
-
-                if (card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable)
-                {
-                    // Already installed — uninstall first so user can install the new variant
-                    await ViewModel.HandleDxvkToggleAsync(card, false, Content.XamlRoot);
-                    card.DxvkVariantPending = true;
-                }
-                else
-                {
-                    card.DxvkVariantPending = true;
-                }
-                card.NotifyAll();
-                PopulateDetailPanel(card);
-                BuildOverridesPanel(card);
-            };
-            variantComboInit = false;
-
-            // Wire Lilium preset combo
-            var liliumPresetInit = true;
-            liliumPresetCombo.SelectionChanged += (s, ev) =>
-            {
-                if (liliumPresetInit) return;
-                int idx = liliumPresetCombo.SelectedIndex;
-                if (idx < 0) return;
-                ViewModel.SetLiliumPreset(gameName, idx, store);
-                // Re-deploy dxvk.conf with new preset if DXVK is installed
-                if (!string.IsNullOrEmpty(card.InstallPath))
-                {
-                    var confPath = System.IO.Path.Combine(card.InstallPath, "dxvk.conf");
-                    var confContent = isDx9Api
-                        ? DxvkService.GetLiliumD3d9ConfContent(idx)
-                        : DxvkService.GetLiliumD3d11ConfContent(idx);
-                    try { System.IO.File.WriteAllText(confPath, confContent); }
-                    catch (Exception ex) { CrashReporter.Log($"[DxvkCog.LiliumPreset] Failed to write dxvk.conf — {ex.Message}"); }
-                }
-            };
-            liliumPresetInit = false;
-
-            // ── Separator ─────────────────────────────────────────────────────────
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
+                    ViewModel.SetLiliumPreset(gameName, idx, store);
+                    // Re-deploy dxvk.conf with new preset if DXVK is installed
+                    if (!string.IsNullOrEmpty(card.InstallPath))
+                        _ = DxvkCogWriteLiliumConfAsync(cog, card.InstallPath, isDx9Api, idx, presetNames[idx]);
+                    else
+                        cog.SetSuccess($"Lilium preset set to {presetNames[idx]}.");
+                });
+            // AddRow puts the combo in a grid inside the row panel: hide the whole row when not Lilium
+            liliumPresetRow = (liliumPresetCombo.Parent as FrameworkElement)?.Parent as FrameworkElement;
+            if (liliumPresetRow != null)
+                liliumPresetRow.Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed;
 
             // ── Deploy dxvk.conf button ───────────────────────────────────────────
-            var deployBtn = new Button
+            cog.AddSection("dxvk.conf");
+            cog.AddButtons(cog.MakeButton("Deploy dxvk.conf", CogButtonKind.Primary, () =>
             {
-                Content = "Deploy dxvk.conf",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            };
-            deployBtn.Click += (s, ev) => ViewModel.CopyDxvkConf(card);
-            content.Children.Add(deployBtn);
+                var error = ViewModel.CopyDxvkConf(card);
+                if (error == null) cog.SetSuccess("dxvk.conf copied to the game folder.");
+                else cog.SetError($"Couldn't copy dxvk.conf: {error}");
+            }));
+            cog.AddNote("Copies dxvk.conf into the game folder: the selected Lilium preset for Lilium HDR installs, otherwise your dxvk.conf template.");
 
-            // ── Vulkan/OpenGL Present Method ──────────────────────────────────
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
-
-            // Pre-fetch both values off the UI thread — each calls _sessionLock.Wait(5000)
-            // and will block the UI thread if NVAPI is hung after GPU sleep/wake.
-            var (currentPresentMethod, currentPresentFlags) = await Task.Run(() => (
-                _dlssPresetService.GetVulkanPresentMethod(card.GameName, card.InstallPath ?? ""),
-                _dlssPresetService.GetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "")
-            ));
-
-            var presentGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
-            presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140, GridUnitType.Pixel) });
-            presentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            presentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            // Row 0: Prefer DXGI Swapchain
-            var presentLabel = new TextBlock
-            {
-                Text = "Prefer DXGI Swapchain",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTipService.SetToolTip(presentLabel, "Sets Vulkan/OpenGL Present Method to 'Preferred layered on DXGI Swapchain' in the NVIDIA driver profile. Recommended for DXVK — improves compatibility and HDR support.");
-            Grid.SetRow(presentLabel, 0); Grid.SetColumn(presentLabel, 0);
-            presentGrid.Children.Add(presentLabel);
-
-            var presentCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
-            presentCombo.Items.Add("No");   // 0x00000002 — Auto
-            presentCombo.Items.Add("Yes");  // 0x00000001 — Preferred layered on DXGI Swapchain
-            var currentPresentMethod2 = currentPresentMethod; // already fetched above
-            presentCombo.SelectedIndex = currentPresentMethod2 == 0x00000001 ? 1 : 0;
-            presentCombo.SelectionChanged += (s, ev) =>
-            {
-                uint value = presentCombo.SelectedIndex == 1 ? 0x00000001u : 0x00000002u;
-                var capturedName = card.GameName; var capturedPath = card.InstallPath ?? "";
-                _ = Task.Run(() => _dlssPresetService.SetVulkanPresentMethod(capturedName, capturedPath, value));
-            };
-            Grid.SetRow(presentCombo, 0); Grid.SetColumn(presentCombo, 1);
-            presentGrid.Children.Add(presentCombo);
-
-            // Row 1: DXVK as Native Flags
-            var flagsLabel = new TextBlock
-            {
-                Text = "DXVK as Native",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTipService.SetToolTip(flagsLabel, "Standard: Treat DXVK as Native (0x000802A5). Alternative: Allow DXVK Promotion + DirectFlip (0x00080004). Only active when Prefer DXGI Swapchain is Yes.");
-            Grid.SetRow(flagsLabel, 1); Grid.SetColumn(flagsLabel, 0);
-            presentGrid.Children.Add(flagsLabel);
+            // ── Vulkan/OpenGL Present Method ──────────────────────────────────────
+            cog.AddSection("NVIDIA Driver Profile");
 
             var flagOptions = new (string Label, uint Value)[]
             {
                 ("Standard",    0x000802A5u),
                 ("Alternative", 0x00080004u),
             };
-            var flagsCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
-            foreach (var (lbl, _) in flagOptions) flagsCombo.Items.Add(lbl);
-            ToolTipService.SetToolTip(flagsCombo, "Standard (0x000802A5): Treat DXVK as Native\nAlternative (0x00080004): Allow DXVK Promotion + DirectFlip");
+            bool presentIsYes = currentPresentMethod == 0x00000001;
+            ComboBox? flagsCombo = null;
 
-            var currentFlags = currentPresentFlags; // already fetched above
-            bool presentIsYes = currentPresentMethod2 == 0x00000001;
+            // Prefer DXGI Swapchain: No = 0x00000002 (Auto), Yes = 0x00000001 (Preferred layered on DXGI Swapchain)
+            cog.AddCombo("Prefer DXGI Swapchain",
+                "Sets the Vulkan/OpenGL present method to 'Prefer layered on DXGI Swapchain' in the game's NVIDIA driver profile. " +
+                "Recommended for DXVK: better compatibility and HDR support.",
+                new List<string> { "No", "Yes" }, presentIsYes ? 1 : 0, i =>
+                {
+                    bool isYes = i == 1;
+                    uint value = isYes ? 0x00000001u : 0x00000002u;
+                    if (flagsCombo != null)
+                    {
+                        flagsCombo.IsEnabled = isYes;
+                        flagsCombo.Opacity = isYes ? 1.0 : CogDialog.DisabledOpacity;
+                    }
+                    // No → clear the flags; Yes → write the selected flags
+                    uint? flagsValue = null;
+                    if (!isYes)
+                        flagsValue = 0x00000000u;
+                    else if (flagsCombo != null && flagsCombo.SelectedIndex >= 0 && flagsCombo.SelectedIndex < flagOptions.Length)
+                        flagsValue = flagOptions[flagsCombo.SelectedIndex].Value;
+                    var capturedName = card.GameName; var capturedPath = card.InstallPath ?? "";
+                    _ = DxvkCogProfileWriteAsync(cog, "Prefer DXGI Swapchain", () =>
+                    {
+                        bool ok = _dlssPresetService.SetVulkanPresentMethod(capturedName, capturedPath, value);
+                        if (flagsValue.HasValue)
+                            ok &= _dlssPresetService.SetVulkanPresentMethodFlags(capturedName, capturedPath, flagsValue.Value);
+                        return ok;
+                    });
+                });
 
+            // DXVK as Native flags — only active when Prefer DXGI Swapchain is Yes
+            int flagsIdx = 0;
             if (presentIsYes)
             {
-                var flagMatch = Array.FindIndex(flagOptions, f => f.Value == currentFlags);
-                flagsCombo.SelectedIndex = flagMatch >= 0 ? flagMatch : 0; // default to Standard
+                var flagMatch = Array.FindIndex(flagOptions, f => f.Value == currentPresentFlags);
+                flagsIdx = flagMatch >= 0 ? flagMatch : 0; // default to Standard
             }
-            else
-            {
-                flagsCombo.SelectedIndex = 0;
-                flagsCombo.IsEnabled = false;
-                flagsCombo.Opacity = 0.35;
-            }
-
-            flagsCombo.SelectionChanged += (s, ev) =>
-            {
-                if (flagsCombo.SelectedIndex >= 0 && flagsCombo.SelectedIndex < flagOptions.Length)
+            flagsCombo = cog.AddCombo("DXVK as Native",
+                "Standard treats DXVK as native. Alternative allows DXVK promotion and DirectFlip. Only used when Prefer DXGI Swapchain is Yes.",
+                flagOptions.Select(f => f.Label).ToList(), flagsIdx, i =>
                 {
                     var capturedName = card.GameName; var capturedPath = card.InstallPath ?? "";
-                    var capturedVal = flagOptions[flagsCombo.SelectedIndex].Value;
-                    _ = Task.Run(() => _dlssPresetService.SetVulkanPresentMethodFlags(capturedName, capturedPath, capturedVal));
-                }
-            };
-            Grid.SetRow(flagsCombo, 1); Grid.SetColumn(flagsCombo, 1);
-            presentGrid.Children.Add(flagsCombo);
+                    var capturedVal = flagOptions[i].Value;
+                    _ = DxvkCogProfileWriteAsync(cog, "DXVK as Native",
+                        () => _dlssPresetService.SetVulkanPresentMethodFlags(capturedName, capturedPath, capturedVal));
+                }, isEnabled: presentIsYes);
+            if (!presentIsYes) flagsCombo.Opacity = CogDialog.DisabledOpacity;
 
-            // When Prefer DXGI Swapchain changes, update flags combo state
-            presentCombo.SelectionChanged += (s, ev) =>
-            {
-                bool isYes = presentCombo.SelectedIndex == 1;
-                flagsCombo.IsEnabled = isYes;
-                flagsCombo.Opacity = isYes ? 1.0 : 0.35;
-                var capturedName2 = card.GameName; var capturedPath2 = card.InstallPath ?? "";
-                if (!isYes)
-                {
-                    _ = Task.Run(() => _dlssPresetService.SetVulkanPresentMethodFlags(capturedName2, capturedPath2, 0x00000000u));
-                }
-                else if (flagsCombo.SelectedIndex >= 0 && flagsCombo.SelectedIndex < flagOptions.Length)
-                {
-                    var capturedVal2 = flagOptions[flagsCombo.SelectedIndex].Value;
-                    _ = Task.Run(() => _dlssPresetService.SetVulkanPresentMethodFlags(capturedName2, capturedPath2, capturedVal2));
-                }
-            };
-
-            content.Children.Add(presentGrid);
-
-            var dialog = new ContentDialog
-            {
-                Title = "DXVK Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(dialog);
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[MainWindow.DxvkCogButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Saves the per-game DXVK variant override. If DXVK is installed it's uninstalled first so the
+    /// user can install the new variant; the detail panel is rebuilt either way.
+    /// </summary>
+    private async Task DxvkCogChangeVariantAsync(CogDialog cog, GameCardViewModel card, ComboBox variantCombo, string selected)
+    {
+        var gameName = card.GameName;
+        var store    = card.Source ?? "";
+        string variantValue = selected switch
+        {
+            "Lilium HDR"  => "LiliumHdr",
+            "Development" => "Development",
+            "Stable"      => "Stable",
+            _             => "LiliumHdr",
+        };
+        variantCombo.IsEnabled = false;
+        try
+        {
+            ViewModel.SetDxvkVariantOverride(gameName, variantValue, store);
+
+            bool wasInstalled = card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable;
+            if (wasInstalled)
+            {
+                // Already installed — uninstall first so user can install the new variant
+                cog.SetStatus("Uninstalling DXVK...");
+                await ViewModel.HandleDxvkToggleAsync(card, false, Content.XamlRoot);
+            }
+            card.DxvkVariantPending = true;
+            card.NotifyAll();
+            PopulateDetailPanel(card);
+            BuildOverridesPanel(card);
+
+            cog.SetSuccess(wasInstalled
+                ? $"Variant set to {selected}. DXVK was uninstalled; install it again to use the new variant."
+                : $"Variant set to {selected}. It will be used when you install DXVK.");
+            CrashReporter.Log($"[MainWindow.DxvkCogChangeVariantAsync] '{gameName}' variant → {variantValue} (wasInstalled={wasInstalled})");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DxvkCogChangeVariantAsync] Failed for '{gameName}' — {ex.Message}\n{ex.StackTrace}");
+            cog.SetError($"Couldn't change the variant: {ex.Message}");
+        }
+        finally
+        {
+            variantCombo.IsEnabled = true;
+        }
+    }
+
+    /// <summary>Rewrites the game's dxvk.conf with the chosen Lilium HDR preset (off the UI thread).</summary>
+    private static async Task DxvkCogWriteLiliumConfAsync(CogDialog cog, string installPath, bool isDx9Api, int idx, string presetName)
+    {
+        var confPath = Path.Combine(installPath, "dxvk.conf");
+        var confContent = isDx9Api
+            ? DxvkService.GetLiliumD3d9ConfContent(idx)
+            : DxvkService.GetLiliumD3d11ConfContent(idx);
+        try
+        {
+            await Task.Run(() => File.WriteAllText(confPath, confContent));
+            cog.SetSuccess($"Lilium preset set to {presetName}. dxvk.conf updated.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DxvkCog.LiliumPreset] Failed to write dxvk.conf — {ex.Message}");
+            cog.SetError($"Lilium preset saved, but dxvk.conf couldn't be written: {ex.Message}");
+        }
+    }
+
+    /// <summary>Runs an NVIDIA profile write off the UI thread and reports the result in the dialog.</summary>
+    private static async Task DxvkCogProfileWriteAsync(CogDialog cog, string settingName, Func<bool> write)
+    {
+        try
+        {
+            bool ok = await Task.Run(write);
+            if (ok) cog.SetSuccess($"{settingName} saved to the NVIDIA driver profile.");
+            else cog.SetError($"Couldn't save {settingName} to the NVIDIA driver profile. See the log for details.");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.DxvkCogProfileWriteAsync] {settingName} write failed — {ex.Message}");
+            cog.SetError($"Couldn't save {settingName}: {ex.Message}");
         }
     }
 }

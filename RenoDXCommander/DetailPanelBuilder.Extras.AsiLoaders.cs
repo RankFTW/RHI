@@ -178,31 +178,20 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog (empty for now, matches Components cog size/position)
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-            Tag = card,
-        };
-        ToolTipService.SetToolTip(cogBtn, "ASI Loader settings (coming soon)");
+        var cogBtn = CogDialog.MakeCogButton("ASI Loader settings");
+        cogBtn.Tag = card;
         cogBtn.Click += async (s, e) =>
         {
-            // Placeholder — settings dialog will be added later
-            var dlg = new ContentDialog
+            try
             {
-                Title = "ASI Loader Settings",
-                Content = new TextBlock { Text = "No settings available yet.", FontSize = 12 },
-                CloseButtonText = "Close",
-                XamlRoot = _window.Content.XamlRoot,
-            };
-            await DialogService.ShowSafeAsync(dlg);
+                var cog = new CogDialog("ASI Loader", _window.Content.XamlRoot);
+                cog.AddEmpty();
+                await cog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DetailPanelBuilder.BuildUalRow] Settings dialog failed — {ex.Message}");
+            }
         };
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -451,58 +440,11 @@ public partial class DetailPanelBuilder
         };
         Grid.SetColumn(installBtn, 3); row.Children.Add(installBtn);
 
-        var cogBtn = new Button { Width = 36, Height = 32, Padding = new Thickness(0), Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush), Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center } };
-        ToolTipService.SetToolTip(cogBtn, "RTX Encore settings");
+        var cogBtn = CogDialog.MakeCogButton("RTX Encore settings");
         cogBtn.Click += async (s, e) =>
         {
-            var content = new StackPanel { Spacing = 8 };
-            content.Children.Add(new TextBlock { Text = "Neural Rendering (nvngx_dlssnr.dll)", FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) });
-            content.Children.Add(new TextBlock { Text = "RTX Encore requires nvngx_dlssnr.dll version 310.8.0 exactly. Other versions are refused.", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush), TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap });
-            var nrCachedPath = svc.GetNrDllCachedPath();
-            bool nrAvailable = nrCachedPath != null;
-
-            var nrRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0) };
-            nrRow.Children.Add(new TextBlock { Text = "Deploy NR DLL", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center });
-            var nrCombo = new ComboBox { FontSize = 11, MinWidth = 80 };
-            nrCombo.Items.Add("No"); nrCombo.Items.Add("Yes");
-            nrCombo.SelectedIndex = nrDeployed ? 1 : 0;
-            ToolTipService.SetToolTip(nrCombo, nrAvailable
-                ? "Deploy nvngx_dlssnr.dll 310.8.0 alongside RTX Encore for Neural Rendering support."
-                : "nvngx_dlssnr.dll 310.8.0 not yet cached — selecting Yes will download it automatically.");
-            nrRow.Children.Add(nrCombo); content.Children.Add(nrRow);
-            if (nrAvailable)
-                content.Children.Add(new TextBlock { Text = $"Source: {nrCachedPath}", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap });
-            else
-                content.Children.Add(new TextBlock { Text = "310.8.0 not yet downloaded — will download on Apply.", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap });
-            var cogDlg = new ContentDialog { Title = "RTX Encore Settings", Content = new ScrollViewer { Content = content, MaxHeight = 480, Padding = new Thickness(0, 0, 16, 0) }, PrimaryButtonText = "Apply", CloseButtonText = "Cancel", XamlRoot = _window.Content.XamlRoot, RequestedTheme = ElementTheme.Dark };
-            var dlgResult = await DialogService.ShowSafeAsync(cogDlg);
-
-            if (dlgResult != ContentDialogResult.Primary) return;
-            bool enableNr = nrCombo.SelectedIndex == 1;
-
-            // Always persist the preference, regardless of install state
-            if (enableNr != nrDeployed)
-                _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, enableNr, store);
-
-            if (!isInstalled) return; // can't deploy to disk yet — preference is saved, deploy happens at install
-
-            if (enableNr && !nrDeployed)
-            {
-                // Ensure 310.8.0 is cached — try exact match first, then with (50xx) suffix
-                var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
-                var cachedNrPath = svc.GetNrDllCachedPath()
-                                ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)").ConfigureAwait(false)
-                                ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer).ConfigureAwait(false);
-                if (cachedNrPath == null)
-                {
-                    CrashReporter.Log("[RtxEncoreCog] 310.8.0 not available and download failed — NR DLL not deployed");
-                    return;
-                }
-                bool ok = svc.DeployNrDll(installPath);
-                if (!ok) { _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); } // revert if deploy failed
-                RequestExtrasRebuild(card);
-            }
-            else if (!enableNr && nrDeployed) { svc.RemoveNrDll(installPath); RequestExtrasRebuild(card); }
+            try { await ShowRtxEncoreSettingsAsync(card, svc, installPath, isInstalled, nrDeployed); }
+            catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildRtxEncoreRow] Settings dialog failed — {ex.Message}"); }
         };
         Grid.SetColumn(cogBtn, 4); row.Children.Add(cogBtn);
 
@@ -520,6 +462,124 @@ public partial class DetailPanelBuilder
 
         body.Children.Add(row);
         _window.ViewModel.SetLastUiAction($"BuildRtxEncoreRow:Done({card.GameName})");
+    }
+
+    /// <summary>⚙ dialog for RTX Encore. The NR DLL choice applies as soon as it changes.</summary>
+    private async Task ShowRtxEncoreSettingsAsync(GameCardViewModel card, RtxEncoreService svc,
+        string installPath, bool isInstalled, bool nrDeployed)
+    {
+        var gameName = card.GameName;
+        var store    = card.Source ?? "";
+        var nrCachedPath = svc.GetNrDllCachedPath();
+
+        var cog = new CogDialog("RTX Encore", _window.Content.XamlRoot);
+        cog.AddSection("Neural Rendering (nvngx_dlssnr.dll)");
+        cog.AddIntro("RTX Encore requires nvngx_dlssnr.dll version 310.8.0 exactly. Other versions are refused.");
+
+        bool nrOn = nrDeployed;      // current state, updated as the user changes it
+        bool suppress = false;       // set while reverting the combo in code
+        ComboBox? nrCombo = null;
+
+        void Revert()
+        {
+            if (nrCombo == null) return;
+            suppress = true;
+            nrCombo.SelectedIndex = nrOn ? 1 : 0;
+            suppress = false;
+        }
+
+        async Task ApplyNrAsync(bool enableNr)
+        {
+            if (enableNr == nrOn) return;
+
+            // Always persist the preference, regardless of install state
+            _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, enableNr, store);
+
+            if (!isInstalled)
+            {
+                // Can't deploy to disk yet: the preference is saved and the DLL is deployed at install
+                nrOn = enableNr;
+                cog.SetSuccess(enableNr
+                    ? "Saved. nvngx_dlssnr.dll will be deployed when RTX Encore is installed."
+                    : "Saved.");
+                return;
+            }
+
+            if (enableNr)
+            {
+                if (nrCombo != null) nrCombo.IsEnabled = false;
+                try
+                {
+                    // Ensure 310.8.0 is cached: try with (50xx) suffix first (manifest key), then the bare version
+                    var cachedNrPath = svc.GetNrDllCachedPath();
+                    if (cachedNrPath == null)
+                    {
+                        cog.SetStatus("Downloading nvngx_dlssnr.dll 310.8.0...");
+                        var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+                        cachedNrPath = await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)")
+                                    ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer);
+                    }
+                    if (cachedNrPath == null)
+                    {
+                        CrashReporter.Log("[RtxEncoreCog] 310.8.0 not available and download failed — NR DLL not deployed");
+                        _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
+                        Revert();
+                        cog.SetError("Couldn't download nvngx_dlssnr.dll 310.8.0. Nothing was deployed.");
+                        return;
+                    }
+                    bool ok = svc.DeployNrDll(installPath);
+                    if (ok)
+                    {
+                        nrOn = true;
+                        cog.SetSuccess("Deployed nvngx_dlssnr.dll 310.8.0 to the game folder.");
+                    }
+                    else
+                    {
+                        _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); // revert if deploy failed
+                        Revert();
+                        cog.SetError("Couldn't copy nvngx_dlssnr.dll into the game folder.");
+                    }
+                    RequestExtrasRebuild(card);
+                }
+                finally
+                {
+                    if (nrCombo != null) nrCombo.IsEnabled = true;
+                }
+            }
+            else
+            {
+                svc.RemoveNrDll(installPath);
+                nrOn = false;
+                cog.SetSuccess("Removed nvngx_dlssnr.dll from the game folder.");
+                RequestExtrasRebuild(card);
+            }
+        }
+
+        nrCombo = cog.AddCombo("Deploy NR DLL",
+            "Copies nvngx_dlssnr.dll 310.8.0 into the game folder alongside RTX Encore for Neural Rendering support. " +
+            "If RTX Encore isn't installed yet, the choice is saved and applied when you install it.",
+            new[] { "No", "Yes" }, nrOn ? 1 : 0, i =>
+            {
+                if (suppress) return true;
+                _ = ApplyNrSafeAsync(i == 1);
+                return true;
+            });
+
+        async Task ApplyNrSafeAsync(bool enableNr)
+        {
+            try { await ApplyNrAsync(enableNr); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[RtxEncoreCog] NR DLL change failed — {ex.Message}");
+                cog.SetError($"Couldn't change the NR DLL: {ex.Message}");
+            }
+        }
+
+        cog.AddNote(nrCachedPath != null
+            ? $"Source: {nrCachedPath}"
+            : "310.8.0 isn't downloaded yet. It downloads automatically when you pick Yes.");
+
+        await cog.ShowAsync();
     }
 
     private async Task<string?> ShowRtxEncoreDllPickerAsync(GameCardViewModel card, string? currentDllName)

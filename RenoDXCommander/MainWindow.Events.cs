@@ -150,139 +150,82 @@ public sealed partial class MainWindow
         {
             if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-            var content = new StackPanel { Spacing = 8 };
+            var cog = new CogDialog("Luma", this.Content.XamlRoot);
 
             // ── Engine.ini Settings ───────────────────────────────────────────────
-            // Only show for Unreal Engine games with Luma installed
-            if (card.LumaMod != null && card.EngineHint?.Contains("Unreal") == true)
+            // Only for Unreal Engine games that have a Luma mod
+            if (card.LumaMod == null)
             {
-                content.Children.Add(new TextBlock
-                {
-                    Text = "Engine.ini Settings",
-                    FontSize = 13,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                    Margin = new Thickness(0, 0, 0, 4),
-                });
-
-                var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
-                cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-                cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                cog.AddEmpty("There's no Luma mod for this game, so there's nothing to set here.");
+            }
+            else if (card.EngineHint?.Contains("Unreal") != true)
+            {
+                cog.AddEmpty("Luma's settings are for Unreal Engine games. This game has nothing to set here.");
+            }
+            else
+            {
+                cog.AddSection("Unreal Engine");
 
                 // ── HDR on First Boot ──────────────────────────────────────────────
-                var hdrLabel = new TextBlock
-                {
-                    Text = "HDR on First Boot",
-                    FontSize = 11,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
-                cogGrid.Children.Add(hdrLabel);
-
-                var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-                hdrCombo.Items.Add("Default");
-                hdrCombo.Items.Add("Off");
-                hdrCombo.Items.Add("On");
-                ToolTipService.SetToolTip(hdrCombo,
-                    "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
-                    "Default: leaves both keys as-is (Luma controls them).\n" +
-                    "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
-                    "On: sets EnableHDR=1 and DisplayMode=1.");
-
                 var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
                 // Default = key absent or never set by RHI; Off = "0"; On = "1"
-                hdrCombo.SelectedIndex = currentHdr == null ? 0 : currentHdr == "0" ? 1 : 2;
-                bool hdrInitializing = true;
-                hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
-                hdrCombo.SelectionChanged += (s2, ev) =>
-                {
-                    if (hdrInitializing) return;
-                    if (hdrCombo.SelectedIndex == 0) // Default — remove keys, let Luma manage them
+                cog.AddCombo("HDR on First Boot",
+                    "Sets EnableHDR and DisplayMode in the [Luma] section of reshade.ini. " +
+                    "Default leaves both to Luma; Off sets them to 0; On sets them to 1.",
+                    new[] { "Default", "Off", "On" },
+                    currentHdr == null ? 0 : currentHdr == "0" ? 1 : 2,
+                    i =>
                     {
-                        AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
-                        AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
-                        card.LumaActionMessage = "✅ HDR reset to Luma default.";
-                    }
-                    else
-                    {
-                        bool hdrOn = hdrCombo.SelectedIndex == 2;
-                        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
-                        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
-                        card.LumaActionMessage = hdrOn ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
-                    }
-                    card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
-                };
-                Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);
-                cogGrid.Children.Add(hdrCombo);
+                        if (i == 0) // Default — remove keys, let Luma manage them
+                        {
+                            AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+                            AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
+                            cog.SetSuccess("HDR reset to Luma default.");
+                        }
+                        else
+                        {
+                            bool hdrOn = i == 2;
+                            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
+                            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
+                            cog.SetSuccess(hdrOn ? "HDR turned on in reshade.ini." : "HDR turned off in reshade.ini.");
+                        }
+                        CrashReporter.Log($"[MainWindow.LumaCogButton_Click] HDR on First Boot = {i} for '{card.GameName}'");
+                    });
 
                 // ── TAA Settings ───────────────────────────────────────────────────
-                var taaLabel = new TextBlock
-                {
-                    Text = "TAA Settings",
-                    FontSize = 11,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
-                cogGrid.Children.Add(taaLabel);
-
-                var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-                taaCombo.Items.Add("Off");
-                taaCombo.Items.Add("On");
-                ToolTipService.SetToolTip(taaCombo,
-                    "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
-                    "Forces TAA with high quality for Luma HDR compatibility.");
-
-                bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
-                taaCombo.SelectedIndex = taaActive ? 1 : 0;
-                bool taaInitializing = true;
-                taaCombo.Loaded += (s2, e2) => taaInitializing = false;
-
-                taaCombo.SelectionChanged += (s2, ev) =>
-                {
-                    if (taaInitializing) return;
-                    var taaKeys = new (string Section, string Key, string Value)[]
+                cog.AddCombo("TAA Settings",
+                    "On writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini, " +
+                    "forcing high-quality TAA for Luma HDR compatibility. Off removes them.",
+                    new[] { "Off", "On" },
+                    ViewModel.IsLumaTaaEnabled(card.GameName) ? 1 : 0,
+                    i =>
                     {
-                        ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
-                        ("SystemSettings", "r.PostProcessAAQuality", "4"),
-                    };
-                    if (taaCombo.SelectedIndex == 1)
-                    {
-                        AuxInstallService.ApplyEngineIniCustomKeys(
-                            card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
-                        ViewModel.SetLumaTaaEnabled(card.GameName, true);
-                        card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
-                    }
-                    else
-                    {
-                        AuxInstallService.RemoveEngineIniCustomKeys(
-                            card.InstallPath,
-                            taaKeys.Select(k => k.Key),
-                            card.EngineIniProjectOverride, card.GameName, card.Source);
-                        ViewModel.SetLumaTaaEnabled(card.GameName, false);
-                        card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
-                    }
-                    card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
-                };
-                Grid.SetRow(taaCombo, 1); Grid.SetColumn(taaCombo, 1);
-                cogGrid.Children.Add(taaCombo);
-
-                content.Children.Add(cogGrid);
+                        var taaKeys = new (string Section, string Key, string Value)[]
+                        {
+                            ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
+                            ("SystemSettings", "r.PostProcessAAQuality", "4"),
+                        };
+                        if (i == 1)
+                        {
+                            AuxInstallService.ApplyEngineIniCustomKeys(
+                                card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
+                            ViewModel.SetLumaTaaEnabled(card.GameName, true);
+                            cog.SetSuccess("TAA settings written to Engine.ini.");
+                        }
+                        else
+                        {
+                            AuxInstallService.RemoveEngineIniCustomKeys(
+                                card.InstallPath,
+                                taaKeys.Select(k => k.Key),
+                                card.EngineIniProjectOverride, card.GameName, card.Source);
+                            ViewModel.SetLumaTaaEnabled(card.GameName, false);
+                            cog.SetSuccess("TAA settings removed from Engine.ini.");
+                        }
+                        CrashReporter.Log($"[MainWindow.LumaCogButton_Click] TAA Settings = {(i == 1 ? "On" : "Off")} for '{card.GameName}'");
+                    });
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "Luma Settings",
-                Content = content,
-                CloseButtonText = "Close",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            await DialogService.ShowSafeAsync(dialog);
+            await cog.ShowAsync();
         }
         catch (Exception ex)
         {

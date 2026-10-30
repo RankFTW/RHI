@@ -176,17 +176,7 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog button
-        var cogBtn = new Button
-        {
-            Width = 36, Height = 32, Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-        };
-        ToolTipService.SetToolTip(cogBtn, "20/30 FG Unlock settings");
+        var cogBtn = CogDialog.MakeCogButton("20/30 FG Unlock settings");
         cogBtn.Click += async (s, e) =>
         {
             try { await ShowDlssg2030SettingsAsync(installPath, isInstalled); }
@@ -476,44 +466,27 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog button
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-        };
-        ToolTipService.SetToolTip(cogBtn, "RTX 40 MFG settings — configure multiplier mode");
+        var cogBtn = CogDialog.MakeCogButton("RTX 40 MFG settings");
         cogBtn.Click += async (s, e) =>
         {
-            var installedNote = isInstalled ? $"\n\nCurrently installed as: {currentDllName}" : "";
-            var dlg = new ContentDialog
+            try
             {
-                Title = "RTX 40 MFG Settings",
-                Content = new TextBlock
-                {
-                    Text = "Press Backspace in-game to open the RTX 40 MFG menu.\n\n" +
-                           "• Follow game — uses the game's own MFG setting\n" +
-                           "• Fixed 2x–6x — forces a specific multiplier\n" +
-                           "• Dynamic — targets the display refresh rate or a custom FPS value\n\n" +
-                           "If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App." +
-                           installedNote,
-                    FontSize = 12,
-                    TextWrapping = TextWrapping.Wrap,
-                },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText   = "Close",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
-            var result = await DialogService.ShowSafeAsync(dlg);
-            if (result == ContentDialogResult.Primary)
-                _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock"));
+                var cog = new CogDialog("RTX 40 MFG", _window.Content.XamlRoot);
+                cog.AddIntro("Press Backspace in-game to open the RTX 40 MFG menu. It offers these modes:");
+                cog.AddNote("• Follow game: uses the game's own MFG setting");
+                cog.AddNote("• Fixed 2x to 6x: forces a specific multiplier");
+                cog.AddNote("• Dynamic: targets the display refresh rate or a custom FPS value");
+                cog.AddIntro("If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App.");
+                if (isInstalled)
+                    cog.AddNote($"Currently installed as: {currentDllName}");
+                cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
+                    async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock")); }));
+                await cog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[BuildRtx40MfgRow] Settings dialog failed — {ex.Message}");
+            }
         };
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);

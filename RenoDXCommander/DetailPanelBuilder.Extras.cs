@@ -341,22 +341,10 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog (⚙) button
-        var cogBtn = new Button
-        {
-            Width = 36,
-            Height = 32,
-            Padding = new Thickness(0),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
-            Tag = card,
-            IsEnabled = !osGreyed,
-            Opacity = osGreyed ? 0.35 : 1.0,
-        };
-        ToolTipService.SetToolTip(cogBtn, "OptiScaler Settings");
+        var cogBtn = CogDialog.MakeCogButton("OptiScaler settings");
+        cogBtn.Tag = card;
+        cogBtn.IsEnabled = !osGreyed;
+        cogBtn.Opacity = osGreyed ? 0.35 : 1.0;
         cogBtn.Click += (s, e) => _window.OsCogButton_ClickInternal(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);

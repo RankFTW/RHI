@@ -729,14 +729,14 @@ public partial class DxvkService
     // ── CopyConfToGame ────────────────────────────────────────────────
 
     /// <inheritdoc />
-    public void CopyConfToGame(GameCardViewModel card)
+    public string? CopyConfToGame(GameCardViewModel card)
     {
         try
         {
             if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
             {
                 CrashReporter.Log($"[DxvkService.CopyConfToGame] Invalid install path for '{card.GameName}'");
-                return;
+                return "The game folder wasn't found.";
             }
 
             var destPath = Path.Combine(card.InstallPath, "dxvk.conf");
@@ -754,7 +754,7 @@ public partial class DxvkService
                     : GetLiliumD3d11ConfContent(presetIdx);
                 File.WriteAllText(destPath, content);
                 CrashReporter.Log($"[DxvkService.CopyConfToGame] Wrote Lilium HDR dxvk.conf (preset {presetIdx}, {(isDx9 ? "DX9" : "DX11")}) to '{card.GameName}'");
-                return;
+                return null;
             }
 
             // Non-Lilium: copy from the user's INI template
@@ -768,10 +768,12 @@ public partial class DxvkService
                 File.WriteAllText(destPath, DefaultDxvkConfContent);
                 CrashReporter.Log($"[DxvkService.CopyConfToGame] Wrote default dxvk.conf to {card.GameName}");
             }
+            return null;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[DxvkService.CopyConfToGame] {card.GameName} — {ex.Message}");
+            return ex.Message;
         }
     }
 

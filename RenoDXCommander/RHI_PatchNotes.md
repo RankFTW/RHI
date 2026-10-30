@@ -15,6 +15,13 @@
 - The 20/30 FG Unlock ⚙ now has the mod's main settings: Frame Generation on/off, Engine (DLSS or Intel XeSS), Max Frames (2X up to 6X), Preset (including C, FG Lite, which is much cheaper to run), Speed Tier and Super Resolution (DLSS preset M or L with the mod's faster INT8 kernels on RTX 20/30). Each is a dropdown, so you can't enter a value that would switch frame generation off. There are also buttons to open the ini and the mod's log. Your settings are kept when the mod updates.
 - Removed the GPU generation setting. The mod now detects RTX 20 and 30 cards by itself.
 
+**Component settings (⚙)**
+- Every component's ⚙ window now has the same layout: the same width, setting names on the left with the option beside them, a short explanation under every setting, matching section headings and buttons, and a scroll bar when there's a lot to show.
+- Messages (for example "Deployed ReShade.ini" or an error) now appear inside the ⚙ window instead of on the game behind it.
+- Settings save as soon as you change them everywhere, including dgVoodoo2, RTX Encore and ShortFuse DLSS Tool, which used to need an Apply or Save button. RTX HDR and Auto HDR keep their Apply button because they use sliders.
+- New buttons: Open relimiter.ini, Open DisplayCommander.ini and Open OptiScaler.ini.
+- Components with nothing to set (DOF Fix, ASI Loader, DLSS Enabler) and Luma on non-Unreal games now say so instead of showing an empty window.
+
 **Quick Start**
 - The Quick Start guide has been rewritten to match the current app. It now covers Neural Rendering, the Extras section, OptiScaler's variants, RTX HDR and Auto HDR, the HDR and RES buttons and adding a GitHub token, and out-of-date steps have been corrected.
 
@@ -31,8 +38,20 @@
 **ReLimiter**
 - Fixed the ReLimiter ⚙ Target FPS and DLSS Hooks settings staying greyed out (or not applying) on games whose `reshade.ini` sets an `AddonPath`. They now use the `relimiter.ini` in the addon folder, where RHI installs it.
 
+**Component settings (⚙)**
+- Fixed "Deploy dxvk.conf" reporting success when the copy failed.
+- Fixed a setting that failed to save still showing the new value. It now goes back to the saved value and shows why.
+- Fixed changing OptiScaler's Upscaler API also rewriting the game's upscaler choice in OptiScaler.ini.
+- Fixed RTX Encore staying set to deploy the Neural Rendering DLL after its download failed.
+- Fixed the RE Framework "Delete _storage_ folder" button getting stuck on "Deleting...".
+- Fixed applying a ReShade hotkey saying "Applied!" when the game had no reshade.ini to change.
+- Fixed an invalid ReLimiter custom FPS being ignored without a message.
+
 **Tooltips**
 - Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.
+
+### Manifest Updates
+- Added dgVoodoo2 v2.87.6, now the default version for new installs.
 
 ## v2.8.8
 
