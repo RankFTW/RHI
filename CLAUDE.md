@@ -33,7 +33,7 @@ dotnet test  RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64 
 - Single developer, pushes straight to `main`. **Always ask before committing or pushing.**
 - **Never bump the version** (`AssemblyVersion`/`FileVersion` in `RenoDXCommander.csproj`). The user does it manually right before a release.
 - Commit subjects: short, prefixed: `Fix:`, `Feat:`, `Changes:`, `Manifest:`, `DLSS manifest:`, `MOTD:`, `Release vX.Y.Z`.
-- Remotes: `origin` = RankFTW/RenoDXChecker (also served as RankFTW/RHI). `lazorr410` is a contributor fork; never push there.
+- Remotes: `origin` = RankFTW/RHI (formerly RankFTW/RenoDXChecker). `lazorr410` is a contributor fork; never push there.
 
 **Patch notes (`RenoDXCommander/RHI_PatchNotes.md`) are updated in the same turn as the change, without being asked**, for every bug fix, feature, UI change and manifest change.
 - Sections: `### New` (genuinely new features; drop the section if nothing qualifies), `### Changes` (improvements to existing features), `### Bug Fixes`, `### Maintenance` (internal/infrastructure), `### Manifest Updates`.
