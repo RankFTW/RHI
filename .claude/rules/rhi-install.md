@@ -157,6 +157,7 @@ paths:
 - Never re-create a tracked file that no longer exists in the game folder — the user removed it.
 - Components that copy addons directly must call `AddonPackService.TrackAddonDeployment` / `UntrackAddonDeployment`.
 - Upstream release asset/file names change (RTX 40 MFG: `RTXMFG.dll` → `MFGUnlocker.dll`). Never record a new staged version unless the expected file was actually extracted.
+- 20/30 FG Unlock (dlssg_for_sm86) is a package since 0.4.0: proxy DLL + `dlssg_sm86.ini` + the whole `dlssg_sm86\` folder (backend, kernel packs, bundled runtime). Each proxy name (version, winmm, dbghelp, dinput8, dxgi, d3d12) is a separate build that forwards to its own system DLL: never rename one proxy to another name. Staged from the release zip; deployed files tracked in `dlssg_sm86\rhi_install.txt`; installed games are refreshed by file comparison (`NeedsUpdate`).
 
 ### Periodic Timer
 - `System.Threading.Timer` every 4 hours after initial scan completes

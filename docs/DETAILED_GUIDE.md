@@ -676,7 +676,7 @@ Several of these are "proxy" DLLs that load by taking a system DLL's name. When 
 | **ASI Loader** ([Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)) | Loads `.asi` plugins. Recommended names are marked. If the chosen name already exists, the existing file is renamed to `<name>Hooked.dll` and still loaded. |
 | **RTX Encore (Beta)** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40. Its ⚙ can deploy the NR DLL. |
 | **DLSS Enabler** | DLSS Frame Generation support through a proxy DLL (`version.dll` works for most games). Not available while OptiScaler is installed, as OptiScaler includes it. |
-| **20/30 FG Unlock** | DLSS Frame Generation on RTX 20 and 30 Series (DX12 only). Choose your GPU generation in its ⚙ before installing. |
+| **20/30 FG Unlock** | DLSS Frame Generation (up to 6X) on RTX 20 and 30 Series, DX12 only, NVIDIA driver R580 or newer. Installs a proxy DLL (start with `version.dll`; if FG doesn't appear in the game, try the next name), `dlssg_sm86.ini` and the `dlssg_sm86` folder; uninstall removes all of it. Its ⚙ sets Frame Generation on/off, Engine (DLSS or XeSS), Max Frames (2X–6X), Preset (A, B, or C for FG Lite), Speed Tier and Super Resolution (preset M/L, with faster INT8 kernels), and opens the ini and log. Settings are kept when the mod updates. |
 | **RTX 40 MFG** | Multi frame generation beyond 2x (up to 6x) on RTX 40 Series. Press Backspace in-game for its menu. |
 | **MFG Ada Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). |
 

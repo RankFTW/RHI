@@ -829,19 +829,29 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
-    public string GetDlssg2030GpuGen(string gameName, string store = "")
+    /// <summary>
+    /// Brings every game with 20/30 FG Unlock up to the staged package. Compares files rather
+    /// than relying on "an update was just downloaded", so installs from before the 0.4.0
+    /// package layout and games that were running during an update are fixed too.
+    /// Safe to call from a background thread.
+    /// </summary>
+    internal void UpdateDlssg2030Installs()
     {
-        var key = GameKey.From(gameName, store).ToKey();
-        if (_gameNameService.Dlssg2030GpuGen.TryGetValue(key, out var v)) return v;
-        if (_gameNameService.Dlssg2030GpuGen.TryGetValue(gameName, out var v2)) return v2;
-        return Dlssg20_30Service.GpuGenRtx30; // default to RTX 30
-    }
+        if (!_dlssg2030Service.IsStagingReady) return;
+        foreach (var c in _allCards.ToList())
+        {
+            if (string.IsNullOrEmpty(c.InstallPath)) continue;
+            var installedAs = GetDlssg2030InstalledAs(c.GameName, c.Source ?? "");
+            if (string.IsNullOrEmpty(installedAs) || !File.Exists(Path.Combine(c.InstallPath, installedAs))) continue;
+            if (!_dlssg2030Service.NeedsUpdate(c.InstallPath, installedAs)) continue;
 
-    public void SetDlssg2030GpuGen(string gameName, string gpuGen, string store = "")
-    {
-        var key = GameKey.From(gameName, store).ToKey();
-        _gameNameService.Dlssg2030GpuGen[key] = gpuGen;
-        SaveNameMappings();
+            var nowAs = _dlssg2030Service.Update(c.InstallPath, installedAs);
+            if (nowAs != null && !nowAs.Equals(installedAs, StringComparison.OrdinalIgnoreCase))
+            {
+                var game = c.GameName; var store = c.Source ?? "";
+                DispatcherQueue?.TryEnqueue(() => SetDlssg2030InstalledAs(game, nowAs, store));
+            }
+        }
     }
 
     // ── RTX Encore ────────────────────────────────────────────────────────────

@@ -261,16 +261,8 @@ public partial class MainViewModel
                 {
                     await _dlssg2030Service.CheckForUpdateAsync();
                     if (_dlssg2030Service.HasUpdate)
-                    {
                         await _dlssg2030Service.EnsureStagingAsync();
-                        if (_dlssg2030Service.IsStagingReady)
-                            foreach (var c in _allCards.Where(c => !string.IsNullOrEmpty(c.InstallPath)))
-                            {
-                                var installedAs = GetDlssg2030InstalledAs(c.GameName, c.Source ?? "");
-                                if (!string.IsNullOrEmpty(installedAs) && File.Exists(Path.Combine(c.InstallPath!, installedAs)))
-                                    _dlssg2030Service.Update(c.InstallPath!, installedAs, GetDlssg2030GpuGen(c.GameName, c.Source ?? ""));
-                            }
-                    }
+                    UpdateDlssg2030Installs();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Dlssg2030 check failed — {ex.Message}"); }
 

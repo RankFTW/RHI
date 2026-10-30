@@ -59,7 +59,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "20/30 FG Unlock — enables DLSS Frame Generation on RTX 20 and 30 series GPUs. D3D12 only. No ASI Loader or ReShade required.");
+        ToolTipService.SetToolTip(label, "20/30 FG Unlock — enables DLSS Frame Generation (up to 6X) on RTX 20 and 30 series GPUs. D3D12. Needs NVIDIA driver R580 or newer. No ASI Loader or ReShade required.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -127,7 +127,7 @@ public partial class DetailPanelBuilder
         {
             ToolTipService.SetToolTip(installBtn, isInstalled
                 ? $"Reinstall 20/30 FG Unlock (currently deployed as {currentDllName})"
-                : "Install 20/30 FG Unlock — deploys version.dll under a name you choose");
+                : "Install 20/30 FG Unlock — deploys the proxy DLL you choose, dlssg_sm86.ini and the dlssg_sm86 folder");
         }
 
         installBtn.Click += async (s, e) =>
@@ -141,17 +141,17 @@ public partial class DetailPanelBuilder
             installBtn.Content   = "Installing...";
             try
             {
-                // If reinstalling with a different name, remove the old one first
+                // Only one proxy may be in the folder: if reinstalling under a different name,
+                // put the old slot back first (the ini and dlssg_sm86\ folder are reused)
                 if (isInstalled && !string.IsNullOrEmpty(currentDllName)
                     && !currentDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
-                    svc.Uninstall(installPath, currentDllName);
+                    AuxInstallService.SentinelRestore(Path.Combine(installPath, currentDllName));
 
-                var gpuGen = _window.ViewModel.GetDlssg2030GpuGen(gameName, store);
                 bool ok = await Task.Run(async () =>
                 {
                     if (!svc.IsStagingReady || svc.HasUpdate)
                         await svc.EnsureStagingAsync().ConfigureAwait(false);
-                    return svc.Install(installPath, chosen, gpuGen);
+                    return svc.Install(installPath, chosen);
                 });
 
                 if (ok)
@@ -186,56 +186,11 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(8),
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
         };
-        ToolTipService.SetToolTip(cogBtn, "Select GPU generation");
+        ToolTipService.SetToolTip(cogBtn, "20/30 FG Unlock settings");
         cogBtn.Click += async (s, e) =>
         {
-            var currentGen = _window.ViewModel.GetDlssg2030GpuGen(gameName, store);
-            var combo = new ComboBox
-            {
-                ItemsSource = new[] { Dlssg20_30Service.GpuGenRtx30, Dlssg20_30Service.GpuGenRtx20 },
-                SelectedItem = currentGen,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                MaxDropDownHeight = 300,
-            };
-            var dlg = new ContentDialog
-            {
-                Title = "20/30 FG Unlock — GPU Generation",
-                Content = new StackPanel
-                {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = "Select your GPU generation. This controls which rendering path is used.\n\n" +
-                                   "RTX 30 Series (SM86) — Ampere\n" +
-                                   "RTX 20 Series (SM75) — Turing\n\n" +
-                                   "Reinstall after changing to apply the new setting.",
-                            FontSize = 12,
-                            TextWrapping = TextWrapping.Wrap,
-                        },
-                        combo,
-                    },
-                },
-                PrimaryButtonText = "Save",
-                CloseButtonText   = "Cancel",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
-            var result = await DialogService.ShowSafeAsync(dlg);
-            if (result == ContentDialogResult.Primary && combo.SelectedItem is string selected)
-            {
-                _window.ViewModel.SetDlssg2030GpuGen(gameName, selected, store);
-                // If installed, update the INI immediately
-                if (isInstalled && !string.IsNullOrEmpty(currentDllName)
-                    && !string.IsNullOrEmpty(installPath))
-                {
-                    var iniPath = System.IO.Path.Combine(installPath, Dlssg20_30Service.IniFileName);
-                    if (System.IO.File.Exists(iniPath))
-                        Dlssg20_30Service.ApplyRouterToIniPublic(iniPath, selected);
-                }
-                RequestExtrasRebuild(card);
-            }
+            try { await ShowDlssg2030SettingsAsync(installPath, isInstalled); }
+            catch (Exception ex) { CrashReporter.Log($"[BuildDlssg2030Row] Settings dialog failed — {ex.Message}"); }
         };
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -349,7 +304,7 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select your GPU generation in the cog (⚙) before installing. Then choose the filename to deploy the DLL as.",
+                        Text = "Choose which proxy DLL the game loads. Start with version.dll; if frame generation doesn't appear in the game, reinstall with the next name in the list. dxgi.dll and d3d12.dll are a last resort and don't work in Vulkan games.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,

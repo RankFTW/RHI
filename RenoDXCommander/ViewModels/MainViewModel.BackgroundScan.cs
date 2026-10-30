@@ -152,7 +152,7 @@ public partial class MainViewModel
             });
             // EnsureStagingAsync clears HasUpdate, so remember whether an update was staged
             // for the deploy step after the scan (it used to check HasUpdate and never fired).
-            bool nrCostScalerUpdated = false, dlssg2030Updated = false;
+            bool nrCostScalerUpdated = false;
             var nrCostScalerTask = Task.Run(async () => {
                 try
                 {
@@ -180,11 +180,7 @@ public partial class MainViewModel
                 {
                     await _dlssg2030Service.CheckForUpdateAsync();
                     if (!_dlssg2030Service.IsStagingReady || _dlssg2030Service.HasUpdate)
-                    {
-                        bool hadUpdate = _dlssg2030Service.HasUpdate;
                         await _dlssg2030Service.EnsureStagingAsync();
-                        dlssg2030Updated = hadUpdate && _dlssg2030Service.IsStagingReady;
-                    }
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Dlssg2030 staging failed — {ex.Message}"); }
             });
@@ -465,13 +461,7 @@ public partial class MainViewModel
                     // after downloading, so a flag check here never fired. This also catches up games
                     // that missed an earlier update (e.g. game was running).
                     _rtx40MfgService.UpdateInstalledGames(GetRtx40MfgInstalls());
-                    if (_dlssg2030Service.IsStagingReady && dlssg2030Updated)
-                        foreach (var c in _allCards.Where(c => !string.IsNullOrEmpty(c.InstallPath)))
-                        {
-                            var installedAs = GetDlssg2030InstalledAs(c.GameName, c.Source ?? "");
-                            if (!string.IsNullOrEmpty(installedAs) && File.Exists(Path.Combine(c.InstallPath!, installedAs)))
-                                _dlssg2030Service.Update(c.InstallPath!, installedAs, GetDlssg2030GpuGen(c.GameName, c.Source ?? ""));
-                        }
+                    UpdateDlssg2030Installs();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Cost Scaler/RTX40MFG auto-deploy failed — {ex.Message}"); }
 

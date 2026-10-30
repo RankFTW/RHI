@@ -25,116 +25,131 @@ public sealed partial class MainWindow
         // Welcome section
         panel.Children.Add(BuildFaqSection(
             null, "Welcome to RHI", "AccentTealBrush",
-            "RHI auto-detects your games and lets you install HDR mods, shaders, frame limiters, and manage NVIDIA driver settings — all from one place. Here's how to get started.",
-            null));
+            "RHI finds the games on your PC and installs, updates and removes HDR mods, ReShade, shaders, frame limiters, DLSS files and more, and manages your NVIDIA driver settings, all from one place. Here's how to get started.",
+            "Recommended first step: add a free GitHub token in Settings → GitHub API. Without one, GitHub allows only 60 requests an hour, which can make downloads and update checks fail. Create a classic token at github.com/settings/tokens with no boxes ticked, paste it in and click Save."));
 
         // Step 1: Select a Game
         panel.Children.Add(BuildFaqStep(1,
             "Select a Game",
-            "Your games are listed in the sidebar on the left. Click any game to see its details and available actions. Use the filter chips (All Games, Installed, Unreal, etc.) and search box to find specific games.",
-            "Tip: Double-click a game to launch it directly. Drag and drop a game's .exe file onto RHI to add games not auto-detected."));
+            "Your games are listed on the left. Click a game to open its detail panel. Use the search box and the filter chips (All Games, Installed, Favourites, Unreal, Unity, RenoDX, Luma…) to find games.\n\nThe detail panel is split into sections: Components, Game Overrides, Neural Rendering, DLSS / Streamline, Driver Settings, Management and Extras. Click a section heading to collapse it, or drag its ≡ handle to reorder.",
+            "Double-click a game to launch it. Right-click a game to open its folder, favourite or hide it, or create a desktop shortcut.\nThe HDR and RES buttons next to Launch turn Windows HDR on and switch resolution while the game is running.\nType a search, then click the + that appears to save it as a filter chip."));
 
         // Step 2: Install ReShade
         panel.Children.Add(BuildFaqStep(2,
             "Install ReShade",
-            "ReShade is required for RenoDX HDR mods to work. Click 'Install ReShade' on the game's detail panel. RHI automatically downloads and installs the correct version with full addon support.",
-            "ReShade version can be changed per-game via the game overrides section — choose Stable, Nightly, Legacy, or a custom ReShade DLL.\nVulkan Games: Vulkan games (like Doom Eternal) require admin privileges. RHI will prompt for elevation when needed.\nDrag and drop ReShade preset files (.ini) onto a game to install them automatically."));
+            "ReShade is needed for RenoDX, Luma, frame limiters and DOF Fix. Click 'Install ReShade' in the Components section. RHI picks the right file name for the game's graphics API and installs the version with addon support.",
+            "Change the ReShade version per game in Game Overrides → ReShade Channel: Stable, Nightly, Custom (your own DLL), No Addons or Legacy.\nThe ReShade ⚙ deploys reshade.ini or ReShadePreset.ini, sets per-game hotkeys, and can stop RHI changing this game's reshade.ini.\nDrag a ReShade preset (.ini) onto RHI to install it, along with the shaders it needs."));
 
         // Step 3a: RenoDX
         panel.Children.Add(BuildFaqSection(
             "3a", "RenoDX", "AccentTealBrush",
-            "RenoDX is RHI's primary HDR mod framework. The RenoDX row on each game shows what's available:\n\n• Named mods — game-specific HDR mods from the RenoDX wiki, made by the community.\n• UE-Extended — for Unreal Engine games without a named mod. Provides native HDR output via a generic UE addon.\n• Unity addon — same idea for Unity Engine games. Provides HDR output for Unity games without a named mod.\n• RTX HDR — if no mod is available, you can enable NVIDIA's driver-level SDR-to-HDR conversion via the RenoDX ⚙ cog.",
-            "The cog icon next to RenoDX opens advanced settings: Peak Nits, UE-Extended toggle, and RTX HDR configuration.\nEngine.ini Settings (Unreal Engine games only): toggle HDR keys and LUT update frequency written to the game's Engine.ini for accurate HDR rendering.\nFor games not on the wiki, drag and drop an .addon64 file from the RenoDX Discord directly onto the game in RHI."));
+            "RenoDX mods give games true HDR output. The RenoDX HDR row shows what's available for the game:\n\n• Named mods: game-specific HDR mods made by the community.\n• UE-Extended: for Unreal Engine games without a named mod.\n• Generic Unity: for Unity games without a named mod.\n\nA ✓ next to the installed mod means it's complete; a hammer means it's still in progress. Click 'Available Mods' in the toolbar to see every game with a RenoDX, Luma or Ultra+ mod.",
+            "The RenoDX ⚙ has per-game peak brightness, UE-Extended and Engine.ini HDR options, compatibility settings, and preset export/import.\nNo mod for your game? Turn on RTX HDR (NVIDIA) or Auto HDR (Windows 11, any GPU) from the same ⚙. Either one replaces RenoDX for that game.\nGot an .addon64 from the RenoDX Discord? Drag it onto RHI and pick the game."));
 
         // Step 3b: Luma
         panel.Children.Add(BuildFaqSection(
             "3b", "Luma", "AccentTealBrush",
-            "Luma is an alternative mod framework developed by Pumbo (HDR Den). Depending on the game, a Luma mod may add HDR, DLAA (Deep Learning Anti-Aliasing), game-specific rendering fixes, or a combination of these — check the Info button for details on what each mod offers.\n\n• Completed mods — named Luma mods for supported games, shown on the Luma row.\n• Generic Luma — available for all DX11 Unreal Engine games. RHI installs it automatically and applies any game-specific Engine.ini tweaks or launch arguments listed on the Luma wiki.\n\nYou can install RenoDX and Luma on the same game — but there's no guarantee they'll work together on every title. RHI will warn you the first time you try to install both.",
-            "Luma requires ReShade — it will be greyed out until ReShade is installed.\nThe Luma ⚙ cog lets you toggle TAA Engine.ini settings for games that need them.\nIf a game needs a specific launch argument (e.g. -dx11), RHI sets it automatically on install and removes it on uninstall. Launch arguments only apply when the game is launched through RHI.\nCheck the Info button on the Luma row for game-specific notes — completed mods often include details on what the mod adds or any in-game settings required."));
+            "Luma is a mod framework by Pumbo. Depending on the game, a Luma mod may add HDR, DLSS, DLAA or rendering fixes. Check the Info button to see what each mod offers.\n\n• Named mods: for supported games, shown on the Luma row. Mods only on Nexus Mods open their Nexus page.\n• Generic Luma: for DX11 Unreal Engine games. RHI applies the Engine.ini tweaks and launch arguments listed on the Luma wiki.\n\nGeneric Luma can be used alongside RenoDX. Named Luma mods normally replace RenoDX.",
+            "Luma needs ReShade. The install button shows 'ReShade required' until it's installed.\nThe Luma ⚙ (Unreal games) has HDR on First Boot and TAA settings.\nLaunch arguments such as -dx11 are added on install and removed on uninstall. They only apply when you launch the game through RHI.\nDX9 Luma mods get dgVoodoo2 installed automatically."));
 
         // Step 4: Choose Shaders
         panel.Children.Add(BuildFaqStep(4,
             "Choose Shaders (Optional)",
-            "Click the 'Shaders/Addons' button in the toolbar, then 'Global Shaders' to select shader packs. Lilium's HDR shader pack is selected by default. These apply to all games with ReShade installed.\n\nExpand any pack to pick individual shaders — the pack shows a dash when only some files are selected. Use the Profiles panel on the right to save, load, rename, and share named shader selections. Export a profile as a zip to share via Discord.",
-            "Tip: Per-game shaders can be set using the Shaders button on each game's detail card (when ReShade is installed).\nTip: Use Expand All / Collapse All to browse all packs at once. Deselect All clears the whole selection. Export copies a zip of your selected shaders to the clipboard — paste directly into Discord to share."));
+            "Click 'Shaders/Addons' in the toolbar, then 'Global Shaders'. Lilium's HDR shaders are selected by default. Your selection is deployed to every game with ReShade.\n\nExpand a pack to pick individual shaders, or search for one. Use the Profiles panel to save named selections, and Export to copy one as a zip you can paste into Discord.",
+            "Per-game shaders: Game Overrides → Shaders → Select.\nYour own shaders: click Open Custom Folder in the picker's Profiles panel and put them there. They appear under Custom Shaders.\nGlobal Addons, in the same toolbar menu, manages ReShade addons for all games."));
 
         // Step 5: DOF Fix
         panel.Children.Add(BuildFaqStep(5,
             "DOF Fix (Recommended for UE5)",
-            "DOF Fix backports a depth-of-field rendering fix from Unreal Engine 5.7 to games running on UE 5.0–5.6. It appears in the Recommended section on the game's detail panel when supported. Install it alongside RenoDX for the best result.",
-            "DOF Fix only shows on eligible UE 5.0–5.6 games — it won't appear on UE4 or UE 5.7+ titles.\nInstall and uninstall work the same as any other component."));
+            "DOF Fix backports a depth-of-field fix from Unreal Engine 5.7 to games on UE 5.0–5.6. When a game supports it, it appears under Recommended in the Components section. Install it alongside RenoDX for the best result.",
+            "DOF Fix only appears on 64-bit UE 5.0–5.6 games.\nIf a game's engine badge just says 'Unreal Engine', click the badge to mark it as Unreal Engine 5."));
 
         // Step 6: Frame Limiters
         panel.Children.Add(BuildFaqStep(6,
             "Frame Limiters (Optional)",
-            "ReLimiter and Display Commander are ReShade addons that provide precise frame limiting for VRR displays. Install them from the game's detail panel. ReLimiter is recommended as it's developed by the same team as RHI. Set your target FPS in Settings, per-game via the cog icon, or directly in-game.",
-            "VRR cap presets by refresh rate (leave headroom below max for smooth VRR):\n• 60Hz → 59 FPS\n• 120Hz → 116 FPS\n• 144Hz → 138 FPS\n• 165Hz → 157 FPS\n• 240Hz → 224 FPS\n• 360Hz → 324 FPS\nThese values are pre-configured in RHI's FPS dropdown menus."));
+            "ReLimiter and Display Commander are ReShade addons that limit frame rate precisely, which is ideal for VRR displays. Install one of them (not both) from the Components section. ReLimiter is recommended. Set your target FPS in Settings → Component Settings, per game in the ReLimiter ⚙, or in-game.",
+            "Installing either limiter turns off the NVIDIA driver frame limit for that game.\nVRR cap presets by refresh rate (a little below max keeps VRR active):\n• 60Hz → 59 FPS\n• 120Hz → 116 FPS\n• 144Hz → 138 FPS\n• 165Hz → 157 FPS\n• 240Hz → 224 FPS\n• 360Hz → 324 FPS\nThese values are pre-configured in RHI's FPS dropdowns."));
 
         // Step 7: DLSS/Streamline
         panel.Children.Add(BuildFaqStep(7,
-            "Update DLSS / Streamline (Optional)",
-            "Games with DLSS or Streamline DLLs have a dedicated section on the detail panel showing version info. Click to update to the latest version. Using the newest versions is recommended for best performance and quality. RHI backs up originals automatically so you can restore anytime.",
-            "When new DLSS or Streamline versions release, they will appear in RHI automatically. Set your default DLSS preset in Settings. Per-game presets can be changed in the DLSS section on each game's detail panel."));
+            "DLSS / Streamline (Optional)",
+            "Games with DLSS or Streamline files have a DLSS / Streamline section. Pick a version for Super Resolution, Ray Reconstruction, Frame Generation, Neural Rendering or Streamline, and RHI swaps the file. Originals are backed up: choose 'Default' or click Restore DLSS/SL to put them back.\n\nYou can also set presets and render scale per game. These are written to the NVIDIA driver, so you don't need NVIDIA Profile Inspector.",
+            "NVIDIA Override in the version list tells the driver to use its newest DLSS file instead.\nSet your preferred versions and presets once in Settings → Configure Defaults, then use Quick Apply on any game, or Batch Deploy for many games at once.\nDLSS section missing? Use Full Refresh in Settings."));
+
+        // Neural Rendering
+        panel.Children.Add(BuildFaqSpecialSection("N", "AccentGreenBrush",
+            "Neural Rendering (DLSS 5, Optional)",
+            "The Neural Rendering section installs DLSS 5 neural rendering tools. RHI picks the right method for the game, and installs ReShade too if needed:\n• ShortFuse DLSS Tool: most games with native DLSS.\n• DLSS5 Tool: DX12 games with native DLSS.\n• DLSS5 Tool + DX11 Bridge: DX11 and Vulkan games with native DLSS.\n• DLSS5 Feeder: games without DLSS, including OpenGL, DX9 and 32-bit games.",
+            "Each method's versions, and the NR DLL version, can be pinned or left on Latest.\nNR Cost Scaler runs neural rendering at reduced cost. Turn it on before installing. ShortFuse already includes it."));
 
         // OptiScaler
         panel.Children.Add(BuildFaqSpecialSection("⚙", "AccentAmberBrush",
             "OptiScaler (Optional)",
-            "OptiScaler replaces DLSS/XeSS with alternative upscalers (FSR, XeSS, Intel Arc) or adds/patches frame generation on any GPU. Install it from the game's detail panel when a game has OptiScaler support.\n\nThe ⚙ cog on the OptiScaler row opens per-game settings. For the Nightly build channel these include:\n• Streamline/DLSS Enabler — deploys Streamline and DLSS Enabler to the game folder for DLSS Frame Generation support.\n• Frame Generation — set FG Input, FG Output, FG Nvngx Override, and HUD Fix.\n• Additional Settings — DLSS SR/RR preset, render scale, and flip metering.\n• Presets — save and apply named setting presets across games.\n• Engine.ini Settings (Unreal Engine games) — Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin.",
-            "Switch between Stable and Nightly channels per game in the cog — Nightly adds frame generation and additional settings.\nOptiScaler and ReShade can coexist. If you see crashes with both installed, try renaming ReShade to a different DLL name using DLL Naming Overrides in the Game Overrides panel.\nGPU type and DLSS input settings (AMD/Intel only) are configured in Settings → OptiScaler Settings before installing.\nThe 'Deploy OptiScaler.ini' button in the cog redeploys your configured INI template to the game folder."));
+            "OptiScaler lets a game's DLSS, FSR or XeSS inputs drive a different upscaler (FSR, XeSS, DLSS), and can add or replace frame generation on any GPU. It's in the Extras section.\n\nBefore installing, set your GPU Type (and DLSS Inputs for AMD/Intel) in Settings → Component Settings → OptiScaler. Then choose a variant in the OptiScaler ⚙:\n• Stable: official release.\n• Nightly: latest build, or pin a specific build.\n• DLSS NR and F5 DLSSNR: forks with DLSS Neural Rendering.\n\nThe ⚙ also sets the upscaler, frame generation, Reflex, DLSS presets, render scale, Engine.ini fixes and Neural Rendering options, and saves presets you can apply to other games.",
+            "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in Game Overrides → DLL naming overrides.\n'Deploy OptiScaler.ini' in the ⚙ resets the game's ini from your template."));
 
-        // Settings Overview
-        panel.Children.Add(BuildFaqInfoSection("Settings",
-            "Click 'Settings' in the toolbar to configure defaults for all games:",
-            new[]
-            {
-                "ReLimiter FPS: Default frame rate target",
-                "DLSS Preset: Default upscaling preset",
-                "NVIDIA Driver Settings: VSync, Low Latency, Power Mode",
-                "Peak Nits: Your display's peak brightness for HDR",
-                "ReShade Hotkeys: Customize overlay and screenshot keys"
-            }));
+        // Extras
+        panel.Children.Add(BuildFaqSpecialSection("X", "AccentAmberBrush",
+            "Extras (Optional)",
+            "The Extras section holds optional tools:\n• Frame generation unlocks: RTX 40 MFG and MFG Ada Unlock (RTX 40), 20/30 FG Unlock (RTX 20/30), RTX Encore (beta) and DLSS Enabler.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
+            "Most of these ask which file name to use when you install them. Names already used by RHI's other components are disabled, and any game file that gets replaced is backed up."));
 
         // NVIDIA Driver Settings
         panel.Children.Add(BuildFaqInfoSection("NVIDIA Driver Settings",
-            "RHI can manage per-game NVIDIA driver profiles. These settings are available directly on each game's detail panel:",
+            "The Driver Settings section changes the game's NVIDIA profile directly. It needs Admin Mode (Settings → System & Maintenance).",
             new[]
             {
-                "VSync: On, Off, or Adaptive (Fast Sync)",
-                "Low Latency Mode: Ultra, On, or Off",
-                "Smooth Motion: Multi Frame Generation (per-game only)",
-                "ReBAR: Resizable BAR (requires admin)"
+                "VSync: Mode, Tear Control and Low Latency (Off, On, Ultra)",
+                "Smooth Motion (RTX 40+): sets Low Latency to Ultra while it's on",
+                "Power Mode and G-Sync",
+                "ReBAR: Enable, Mode and Size Limit",
+                "Multi Frame Generation (RTX 50): the Multi Frame Gen button in the DLSS / Streamline section"
             },
-            "Global defaults for VSync, Low Latency, and Power Mode are set in Settings. Per-game overrides are configured directly on each game's detail panel."));
+            "Global defaults (shader cache, G-Sync, FPS limit, VSync, Power Mode, ReBAR), Digital Vibrance and profile backup/restore are in Settings → Global NVIDIA Driver Settings."));
+
+        // Settings Overview
+        panel.Children.Add(BuildFaqInfoSection("Settings",
+            "Click 'Settings' in the toolbar for options that apply to all games:",
+            new[]
+            {
+                "Component Updates: Check For Updates, Background Checks and Automatic Updates",
+                "ReShade & Display: screenshots, hotkeys, peak brightness (nits) and HDR Auto-Toggle",
+                "Resolution & Colour Control and DLDSR Control",
+                "GitHub API: your GitHub token",
+                "DLSS / Streamline Settings: defaults, Batch Deploy and auto-update",
+                "Component Settings: ReLimiter and OptiScaler",
+                "System & Maintenance: Full Refresh, Admin Mode and System Tray"
+            }));
 
         // Vulkan Games
         panel.Children.Add(BuildFaqSpecialSection("V", "AccentPurpleBrush",
             "Vulkan Games",
-            "Vulkan games (shown with a 'Vulkan' badge) use a global ReShade layer installed to C:\\ProgramData\\ReShade. This requires administrator privileges. When you install ReShade on a Vulkan game, RHI will prompt for elevation.",
-            "All Vulkan games share the same ReShade installation. Updating ReShade on one Vulkan game updates it for all.\nPer-game RenoDX addons and shaders are still installed individually to each game folder."));
+            "Vulkan games (shown with a VLK badge) use a global ReShade layer installed to C:\\ProgramData\\ReShade. This needs administrator rights, so RHI asks for permission the first time.",
+            "All Vulkan games share the same ReShade, so changing the ReShade channel on one changes it for all.\nRenoDX addons and shaders are still installed to each game's own folder.\nGames that support both DirectX and Vulkan: choose one in Game Overrides → Graphics API."));
 
         // Adding Games Manually
         panel.Children.Add(BuildFaqSpecialSection("+", "AccentAmberBrush",
             "Adding Games Manually",
-            "If a game isn't auto-detected, drag and drop its .exe file directly onto the RHI window. RHI will add it to your library and detect its engine type.",
-            "You can also drag .addon64 files from the RenoDX Discord onto any game to install mods not yet on the wiki."));
+            "If a game isn't detected, click the green + next to the search box and choose its .exe, or drag the .exe onto the RHI window. RHI adds it to your library and detects its engine.",
+            "Wrong folder? Use Management → Change install folder.\nManually added games can be removed with Management → Reset / Remove game."));
 
         // Updating Everything
         panel.Children.Add(BuildFaqSpecialSection("↑", "AccentGreenBrush",
             "Updating Everything",
-            "Click 'Update All' in the toolbar to update all installed components across all games at once. This includes ReShade, RenoDX mods, ReLimiter, Display Commander, and more.",
-            "Games with available updates show a green dot in the sidebar. Configure which components are included in 'Update All' from Settings."));
+            "Click 'Update All' in the toolbar to update ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across all your games.",
+            "Games with updates show a green dot in the sidebar.\nChoose what Update All includes in Settings → Update & Deployment, or per game in Game Overrides → Update Inclusion.\nTurn on Automatic Updates in Settings to install updates in the background.\nThe Updates button at the bottom right shows everything that has been updated."));
 
-        // Troubleshooting - Full Refresh
+        // Troubleshooting
         panel.Children.Add(BuildFaqSpecialSection("↻", "AccentBlueBrush",
-            "Troubleshooting: Full Refresh",
-            "If games are missing, install locations have changed, or DLSS/Streamline files have been added or removed, use 'Full Refresh' in Settings to rescan your entire library from scratch.",
-            "Full Refresh clears the cached game list and re-detects everything. Use it when the normal Refresh button doesn't pick up changes."));
+            "Troubleshooting",
+            "If games are missing, a game has moved, or DLSS files were added or removed, use 'Full Refresh' in Settings → System & Maintenance to rescan everything from scratch.",
+            "Downloads or update checks failing? Add a GitHub token (Settings → GitHub API).\nTo report a problem, click Copy Logs in Settings and/or Copy Report in the game's Management section, then paste it into Discord."));
 
         // System Tray
         panel.Children.Add(BuildFaqSpecialSection("◰", "AccentPurpleBrush",
             "System Tray",
-            "RHI can minimize to the system tray instead of closing. Right-click the tray icon to quickly launch recent games without opening the main window.",
-            "Enable 'Close to System Tray' in Settings to keep RHI running in the background. The tray icon provides quick access to your most recently played games. RHI automatically checks for updates every 4 hours while running, so everything stays up to date."));
+            "RHI can keep running in the system tray when you close the window. Right-click the tray icon to launch recent games without opening RHI.",
+            "Turn on Close to Tray, Recent Games and Start with Windows in Settings → System & Maintenance.\nRecent Games also appear in the taskbar jump list.\nWhile running, RHI checks for updates every 4 hours."));
 
         // Need More Help
         panel.Children.Add(BuildFaqLinksSection());

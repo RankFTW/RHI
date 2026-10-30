@@ -7,6 +7,33 @@
 
 **Use a token rather than the "Sign in with GitHub" button.** Signing in is unreliable (sessions can expire without RHI noticing) and will likely be removed in a future update. If you currently use Sign in with GitHub, switch to a token.
 
+## v2.8.9 Beta
+
+### Changes
+
+**20/30 FG Unlock**
+- The 20/30 FG Unlock ⚙ now has the mod's main settings: Frame Generation on/off, Engine (DLSS or Intel XeSS), Max Frames (2X up to 6X), Preset (including C, FG Lite, which is much cheaper to run), Speed Tier and Super Resolution (DLSS preset M or L with the mod's faster INT8 kernels on RTX 20/30). Each is a dropdown, so you can't enter a value that would switch frame generation off. There are also buttons to open the ini and the mod's log. Your settings are kept when the mod updates.
+- Removed the GPU generation setting. The mod now detects RTX 20 and 30 cards by itself.
+
+**Quick Start**
+- The Quick Start guide has been rewritten to match the current app. It now covers Neural Rendering, the Extras section, OptiScaler's variants, RTX HDR and Auto HDR, the HDR and RES buttons and adding a GitHub token, and out-of-date steps have been corrected.
+
+### Bug Fixes
+
+**20/30 FG Unlock**
+- Fixed 20/30 FG Unlock not working since the mod's 0.4.0 release. The mod now comes as a package, and RHI was only copying its loader DLL, so frame generation never started. RHI now installs the full package (the proxy DLL, `dlssg_sm86.ini` and the `dlssg_sm86` folder) and tracks it for clean removal. Games that already have it installed are repaired automatically.
+- Fixed choosing a DLL name other than version.dll installing the wrong file. Each name now uses the mod's matching build. The name list now follows the mod's recommended order (version, winmm, dbghelp, dinput8, then dxgi or d3d12 as a last resort). winhttp.dll is no longer offered, and games using it are moved to version.dll.
+
+**OptiScaler**
+- Fixed applying an OptiScaler preset saved on F5 DLSSNR not switching the game to F5.
+- Fixed "Deploy OptiScaler.ini" (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
+
+**ReLimiter**
+- Fixed the ReLimiter ⚙ Target FPS and DLSS Hooks settings staying greyed out (or not applying) on games whose `reshade.ini` sets an `AddonPath`. They now use the `relimiter.ini` in the addon folder, where RHI installs it.
+
+**Tooltips**
+- Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.
+
 ## v2.8.8
 
 ### Changes
@@ -48,16 +75,6 @@
 - Fixed F5 updates failing on the first attempt with a "Could not find a part of the path" error.
 - Fixed F5 games showing the old version number after updating, which also stopped the update badge appearing for later releases.
 - Fixed updating an F5 or DLSS NR install forgetting which OptiScaler variant the game uses.
-- Fixed applying an OptiScaler preset saved on F5 DLSSNR not switching the game to F5.
-
-**OptiScaler**
-- Fixed "Deploy OptiScaler.ini" (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
-
-**ReLimiter**
-- Fixed the ReLimiter ⚙ Target FPS and DLSS Hooks settings staying greyed out (or not applying) on games whose `reshade.ini` sets an `AddonPath`. They now use the `relimiter.ini` in the addon folder, where RHI installs it.
-
-**Tooltips**
-- Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.
 
 **RTX 40 MFG Unlock**
 - Fixed RTX 40 MFG updates showing the new version in RHI while games kept the old file. Since v1.5 the mod's file is called `MFGUnlocker.dll`, which RHI wasn't picking up. Every game with RTX 40 MFG installed is now updated automatically, with no reinstall needed.

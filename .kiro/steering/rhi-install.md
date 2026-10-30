@@ -147,6 +147,9 @@ fileMatchPattern: "*Install*,*Update*,*Orchestration*"
 ### Vulkan ReShade False Update
 - Add `.Where(c => !c.RequiresVulkanInstall)` to `auxInstalled` filter
 
+### 20/30 FG Unlock
+- 20/30 FG Unlock (dlssg_for_sm86) is a package since 0.4.0: proxy DLL + `dlssg_sm86.ini` + the whole `dlssg_sm86\` folder (backend, kernel packs, bundled runtime). Each proxy name (version, winmm, dbghelp, dinput8, dxgi, d3d12) is a separate build that forwards to its own system DLL: never rename one proxy to another name. Staged from the release zip; deployed files tracked in `dlssg_sm86\rhi_install.txt`; installed games are refreshed by file comparison (`NeedsUpdate`).
+
 ### Periodic Timer
 - `System.Threading.Timer` every 4 hours after initial scan completes
 - Re-fetches manifests, forces update check, triggers app version check
