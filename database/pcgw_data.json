@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55878,
-  "generated": "2026-10-29T15:09:21Z",
+  "game_count": 55903,
+  "generated": "2026-10-30T13:18:49Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -1067,6 +1067,7 @@
     "3D Body Adventure": {
       "steam_appid": 4395360
     },
+    "3D Bowling USA": {},
     "3D Brick Blaster Unlimited": {
       "dx9": true,
       "config_path": "<path-to-game>\\temporary\\saves\\"
@@ -12700,7 +12701,7 @@
     "Asylum": {
       "steam_appid": 230210,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Asylum\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Asylum\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Asylum of the Dead": {
@@ -12741,6 +12742,7 @@
     "At the Mountains of Madness": {
       "steam_appid": 393820
     },
+    "ATAC: The Secret War Against Drugs": {},
     "Atajrubah": {
       "steam_appid": 282960
     },
@@ -22544,6 +22546,9 @@
     },
     "Boom Island": {
       "steam_appid": 717820
+    },
+    "Boom or Bloom": {
+      "steam_appid": 5503620
     },
     "Boom Squad": {
       "steam_appid": 712360
@@ -46744,6 +46749,9 @@
     "Dodging Fake News With Donald Trump": {
       "steam_appid": 1084450
     },
+    "Dodo Duckie": {
+      "steam_appid": 3358170
+    },
     "Dodo GoGo": {},
     "Dodo Peak": {
       "steam_appid": 2845610,
@@ -49380,7 +49388,10 @@
     "Dreams of Solari - Chapter 1": {
       "steam_appid": 1107450
     },
-    "Dreams to Reality": {},
+    "Dreams to Reality": {
+      "dx11": true,
+      "config_path": "<path-to-game>\\DHOOK.ini"
+    },
     "Dreamscape": {
       "steam_appid": 271990,
       "engine": "RPG Maker"
@@ -52244,6 +52255,10 @@
     "Ecstatica": {
       "steam_appid": 4834840,
       "config_path": "<path-to-game>\\saved\\"
+    },
+    "Ecstatica (2026)": {
+      "steam_appid": 4834840,
+      "config_path": "%APPDATA%\\SNEG\\Ecstatica\\"
     },
     "Ecstatica II": {
       "steam_appid": 4834850,
@@ -58444,7 +58459,9 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Heavy Iron Studios Inc.\\Family Guy\\Settings\\",
       "engine": "GoodEngine"
     },
-    "Family Guy: The Quest for Stuff": {},
+    "Family Guy: The Quest for Stuff": {
+      "dx11": true
+    },
     "Family Hidden Secret": {
       "steam_appid": 1056580
     },
@@ -60201,6 +60218,14 @@
     },
     "Fidget Spinner Simulator": {
       "steam_appid": 676740
+    },
+    "Field & Stream: Trophy Bass 3D": {},
+    "Field & Stream: Trophy Bass 4": {},
+    "Field & Stream: Trophy Buck": {},
+    "Field & Stream: Trophy Hunting": {},
+    "Field & Stream: Trophy Hunting 4": {},
+    "Field & Stream: Trophy Hunting 5": {
+      "engine": "Torque Game Engine"
     },
     "Field Breaking": {
       "steam_appid": 639840
@@ -70235,7 +70260,7 @@
     "Gorky Zero: Beyond Honor": {
       "opengl": true,
       "config_path": "<path-to-game>\\bin\\<span class=\"file-span-linebreak\"><span class=\"file-span\"></span><code class=\"file-code\">standard_game.feel</code></span>",
-      "engine": "RenderWare"
+      "engine": "Nitrous (Metropolis Software)"
     },
     "Gorn": {
       "steam_appid": 578620,
@@ -70743,6 +70768,10 @@
     "Grass Simulator": {
       "steam_appid": 331200,
       "engine": "GameGuro"
+    },
+    "GRASS.EXE": {
+      "steam_appid": 5459380,
+      "engine": "Unity"
     },
     "Grater": {
       "steam_appid": 1030520
@@ -84194,6 +84223,7 @@
     },
     "International Karate": {},
     "International Moto X": {},
+    "International Ninja Rabbits": {},
     "International Rally Championship": {
       "config_path": "<path-to-game>\\var\\"
     },
@@ -87311,6 +87341,9 @@
     },
     "Jungle Juggle": {
       "steam_appid": 844580
+    },
+    "Jungle Legend": {
+      "engine": "3DGE"
     },
     "Jungle Strike": {},
     "Jungle Z": {
@@ -95867,6 +95900,7 @@
     },
     "Lonely Mountains: Downhill": {
       "steam_appid": 711540,
+      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Megagon Industries\\Lonely Mountains: Downhill\\",
       "engine": "Unity"
     },
@@ -97095,6 +97129,12 @@
     },
     "Love, Sam": {
       "steam_appid": 1073820
+    },
+    "Love: Fall in Death": {
+      "steam_appid": 3077540,
+      "dx12": true,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\SNR\\Love Fall in Death\\",
+      "engine": "Unity"
     },
     "LoveBeat": {
       "steam_appid": 354290
@@ -113519,6 +113559,7 @@
     "Ninja Power Slasher": {
       "steam_appid": 997670
     },
+    "Ninja Rabbits": {},
     "Ninja Reflex": {
       "steam_appid": 13000,
       "dx9": true,
@@ -139036,8 +139077,8 @@
       "steam_appid": 3949040,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Ride\\Saved\\Config\\Windows\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\Ride\\Saved\\Config\\WinGDK\\",
+      "config_path": "%LOCALAPPDATA%\\Ride\\Saved\\Config\\Windows",
+      "config_path_xbox": "%LOCALAPPDATA%\\Ride\\Saved\\Config\\WinGDK",
       "engine": "Unreal Engine 5"
     },
     "RWBY Deckbuilding Game": {
@@ -141477,6 +141518,9 @@
       "steam_appid": 773920,
       "engine": "Unity"
     },
+    "Scramble Knights Online": {
+      "steam_appid": 2379350
+    },
     "Scramble: Battle of Britain": {
       "steam_appid": 1530450
     },
@@ -142093,6 +142137,10 @@
       "steam_appid": 40330,
       "dx9": true,
       "config_path": "<path-to-game>\\config.ini, <path-to-game>\\settings.ini"
+    },
+    "Secret Files: Tunguska - Remastered": {
+      "steam_appid": 4504840,
+      "engine": "Unity"
     },
     "Secret Government": {
       "steam_appid": 946990,
@@ -144162,6 +144210,10 @@
     },
     "Shattered Universe": {
       "steam_appid": 1179840
+    },
+    "Shattered: Tale of the Forgotten King": {
+      "steam_appid": 1045180,
+      "engine": "Unreal Engine 4"
     },
     "Shatterline": {
       "steam_appid": 2087030,
@@ -149784,7 +149836,9 @@
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\SegaNetworksInc.56538047DFC80_as33fap47kd3c",
       "engine": "Unity"
     },
-    "Sonic Dream Team": {},
+    "Sonic Dream Team": {
+      "engine": "Unity"
+    },
     "Sonic Forces": {
       "steam_appid": 637100,
       "dx11": true,
@@ -163710,6 +163764,9 @@
       "steam_appid": 985430,
       "engine": "RPG Maker"
     },
+    "Terrible Lizards": {
+      "steam_appid": 2920220
+    },
     "Terrifier The ARTcade Game": {
       "steam_appid": 3130400,
       "dx11": true,
@@ -164392,6 +164449,7 @@
     "The Adventures of Perseus": {
       "steam_appid": 1031590
     },
+    "The Adventures of Pinocchio": {},
     "The Adventures of Robin Hood": {},
     "The Adventures of Sam Carlisle: The Hunt for the Lost Treasure": {
       "steam_appid": 726500
@@ -173534,6 +173592,10 @@
     "The Swordsmen X": {
       "steam_appid": 840140
     },
+    "The Séance of Blake Manor": {
+      "steam_appid": 1395520,
+      "engine": "Unity"
+    },
     "The S├®ance of Blake Manor": {
       "steam_appid": 1395520,
       "engine": "Unity"
@@ -174709,6 +174771,8 @@
     },
     "The Wolf Among Us Remastered": {
       "steam_appid": 3884860,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\Documents\\Telltale Games\\The Wolf Among Us Remastered\\",
       "engine": "Telltale Tool"
     },
     "The Wolf's Bite": {
@@ -181070,6 +181134,7 @@
     "Trooper 2 - Alien Justice": {
       "steam_appid": 880340
     },
+    "Trophy Bass": {},
     "Trophy Fishing 2": {
       "steam_appid": 645260,
       "engine": "Unity"
@@ -184623,6 +184688,9 @@
     },
     "USAGIRI": {
       "steam_appid": 1153950
+    },
+    "USAR Hooters ProCup Racing": {
+      "config_path": "<path-to-game>\\VIDEO.CFG"
     },
     "USC: Counterforce": {
       "steam_appid": 1574870,
@@ -194697,6 +194765,11 @@
     "XENOS Defense": {
       "steam_appid": 1122760
     },
+    "Xenosensory": {
+      "steam_appid": 4037830,
+      "config_path": "%LOCALAPPDATA%/Xenosensory",
+      "engine": "GameMaker"
+    },
     "XenoShyft": {
       "steam_appid": 429390
     },
@@ -195499,7 +195572,7 @@
     "You Are Empty": {
       "steam_appid": 4760480,
       "opengl": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\YaE",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\YaE, %USERPROFILE%\\Documents\\My Games\\YaE_Absolute\\config_*",
       "engine": "DS2 Engine"
     },
     "You Are God": {
@@ -197337,7 +197410,9 @@
       "config_path": "%APPDATA%\\Microsoft Games\\Zoo Tycoon 2",
       "engine": "Gamebryo"
     },
-    "Zoo Tycoon Friends": {},
+    "Zoo Tycoon Friends": {
+      "engine": "Unity"
+    },
     "Zoo Tycoon: Ultimate Animal Collection": {
       "steam_appid": 613880,
       "dx11": true,
