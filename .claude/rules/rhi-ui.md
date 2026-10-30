@@ -1,7 +1,6 @@
 ---
 paths:
   - "**/*DetailPanel*"
-  - "**/*CompactView*"
   - "**/*MainWindow*"
   - "**/*Builder*"
   - "**/*Flyout*"
@@ -15,14 +14,21 @@ paths:
 ## Panel Architecture
 - Overrides panel: `DetailPanelBuilder.Overrides` split across partials (`.RsChannel.cs`, `.ShadersAddons.cs`, `.Dxvk.cs`, `.NvidiaProfile.cs`, `.DriverSettings.cs`, `.Dlss.cs`)
 - Code-behind builders (NOT XAML templates). `DetailPanelBuilder` receives services via constructor injection (11 services).
-- `BuildOverridesPanel()` populates BOTH `OverridesPanel` AND `NvidiaProfilePanel`
+- `BuildOverridesPanel()` fills `OverridesPanel`, the DLSS / Driver Settings panels (`.Overrides.NvidiaProfile.cs`, `.Overrides.DriverSettings.cs`) and `ManagementPanel`. Neural Rendering is built by `DetailPanelBuilder.NeuralRendering*.cs`, Extras by `DetailPanelBuilder.Extras*.cs`.
 
 ## Detail Panel Section Layout
-4 containers inside `DetailPanel` StackPanel:
-1. **Components** — game info, install buttons, progress bars
-2. **OverridesContainer** → `OverridesPanel` — per-game overrides
-3. **NvidiaProfileContainer** → `NvidiaProfilePanel` — DLSS/Streamline + driver settings
-4. **ManagementContainer** → `ManagementPanel` — Change folder, Reset, Copy Report
+There is only one layout (Detail). `DetailPanel` StackPanel = 2 header Grids (game info) at index 0–1, then 7 section Borders. Default order (`SettingsViewModel.DefaultSectionOrder`, key → container → panel):
+1. `Components` → `DetailComponentSection` — component install rows (in XAML)
+2. `GameOverrides` → `OverridesContainer` → `OverridesPanel`
+3. `NeuralRendering` → `NeuralRenderingContainer` → `NeuralRenderingPanel`
+4. `NvidiaProfileDlss` → `NvidiaProfileDlssContainer` → `NvidiaProfileDlssPanel` ("DLSS / Streamline")
+5. `NvidiaProfileDriver` → `NvidiaProfileDriverContainer` → `NvidiaProfileDriverPanel` ("Driver Settings — Driver x")
+6. `Management` → `ManagementContainer` → `ManagementPanel` (Change install folder, Reset / Remove game, Reset Overrides, Copy Report)
+7. `Extras` → `ExtrasContainer` → `ExtrasPanel` (ASI Loader, OptiScaler, MFG unlocks, DXVK, dgVoodoo2)
+
+- `NvidiaProfileContainer` is a legacy Border kept collapsed for migration; never show it. Old setting key `NvidiaProfile` migrates to `NvidiaProfileDlss` + `NvidiaProfileDriver`.
+- Every section collapses (heading click, `CollapsedDetailSections`) and reorders (≡ drag handle, `DetailSectionOrder`); both persist in settings. `ApplySectionOrder()` must run after all sections are populated and visible. Collapsed headers show a summary (`MakeSectionSummaryInlines`).
+- New sections: add a key to `DefaultSectionOrder`, a container in `GetSectionContainer`, and a summary.
 
 ## ComboBox Patterns
 - Simple strings ("Global", "Stable", "Nightly") — not verbose labels
@@ -47,22 +53,19 @@ WinUI `SelectionChanged` doesn't fire on re-selecting current item. Use `DropDow
 Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of block. Background merge can rebuild mid-block.
 
 ## Detail Panel Selection Debounce
-- 150ms `DispatcherTimer` in `GameList_SelectionChanged` (Detail mode)
+- 150ms `DispatcherTimer` (`_selectionDebounceTimer`) in `GameList_SelectionChanged`
 - Guard check ensures pending card still matches `SelectedGame` before rebuilding
 - `PopulateDetailPanel` + `BuildOverridesPanel` are synchronous and heavy
 
-## Compact View
-- 3 pages: Page 0=Components, Page 1=Game Overrides, Page 2=Nvidia Profile + Management
-- `NavigateCompactPage` uses modulo 3. Nav arrows cycle.
-- StackPanel vertical centering: disable scrolling + `VerticalAlignment.Center` on all compact pages
-- Restore `Auto` scrolling and `Top` alignment when leaving compact mode
-- Window size: 1166×820
-- Shared `_selectionDebounceTimer` checks `CurrentViewLayout` at fire time
+## Compact View (removed)
+- Compact/Simple view was removed in v2.7.6. `GameNameService` forces `ViewLayout.Detail` on every settings load; there is no Views toggle. `CompactViewBuilder.cs` no longer exists.
+- Leftover `CurrentViewLayout == ViewLayout.Detail` checks are always true; don't build new UI for a compact layout.
 
 ## Component Cog Buttons (⚙️)
-- Each component row has ⚙️ in Column 4 → per-component ContentDialog
+- Each component row (Components and Extras sections) has ⚙️ → per-component ContentDialog
 - Always visible (no conditional hiding)
-- Handlers: `RsCogButton_Click`, `RdxCogButton_Click`, `UlCogButton_Click`, `DcCogButton_Click`, `OsCogButton_Click`, `DxvkCogButton_Click` in `MainWindow.Events.cs`
+- Handlers live in `MainWindow.Events.Components*.cs` partials: ReShade/RE Framework in `.Components.cs`, RenoDX (incl. RTX HDR / Auto HDR) in `.Rdx.cs`, ReLimiter/DC in `.FrameLimiters.cs`, OptiScaler in `.OptiScaler.cs`, DXVK in `.Dxvk.cs`. Exceptions: Luma in `MainWindow.Events.cs`, DOF Fix in `MainWindow.Events.Install.cs`. Extras cogs (ASI Loader, RTX Encore, MFG unlocks, dgVoodoo2) are in `DetailPanelBuilder.Extras*.cs`.
+- Addon-based components (ReLimiter, DC, addons) deploy to `ModInstallService.GetAddonDeployPath(installPath)` (honours `AddonPath` in reshade.ini). Cogs that read/write their ini must use the same path, not `card.InstallPath`.
 
 ## Admin Mode
 - Task Scheduler task "RHI Admin Mode" for UAC-free elevation
