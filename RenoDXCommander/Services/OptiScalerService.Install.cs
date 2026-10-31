@@ -1333,8 +1333,15 @@ public partial class OptiScalerService
             }
 
             // ── 6. Update card VM properties ─────────────────────────────────
-            card.OsInstalledVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
-            card.OsStatus = GameStatus.Installed;
+            // The silent auto-updater runs this off the UI thread; card properties are bound to the
+            // UI, so set them on the UI thread (a wrong-thread COMException here used to abort the
+            // update before rhi_install.txt was rewritten, leaving the old version shown).
+            var newOsVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            RunOnCardThread(card, () =>
+            {
+                card.OsInstalledVersion = newOsVersion;
+                card.OsStatus = GameStatus.Installed;
+            }, "UpdateAsync");
             if (isF5) HasUpdateF5 = false;
             else if (isDlssNr) HasUpdateDlssNr = false;
             else if (isNightly) HasUpdateNightly = false;
@@ -1411,6 +1418,23 @@ public partial class OptiScalerService
             CrashReporter.Log($"[OptiScalerService.UpdateAsync] {card.GameName} — {ex.GetType().Name} (0x{ex.HResult:X8}): {ex.Message}\n{ex.StackTrace}");
             progress?.Report(($"Update failed: {ex.Message}", 0));
         }
+    }
+
+    /// <summary>
+    /// Runs <paramref name="set"/> on the card's UI thread: directly when already there (or when the card
+    /// has no dispatcher), otherwise queued. Card properties are bound to the UI and throw a wrong-thread
+    /// COMException if set from a background thread (silent auto-update).
+    /// </summary>
+    private static void RunOnCardThread(GameCardViewModel card, Action set, string caller)
+    {
+        var dq = card.DispatcherQueue;
+        if (dq == null || dq.HasThreadAccess) { set(); return; }
+        bool queued = dq.TryEnqueue(() =>
+        {
+            try { set(); }
+            catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.{caller}] Card update failed for {card.GameName} — {ex.Message}"); }
+        });
+        if (!queued) CrashReporter.Log($"[OptiScalerService.{caller}] Could not queue card update for {card.GameName} (UI shutting down)");
     }
 
     // ── INI management ────────────────────────────────────────────────────────
