@@ -35,6 +35,10 @@ public partial class SettingsHandler
             return;
         }
 
+        // Tab/Enter/Esc move focus or close; Backspace would save "no overlay key". Never capture them.
+        if (IsHotkeyBoxPassThroughKey(key) || key == Windows.System.VirtualKey.Back)
+            return;
+
         // Extract VK code from the pressed key (Req 2.2)
         int vk = (int)key;
 
@@ -58,9 +62,25 @@ public partial class SettingsHandler
             hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentHotkeyString);
         }
 
+        // Persist straight away so the key isn't lost when leaving the page.
+        // "Write these to all games" still writes it into each game's reshade.ini.
+        ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
+        ViewModel.SaveSettingsPublic();
+        CrashReporter.Log($"[SettingsHandler.HotkeyBox_PreviewKeyDown] Overlay key saved: {_currentHotkeyString}");
+
         // Prevent the TextBox from receiving the character
         e.Handled = true;
     }
+
+    /// <summary>
+    /// Keys a hotkey box must let through instead of capturing: they move focus (Tab) or act on
+    /// the page (Enter, Esc). Capturing them would save e.g. Tab as the hotkey the moment a
+    /// keyboard user tabs past the box, since keys now save immediately.
+    /// </summary>
+    private static bool IsHotkeyBoxPassThroughKey(Windows.System.VirtualKey key) =>
+        key == Windows.System.VirtualKey.Tab ||
+        key == Windows.System.VirtualKey.Enter ||
+        key == Windows.System.VirtualKey.Escape;
 
     // ── Screenshot Hotkey ─────────────────────────────────────────────────────
 
@@ -86,6 +106,10 @@ public partial class SettingsHandler
             return;
         }
 
+        // Tab/Enter/Esc move focus or close; never capture them. (Backspace clears this key on purpose.)
+        if (IsHotkeyBoxPassThroughKey(key))
+            return;
+
         int vk = (int)key;
 
         bool shift = Microsoft.UI.Input.InputKeyboardSource
@@ -104,6 +128,11 @@ public partial class SettingsHandler
         {
             hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentScreenshotHotkeyString);
         }
+
+        // Persist straight away (Backspace clears it to "0,0,0,0", which is saved too).
+        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
+        ViewModel.SaveSettingsPublic();
+        CrashReporter.Log($"[SettingsHandler.ScreenshotHotkeyBox_PreviewKeyDown] Screenshot key saved: {_currentScreenshotHotkeyString}");
 
         e.Handled = true;
     }
@@ -138,6 +167,10 @@ public partial class SettingsHandler
             return;
         }
 
+        // Tab/Enter/Esc move focus or close; Backspace isn't a usable OSD key. Never capture them.
+        if (IsHotkeyBoxPassThroughKey(key) || key == Windows.System.VirtualKey.Back)
+            return;
+
         int vk = (int)key;
 
         bool shift = Microsoft.UI.Input.InputKeyboardSource
@@ -154,6 +187,11 @@ public partial class SettingsHandler
 
         if (sender is TextBox hotkeyBox)
             hotkeyBox.Text = _currentUlHotkeyString;
+
+        // Persist straight away; "Write to all ReLimiter games" still writes it into each relimiter.ini.
+        ViewModel.Settings.UlOsdHotkey = _currentUlHotkeyString;
+        ViewModel.SaveSettingsPublic();
+        CrashReporter.Log($"[SettingsHandler.UlHotkeyBox_PreviewKeyDown] ReLimiter OSD key saved: {_currentUlHotkeyString}");
 
         e.Handled = true;
     }

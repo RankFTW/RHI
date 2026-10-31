@@ -26,7 +26,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSection(
             null, "Welcome to RHI", "AccentTealBrush",
             "RHI finds the games on your PC and installs, updates and removes HDR mods, ReShade, shaders, frame limiters, DLSS files and more, and manages your NVIDIA driver settings, all from one place. Here's how to get started.",
-            "Recommended first step: add a free GitHub token in Settings → GitHub API. Without one, GitHub allows only 60 requests an hour, which can make downloads and update checks fail. Create a classic token at github.com/settings/tokens with no boxes ticked, paste it in and click Save."));
+            "Recommended first step: add a free GitHub token in Settings → Accounts & Data → GitHub token. Without one, GitHub allows only 60 requests an hour, which can make downloads and update checks fail. Create a classic token at github.com/settings/tokens with no boxes ticked, paste it in and click Save."));
 
         // Step 1: Select a Game
         panel.Children.Add(BuildFaqStep(1,
@@ -67,14 +67,14 @@ public sealed partial class MainWindow
         // Step 6: Frame Limiters
         panel.Children.Add(BuildFaqStep(6,
             "Frame Limiters (Optional)",
-            "ReLimiter and Display Commander are ReShade addons that limit frame rate precisely, which is ideal for VRR displays. Install one of them (not both) from the Components section. ReLimiter is recommended. Set your target FPS in Settings → Component Settings, per game in the ReLimiter ⚙, or in-game.",
+            "ReLimiter and Display Commander are ReShade addons that limit frame rate precisely, which is ideal for VRR displays. Install one of them (not both) from the Components section. ReLimiter is recommended. Set your target FPS in Settings → Components, per game in the ReLimiter ⚙, or in-game.",
             "Installing either limiter turns off the NVIDIA driver frame limit for that game.\nVRR cap presets by refresh rate (a little below max keeps VRR active):\n• 60Hz → 59 FPS\n• 120Hz → 116 FPS\n• 144Hz → 138 FPS\n• 165Hz → 157 FPS\n• 240Hz → 224 FPS\n• 360Hz → 324 FPS\nThese values are pre-configured in RHI's FPS dropdowns."));
 
         // Step 7: DLSS/Streamline
         panel.Children.Add(BuildFaqStep(7,
             "DLSS / Streamline (Optional)",
             "Games with DLSS or Streamline files have a DLSS / Streamline section. Pick a version for Super Resolution, Ray Reconstruction, Frame Generation, Neural Rendering or Streamline, and RHI swaps the file. Originals are backed up: choose 'Default' or click Restore DLSS/SL to put them back.\n\nYou can also set presets and render scale per game. These are written to the NVIDIA driver, so you don't need NVIDIA Profile Inspector.",
-            "NVIDIA Override in the version list tells the driver to use its newest DLSS file instead.\nSet your preferred versions and presets once in Settings → Configure Defaults, then use Quick Apply on any game, or Batch Deploy for many games at once.\nDLSS section missing? Use Full Refresh in Settings."));
+            "NVIDIA Override in the version list tells the driver to use its newest DLSS file instead.\nSet your preferred versions and presets once in Settings → DLSS / Streamline → Configure Defaults, then use Quick Apply on any game, or Batch Deploy for many games at once.\nDLSS section missing? Use Full refresh in Settings → Tools & Maintenance."));
 
         // Neural Rendering
         panel.Children.Add(BuildFaqSpecialSection("N", "AccentGreenBrush",
@@ -85,7 +85,7 @@ public sealed partial class MainWindow
         // OptiScaler
         panel.Children.Add(BuildFaqSpecialSection("⚙", "AccentAmberBrush",
             "OptiScaler (Optional)",
-            "OptiScaler lets a game's DLSS, FSR or XeSS inputs drive a different upscaler (FSR, XeSS, DLSS), and can add or replace frame generation on any GPU. It's in the Extras section.\n\nBefore installing, set your GPU Type (and DLSS Inputs for AMD/Intel) in Settings → Component Settings → OptiScaler. Then choose a variant in the OptiScaler ⚙:\n• Stable: official release.\n• Nightly: latest build, or pin a specific build.\n• DLSS NR and F5 DLSSNR: forks with DLSS Neural Rendering.\n\nThe ⚙ also sets the upscaler, frame generation, Reflex, DLSS presets, render scale, Engine.ini fixes and Neural Rendering options, and saves presets you can apply to other games.",
+            "OptiScaler lets a game's DLSS, FSR or XeSS inputs drive a different upscaler (FSR, XeSS, DLSS), and can add or replace frame generation on any GPU. It's in the Extras section.\n\nBefore installing, set your GPU type (and DLSS inputs for AMD/Intel) in Settings → Components → OptiScaler. Then choose a variant in the OptiScaler ⚙:\n• Stable: official release.\n• Nightly: latest build, or pin a specific build.\n• DLSS NR and F5 DLSSNR: forks with DLSS Neural Rendering.\n\nThe ⚙ also sets the upscaler, frame generation, Reflex, DLSS presets, render scale, Engine.ini fixes and Neural Rendering options, and saves presets you can apply to other games.",
             "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in Game Overrides → DLL naming overrides.\n'Deploy OptiScaler.ini' in the ⚙ resets the game's ini from your template."));
 
         // Extras
@@ -96,7 +96,7 @@ public sealed partial class MainWindow
 
         // NVIDIA Driver Settings
         panel.Children.Add(BuildFaqInfoSection("NVIDIA Driver Settings",
-            "The Driver Settings section changes the game's NVIDIA profile directly. It needs Admin Mode (Settings → System & Maintenance).",
+            "The Driver Settings section changes the game's NVIDIA profile directly. It needs Admin Mode (Settings → General → Admin Mode).",
             new[]
             {
                 "VSync: Mode, Tear Control and Low Latency (Off, On, Ultra)",
@@ -105,20 +105,21 @@ public sealed partial class MainWindow
                 "ReBAR: Enable, Mode and Size Limit",
                 "Multi Frame Generation (RTX 50): the Multi Frame Gen button in the DLSS / Streamline section"
             },
-            "Global defaults (shader cache, G-Sync, FPS limit, VSync, Power Mode, ReBAR), Digital Vibrance and profile backup/restore are in Settings → Global NVIDIA Driver Settings."));
+            "Global defaults (shader cache, G-Sync, FPS limit, VSync, Power Mode, ReBAR) and profile backup/restore are in Settings → Driver Settings. Digital Vibrance is in Settings → Display & HDR."));
 
         // Settings Overview
         panel.Children.Add(BuildFaqInfoSection("Settings",
             "Click 'Settings' in the toolbar for options that apply to all games:",
             new[]
             {
-                "Component Updates: Check For Updates, Background Checks and Automatic Updates",
-                "ReShade & Display: screenshots, hotkeys, peak brightness (nits) and HDR Auto-Toggle",
-                "Resolution & Colour Control and DLDSR Control",
-                "GitHub API: your GitHub token",
-                "DLSS / Streamline Settings: defaults, Batch Deploy and auto-update",
-                "Component Settings: ReLimiter and OptiScaler",
-                "System & Maintenance: Full Refresh, Admin Mode and System Tray"
+                "General: update checks, automatic updates (components, DLSS, Streamline), system tray and Admin Mode",
+                "Accounts & Data: your GitHub token, the mod data source and Nexus Mods",
+                "ReShade & RenoDX: hotkeys, screenshots, peak brightness (nits), shaders and the addon watch folder",
+                "Display & HDR: HDR and resolution auto-toggle, output colour and DLDSR",
+                "DLSS / Streamline: defaults for Quick Apply, the DLSS indicator, multi frame generation and Batch Deploy",
+                "Driver Settings: global NVIDIA driver defaults and profiles",
+                "Components: ReLimiter and OptiScaler",
+                "Tools & Maintenance: mass INI deploy, folders and logs, Full refresh and Purge staging files"
             }));
 
         // Vulkan Games
@@ -137,19 +138,19 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("↑", "AccentGreenBrush",
             "Updating Everything",
             "Click 'Update All' in the toolbar to update ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across all your games.",
-            "Games with updates show a green dot in the sidebar.\nChoose what Update All includes in Settings → Update & Deployment, or per game in Game Overrides → Update Inclusion.\nTurn on Automatic Updates in Settings to install updates in the background.\nThe Updates button at the bottom right shows everything that has been updated."));
+            "Games with updates show a green dot in the sidebar.\nChoose what Update All includes in Settings → General → Components to check, or per game in Game Overrides → Update Inclusion.\nTurn on Automatic updates in Settings → General to install updates in the background.\nThe Updates button at the bottom right shows everything that has been updated."));
 
         // Troubleshooting
         panel.Children.Add(BuildFaqSpecialSection("↻", "AccentBlueBrush",
             "Troubleshooting",
-            "If games are missing, a game has moved, or DLSS files were added or removed, use 'Full Refresh' in Settings → System & Maintenance to rescan everything from scratch.",
-            "Downloads or update checks failing? Add a GitHub token (Settings → GitHub API).\nTo report a problem, click Copy Logs in Settings and/or Copy Report in the game's Management section, then paste it into Discord."));
+            "If games are missing, a game has moved, or DLSS files were added or removed, use 'Full refresh' in Settings → Tools & Maintenance to rescan everything from scratch.",
+            "Downloads or update checks failing? Add a GitHub token (Settings → Accounts & Data).\nTo report a problem, click Copy logs in Settings → Tools & Maintenance and/or Copy Report in the game's Management section, then paste it into Discord."));
 
         // System Tray
         panel.Children.Add(BuildFaqSpecialSection("◰", "AccentPurpleBrush",
             "System Tray",
             "RHI can keep running in the system tray when you close the window. Right-click the tray icon to launch recent games without opening RHI.",
-            "Turn on Close to Tray, Recent Games and Start with Windows in Settings → System & Maintenance.\nRecent Games also appear in the taskbar jump list.\nWhile running, RHI checks for updates every 4 hours."));
+            "Turn on Close to Tray, Recent Games and Start with Windows in Settings → General → Windows.\nRecent Games also appear in the taskbar jump list.\nWhile running, RHI checks for updates every 4 hours."));
 
         // Need More Help
         panel.Children.Add(BuildFaqLinksSection());

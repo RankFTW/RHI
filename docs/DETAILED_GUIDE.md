@@ -56,7 +56,7 @@ This guide covers every feature in RHI (ReShade HDR Installer). For a short over
 The first time RHI starts, a **Welcome to RHI** window asks how you want ReShade handled:
 
 - **Manage ReShade for me**: the normal setup. RHI installs, updates and configures ReShade and shaders.
-- **I'll manage it myself**: ReShade is excluded from Update All, Cache All Shaders is turned off and global shaders are set to Off. You can change any of these later in Settings.
+- **I'll manage it myself**: ReShade is excluded from Update All, Download all shaders is turned off and global shaders are set to Off. You can change any of these later in Settings.
 
 RHI then scans your library. Later launches show the cached library immediately and rescan in the background.
 
@@ -65,9 +65,9 @@ RHI then scans your library. Later launches show the cached library immediately 
 Most of what RHI downloads comes from GitHub. Without a token, GitHub allows 60 requests an hour, and once that's used up, downloads and update checks fail until the hour resets. A token raises the limit to 5,000.
 
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and create a **classic** token. Don't tick any boxes; it needs no permissions.
-2. In RHI, open **Settings → GitHub API**, paste the token (it starts with `ghp_` or `github_pat_`) and click **Save**.
+2. In RHI, open **Settings → Accounts & Data → GitHub token**, paste the token (it starts with `ghp_` or `github_pat_`) and click **Save**.
 
-RHI checks the token, stores it in `%LOCALAPPDATA%\RHI\github_api.txt` and uses it straight away, including after restarts. **Clear** removes it. The token is only ever sent to `api.github.com`. There is also a **Connect GitHub** sign-in option, but a token is more reliable, and a saved token takes priority over the sign-in.
+RHI checks the token, stores it in `%LOCALAPPDATA%\RHI\github_api.txt` and uses it straight away, including after restarts. **Remove** deletes it. The token is only ever sent to `api.github.com`. There is also a **Sign in with GitHub instead** option, but a token is more reliable, and a saved token takes priority over the sign-in.
 
 ### Quick Start
 
@@ -263,18 +263,18 @@ Available once the game has a `reshade.ini`:
 - **Deploy ReShadePreset.ini**: copies `%LOCALAPPDATA%\RHI\inis\ReShadePreset.ini` to the game.
 - **Open ReShade.ini**, **Open ReShade.log**, **Copy ReShade.log to clipboard**.
 - **Overlay Key** and **Screenshot Key** for this game.
-- **Keep ReShade.ini Updated** (Yes/No): when **No**, RHI never changes this game's `reshade.ini` on install, update or any "Apply to All Games" action.
+- **Keep ReShade.ini Updated** (Yes/No): when **No**, RHI never changes this game's `reshade.ini` on install, update or any "Write ... to all games" action.
 
 The `reshade.ini` template lives in `%LOCALAPPDATA%\RHI\inis\`. You can edit it; RHI won't overwrite your changes.
 
 ### Global ReShade settings
 
-In **Settings → ReShade & Display**:
+In **Settings → ReShade & RenoDX → Keys, screenshots and brightness**:
 
-- **Screenshots & Hotkeys**: screenshot folder (with optional per-game subfolders), Overlay key, Screenshot key, effect list style (Tabs/Tree), and **Apply to All Games**.
-- **HDR & Peak Brightness**: your display's peak brightness in nits (type it or click **Auto**). It's written as `ToneMapPeakNits` to RenoDX presets on every install, update and ini deploy. The ⚙ chooses whether that happens automatically and which presets (1, 2, 3) get it. **Apply to All Games** writes it everywhere now.
+- **Keys and screenshots**: Overlay key, Screenshot key, screenshot folder (**Folder per game** gives each game its own subfolder), effect list style (Tabs/Tree), and **Write these to all games**.
+- **HDR brightness (RenoDX)**: your display's peak brightness in nits (type it or click **Auto**). It's written as `ToneMapPeakNits` to RenoDX presets on every install, update and ini deploy. The ⚙ chooses whether that happens automatically and which presets (1, 2, 3) get it. **Write peak brightness to all games** writes it everywhere now.
 
-"Apply to All Games" skips games with **Keep ReShade.ini Updated** set to No.
+The "Write ... to all games" buttons skip hidden games and games with **Keep ReShade.ini Updated** set to No.
 
 ### Foreign DLL protection
 
@@ -292,7 +292,7 @@ RHI can't write inside `C:\Program Files\WindowsApps\`. For Game Pass games inst
 
 ### Where mod data comes from
 
-By default, RHI uses the **RHI Database**: a curated list of named mods, UE-Extended games, Unity games and Source engine games. You can switch to the **RenoDX Wiki** in Settings → **Mod Data Source**.
+By default, RHI uses the **RHI Database**: a curated list of named mods, UE-Extended games, Unity games and Source engine games. You can switch to the **RenoDX Wiki** in Settings → Accounts & Data → **Mod data source**.
 
 ### How mods are matched
 
@@ -340,7 +340,7 @@ Both are alternatives to a RenoDX mod, so turning either on **uninstalls RenoDX*
 
 NVIDIA's driver-level SDR-to-HDR conversion. It requires an NVIDIA RTX GPU and the NVIDIA App with its overlay and Game Filters enabled.
 
-- **Enable RTX HDR** writes starting values to the game's NVIDIA profile: peak brightness from your global Peak Nits, Contrast +25 (gamma 2.2), Saturation −25, middle grey Auto.
+- **Enable RTX HDR** writes starting values to the game's NVIDIA profile: peak brightness from your global Peak brightness, Contrast +25 (gamma 2.2), Saturation −25, middle grey Auto.
 - The install button becomes **Configure RTX HDR**, which opens **RTX HDR Settings**:
   - **Peak Brightness**: 400–2000 nits.
   - **Contrast**: −100 to +100, with Gamma 2.0 / 2.2 / 2.4 shortcuts.
@@ -427,7 +427,7 @@ Two ReShade-addon frame limiters sit under **Frame limiters — Choose one**. Yo
 [ReLimiter](https://github.com/RankFTW/ReLimiter) is a frame pacing limiter with an on-screen display.
 
 - Installs the addon plus `relimiter.ini` (from RHI's template, if the game doesn't have one).
-- **Settings → Component Settings → ReLimiter**: OSD key, **Shared Presets** (all games share one OSD presets file), **DLSS Hooks** (shows DLSS info on the OSD; turn off if a game crashes), **Target FPS** (VRR caps from 59 FPS at 60 Hz up to 431 FPS at 500 Hz, or Custom 20–1000), and **Apply to All Games**.
+- **Settings → Components → ReLimiter**: OSD key, **Shared Presets** (all games share one OSD presets file), **DLSS Hooks** (shows DLSS info on the OSD; turn off if a game crashes), **Target FPS** (VRR caps from 59 FPS at 60 Hz up to 431 FPS at 500 Hz, or Custom 20–1000), and **Write to all ReLimiter games**.
 - **⚙ ReLimiter Settings**: Deploy relimiter.ini, open or copy the ReLimiter log, and per-game **Target FPS** and **DLSS Hooks**.
 
 ### Display Commander
@@ -448,13 +448,13 @@ RHI manages 56 ReShade shader packs. 50 are built in, and the remote manifest ca
 
 ### Global shader mode
 
-**Settings → Shaders & Addons → Shader Management**:
+**Settings → ReShade & RenoDX → Shaders and addons → Shaders**:
 
 - **RHI Managed**: RHI deploys your selected packs to every game.
 - **Custom**: RHI deploys only your own shaders.
 - **Off**: RHI doesn't deploy shaders unless a game has its own override.
 
-**Cache All Shaders** (On by default) downloads every pack at startup so installs are instant. Turn it off to download packs only when needed.
+**Download all shaders** (On by default) downloads every pack at startup so installs are instant. Turn it off to download packs only when needed.
 
 ### Choosing packs
 
@@ -521,7 +521,7 @@ Put preset `.ini` files in `%LOCALAPPDATA%\RHI\inis\reshade-presets\`.
 
 - **Per game**: Game Overrides → **Select ReShade Preset**. Tick presets and click **Deploy**. RHI then offers to install the shaders and textures the preset needs.
 - **Drag and drop**: drop a preset `.ini` onto the window. RHI checks it's a ReShade preset, saves it, deploys it to the game you pick and offers to install its shaders.
-- **Many games at once**: Settings → Update & Deployment → **Mass Preset Install**.
+- **Many games at once**: Settings → Tools & Maintenance → **ReShade preset**.
 
 ---
 
@@ -531,7 +531,7 @@ The **DLSS / Streamline** section manages a game's DLSS and Streamline files and
 
 ### Detection
 
-RHI scans the whole game folder in the background and caches the results. A game checked three times without finding DLSS is skipped after that. If you've added DLSS to a game or the section is missing, use **Settings → System & Maintenance → Full Refresh**.
+RHI scans the whole game folder in the background and caches the results. A game checked three times without finding DLSS is skipped after that. If you've added DLSS to a game or the section is missing, use **Settings → Tools & Maintenance → Full refresh**.
 
 ### Columns
 
@@ -636,7 +636,7 @@ RHI tracks shared files such as `nvngx_dlssnr.dll`, so removing one tool doesn't
 
 ### Driver Settings
 
-The **Driver Settings** section (its heading shows your driver version) changes this game's NVIDIA profile. Changes apply immediately. **It needs admin**: without [Admin Mode](#system--maintenance), the section is dimmed.
+The **Driver Settings** section (its heading shows your driver version) changes this game's NVIDIA profile. Changes apply immediately. **It needs admin**: without [Admin Mode](#general), the section is dimmed.
 
 | Group | Settings |
 |---|---|
@@ -654,7 +654,7 @@ Click **Multi Frame Gen** in the Frame Generation column (needs a DLSS Frame Gen
 - **FG Mode**: Default, **Fixed** (2x–6x) or **Dynamic** (up to 2x–6x).
 - **Target Frame Rate** (Dynamic): Off, Max Refresh Rate, VRR caps from 59 FPS (60 Hz) to 431 FPS (500 Hz), or Custom (20–1000).
 
-Changes apply immediately. Defaults for Dynamic MFG are in Settings → DLSS / Streamline Settings → **DMFG Defaults**.
+Changes apply immediately. Defaults for Dynamic MFG are in Settings → DLSS / Streamline → **Multi frame generation (RTX 50)**.
 
 For RTX 20, 30 and 40 Series cards, see the frame generation unlocks in [Extras](#extras).
 
@@ -690,13 +690,13 @@ RTX 40 MFG and MFG Ada Unlock can't be installed together, and 20/30 FG Unlock i
 
 ### Before your first install
 
-A one-time reminder points you to **Settings → Component Settings → OptiScaler**:
+A one-time reminder points you to **Settings → Components → OptiScaler**:
 
-- **GPU Type**: NVIDIA, AMD or Intel.
-- **DLSS Inputs** (AMD/Intel): whether the game's DLSS inputs should be used.
-- **Hotkey** for the OptiScaler menu (Insert by default), with **Apply to All Games**.
+- **GPU type**: NVIDIA, AMD or Intel.
+- **DLSS inputs** (AMD/Intel): whether the game's DLSS inputs should be used.
+- **Overlay key** for the OptiScaler menu (Insert by default), with **Write key to all OptiScaler games**.
 
-GPU Type and DLSS Inputs choose which ini template new installs get.
+GPU type and DLSS inputs choose which ini template new installs get.
 
 ### Variants
 
@@ -828,7 +828,7 @@ The game starts in its own folder. While it's running, its sidebar row is green.
 
 Turns Windows HDR on when a game starts and off when it closes.
 
-- **Global**: Settings → ReShade & Display → **HDR Auto-Toggle**. The ⚙ chooses which monitors to switch; with none ticked, only the primary monitor switches.
+- **Global**: Settings → Display & HDR → **Windows HDR**. The ⚙ chooses which monitors to switch; with none ticked, only the primary monitor switches.
 - **Per game**: the **HDR** button next to Launch (purple = on). It overrides the global setting.
 
 For games started through Steam, Epic or Xbox, RHI watches for a process running from the game folder for up to 60 seconds. If it can't find one, HDR is left on. If the game starts through a wrapper (such as SKSE or Mod Organizer 2), RHI follows the real game process.
@@ -837,15 +837,15 @@ For games started through Steam, Epic or Xbox, RHI watches for a process running
 
 Switches to a target resolution when a game starts and back when it closes.
 
-- **Global**: Settings → Resolution & Colour Control → **Target Resolution** and **Resolution Auto-Toggle** (⚙ for monitors).
+- **Global**: Settings → Display & HDR → **Change resolution** (⚙ for monitors) and **Resolution**.
 - **Per game**: the **RES** button next to HDR.
 
 ### System tray and jump list
 
-Settings → System & Maintenance → **System Tray**:
+Settings → General → **Windows**:
 
-- **Close to Tray**: closing the window hides RHI to the tray. Background update checks, HDR switching and addon detection keep running. Double-click the tray icon to reopen it.
-- **Recent Games**: your last five launched games in the tray menu and the taskbar jump list.
+- **Close to tray**: closing the window hides RHI to the tray. Background update checks, HDR switching and addon detection keep running. Double-click the tray icon to reopen it.
+- **Recent games in tray menu**: your last five launched games in the tray menu and the taskbar jump list.
 - **Start with Windows**: starts RHI minimised to the tray when you sign in. Works with Admin Mode.
 
 Starting RHI again while it's running brings the existing window to the front.
@@ -854,87 +854,104 @@ Starting RHI again while it's running brings the existing window to the front.
 
 ## Settings Page
 
-### Component Updates
+The Settings page is one scrolling page with eight sections, in this order. Each section starts with a short line saying what it's for.
 
-- **Check For Updates**: checks every component and the app straight away.
-- **Background Checks**: **On** (default) checks at startup and every 4 hours. **Minimal** only refreshes the manifests, PCGamingWiki data and DLSS versions automatically; components are then checked on Refresh or Update All.
-- **Automatic Updates**: **No** (default) or **Yes**. With Yes, component updates found by any check are installed in the background. Games that are running are updated after they close. App updates still ask first.
+The column on the left stays in view while you scroll. **Find a setting** searches every label, button and tooltip on the page as you type (for example `hotkey`, `HDR` or `ReBAR`); click a result to jump to it, or press Esc to clear the search. Below the search box, click a section name to jump to it. The section you're looking at is highlighted, and Settings reopens at the section you used last. In a narrow window the section list is hidden and the search box sits above the settings.
 
-### ReShade & Display
+### General
 
-Screenshots, hotkeys, effect list style, peak brightness and HDR Auto-Toggle. See [Global ReShade settings](#global-reshade-settings) and [HDR auto-toggle](#hdr-auto-toggle).
+Updates and how RHI behaves on your PC.
 
-### Resolution & Colour Control
+**Updates** card:
 
-- **Target Resolution** and **Resolution Auto-Toggle** (see [Resolution auto-toggle](#resolution-auto-toggle)).
-- **Output Colour Settings** (NVIDIA displays): pick a display, set **Colour Depth** (8/10/12 bpc) and **Dynamic Range** (Full/Limited), then click **Apply**.
+- **Check for updates**: checks every component and the app straight away (skips the 4-hour wait) and restarts the 4-hour countdown. The panel above the button shows when the next automatic check runs (**Next check in**, or **After startup** while RHI is still loading) and when the last one ran (**Last checked**). With Background checks on **Minimal** it reads **Next data refresh in** and **Last full check**, since the 4-hour run then only refreshes data.
+- **Background checks**: **On** (default) checks at startup and every 4 hours. **Minimal** only refreshes the manifests, PCGamingWiki data and DLSS versions automatically; components are then checked on Refresh or Update All.
+- **Components to check**: the line shows which components Update All and update checks cover for every game (ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework). **Choose** changes them.
+- **Automatic updates**:
+  - **Components**: **Off** (default) or **On**. With On, component updates found by any check are installed in the background. Games that are running are updated after they close.
+  - **DLSS** and **Streamline** (both Off by default): when a new version is released, games on the previous newest version are moved to it. Games where you chose an older version are left alone.
+  - RHI's own updates are never installed without asking.
 
-### DLDSR Control
+**Windows and Admin Mode** card:
+
+- **Windows**: **Close to tray**, **Recent games in tray menu** and **Start with Windows**. See [System tray and jump list](#system-tray-and-jump-list).
+- **Admin Mode**: RHI starts elevated without a UAC prompt each time (through a scheduled task called "RHI Admin Mode"). Needed for per-game driver settings, ReBAR, Low Latency Ultra, Smooth Motion, DLDSR and the DLSS indicator. Turning it on or off asks for UAC once.
+- **Drop Helper** (on by default, only used in Admin Mode): lets you drag files from Discord and browsers onto RHI while it's running as admin. Needs a restart to take effect.
+
+### Accounts & Data
+
+- **GitHub token**: paste a Personal Access Token into **Token** and click **Save** (**Create a token** opens the GitHub page), or use **Sign in with GitHub instead**. **Remove** deletes the saved token. See [Add a GitHub token](#add-a-github-token-recommended).
+- **Mod data source**: **Source** is **RHI Database** (default) or **RenoDX Wiki**. Changing it refreshes immediately.
+
+### ReShade & RenoDX
+
+Defaults for every game using ReShade. Each game can still change these in its own ReShade ⚙.
+
+- **Keys, screenshots and brightness**: **Overlay key**, **Screenshot key**, **Screenshot folder** (Browse / Open), **Folder per game**, **Effect list style**, **Peak brightness** (Auto / ⚙) and the two "Write ... to all games" buttons. See [Global ReShade settings](#global-reshade-settings).
+- **Shaders and addons**: **Shaders** (shader management), **Download all shaders** and **Addon watch folder**. See [Global shader mode](#global-shader-mode) and [Addon Watch Folder](#addon-watch-folder).
+
+### Display & HDR
+
+What happens to your screen when you launch a game through RHI, and display options without the NVIDIA Control Panel.
+
+- **When a game starts**: **Windows HDR** (HDR auto-toggle) and **Change resolution** (resolution auto-toggle), each with a ⚙ to pick monitors, and the target **Resolution**. Both are undone when the game closes. See [HDR auto-toggle](#hdr-auto-toggle) and [Resolution auto-toggle](#resolution-auto-toggle).
+- **Output colour** (NVIDIA displays): pick a display, set **Colour depth** (8/10/12 bpc) and **Dynamic range** (Full/Limited), then click **Apply**. **Digital vibrance** (**Adjust**): per-monitor saturation from 0 to 100 (50 = neutral), reapplied every time RHI starts.
+
+#### DLDSR
 
 Switch NVIDIA DLDSR factors without opening NVIDIA Control Panel. Needs Admin Mode.
 
 1. In NVIDIA Control Panel, set the DSR factors you want (Manage 3D Settings → DSR – Factors).
-2. In RHI, click **Capture Current** and name the state (e.g. "2.25x only").
+2. In RHI, click **Capture current** and name the state (e.g. "2.25x only").
 3. Repeat for each setup you want, including one with DLDSR off.
 
-Then pick a state under **Saved States** and click **Apply**. **DSR Smoothness** has its own slider and **Set** button. Applying restarts the graphics driver, so the screen goes black for about 15 seconds. The **ⓘ** button has step-by-step help.
+Then pick a state under **Saved state** and click **Apply**. **Smoothness** has its own slider and **Set** button. Applying restarts the graphics driver, so the screen goes black for about 15 seconds. The **i** button next to the title has step-by-step help.
 
-### Mod Data Source and GitHub API
+### DLSS / Streamline settings
 
-- **Mod Data Source**: **RHI Database** (default) or **RenoDX Wiki**. Changing it refreshes immediately.
-- **GitHub API**: your GitHub token (see [Add a GitHub token](#add-a-github-token-recommended)).
+Defaults that Quick Apply uses, plus DLSS options for all games. Matches the DLSS / Streamline section in each game's panel. Automatic DLSS and Streamline updates are in [General](#general).
 
-### DLSS / Streamline Settings
+- **Defaults → Configure defaults**: your preferred version, preset and render scale for Super Resolution, Ray Reconstruction, Frame Generation and Neural Rendering, plus the Streamline version. Leave a column on **Default** to leave it unchanged. Used by Quick Apply and Batch Deploy. The table above the button shows your current defaults.
+- **DLSS indicator**: shows DLSS information in games. Needs admin.
+- **Multi frame generation (RTX 50)**: default **Max frames** and **Target FPS** for Dynamic Multi Frame Generation (DMFG).
+- **Batch deploy**: tick games (with **Select All** / **Deselect All**), choose versions and presets, then click **Deploy**. **Restore** puts back the originals for the ticked games. **Auto-create NVIDIA profiles** creates missing profiles as needed. Games already on the chosen version are skipped.
 
-- **Configure Defaults**: your preferred version, preset and render scale for Super Resolution, Ray Reconstruction, Frame Generation and Neural Rendering, plus the Streamline version. Leave a column on **Default** to leave it unchanged. Used by Quick Apply and Batch Deploy.
-- **DMFG Defaults**: default **Frame Count** and **Target FPS** for Dynamic Multi Frame Generation.
-- **Batch Deploy**: tick games (with **Select All** / **Deselect All**), choose versions and presets, then click **Deploy**. **Restore** puts back the originals for the ticked games. **Auto-create NVIDIA profiles** creates missing profiles as needed. Games already on the chosen version are skipped.
-- **DLSS On-Screen Indicator**: shows DLSS information in games. Needs admin.
-- **G-Sync On-Screen Indicator**.
-- **Auto-Update DLSS** and **Auto-Update Streamline** (both Off by default): when a new version is released, games on the previous newest version are moved to it. Games where you chose an older version are left alone.
+### Driver Settings (global defaults)
 
-### Global NVIDIA Driver Settings
+Driver defaults for every game. A game's own [Driver Settings](#driver-settings) section overrides these.
 
-Apply to every game that doesn't have its own setting:
+**Driver defaults** card:
 
-- **Shader Cache Size** (512MB up to Unlimited; default 16GB) and **Shader Pre-Compile**.
-- **G-Sync** and **G-Sync Mode** (Off, Fullscreen only, Fullscreen/Windowed).
-- **FPS Limit**: Off, VRR caps or Custom. Games with ReLimiter or Display Commander are set to Off so the limiters don't fight.
-- **Preferred Refresh Rate**, **VSync**, **Power Mode**.
-- **ReBAR** and **ReBAR Size Limit** (need admin).
-- **Digital Vibrance**: per-monitor saturation from 0 to 100 (50 = neutral). Reapplied every time RHI starts.
-- **Create Missing Profiles**: creates NVIDIA profiles for library games that don't have one, so global settings apply to them.
-- **Backup Profiles** / **Restore Profiles**: saves your library games' NVIDIA settings (driver settings, DLSS presets, render scales, MFG, RTX HDR) to `%LOCALAPPDATA%\RHI\nvidia_profiles_backup.json`, and restores them, for example after a driver reinstall. NVIDIA Override flags and per-game FPS limits aren't included.
-- **Reset Nvidia Profiles**: removes every per-game override and resets the global settings. Can't be undone.
-- **Clear Shader Cache**: deletes NVIDIA's DirectX and OpenGL shader caches.
+- **Shader cache size** (512MB up to Unlimited; default 16GB) and **Shader pre-compile**.
+- **Frame rate limit**: Off, VRR caps or Custom. Games with ReLimiter or Display Commander are set to Off so the limiters don't fight.
+- **Preferred refresh rate**, **VSync**, **Power mode**.
+- **G-Sync** and **G-Sync mode** (Off, Fullscreen only, Fullscreen/Windowed), and the **G-Sync indicator**.
+- **ReBAR** and **ReBAR size limit** (need admin).
 
-### Component Settings
+**Profiles** card:
+
+- **Create missing profiles**: creates NVIDIA profiles for library games that don't have one, so global settings apply to them.
+- **Back up profiles** / **Restore profiles**: saves your library games' NVIDIA settings (driver settings, DLSS presets, render scales, MFG, RTX HDR) to `%LOCALAPPDATA%\RHI\nvidia_profiles_backup.json`, and restores them, for example after a driver reinstall. NVIDIA Override flags and per-game FPS limits aren't included.
+- **Reset**: **Reset all game profiles** removes every per-game override and resets the global settings (can't be undone). **Clear shader cache** deletes NVIDIA's DirectX and OpenGL shader caches.
+
+### Components (ReLimiter and OptiScaler)
+
+Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 - **ReLimiter**: see [ReLimiter](#relimiter).
-- **OptiScaler**: GPU Type, DLSS Inputs and Hotkey. See [OptiScaler](#before-your-first-install).
+- **OptiScaler**: GPU type, DLSS inputs and overlay key. See [OptiScaler](#before-your-first-install).
 
-### Shaders & Addons
+### Tools & Maintenance
 
-**Shader Management**, **Cache All Shaders** and **Addon Watch Folder** (see [Drag-and-Drop and Addon Detection](#addon-watch-folder)).
+**Tools** card:
 
-### Update & Deployment
+- **Deploy to many games**: deploy `reshade.ini`, `relimiter.ini`, `DisplayCommander.ini` or `OptiScaler.ini` to many games at once, or a **ReShade preset**.
+- **Folders and logs**: **RHI data** (the AppData folder), **Downloads**, **Custom**, **Logs**, **Copy logs** (zips your logs and copies them to the clipboard to paste into Discord; logs hide your Windows username and account IDs) and **Export game data** (zips your library's detection data, such as API, exe paths, engine and store IDs, and copies it to the clipboard for sharing).
 
-- **Update Inclusion**: choose which components Update All covers for every game (ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework).
-- **Mass INI Deployment**: deploy `reshade.ini`, `relimiter.ini`, `DisplayCommander.ini` or `OptiScaler.ini` to many games at once, or **Mass Preset Install**.
+**Troubleshooting** card:
 
-### System & Maintenance
-
-- **Full Refresh**: clears RHI's caches and rescans everything from scratch. Use it when something looks out of date or a game's DLSS section is missing.
-- **Purge Staging Files**: deletes cached downloads (DLSS, Streamline and component files) to free space. They download again when needed.
-- **Admin Mode**: RHI starts elevated without a UAC prompt each time (through a scheduled task called "RHI Admin Mode"). Needed for per-game driver settings, ReBAR, Low Latency Ultra, Smooth Motion, DLDSR Control and the DLSS indicator. Turning it on or off asks for UAC once.
-- **Drop Helper** (on by default): lets you drag files from Discord and browsers onto RHI while it's running as admin. Needs a restart to take effect.
-- **System Tray**: see [System tray and jump list](#system-tray-and-jump-list).
-
-### Data & Custom Files
-
-- **AppData Folder**, **Downloads Folder**, **Custom Folder**, **Logs Folder**.
-- **Copy Logs**: zips your logs and copies them to the clipboard to paste into Discord. Logs hide your Windows username and account IDs.
-- **Export Game Data**: zips your library's detection data (API, exe paths, engine, store IDs) and copies it to the clipboard for sharing.
+- **Full refresh**: clears RHI's caches and rescans everything from scratch. Use it when something looks out of date or a game's DLSS section is missing.
+- **Purge staging files**: deletes cached downloads (DLSS, Streamline and component files) to free space. They download again when needed.
 
 ---
 
@@ -944,13 +961,13 @@ Apply to every game that doesn't have its own setting:
 
 **Update All** in the toolbar updates every installed component that has an update, in this order: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix.
 
-- Components excluded in Settings → Update & Deployment → **Update Inclusion** (all games) or Game Overrides → **Update Inclusion** (one game) are skipped. So are Legacy ReShade and pinned OptiScaler Nightly builds.
+- Components excluded in Settings → General → **Components to check** (all games) or Game Overrides → **Update Inclusion** (one game) are skipped. So are Legacy ReShade and pinned OptiScaler Nightly builds.
 - Only mods with an update are reinstalled.
 - Files that belong to another tool (foreign DLLs) are never overwritten.
 
 ### Automatic and background checks
 
-With **Background Checks** on, RHI checks at startup and every 4 hours, even from the tray. Shader packs, addons and Extras tools also update at startup. With **Automatic Updates** on, updates are installed without asking.
+With **Background checks** on, RHI checks at startup and every 4 hours, even from the tray. Shader packs, addons and Extras tools also update at startup. With **Automatic updates → Components** on, component updates are installed without asking.
 
 Every component update is logged in the **Updates** window (status bar).
 
@@ -983,7 +1000,7 @@ When RHI runs as admin, Windows blocks drops from non-admin apps such as Discord
 
 ### Addon Watch Folder
 
-RHI watches a folder (your **Downloads** folder by default; change it in Settings → Shaders & Addons) for new RenoDX addons (`renodx-*.addon64`/`.addon32`) and archives with "renodx" or "luma" in the name, and offers to install them. Addon files are removed after a successful install; archives are left where they are.
+RHI watches a folder (your **Downloads** folder by default; change it in Settings → ReShade & RenoDX → Shaders and addons) for new RenoDX addons (`renodx-*.addon64`/`.addon32`) and archives with "renodx" or "luma" in the name, and offers to install them. Addon files are removed after a successful install; archives are left where they are.
 
 ### Opening addons from Explorer
 
@@ -1048,7 +1065,7 @@ Everything RHI stores is in `%LOCALAPPDATA%\RHI\`:
 | `Custom\` | Your own ReShade DLLs, DLSS/Streamline DLLs and addons |
 | `reshade\Custom\` | Your own shaders and textures |
 | `logs\` | Session logs and crash reports (last 10 of each) |
-| `downloads\` and staging folders | Cached downloads (safe to delete with Purge Staging Files) |
+| `downloads\` and staging folders | Cached downloads (safe to delete with Purge staging files) |
 
 Settings and install records keep a `.bak` copy and are recovered automatically if a file is damaged.
 
@@ -1067,12 +1084,12 @@ If RHI's window ever stops responding, RHI restarts itself after a few seconds a
 | ReShade doesn't load | Check the install folder points at the folder with the game's exe. Try a different name under DLL naming overrides. |
 | Game crashes with OptiScaler and ReShade | Give ReShade a different name (e.g. `d3d12.dll`) under DLL naming overrides. |
 | UE-Extended shows no HDR | Turn HDR on in the game's own settings, or turn on **Engine.ini HDR** in the RenoDX ⚙ for games without an HDR option. |
-| Driver Settings or DLDSR greyed out | Turn on **Admin Mode** in Settings → System & Maintenance. |
-| DLSS section missing or out of date | Settings → System & Maintenance → **Full Refresh**. |
+| Driver Settings or DLDSR greyed out | Turn on **Admin Mode** in Settings → General. |
+| DLSS section missing or out of date | Settings → Tools & Maintenance → **Full refresh**. |
 | "Couldn't change DLSS files" | Close the game and try again. Game Pass folders may be protected. |
 | Game Pass ReShade gone after a game update | RHI reinstalls it on the next launch. |
-| Need disk space | Settings → **Purge Staging Files**. |
-| Reporting a problem | **Copy Logs** (Settings) and/or **Copy Report** (Management), then paste into [Discord](https://discord.gg/ultraplace). |
+| Need disk space | Settings → Tools & Maintenance → **Purge staging files**. |
+| Reporting a problem | **Copy logs** (Settings → Tools & Maintenance) and/or **Copy Report** (Management), then paste into [Discord](https://discord.gg/ultraplace). |
 
 ---
 

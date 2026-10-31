@@ -106,8 +106,8 @@ Not detected? Click **+** next to the search box, or drag the game's `.exe` onto
 - Windows 10 or 11 (64-bit)
 - [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The installer adds the Windows App Runtime if it's missing.
 - An NVIDIA GPU for the DLSS preset, driver and Neural Rendering features. ReShade, RenoDX, Luma and OptiScaler work on any GPU.
-- **Admin Mode** (Settings → System & Maintenance) for per-game driver settings, ReBAR, DLDSR Control and the DLSS on-screen indicator.
-- **Recommended: a GitHub token.** Without one, GitHub allows 60 requests an hour, which can make downloads and update checks fail. Add a free token with no permissions under Settings → GitHub API to raise the limit to 5,000.
+- **Admin Mode** (Settings → General → Admin Mode) for per-game driver settings, ReBAR, DLDSR Control and the DLSS on-screen indicator.
+- **Recommended: a GitHub token.** Without one, GitHub allows 60 requests an hour, which can make downloads and update checks fail. Add a free token with no permissions under Settings → Accounts & Data → GitHub token to raise the limit to 5,000.
 
 ---
 

@@ -42,7 +42,7 @@ public sealed partial class MainWindow
                           "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
                 PrimaryButtonText = "Continue",
                 CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme  = ElementTheme.Dark,
             };
@@ -92,6 +92,9 @@ public sealed partial class MainWindow
                 // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
                 DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
                 await ViewModel.RefreshAsync();
+
+                // A manual check restarts the 4-hour background countdown (shown on the Settings page)
+                ViewModel.RestartPeriodicUpdateCheckTimer();
 
                 // Trigger silent auto-install of any updates found
                 ViewModel.TriggerAutoUpdate();

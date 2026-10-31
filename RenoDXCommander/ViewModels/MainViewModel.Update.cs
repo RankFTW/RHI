@@ -141,17 +141,88 @@ public partial class MainViewModel
         lock (_backgroundTimerLock)
         {
             if (_backgroundStopped || _updateCheckTimer != null) return;
-            _updateCheckTimer = CreatePeriodicUpdateCheckTimer();
-            _crashReporter.Log("[MainViewModel] Periodic update check timer started (4h interval)");
+            var now = DateTime.UtcNow;
+            DateTime? lastCheck = DateTime.TryParse(_settingsViewModel.LastUpdateCheckUtc,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var parsed)
+                ? parsed.ToUniversalTime() : null;
+            bool minimal = _settingsViewModel.BackgroundUpdateChecks == "Minimal";
+            var firstDelay = ComputeFirstPeriodicCheckDelay(lastCheck, now, minimal);
+            _updateCheckTimer = CreatePeriodicUpdateCheckTimer(firstDelay);
+            SetNextUpdateCheck(now + firstDelay);
+            _crashReporter.Log($"[MainViewModel] Periodic update check timer started (first in {firstDelay.TotalMinutes:F0}m, then every 4h)");
         }
     }
 
-    private System.Threading.Timer CreatePeriodicUpdateCheckTimer()
+    /// <summary>Shortest wait before the first periodic check, so a just-opened RHI doesn't re-check straight away.</summary>
+    internal static readonly TimeSpan MinFirstPeriodicCheckDelay = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Delay before the first periodic check: "last full check + 4h", so a full check happens at least
+    /// every 4 hours across restarts (the launch check skips when the last one was under 4h ago).
+    /// Minimal mode, or no/future last check: a full 4h interval (Minimal never moves the last check).
+    /// </summary>
+    internal static TimeSpan ComputeFirstPeriodicCheckDelay(DateTime? lastCheckUtc, DateTime nowUtc, bool minimalMode)
     {
-        var interval = TimeSpan.FromHours(4);
+        if (minimalMode || lastCheckUtc == null || lastCheckUtc.Value > nowUtc) return PeriodicUpdateCheckInterval;
+        var due = lastCheckUtc.Value + PeriodicUpdateCheckInterval - nowUtc;
+        if (due < MinFirstPeriodicCheckDelay) return MinFirstPeriodicCheckDelay;
+        return due > PeriodicUpdateCheckInterval ? PeriodicUpdateCheckInterval : due;
+    }
+
+    /// <summary>How often the periodic background check runs while RHI is open.</summary>
+    internal static readonly TimeSpan PeriodicUpdateCheckInterval = TimeSpan.FromHours(4);
+
+    /// <summary>UTC ticks of the next periodic check; 0 = timer not started yet (startup scan still running).</summary>
+    private long _nextUpdateCheckTicks;
+
+    /// <summary>
+    /// When the periodic 4-hour background check fires next, or null before the timer has started
+    /// (startup scan still running) or after background work has stopped. Safe to read from any thread.
+    /// </summary>
+    public DateTime? NextUpdateCheckUtc
+    {
+        get
+        {
+            if (_backgroundStopped) return null;
+            var ticks = System.Threading.Interlocked.Read(ref _nextUpdateCheckTicks);
+            return ticks == 0 ? null : new DateTime(ticks, DateTimeKind.Utc);
+        }
+    }
+
+    private void SetNextUpdateCheck(DateTime utc)
+        => System.Threading.Interlocked.Exchange(ref _nextUpdateCheckTicks, utc.Ticks);
+
+    /// <summary>
+    /// Restarts the 4-hour countdown after a user-initiated "Check for updates", so the next
+    /// background check is a full interval away. Re-arms the existing timer (never creates a
+    /// second one, never fires immediately). No-op before the timer has started or after shutdown.
+    /// </summary>
+    internal void RestartPeriodicUpdateCheckTimer()
+    {
+        lock (_backgroundTimerLock)
+        {
+            if (_backgroundStopped || _updateCheckTimer == null) return;
+            try
+            {
+                _updateCheckTimer.Change(PeriodicUpdateCheckInterval, PeriodicUpdateCheckInterval);
+                SetNextUpdateCheck(DateTime.UtcNow + PeriodicUpdateCheckInterval);
+                _crashReporter.Log("[MainViewModel.RestartPeriodicUpdateCheckTimer] Periodic update check countdown restarted (4h)");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _crashReporter.Log($"[MainViewModel.RestartPeriodicUpdateCheckTimer] Timer already disposed — {ex.Message}");
+            }
+        }
+    }
+
+    private System.Threading.Timer CreatePeriodicUpdateCheckTimer(TimeSpan firstDelay)
+    {
+        var interval = PeriodicUpdateCheckInterval;
         return new System.Threading.Timer(async _ =>
         {
             if (_backgroundStopped) return;
+            SetNextUpdateCheck(DateTime.UtcNow + interval);
             try
             {
                 _crashReporter.Log("[MainViewModel] Periodic update check triggered (4h timer)");
@@ -313,7 +384,7 @@ public partial class MainViewModel
                 CrashReporter.Log("[RefreshTrigger] 4h periodic timer — PeriodicAppUpdateCheck dispatched to UI thread");
                 PeriodicAppUpdateCheck?.Invoke();
             });
-        }, null, interval, interval);
+        }, null, firstDelay, interval);
     }
 
     /// <summary>Callback set by MainWindow to trigger app update check from the periodic timer.</summary>

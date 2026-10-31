@@ -129,15 +129,61 @@ public partial class SettingsHandler
 
     // SkipUpdateToggle and VerboseLoggingToggle removed from UI — logic retained in ViewModel
 
-    public void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    /// <summary>Set while the Shader Management combo is changed from code (page open, Cancel revert).</summary>
+    private bool _suppressShaderModeChange;
+
+    /// <summary>Combo index for the saved shader mode: 0 = Off, 1 = RHI Managed, 2 = Custom.</summary>
+    private int SavedShaderModeIndex =>
+        ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
+
+    /// <summary>Selects the saved shader mode without triggering the change handler.</summary>
+    internal void SyncShaderModeCombo()
     {
-        if (sender is ComboBox combo)
+        _suppressShaderModeChange = true;
+        try { _window.CustomShadersCombo.SelectedIndex = SavedShaderModeIndex; }
+        finally { _suppressShaderModeChange = false; }
+    }
+
+    public async void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        try
         {
-            ViewModel.Settings.GlobalShadersOff = combo.SelectedIndex == 0;
-            ViewModel.Settings.UseCustomShaders = combo.SelectedIndex == 2;
+            if (_suppressShaderModeChange) return;
+            if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+            int previousIndex = SavedShaderModeIndex;
+            int newIndex = combo.SelectedIndex;
+            if (newIndex == previousIndex) return;
+
+            // Changing this redeploys shaders to every game straight away, so confirm first.
+            var confirm = new ContentDialog
+            {
+                Title = "Change shader management?",
+                Content = "RHI will update the shader files in all your ReShade games straight away to match this setting.",
+                PrimaryButtonText = "Change",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = combo.XamlRoot ?? _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(confirm);
+            if (result != ContentDialogResult.Primary)
+            {
+                CrashReporter.Log($"[SettingsHandler.CustomShadersCombo_SelectionChanged] Change to index {newIndex} cancelled — reverting");
+                SyncShaderModeCombo();
+                return;
+            }
+
+            ViewModel.Settings.GlobalShadersOff = newIndex == 0;
+            ViewModel.Settings.UseCustomShaders = newIndex == 2;
             ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[SettingsHandler.CustomShadersCombo_SelectionChanged] Shader management set to index {newIndex}; redeploying shaders");
             // Immediately sync shaders to all games so the setting takes effect without a manual refresh
             ViewModel.DeployAllShaders();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.CustomShadersCombo_SelectionChanged] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -209,7 +255,7 @@ public partial class SettingsHandler
                 : "Screenshot path, ReShade hotkeys, and effect list style";
             var dialog = new ContentDialog
             {
-                Title = "Screenshots & Hotkeys",
+                Title = "Keys and screenshots",
                 Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
@@ -250,7 +296,7 @@ public partial class SettingsHandler
     }
 
     /// <summary>
-    /// Handles the Apply to All Games button click for the HDR & Peak Brightness section.
+    /// Handles the "Write peak brightness to all games" button in the HDR & Peak Brightness section.
     /// Applies only peak nits to all managed reshade*.ini files.
     /// </summary>
     public async void ApplyPeakNitsToAll_Click(object sender, RoutedEventArgs e)

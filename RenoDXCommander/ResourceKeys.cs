@@ -214,6 +214,10 @@ public static class ResourceKeys
     public const string TextTertiaryBrush = "TextTertiaryBrush";
     /// <summary>Brush resource key for disabled text.</summary>
     public const string TextDisabledBrush = "TextDisabledBrush";
+    /// <summary>Brush resource key for Settings page labels.</summary>
+    public const string SettingsLabelBrush = "SettingsLabelBrush";
+    /// <summary>Brush resource key for Settings page help text and notes.</summary>
+    public const string SettingsHelpBrush = "SettingsHelpBrush";
 
     // ── Brush keys: Accent Teal ─────────────────────────────────────────
 

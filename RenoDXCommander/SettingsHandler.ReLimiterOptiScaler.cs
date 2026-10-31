@@ -157,7 +157,7 @@ public partial class SettingsHandler
     {
         if (sender is ComboBox combo && combo.SelectedIndex >= 0)
         {
-            ViewModel.Settings.OsDlssInputs = combo.SelectedIndex == 0; // 0=Yes, 1=No
+            ViewModel.Settings.OsDlssInputs = combo.SelectedIndex == 1; // 0=Off, 1=On
             ViewModel.SaveSettingsPublic();
         }
     }
@@ -215,12 +215,12 @@ public partial class SettingsHandler
         var settings = ViewModel.Settings;
         var items = new (string label, bool isOn)[]
         {
-            ("RS", !settings.GlobalSkipRsUpdates),
-            ("RDX", !settings.GlobalSkipRdxUpdates),
-            ("RL", !settings.GlobalSkipUlUpdates),
-            ("DC", !settings.GlobalSkipDcUpdates),
-            ("OS", !settings.GlobalSkipOsUpdates),
-            ("REF", !settings.GlobalSkipRefUpdates),
+            ("ReShade", !settings.GlobalSkipRsUpdates),
+            ("RenoDX", !settings.GlobalSkipRdxUpdates),
+            ("ReLimiter", !settings.GlobalSkipUlUpdates),
+            ("Display Commander", !settings.GlobalSkipDcUpdates),
+            ("OptiScaler", !settings.GlobalSkipOsUpdates),
+            ("RE Framework", !settings.GlobalSkipRefUpdates),
         };
         for (int i = 0; i < items.Length; i++)
         {
@@ -228,7 +228,7 @@ public partial class SettingsHandler
             tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
                 Text = $"{label}: ",
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.SettingsLabelBrush),
             });
             tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {

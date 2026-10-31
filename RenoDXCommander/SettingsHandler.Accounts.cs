@@ -240,7 +240,7 @@ public partial class SettingsHandler
         {
             _window.GitHubStatusText.Text       = hasPat ? "Using PAT · 5,000 req/hr" : "Not connected · 60 req/hr";
             _window.GitHubStatusText.Foreground = hasPat ? UIFactory.Brush(ResourceKeys.AccentGreenBrush) : UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-            _window.GitHubConnectBtn.Content    = "Connect GitHub";
+            _window.GitHubConnectBtn.Content    = "Sign in with GitHub instead";
             _window.GitHubDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
         }
 
@@ -273,7 +273,7 @@ public partial class SettingsHandler
                     _window.GitHubStatusText.Text      = "Failed to start authorisation. Check your connection and try again.";
                     _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     _window.GitHubConnectBtn.IsEnabled  = true;
-                    _window.GitHubConnectBtn.Content    = "Connect GitHub";
+                    _window.GitHubConnectBtn.Content    = "Sign in with GitHub instead";
                 });
                 return;
             }
@@ -307,7 +307,7 @@ public partial class SettingsHandler
                     _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     _window.GitHubDeviceCodePanel.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
                     _window.GitHubConnectBtn.IsEnabled  = true;
-                    _window.GitHubConnectBtn.Content    = "Connect GitHub";
+                    _window.GitHubConnectBtn.Content    = "Sign in with GitHub instead";
                 });
                 return;
             }

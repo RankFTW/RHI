@@ -182,6 +182,112 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
+         Settings page (MainWindow SettingsPanel): cards, rows, notes, buttons.
+         Row pattern: Grid [label * | control *, MaxWidth 210], ColumnSpacing 10.
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="SettingsLabelText">#FFC9D1DD</Color>
+    <Color x:Key="SettingsHelpText">#FF8C99AD</Color>
+    <SolidColorBrush x:Key="SettingsLabelBrush" Color="{StaticResource SettingsLabelText}"/>
+    <SolidColorBrush x:Key="SettingsHelpBrush"  Color="{StaticResource SettingsHelpText}"/>
+    <!-- Text on blue Settings buttons: a little brighter than AccentBlue -->
+    <SolidColorBrush x:Key="SettingsButtonBlueBrush" Color="#FF96BEE6"/>
+
+    <Style x:Key="SettingsCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="20,16"/>
+    </Style>
+    <Style x:Key="SettingsCardTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+    </Style>
+    <Style x:Key="SettingsCardDescStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="LineHeight" Value="17"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsHelpBrush}"/>
+    </Style>
+    <Style x:Key="SettingsHeadStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+    </Style>
+    <Style x:Key="SettingsLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsLabelBrush}"/>
+    </Style>
+    <Style x:Key="SettingsHelpStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="LineHeight" Value="15"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,-4,0,0"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsHelpBrush}"/>
+    </Style>
+    <Style x:Key="SettingsNoteStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsHelpBrush}"/>
+    </Style>
+    <Style x:Key="SettingsStatusStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="LineHeight" Value="17"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+    </Style>
+    <Style x:Key="SettingsComboStyle" TargetType="ComboBox">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource SurfaceInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+    </Style>
+    <!-- WinUI quirk: the hover/pressed text colour (ButtonForegroundPointerOver/Pressed) could stay after
+         the pointer left. Settings buttons keep their own text colour instead: SettingsCardsPanel.Resources
+         sets it to SettingsLabelBrush for grey buttons, and blue/red buttons override it in Button.Resources. -->
+    <Style x:Key="SettingsButtonStyle" TargetType="Button">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Padding" Value="12,5"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource SurfaceOverlayBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsLabelBrush}"/>
+    </Style>
+    <Style x:Key="SettingsPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SettingsButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource AccentBlueBgBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AccentBlueBorderBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource SettingsButtonBlueBrush}"/>
+    </Style>
+    <Style x:Key="SettingsDangerButtonStyle" TargetType="Button" BasedOn="{StaticResource SettingsButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource AccentRedBgBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AccentRedBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentRedBrush}"/>
+    </Style>
+    <Style x:Key="SettingsIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SettingsButtonStyle}">
+        <Setter Property="Padding" Value="9,5"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
          Card grid colors
          ═══════════════════════════════════════════════════════════════════════ -->
     <Color x:Key="CardBackground">#FF141820</Color>

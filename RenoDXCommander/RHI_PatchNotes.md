@@ -1,13 +1,16 @@
-⚠ **Add a GitHub Personal Access Token (PAT) — strongly recommended.** Almost everything RHI downloads comes from GitHub: ReShade, RenoDX, OptiScaler, DLSS versions, shader packs, Luma mods, manifests and update checks. Without a token, RHI is limited to **60 GitHub requests per hour**. That runs out quickly, and when it does, installs fail, update checks are skipped and components show as unavailable. A token raises the limit to **5,000 requests per hour**.
+⚠ **GitHub token: please replace yours, or add one if you haven't.**
 
-**How to add one (about a minute):**
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**.
-2. Give it any name, pick an expiry, and leave every scope unticked. It doesn't need any permissions.
-3. Copy the token, then in RHI open **Settings → GitHub API**, paste it into the token box and click **Save**.
+- **Security:** before v2.8.8, RHI also sent your GitHub token with downloads from other sites (such as ReShade, Nexus Mods and PCGamingWiki), not just GitHub. This was fixed in v2.8.8 and we have no sign it was misused, but to be on the safe side please replace it.
+- **Why have one:** almost everything RHI downloads comes from GitHub. Without a token RHI is limited to **60 GitHub requests per hour**, which runs out quickly; then installs fail, update checks are skipped and components show as unavailable. A token raises the limit to **5,000 per hour**.
 
-**Use a token rather than the "Sign in with GitHub" button.** Signing in is unreliable (sessions can expire without RHI noticing) and will likely be removed in a future update. If you currently use Sign in with GitHub, switch to a token.
+**How (about a minute):**
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens). If you already made one for RHI, delete it.
+2. Choose **Generate new token (classic)**, give it any name and expiry, and leave every scope unticked. It doesn't need any permissions.
+3. In RHI open **Settings → Accounts & Data → GitHub token**, paste it into the Token box and click **Save**.
 
-## v2.8.9 Beta
+If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke RHI at [github.com/settings/applications](https://github.com/settings/applications), and use a token instead. Sign-in is less reliable (sessions can expire without RHI noticing) and will likely be removed in a future update.
+
+## v2.8.9 Beta 2
 
 ### Changes
 
@@ -22,6 +25,22 @@
 - New buttons: Open relimiter.ini, Open DisplayCommander.ini and Open OptiScaler.ini.
 - Components with nothing to set (DOF Fix, ASI Loader, DLSS Enabler) and Luma on non-Unreal games now say so instead of showing an empty window.
 
+**Settings**
+- Settings is now organised into 8 sections: General, Accounts & Data, ReShade & RenoDX, Display & HDR, DLSS / Streamline, Driver Settings, Components, and Tools & Maintenance. Related settings are together (for example every update setting is in General › Updates), and DLSS / Streamline and Driver Settings use the same names as the sections in each game's panel. Nothing was removed.
+- Every setting now has the same layout: its name on the left, its option on the right, a short line of help where it's needed, and the full explanation when you hover it. Buttons are sized to their text, and the section list and settings are centred together on wide windows.
+- A list of the sections stays on the left as you scroll. Click one to jump to it; the section you're in is highlighted, and Settings reopens where you left it.
+- New "Find a setting" search box above that list. Type part of a setting's name or description to list every match and where it lives, then click one to jump to it.
+- General › Updates shows a countdown to the next automatic update check and when the last one ran. Pressing "Check for updates" restarts the 4-hour countdown.
+- Automatic update checks now run at least every 4 hours even if you restart RHI. Previously a restart could push the next full check out to nearly 8 hours.
+- "Subfolders" is now called "Folder per game", and the DLSS On-Screen Indicator and Drop Helper are marked as needing Admin Mode, like ReBAR.
+- The "Apply to All Games" buttons now say what they write: "Write these to all games" (ReShade keys, screenshot folder and effect list style), "Write peak brightness to all games", "Write to all ReLimiter games" and "Write key to all OptiScaler games".
+- Buttons that delete or reset things (Reset all game profiles, Clear shader cache, Purge staging files, Full refresh, Remove token, Sign out and Nexus Disconnect) are now red, and their confirmation windows have Cancel as the default.
+- Changing Shaders, Create missing profiles and applying a DLDSR state now ask first. Cancel leaves everything as it was.
+- Digital vibrance has moved to Display & HDR › Output colour, next to the other screen colour settings.
+- Toggles say Off / On everywhere (Automatic Updates, DLSS Inputs, DLSS and G-Sync On-Screen Indicator).
+- Added labels to the OptiScaler overlay key and the colour settings monitor, and tooltips to GPU Type, DLSS Inputs, the overlay keys, G-Sync On-Screen Indicator, Colour Depth and Dynamic Range. The FPS Limit tooltip now says that choosing a cap turns the per-game FPS limit off for ReLimiter and Display Commander games.
+- Clearer names: Update Inclusion is now Components to check › Choose, Cache All Shaders is Download all shaders, HDR Auto-Toggle is Windows HDR, Resolution Auto-Toggle is Change resolution, Mass Preset Install is ReShade preset, the folder buttons are RHI data, Downloads, Custom and Logs, and the GitHub sign-in button is "Sign in with GitHub instead" (a token is the recommended option). The components summary uses full names, and the "DC.ini" button is now "DisplayCommander.ini".
+
 **Quick Start**
 - The Quick Start guide has been rewritten to match the current app. It now covers Neural Rendering, the Extras section, OptiScaler's variants, RTX HDR and Auto HDR, the HDR and RES buttons and adding a GitHub token, and out-of-date steps have been corrected.
 
@@ -32,6 +51,7 @@
 - Fixed choosing a DLL name other than version.dll installing the wrong file. Each name now uses the mod's matching build. The name list now follows the mod's recommended order (version, winmm, dbghelp, dinput8, then dxgi or d3d12 as a last resort). winhttp.dll is no longer offered, and games using it are moved to version.dll.
 
 **OptiScaler**
+- Fixed automatic OptiScaler updates still showing the old version afterwards (for example 0.1.34 after updating to 0.1.35.1). The new files were installed, but the update stopped before recording the new version. Reinstall OptiScaler once on games that already show the old number.
 - Fixed applying an OptiScaler preset saved on F5 DLSSNR not switching the game to F5.
 - Fixed "Deploy OptiScaler.ini" (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
 
@@ -49,6 +69,12 @@
 
 **Hidden games**
 - Fixed hidden games still being changed in the background. RHI already left them out of Update All; now the automatic DLSS / Streamline, RTX 40 MFG, 20/30 FG Unlock, RTX Encore, NR Cost Scaler, ASI Loader and DLSS Enabler updates skip them too, along with the "apply to all" settings (screenshot path, peak nits, ReLimiter and OptiScaler hotkeys, deploy all addons and shaders). Show a game again, or use its own buttons, to update it.
+
+**Settings**
+- Fixed the ReShade overlay key, screenshot key and ReLimiter OSD key being lost if you left Settings without pressing Apply. They now save as soon as you press the key.
+- Fixed a typed screenshot folder, addon watch folder or peak nits value being lost unless you pressed Enter (or Apply). They now also save when you click away. A typed addon watch folder that doesn't exist isn't saved, and RHI tells you.
+- Fixed out-of-date text in Settings: the Nexus Mods description, and the pointers to each game's DLSS / Streamline and Driver Settings sections.
+- Fixed opening Settings for the first time redeploying shaders to every game.
 
 **Tooltips**
 - Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.

@@ -159,7 +159,7 @@ public sealed partial class MainWindow
             var capturedKeepGameName = card.GameName;
             var capturedKeepSource = card.Source ?? "";
             cog.AddCombo("Keep ReShade.ini Updated",
-                "No stops RHI from changing this game's reshade.ini when ReShade is installed or updated, or when you use Apply to All Games.",
+                "No stops RHI from changing this game's reshade.ini when ReShade is installed or updated, or when you use the Settings buttons that write to all games.",
                 new[] { "Yes", "No" },
                 ViewModel.GetKeepRsIniUpdated(capturedKeepGameName, capturedKeepSource) ? 0 : 1,
                 i =>

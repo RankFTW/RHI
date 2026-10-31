@@ -813,6 +813,9 @@ public partial class MainViewModel
                 {
                     _crashReporter.Log($"[MainViewModel.InitializeAsync] Background update check failed — {ex}");
                 }
+                // The cached-library path starts the 4 h timer after its background scan; a first
+                // launch (no saved library) only takes this path, so start it here too. No-op if running.
+                StartPeriodicUpdateCheckTimer();
             });
 
             _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();

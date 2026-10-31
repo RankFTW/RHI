@@ -238,6 +238,7 @@ public partial class SettingsHandler
                 Content = "This will delete cached DLSS, Streamline, and component staging files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
                 PrimaryButtonText = "Purge",
                 CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };

@@ -649,6 +649,18 @@ public sealed partial class MainWindow
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             if (!presetService.IsSupported) return;
 
+            var confirm = new ContentDialog
+            {
+                Title = "Create missing profiles?",
+                Content = "RHI will create an NVIDIA driver profile for every game in your library that doesn't have one. Hidden games are skipped and existing profiles are not changed.",
+                PrimaryButtonText = "Create",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirm) != ContentDialogResult.Primary) return;
+
             // Copy card data for background thread
             var cardData = ViewModel.AllCards
                 .Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))
@@ -1148,7 +1160,7 @@ public sealed partial class MainWindow
                 Content = "This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.",
                 PrimaryButtonText = "Clear",
                 CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
@@ -1213,8 +1225,8 @@ public sealed partial class MainWindow
             if (_dlssIndicatorInitializing) return;
             if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
 
-            // 0 = Enabled (0x400), 1 = Disabled (0x0)
-            uint value = combo.SelectedIndex == 0 ? 0x400u : 0u;
+            // 0 = Off (0x0), 1 = On (0x400)
+            uint value = combo.SelectedIndex == 1 ? 0x400u : 0u;
 
             try
             {
@@ -1257,7 +1269,7 @@ public sealed partial class MainWindow
     {
         if (_dlssIndicatorInitializing) return;
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
-        bool enabled = combo.SelectedIndex == 0;
+        bool enabled = combo.SelectedIndex == 1; // 0=Off, 1=On
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
         _ = Task.Run(() => presetService.SetGSyncIndicator(enabled));
     }
@@ -1772,6 +1784,18 @@ public sealed partial class MainWindow
             if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
                 return;
 
+            var confirm = new ContentDialog
+            {
+                Title = "Apply DLDSR state?",
+                Content = $"Your screen will go black for about 15 seconds while the driver applies '{selectedLabel}'.",
+                PrimaryButtonText = "Apply",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirm) != ContentDialogResult.Primary) return;
+
             DldsrApplyBtn.IsEnabled = false;
             DldsrApplyBtn.Content = "Applying...";
 
@@ -1927,6 +1951,7 @@ public sealed partial class MainWindow
                 Content = $"Delete the capture '{selectedLabel}'?",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = Content.XamlRoot,
             };
 
@@ -2092,11 +2117,8 @@ public sealed partial class MainWindow
     {
         if (e.Key == Windows.System.VirtualKey.Enter)
         {
-            if (sender is Microsoft.UI.Xaml.Controls.TextBox box && int.TryParse(box.Text, out var val) && val > 0)
+            if (sender is Microsoft.UI.Xaml.Controls.TextBox box && TrySavePeakNitsFromBox(box))
             {
-                ViewModel.Settings.PeakNits = val;
-                AuxInstallService.GlobalPeakNits = val;
-                ViewModel.SaveSettingsPublic();
                 box.IsEnabled = false;
                 box.IsEnabled = true;
             }

@@ -44,12 +44,16 @@ public partial class SettingsHandler
     {
         try
         {
+            bool settingsWasOpen = _window.SettingsPanel.Visibility == Visibility.Visible;
             ViewModel.NavigateToSettingsCommand.Execute(null);
             _window.GameViewPanel.Visibility = Visibility.Collapsed;
             _window.SettingsPanel.Visibility = Visibility.Visible;
             _window.LoadingPanel.Visibility = Visibility.Collapsed;
+            // Nav column / search / update countdown (one-time setup) + scroll to the last section
+            OnSettingsPageOpened(settingsWasOpen);
             // Sync toggle state with ViewModel
-            _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
+            // (without triggering the change handler, which confirms and redeploys shaders)
+            SyncShaderModeCombo();
             _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
             // Show installed Windows App Runtime version
             // Populate addon watch folder textbox
@@ -106,7 +110,7 @@ public partial class SettingsHandler
                 gpuCombo.SelectedIndex = 0; // Default to NVIDIA
 
             // Initialize DLSS inputs combo and visibility
-            _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 0 : 1; // 0=Yes, 1=No
+            _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 1 : 0; // 0=Off, 1=On
             bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
             _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
 
@@ -147,7 +151,7 @@ public partial class SettingsHandler
                 }
                 catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.SettingsButton_Click] Failed to read DLSS indicator registry value — {ex.Message}"); }
             });
-            _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
+            _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 1 : 0; // 0=Off, 1=On
             // Keep _dlssIndicatorInitializing = true until ALL NVAPI combos are populated below.
             // Setting it false here was too early — GSyncIndicator and other combos further down
             // would fire their SelectionChanged handlers, each calling SetGSyncIndicator / SetGSyncMode etc.
@@ -168,7 +172,9 @@ public partial class SettingsHandler
             // Initialize HDR auto-toggle combo
             _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
 
-            // Initialize Resolution Control (dev-only)
+            // Initialize Resolution Control (FeatureFlags.ResolutionControl is always true).
+            // ResolutionControlCard is the whole Display card, which also holds HDR Auto-Toggle;
+            // if this flag ever becomes switchable, hide only the resolution/colour rows instead.
             if (FeatureFlags.ResolutionControl)
             {
                 _window.ResolutionControlCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
@@ -202,6 +208,9 @@ public partial class SettingsHandler
                 {
                     // No NVIDIA displays found — hide the colour controls
                     _window.ColorDisplayCombo.Visibility  = Microsoft.UI.Xaml.Visibility.Collapsed;
+                    // Also hide its "Monitor" label (the combo's unnamed parent row)
+                    if (_window.ColorDisplayCombo.Parent is FrameworkElement displayRow)
+                        displayRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
                     _window.ColorDepthCombo.IsEnabled     = false;
                     _window.ColorRangeCombo.IsEnabled     = false;
                     _window.ColorApplyBtn.IsEnabled       = false;
@@ -479,6 +488,7 @@ public partial class SettingsHandler
                 inner.Children.Add(btnRow);
                 card.Child = inner;
                 _window.SettingsCardsPanel.Children.Add(card);
+                HideNewCardWhileSearching(card);
             }
 
             RefreshGitHubStatus();
@@ -486,6 +496,11 @@ public partial class SettingsHandler
         catch (Exception unhandledEx)
         {
             CrashReporter.Log($"[SettingsHandler.SettingsButton_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
+        finally
+        {
+            // Populating can change heights above the restored section: re-apply the scroll if untouched
+            OnSettingsPagePopulated();
         }
     }
 
@@ -506,7 +521,7 @@ public partial class SettingsHandler
         _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
 
         // G-Sync Indicator (uses snapshot value now)
-        _window.GSyncIndicatorCombo.SelectedIndex = snapshot.GSyncIndicator == true ? 0 : 1; // 0=Enabled, 1=Disabled
+        _window.GSyncIndicatorCombo.SelectedIndex = snapshot.GSyncIndicator == true ? 1 : 0; // 0=Off, 1=On
 
         // G-Sync Enable
         _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();

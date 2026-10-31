@@ -659,6 +659,8 @@ public partial class MainViewModel
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Background scan failed — {ex.Message}");
             _crashReporter.WriteCrashReport("RunBackgroundScanAndMergeAsync", ex);
             // Leave cached cards in place — user sees stale data but app remains functional
+            // Still schedule the 4 h update checks if the scan failed before starting them (no-op if running).
+            if (isStartup) StartPeriodicUpdateCheckTimer();
         }
         finally
         {

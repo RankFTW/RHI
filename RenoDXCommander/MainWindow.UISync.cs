@@ -70,7 +70,7 @@ public sealed partial class MainWindow
                         // Show one-line notice if the GitHub token was found to be expired/revoked at startup
                         if (App._gitHubTokenExpiredOnStartup)
                         {
-                            var msg = "⚠ GitHub session expired — go to Settings → GitHub API and re-connect to restore the download rate limit";
+                            var msg = "⚠ GitHub session expired — go to Settings → Accounts & Data and re-connect to restore the download rate limit";
                             _ = System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
                                 DispatcherQueue?.TryEnqueue(() =>
                                 {
