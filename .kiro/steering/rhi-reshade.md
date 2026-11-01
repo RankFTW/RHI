@@ -85,6 +85,13 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - Skip extracting `reshade.ini` from zip. Pass screenshot/hotkey/game params to `MergeRsIni`.
 - Cannot move `MergeRsIni` after extraction — `AddonPath` must be present before extraction.
 
+## Load ReShade as ASI (per game)
+- ReShade ⚙ › Loading › "Load ReShade as ASI" (Off/On). Stored in `GameNameService.RsAsiGames` (composite key, saved as `RsAsiGames`). `MainViewModel.ReShadeAsi.cs`: `GetRsAsiMode` / `SetRsAsiModeAsync` (renames the installed file; returns an error message and leaves the setting unchanged if it can't).
+- Name: `AuxInstallService.RsAsiName(is32Bit)` = `ReShade64.asi` / `ReShade32.asi`. RHI only renames; it does NOT install an ASI loader (user's choice).
+- `AuxInstallService.RsAsiModeResolver` (wired in `MainViewModel.Init`) makes `InstallReShadeAsync` deploy as the .asi for every install/update/Update All path, ahead of DLL overrides.
+- While on: ReShade's DLL name dropdown in Game Overrides is disabled (reason on the "ReShade" label), and `ApplyManifestDllRenames` / `ReconcileDefaultNaming` skip the ReShade rename. Off: name = user DLL override → manifest name → API default; `ReShade64.dll` if OptiScaler holds that name.
+- Hidden for Vulkan games (global layer). Separate from the ShortFuse auto-config, which renames to `Reshade64.asi` on its own.
+
 ## GAC Symlink Games (XNA Framework)
 - Games load DLLs from GAC (`C:\Windows\Microsoft.NET\assembly\GAC_32\...`)
 - Manifest field `gacSymlinkGames`: game name → GAC directory path

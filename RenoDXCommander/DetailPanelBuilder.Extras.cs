@@ -74,7 +74,7 @@ public partial class DetailPanelBuilder
         bool dgvInstalled = !string.IsNullOrEmpty(installPath) && dgSvc.IsDeployed(installPath);
         var exSummaryEntries = new List<(string, string?)>();
         if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
-        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", "On"));
+        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("Universal MFG", "On"));
         if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Ada", "On"));
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
@@ -128,7 +128,7 @@ public partial class DetailPanelBuilder
         BuildDlssg2030Row(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
-        // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
+        // ── Universal MFG Unlocker row ─────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
         BuildRtx40MfgRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] Rtx40MfgRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");

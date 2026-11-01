@@ -54,6 +54,12 @@ public interface IOptiScalerService
     Task<bool> CheckOptiPatcherUpdateAsync();
 
     /// <summary>
+    /// Moves OptiPatcher.asi from &lt;game&gt;\plugins into OptiScaler\plugins for every game with an
+    /// OptiScaler 10 build (nightly, F5, DLSS NR), where older RHI versions put it in the wrong place.
+    /// </summary>
+    void MoveOptiPatcherForAllGames();
+
+    /// <summary>
     /// Checks the GitHub releases API for a newer version than the staged one.
     /// Sets <see cref="HasUpdate"/> accordingly.
     /// </summary>

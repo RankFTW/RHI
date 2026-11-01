@@ -1,7 +1,7 @@
 // MainWindow.Events.Components.OptiScaler.cs — OptiScaler cog dialog handler (OsCogButton_Click).
 // Uses the CogDialog shell (title, sections, buttons, status line) with a compact two-per-row
 // settings grid (AddOsGrid) because OptiScaler has many settings; explanations are tooltips.
-// Sections live in .OptiScaler.Sections.cs, the pinned footer (presets + Deploy OptiScaler.ini)
+// Sections live in .OptiScaler.Sections.cs, presets in .OptiScaler.Presets.cs, the pinned footer (Open / Replace OptiScaler.ini)
 // in .OptiScaler.Footer.cs.
 
 using System;
@@ -338,6 +338,9 @@ public sealed partial class MainWindow
                     ? "Install OptiScaler on this game to change these settings. The version and nightly build can be chosen before installing."
                     : "Install OptiScaler on this game to change these settings. The version can be chosen before installing."));
 
+            // ── Presets (all versions) ───────────────────────────────────────
+            cog.AddContent(BuildOsPresetsPanel(ctx));
+
             // ── Version ──────────────────────────────────────────────────────
             var variantItems = new[] { "Stable", "Nightly", "DLSS NR", "F5 DLSSNR" };
             var variantDisplay = variant switch { "DlssNr" => "DLSS NR", "F5" => "F5 DLSSNR", _ => variant };
@@ -471,7 +474,7 @@ public sealed partial class MainWindow
                 }
             }
 
-            var footer = BuildOsCogFooter(ctx, hasAdvanced, isInstalled);
+            var footer = BuildOsCogFooter(ctx, isInstalled);
             await cog.ShowAsync(footer);
         }
         catch (Exception ex)

@@ -137,6 +137,7 @@ public partial class MainViewModel
             var dlssManifestTask2 = Task.Run(async () => {
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS manifest fetch failed — {ex.Message}"); }
+                await OsPresetService.FetchManifestAsync(_http);
             });
             var dxvkTask     = Task.Run(async () => {
                 try
@@ -461,6 +462,8 @@ public partial class MainViewModel
                     // Compare file contents rather than HasUpdate: EnsureStagingAsync clears HasUpdate
                     // after downloading, so a flag check here never fired. This also catches up games
                     // that missed an earlier update (e.g. game was running).
+                    _optiScalerService.MoveOptiPatcherForAllGames(); // one-off fix for nightly / F5 / DLSS NR installs
+                    ReconcileMfgPlacementForAllGames();              // mod as OptiScaler plugin where OptiScaler 10 is installed
                     _rtx40MfgService.UpdateInstalledGames(GetRtx40MfgInstalls());
                     UpdateDlssg2030Installs();
                 }

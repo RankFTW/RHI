@@ -37,6 +37,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _dxvkWarningDismissed;
     [ObservableProperty] private bool _mfgWarningDismissed;
     [ObservableProperty] private bool _engineBadgeWarningDismissed;
+    [ObservableProperty] private bool _umfgReShadeWarningDismissed;
     [ObservableProperty] private bool _lumaRenodxCombinedWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
     [ObservableProperty] private bool _firstLaunchSetupDone;
@@ -282,6 +283,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("EngineBadgeWarningDismissed", out var ebwdVal))
             EngineBadgeWarningDismissed = ebwdVal == "true";
 
+        if (s.TryGetValue("UmfgReShadeWarningDismissed", out var urwdVal))
+            UmfgReShadeWarningDismissed = urwdVal == "true";
+
         if (s.TryGetValue("EnabledGlobalAddons", out var egaVal))
         {
             try
@@ -478,6 +482,7 @@ public partial class SettingsViewModel : ObservableObject
         s["DxvkWarningDismissed"] = DxvkWarningDismissed ? "true" : "false";
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EngineBadgeWarningDismissed"] = EngineBadgeWarningDismissed ? "true" : "false";
+        s["UmfgReShadeWarningDismissed"] = UmfgReShadeWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
         s["FirstLaunchSetupDone"] = FirstLaunchSetupDone ? "true" : "false";
         s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";

@@ -304,6 +304,7 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Luma fetch failed — {ex.Message}"); }
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
+                await OsPresetService.FetchManifestAsync(_http);
 
                 // Check and re-stage Cost Scaler + RTX40MFG, auto-deploy to installed games
                 try

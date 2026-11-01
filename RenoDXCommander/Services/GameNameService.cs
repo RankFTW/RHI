@@ -43,6 +43,7 @@ public class GameNameService : IGameNameService
     private HashSet<string> _normalReShadeGames = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Games where RHI should NOT automatically re-merge reshade.ini. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _rsIniLockedGames = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _rsAsiGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _folderOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _vulkanRenderingPaths = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _bitnessOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -187,6 +188,7 @@ public class GameNameService : IGameNameService
     public HashSet<string> NormalReShadeGames => _normalReShadeGames;
     /// <summary>Games where reshade.ini auto-update is locked (Keep ReShade.ini Updated = No).</summary>
     public HashSet<string> RsIniLockedGames => _rsIniLockedGames;
+    public HashSet<string> RsAsiGames => _rsAsiGames;
     public Dictionary<string, string> FolderOverrides => _folderOverrides;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
     public Dictionary<string, string> VulkanRenderingPaths => _vulkanRenderingPaths;
@@ -351,6 +353,7 @@ public class GameNameService : IGameNameService
         _lumaDisabledGames      = new(StringComparer.OrdinalIgnoreCase);
         _normalReShadeGames     = new(StringComparer.OrdinalIgnoreCase);
         _rsIniLockedGames       = new(StringComparer.OrdinalIgnoreCase);
+        _rsAsiGames             = new(StringComparer.OrdinalIgnoreCase);
         _hiddenGames            ??= new(StringComparer.OrdinalIgnoreCase);
         _favouriteGames         ??= new(StringComparer.OrdinalIgnoreCase);
 
@@ -488,6 +491,10 @@ public class GameNameService : IGameNameService
 
         _rsIniLockedGames = new HashSet<string>(
             Load<List<string>>("RsIniLockedGames", new()),
+            StringComparer.OrdinalIgnoreCase);
+
+        _rsAsiGames = new HashSet<string>(
+            Load<List<string>>("RsAsiGames", new()),
             StringComparer.OrdinalIgnoreCase);
 
         _gameRenames = new(Load<Dictionary<string, string>>("GameRenames",
@@ -855,6 +862,7 @@ public class GameNameService : IGameNameService
                 s["LumaDisabledGames"]  = JsonSerializer.Serialize(_lumaDisabledGames.ToList());
                 s["NormalReShadeGames"] = JsonSerializer.Serialize(_normalReShadeGames.ToList());
                 s["RsIniLockedGames"]   = JsonSerializer.Serialize(_rsIniLockedGames.ToList());
+                s["RsAsiGames"]         = JsonSerializer.Serialize(_rsAsiGames.ToList());
                 s["GameRenames"]         = JsonSerializer.Serialize(_gameRenames);
                 s["DllOverrides"]        = JsonSerializer.Serialize(dllOverrideService.GetUserOverridesForSave());
                 s["ManifestDllOptOuts"]  = JsonSerializer.Serialize(dllOverrideService.ManifestDllOverrideOptOuts.ToList());
@@ -1050,6 +1058,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_lumaDisabledGames, oldName, newName);
         MigrateCompositeHashSet(_normalReShadeGames, oldName, newName);
         MigrateCompositeHashSet(_rsIniLockedGames, oldName, newName);
+        MigrateCompositeHashSet(_rsAsiGames, oldName, newName);
         MigrateCompositeHashSet(_osDeployStreamline, oldName, newName);
         MigrateCompositeHashSet(_dgVoodooStandaloneGames, oldName, newName);
         MigrateCompositeDict(_dgVoodooVersionOverride, oldName, newName);

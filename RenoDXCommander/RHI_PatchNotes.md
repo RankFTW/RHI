@@ -10,7 +10,7 @@
 
 If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke RHI at [github.com/settings/applications](https://github.com/settings/applications), and use a token instead. Sign-in is less reliable (sessions can expire without RHI noticing) and will likely be removed in a future update.
 
-## v2.8.9 Beta 2
+## v2.8.9 Beta 3
 
 ### New
 
@@ -20,8 +20,21 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 **Status bar**
 - The bottom-left of the window now shows what RHI is doing in the background, such as checking for new games, checking for updates or updating DLSS. When nothing is running it shows when RHI last checked for updates and when the next check is due. The game and ReShade counts are still shown above the game list.
 
+**Load ReShade as ASI**
+- ReShade's ⚙ has a new Load ReShade as ASI option. Turning it on renames ReShade to `ReShade64.asi` (`ReShade32.asi` for 32-bit games), so an ASI loader can load it. Turning it off puts the normal DLL name back. Installs, updates and Update All keep the `.asi` name. While it's on, ReShade's DLL name in Game Overrides is greyed out. RHI doesn't install an ASI loader for you; use ASI Loader in Extras or another loader. Not available for Vulkan games.
+
 **Find a setting**
 - A search box at the top of Settings. Type part of a setting's name or description to list every match and where it lives, then click one to jump straight to it.
+
+**OptiScaler presets**
+- OptiScaler's ⚙ now opens with a Presets panel, on every OptiScaler version including Stable. Recommended presets are one click:
+  - **Real DLSS FG**: NVIDIA's own DLSS frame generation, with Reflex forced on.
+  - **DLSS Enabler FG**: DLSS frame generation through DLSS Enabler, for cards without it.
+  - **UMFG XeFG**: XeSS frame generation with Universal MFG Unlocker, which is installed if the game doesn't have it yet.
+- Each one turns frame generation on and installs Streamline and DLSS Enabler at the latest Streamline version. The preset that matches the game's current settings is ticked. Hover a preset to see what it does.
+- Recommended presets are updated from RHI's GitHub, so new ones can arrive without an app update.
+- Your own four preset slots are now one dropdown with Apply, Save current (Overwrite for a slot that's in use) and a ... button to rename or clear a slot.
+- "Deploy OptiScaler.ini" is now "Replace with a fresh copy..." at the bottom of the ⚙, next to Open OptiScaler.ini, and asks before replacing the file.
 
 ### Changes
 
@@ -83,6 +96,16 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - New buttons: Open relimiter.ini, Open DisplayCommander.ini and Open OptiScaler.ini.
 - Components with nothing to set (DOF Fix, ASI Loader, DLSS Enabler), and Luma on non-Unreal games, now say so instead of showing an empty window.
 
+**Universal MFG Unlocker**
+- RTX 40 MFG is now called Universal MFG Unlocker, matching the mod's new name. It now also supports RTX 30 cards (RTX 20 is experimental) and XeSS frame generation on any GPU. Its links point to the mod's new GitHub page. Existing installs carry on working, with nothing to reinstall.
+- RHI now also installs the two Intel files the mod's XeSS frame generation needs (`libxess_fg.dll` and `libxell.dll`, in an `RTXMFG-XeSS` folder next to the mod). Before, ticking "XeMFG standalone" in the mod's menu said these files were missing. Games that already have the mod get them automatically on the next launch. If you put your own copies there, RHI leaves them alone. Removing the mod removes RHI's copies.
+- With OptiScaler nightly, F5 or DLSS NR in the same game, Universal MFG Unlocker now installs the way its author recommends: as an OptiScaler plugin (`OptiScaler\plugins\MFGUnlocker.asi`) instead of a separate DLL next to the game's exe. Installing OptiScaler moves an existing copy of the mod there, and games that already have both are moved on the next launch. Removing OptiScaler moves the mod back out under its previous DLL name. Choose DLSS multi frame generation or XeMFG with FG Output in OptiScaler's ⚙ (DLSSG or XeFG). Stable OptiScaler (0.9) isn't supported by the mod, so nothing changes there.
+- The ⚙ window explains XeMFG and shows whether the XeSS files are installed. It also warns when ReShade is installed as dxgi.dll, which can stop some XeMFG frames at 5x and 6x from reaching the screen. Its tip for frames freezing above 2x now points to the Frame Generation preset in the game's DLSS / Streamline section instead of the NVIDIA App.
+- Installing Universal MFG Unlocker in a game that has ReShade now warns that the mod's XeSS frame generation ("XeMFG standalone") doesn't start while ReShade is loaded, whether ReShade is a DLL or an ASI, and points to OptiScaler as the way to use XeMFG with ReShade. DLSS multi frame generation isn't affected. Choose Continue or Cancel, and tick "Don't show this again" to stop the warning.
+
+**MFG Ada Unlock**
+- Its tooltip and ⚙ window now cover the mod's new Intel XeMFG mode (2x to 6x on RTX 20 to RTX 50 Series), and explain how to get its XeSS files from the mod's own panel.
+
 **20/30 FG Unlock**
 - The ⚙ window now has the mod's main settings. Each one is a dropdown, so you can't enter a value that would switch frame generation off:
   - Frame Generation on/off
@@ -111,6 +134,10 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ### Bug Fixes
 
+**OptiScaler plugins (nightly, F5 and DLSS NR)**
+- Fixed OptiPatcher never loading with the nightly, F5 and DLSS NR builds of OptiScaler. These builds load plugins from `OptiScaler\plugins`, but RHI put OptiPatcher in a `plugins` folder next to the game's exe, which only the stable build reads. RHI now uses the right folder, and moves OptiPatcher there in games that already have it on the next launch.
+- Fixed OptiScaler updates deleting everything in `OptiScaler\plugins`, including OptiPatcher and DXVK DLLs that RHI moved there so DXVK and OptiScaler can work together. Removing OptiScaler also no longer deletes those DXVK DLLs before moving them back next to the game's exe.
+
 **Game page**
 - Fixed the Update inclusion line in Game Overrides showing RenoDX, ReLimiter, Display Commander, OptiScaler or RE Framework as "On" when that component is switched off in Settings. Its heading is now "Update inclusion" instead of "Global update inclusion", because it only affects that game.
 - Fixed the ReShade version looking like a link when an update was available (or on Vulkan games) but doing nothing when clicked. It now opens reshade.me.
@@ -123,7 +150,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 **OptiScaler**
 - Fixed automatic OptiScaler updates still showing the old version afterwards (for example 0.1.34 after updating to 0.1.35.1). The new files were installed, but the update stopped before saving the new version number. On games that already show the old number, reinstall OptiScaler once.
-- Fixed "Deploy OptiScaler.ini" (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, your DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
+- Fixed replacing a game's OptiScaler.ini from the ⚙ (and the mass OptiScaler.ini deploy) always using the NVIDIA template. It now uses the same template as a fresh install: the one for your GPU type, your DLSS Inputs setting and the game's OptiScaler variant (including DLSS NR and F5).
 - Fixed applying an OptiScaler preset saved on F5 DLSSNR not switching the game to F5.
 - Fixed changing OptiScaler's Upscaler API also rewriting the game's upscaler choice in OptiScaler.ini.
 - Fixed choosing "--------" for the OptiScaler DLL name on a Vulkan game renaming it to dxgi.dll, which doesn't load there. It now goes back to winmm.dll, the name RHI uses for OptiScaler on Vulkan games.
@@ -146,7 +173,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 **Hidden games**
 - Fixed hidden games still being changed in the background. Update All already skipped them. Now these skip them too:
-  - automatic DLSS / Streamline, RTX 40 MFG, 20/30 FG Unlock, RTX Encore, NR Cost Scaler, ASI Loader and DLSS Enabler updates
+  - automatic DLSS / Streamline, Universal MFG Unlocker, 20/30 FG Unlock, RTX Encore, NR Cost Scaler, ASI Loader and DLSS Enabler updates
   - the "apply to all" settings (screenshot folder, peak brightness, ReLimiter and OptiScaler keys, and deploying all addons and shaders)
 
   To update a hidden game, show it again or use its own buttons.
@@ -165,7 +192,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Fixed out-of-date tooltips:
   - Update All now lists every component it updates.
   - The Neural Rendering "Deploy DLL" button no longer mentions the old addon picker.
-  - RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.
+  - Universal MFG Unlocker no longer refers to the old `RTXMFG.dll` file name.
 
 ### Manifest Updates
 - Added dgVoodoo2 v2.87.6, now the default version for new installs.

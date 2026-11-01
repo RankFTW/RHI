@@ -77,6 +77,9 @@ public interface IGameNameService
     /// <summary>Games where reshade.ini auto-update is locked. Composite-keyed "GameName|Store".</summary>
     HashSet<string> RsIniLockedGames { get; }
 
+    /// <summary>Games where ReShade is installed as ReShade64.asi / ReShade32.asi (loaded by an ASI loader). Composite-keyed "GameName|Store".</summary>
+    HashSet<string> RsAsiGames { get; }
+
     /// <summary>Per-game install folder overrides.</summary>
     Dictionary<string, string> FolderOverrides { get; }
 

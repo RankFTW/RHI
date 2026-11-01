@@ -593,7 +593,7 @@ public partial class DetailPanelBuilder
         var ualName = _window.ViewModel.GetUalInstalledAs(card.GameName, card.Source ?? "");
         if (!string.IsNullOrEmpty(ualName)) rhiConflicts[ualName] = "ASI Loader";
         var mfgName = _window.ViewModel.GetRtx40MfgInstalledAs(card.GameName, card.Source ?? "");
-        if (!string.IsNullOrEmpty(mfgName)) rhiConflicts[mfgName] = "RTX 40 MFG";
+        if (!string.IsNullOrEmpty(mfgName)) rhiConflicts[mfgName] = "Universal MFG Unlocker";
         var fgName = _window.ViewModel.GetDlssg2030InstalledAs(card.GameName, card.Source ?? "");
         if (!string.IsNullOrEmpty(fgName)) rhiConflicts[fgName] = "20/30 FG Unlock";
         if (!string.IsNullOrEmpty(currentDllName)) rhiConflicts.Remove(currentDllName);

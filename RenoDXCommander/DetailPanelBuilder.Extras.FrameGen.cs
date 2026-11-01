@@ -1,4 +1,4 @@
-// DetailPanelBuilder.Extras.FrameGen.cs — Extras section: DLSSG 20/30 and RTX 40 MFG rows with their DLL pickers.
+// DetailPanelBuilder.Extras.FrameGen.cs — Extras section: DLSSG 20/30 and Universal MFG Unlocker rows with their DLL pickers.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -26,6 +26,56 @@ public partial class DetailPanelBuilder
         "xinput1_2.dll", "xinput1_3.dll", "xinput1_4.dll", "xinput9_1_0.dll",
         "xinputuap.dll",
     };
+
+    /// <summary>
+    /// Warns that XeMFG standalone doesn't start while ReShade is installed. Returns true to continue.
+    /// "Don't show this again" is saved even when the user cancels.
+    /// </summary>
+    private async System.Threading.Tasks.Task<bool> ShowUmfgReShadeWarningAsync(XamlRoot? xamlRoot)
+    {
+        xamlRoot ??= _window.Content.XamlRoot;
+        if (xamlRoot == null) return true;
+
+        var dontShowCheck = new CheckBox
+        {
+            Content = "Don't show this again",
+            FontSize = 12,
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+        var content = new StackPanel { Spacing = 4 };
+        content.Children.Add(new TextBlock
+        {
+            Text = "ReShade is installed in this game. Universal MFG Unlocker's XeSS frame generation (\"XeMFG standalone\" in its menu) "
+                 + "doesn't start while ReShade is loaded: the mod's menu shows \"Waiting menu_factory_not_dxgi\". "
+                 + "This happens whether ReShade is installed as a DLL or as an ASI.\n\n"
+                 + "DLSS multi frame generation works as normal. To use XeMFG with ReShade, install OptiScaler (nightly, F5 or DLSS NR) "
+                 + "and set FG Output to XeFG in OptiScaler's settings; RHI then installs the mod as an OptiScaler plugin.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            LineHeight = 22,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
+        content.Children.Add(dontShowCheck);
+
+        var dialog = new ContentDialog
+        {
+            Title = "XeMFG and ReShade",
+            Content = content,
+            PrimaryButtonText = "Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (dontShowCheck.IsChecked == true)
+        {
+            _window.ViewModel.Settings.UmfgReShadeWarningDismissed = true;
+            _window.ViewModel.SaveSettingsPublic();
+        }
+        return result == ContentDialogResult.Primary;
+    }
 
     private void BuildDlssg2030Row(GameCardViewModel card, StackPanel body)
     {
@@ -323,6 +373,7 @@ public partial class DetailPanelBuilder
         bool isInstalled   = card.Rtx40MfgInstalled;
         bool addonConflict = card.MfgAdaInstalled;
         var currentDllName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store);
+        bool isPluginInstall = isInstalled && Rtx40MfgService.IsPluginInstall(currentDllName); // loaded by OptiScaler
 
         // Status
         string statusText  = isInstalled ? (mfgSvc.StagedVersion ?? "Installed") : "Ready";
@@ -339,12 +390,13 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "RTX 40 MFG",
+            Text = "Universal MFG Unlocker",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
+            TextWrapping = TextWrapping.Wrap, // long name; wraps instead of clipping in the 120 px column
         };
-        ToolTipService.SetToolTip(label, "RTX 40 MFG Unlock — enables DLSS Multi Frame Generation multipliers beyond 2x (up to 6x) on RTX 40 Series GPUs. Standalone DLL, no ASI Loader required.");
+        ToolTipService.SetToolTip(label, "Universal MFG Unlocker (formerly RTX 40 MFG Unlock) — DLSS Multi Frame Generation beyond 2x (up to 6x) on RTX 40 and RTX 30 Series GPUs (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. Standalone DLL, no ASI Loader required. RHI also installs Intel's XeSS files that XeMFG needs.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -362,7 +414,7 @@ public partial class DetailPanelBuilder
         {
             ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases page");
             statusBlock.PointerPressed += (s, e) =>
-                _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock/releases"));
+                _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/MFG-Unlocker/releases"));
             AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
@@ -382,16 +434,16 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open RTX 40 MFG Unlock GitHub page");
+        ToolTipService.SetToolTip(infoBtn, "Open the Universal MFG Unlocker GitHub page");
         infoBtn.Click += (s, e) =>
-            _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock"));
+            _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/MFG-Unlocker"));
         Grid.SetColumn(infoBtn, 2);
         row.Children.Add(infoBtn);
 
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall RTX 40 MFG" : "⬇  Install RTX 40 MFG",
+            Content = isInstalled ? "↺  Reinstall Universal MFG Unlocker" : "⬇  Install Universal MFG Unlocker",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -413,35 +465,72 @@ public partial class DetailPanelBuilder
             installBtn.IsEnabled = false;
             installBtn.Opacity   = 0.35;
             installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is already installed and conflicts with RTX 40 MFG Unlock. Remove it from the addon picker first.");
+            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is already installed and conflicts with Universal MFG Unlocker. Remove it from the addon picker first.");
         }
         else
         {
-            ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall RTX 40 MFG Unlock (currently deployed as {currentDllName})"
-                : "Install RTX 40 MFG Unlock — deploys the unlock DLL under a name you choose");
+            // Cheap check for the tooltip only; the click handler checks OptiScaler's install record
+            bool osPluginLikely = card.IsOsInstalled && !string.IsNullOrEmpty(installPath)
+                && System.IO.Directory.Exists(System.IO.Path.Combine(installPath, "OptiScaler"));
+            ToolTipService.SetToolTip(installBtn,
+                isPluginInstall ? $"Reinstall Universal MFG Unlocker (loaded by OptiScaler from {currentDllName})"
+                : osPluginLikely ? (isInstalled
+                    ? $"Reinstall Universal MFG Unlocker. OptiScaler is installed, so it moves from {currentDllName} into OptiScaler\\plugins."
+                    : "Install Universal MFG Unlocker as an OptiScaler plugin (OptiScaler\\plugins\\MFGUnlocker.asi), as its author recommends with OptiScaler.")
+                : isInstalled ? $"Reinstall Universal MFG Unlocker (currently deployed as {currentDllName})"
+                : "Install Universal MFG Unlocker — deploys the unlock DLL under a name you choose");
         }
 
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
+            var vm = _window.ViewModel;
 
-            var chosen = await ShowMfgDllPickerAsync(card, currentDllName);
-            if (chosen == null) return;
+            // With an OptiScaler 10 build installed by RHI the mod goes in OptiScaler\plugins (no name to pick).
+            // Read the live location too: it can have moved since this panel was built.
+            bool asPlugin    = await Task.Run(() => vm.IsOptiScalerPluginHost(card));
+            var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
+            bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
+
+            // XeMFG standalone can't start while ReShade hooks DXGI (the mod reports menu_factory_not_dxgi).
+            // Through OptiScaler it works, so no warning there.
+            if (!asPlugin && card.IsRsInstalled && !card.RequiresVulkanInstall
+                && !vm.Settings.UmfgReShadeWarningDismissed
+                && !await ShowUmfgReShadeWarningAsync(installBtn.XamlRoot))
+                return;
+
+            string? chosen;
+            if (asPlugin)
+                chosen = Rtx40MfgService.PluginRelPath;
+            else
+            {
+                chosen = await ShowMfgDllPickerAsync(card, Rtx40MfgService.IsPluginInstall(liveDllName) ? null : liveDllName);
+                if (chosen == null) return;
+            }
 
             installBtn.IsEnabled = false;
             installBtn.Content   = "Installing...";
             try
             {
-                // If reinstalling with a different name, remove the old one first
-                if (isInstalled && !string.IsNullOrEmpty(currentDllName)
-                    && !currentDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
-                    mfgSvc.Uninstall(installPath, currentDllName);
+                // Proxy → plugin: move it so the old proxy name is remembered for when OptiScaler is removed
+                if (asPlugin && liveInstalled && !Rtx40MfgService.IsPluginInstall(liveDllName))
+                {
+                    var from  = liveDllName!;
+                    var moved = await Task.Run(() => mfgSvc.MoveToOptiScalerPlugin(installPath, from));
+                    if (moved != null) liveDllName = moved;
+                }
+
+                // If reinstalling under a different name, remove the old one first
+                if (liveInstalled && !string.IsNullOrEmpty(liveDllName)
+                    && !liveDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
+                    mfgSvc.Uninstall(installPath, liveDllName);
 
                 bool ok = await Task.Run(async () =>
                 {
                     if (!mfgSvc.IsStagingReady || mfgSvc.HasUpdate)
                         await mfgSvc.EnsureStagingAsync().ConfigureAwait(false);
+                    if (!asPlugin) // standalone XeMFG; through OptiScaler it uses OptiScaler's XeSS files
+                        await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
                     return mfgSvc.Install(installPath, chosen);
                 });
 
@@ -468,21 +557,50 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog button
-        var cogBtn = CogDialog.MakeCogButton("RTX 40 MFG settings");
+        var cogBtn = CogDialog.MakeCogButton("Universal MFG Unlocker settings");
         cogBtn.Click += async (s, e) =>
         {
             try
             {
-                var cog = new CogDialog("RTX 40 MFG", _window.Content.XamlRoot);
-                cog.AddIntro("Press Backspace in-game to open the RTX 40 MFG menu. It offers these modes:");
+                var cog = new CogDialog("Universal MFG Unlocker", _window.Content.XamlRoot);
+                cog.AddIntro("Press Backspace in-game to open the Universal MFG Unlocker menu. It offers these modes:");
                 cog.AddNote("• Follow game: uses the game's own MFG setting");
                 cog.AddNote("• Fixed 2x to 6x: forces a specific multiplier");
                 cog.AddNote("• Dynamic: targets the display refresh rate or a custom FPS value");
-                cog.AddIntro("If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App.");
+                cog.AddIntro("If frames freeze above 2x, set the Frame Generation preset to B in this game's DLSS / Streamline section.");
                 if (isInstalled)
                     cog.AddNote($"Currently installed as: {currentDllName}");
+
+                if (isPluginInstall)
+                {
+                    cog.AddSection("Loaded by OptiScaler");
+                    cog.AddIntro("OptiScaler loads the mod as a plugin, as its author recommends. Frame generation is chosen in OptiScaler, not here: "
+                        + "open OptiScaler's ⚙ and set FG Output to DLSSG for DLSS multi frame generation, or XeFG for XeMFG. "
+                        + "OptiScaler's default (Auto) runs no frame generation.");
+                    cog.AddNote("The mod's own menu still opens beside OptiScaler's for the DLSS presets and DLSS 5. If OptiScaler is removed, RHI moves the mod back next to the game's exe.");
+                }
+
+                cog.AddSection("XeSS frame generation (XeMFG)");
+                if (isPluginInstall)
+                    cog.AddIntro("Through OptiScaler, XeMFG is OptiScaler's FG Output set to XeFG. It uses the XeSS files OptiScaler installs, so nothing else is needed.");
+                else
+                    cog.AddIntro("The mod can also use Intel's XeSS frame generation, 2x to 6x on any GPU (experimental). Tick \"XeMFG standalone\" in the in-game menu and restart the game. "
+                        + "It needs Intel's libxess_fg.dll and libxell.dll in an RTXMFG-XeSS folder next to the mod; RHI installs them with the mod.");
+                if (isInstalled && !isPluginInstall && !string.IsNullOrEmpty(installPath))
+                {
+                    var xessDir = System.IO.Path.Combine(installPath, Rtx40MfgService.XessFolderName);
+                    bool xessPresent = System.IO.File.Exists(System.IO.Path.Combine(xessDir, "libxess_fg.dll"))
+                                    && System.IO.File.Exists(System.IO.Path.Combine(xessDir, "libxell.dll"));
+                    if (xessPresent)
+                        cog.AddNote("XeSS files: installed.");
+                    else
+                        cog.AddWarning("XeSS files: missing. Reinstall the mod to add them.");
+                }
+                if (string.Equals(card.RsInstalledFile, "dxgi.dll", StringComparison.OrdinalIgnoreCase))
+                    cog.AddWarning("ReShade is installed as dxgi.dll in this game. With XeMFG at 5x and 6x, some generated frames may not reach the screen. "
+                        + "If that happens, give ReShade a different DLL name in Game Overrides › DLL naming overrides.");
                 cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
-                    async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock")); }));
+                    async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/MFG-Unlocker")); }));
                 await cog.ShowAsync();
             }
             catch (Exception ex)
@@ -508,11 +626,12 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove RTX 40 MFG Unlock from this game");
+        ToolTipService.SetToolTip(removeBtn, "Remove Universal MFG Unlocker from this game");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-            mfgSvc.Uninstall(installPath, currentDllName);
+            // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
+            mfgSvc.Uninstall(installPath, _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? currentDllName);
             _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
             card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
             RequestExtrasRebuild(card);
@@ -605,7 +724,7 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose RTX 40 MFG DLL name",
+            Title = "Choose Universal MFG Unlocker DLL name",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -613,7 +732,7 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename to deploy the RTX 40 MFG Unlock DLL as. Choose a name the game loads early, and avoid names already used by other mods.",
+                        Text = "Select the filename to deploy the Universal MFG Unlocker DLL as. Choose a name the game loads early, and avoid names already used by other mods.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,

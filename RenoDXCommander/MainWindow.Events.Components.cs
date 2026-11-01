@@ -154,6 +154,55 @@ public sealed partial class MainWindow
             cog.AddRow("Screenshot Key", CogDialog.Inline(screenshotHotkeyBox, applyScreenshotKeyBtn),
                 "Takes a ReShade screenshot. Click the box, press a key (Backspace for none), then Apply. Saved to every reshade*.ini in the game folder.");
 
+            // ── Load ReShade as ASI (not for Vulkan: ReShade is a global layer there) ──
+            if (!card.RequiresVulkanInstall)
+            {
+                cog.AddSection("Loading");
+                var asiName = AuxInstallService.RsAsiName(card.Is32Bit);
+                ComboBox? asiCombo = null;
+                bool asiReverting = false;
+                asiCombo = cog.AddCombo("Load ReShade as ASI",
+                    $"On renames ReShade to {asiName} so an ASI loader (such as ASI Loader in Extras) loads it. "
+                    + "RHI doesn't install a loader for you. Installs and updates keep the name, and ReShade's DLL name in Game Overrides is greyed out while this is on.",
+                    new[] { "Off", "On" },
+                    ViewModel.GetRsAsiMode(card.GameName, card.Source ?? "") ? 1 : 0,
+                    i =>
+                    {
+                        if (asiReverting) return true;
+                        bool on = i == 1;
+                        _ = ApplyAsiModeAsync(on);
+                        return true;
+
+                        async Task ApplyAsiModeAsync(bool turnOn)
+                        {
+                            try
+                            {
+                                var error = await ViewModel.SetRsAsiModeAsync(card, turnOn);
+                                if (error != null)
+                                {
+                                    cog.SetError(error);
+                                    asiReverting = true;
+                                    if (asiCombo != null) asiCombo.SelectedIndex = turnOn ? 0 : 1;
+                                    asiReverting = false;
+                                    return;
+                                }
+                                bool installed = card.RsRecord != null;
+                                cog.SetSuccess(turnOn
+                                    ? (installed ? $"ReShade is now {asiName}. Make sure an ASI loader is installed in this game." : $"ReShade will be installed as {asiName}.")
+                                    : (installed ? $"ReShade is back to {card.RsInstalledFile}." : "ReShade will be installed under its normal DLL name."));
+                                card.NotifyAll();
+                                _detailPanelBuilder?.UpdateDetailComponentRows(card);
+                                _detailPanelBuilder?.BuildOverridesPanel(card); // greys/ungreys the ReShade DLL name dropdown
+                            }
+                            catch (Exception ex)
+                            {
+                                _crashReporter.Log($"[RsCogButton_Click] ASI mode change failed — {ex}");
+                                cog.SetError($"Couldn't change Load ReShade as ASI: {ex.Message}");
+                            }
+                        }
+                    });
+            }
+
             // ── Keep ReShade.ini Updated ──────────────────────────────────────────
             cog.AddSection("ReShade.ini");
             var capturedKeepGameName = card.GameName;

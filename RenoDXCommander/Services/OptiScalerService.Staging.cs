@@ -486,7 +486,8 @@ public partial class OptiScalerService
                 int deployed = 0;
                 foreach (var rec in records)
                 {
-                    var pluginsDir = Path.Combine(rec.InstallPath, "plugins");
+                    MoveOptiPatcherToPluginsDir(rec.InstallPath); // older RHI put it where OptiScaler 10 never looks
+                    var pluginsDir = GetPluginsDir(rec.InstallPath);
                     var destAsi = Path.Combine(pluginsDir, OptiPatcherFileName);
                     if (File.Exists(destAsi))
                     {

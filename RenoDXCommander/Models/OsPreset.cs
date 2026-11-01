@@ -31,4 +31,16 @@ public class OsPreset
     public string? NrPasses               { get; set; }  // "1", "2", "3", "auto"
     public string? NrWorkingScale         { get; set; }  // "0.5", "0.75", "1.0", "1.5", "auto"
     public string? NrFinishedPicture      { get; set; }  // "true", "false", "auto"
+    // ── Ready-made presets (optiscaler_presets.json) ──────────────────────────
+    public string? Id                     { get; set; }  // stable id, e.g. "RealDlssFg"
+    public string? Description            { get; set; }  // one line, shown under the buttons and as the tooltip
+    public string? StreamlineVersion      { get; set; }  // "latest" or a version like "2.14.16"
+    public bool?   InstallUniversalMfg    { get; set; }  // installs Universal MFG Unlocker if it's missing
+}
+
+/// <summary>The optiscaler_presets.json file: ready-made OptiScaler presets shown in the OptiScaler cog.</summary>
+public class OsPresetManifest
+{
+    public int Version { get; set; }
+    public List<OsPreset>? Presets { get; set; }
 }

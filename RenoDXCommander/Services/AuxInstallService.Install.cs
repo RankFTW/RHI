@@ -30,6 +30,13 @@ public partial class AuxInstallService
             ? filenameOverride
             : RsNormalName;
 
+        // "Load ReShade as ASI" wins over any DLL name (the DLL name dropdown is greyed out while it's on)
+        if (RsAsiModeResolver?.Invoke(gameName, store ?? "") == true)
+        {
+            destName = RsAsiName(use32Bit);
+            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] '{gameName}' loads ReShade as ASI — deploying as '{destName}'");
+        }
+
         // ── OptiScaler coexistence: deploy as ReShade64.dll only when filenames actually conflict ──
         // Only rename when RS and OS would use the same DLL name (e.g. both want dxgi.dll).
         // If they use different names (e.g. OS=d3d12.dll, RS=dxgi.dll), no rename is needed.

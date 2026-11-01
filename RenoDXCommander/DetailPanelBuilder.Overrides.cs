@@ -653,6 +653,13 @@ public partial class DetailPanelBuilder
 
         // Label row
         var rsLabel = new TextBlock { Text = "ReShade", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        // "Load ReShade as ASI" (ReShade ⚙) fixes ReShade's name, so its DLL name can't be changed here
+        if (_window.ViewModel.GetRsAsiMode(gameName, card.Source ?? ""))
+        {
+            rsNameBox.IsEnabled = false;
+            ToolTipService.SetToolTip(rsLabel,
+                $"ReShade is loaded as {AuxInstallService.RsAsiName(card.Is32Bit)} for this game. Turn off Load ReShade as ASI in ReShade's ⚙ to choose a DLL name.");
+        }
         var dcLabel = new TextBlock { Text = "Display Commander", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
         var osLabel = new TextBlock { Text = "OptiScaler", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
         Grid.SetColumn(rsLabel, 0); Grid.SetRow(rsLabel, 0);

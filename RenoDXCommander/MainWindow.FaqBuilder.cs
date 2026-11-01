@@ -86,12 +86,12 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("⚙", "AccentAmberBrush",
             "OptiScaler (Optional)",
             "OptiScaler lets a game's DLSS, FSR or XeSS inputs drive a different upscaler (FSR, XeSS, DLSS), and can add or replace frame generation on any GPU. It's in the Extras section.\n\nBefore installing, set your GPU type (and DLSS inputs for AMD/Intel) in Settings → Components → OptiScaler. Then choose a variant in the OptiScaler ⚙:\n• Stable: official release.\n• Nightly: latest build, or pin a specific build.\n• DLSS NR and F5 DLSSNR: forks with DLSS Neural Rendering.\n\nThe ⚙ also sets the upscaler, frame generation, Reflex, DLSS presets, render scale, Engine.ini fixes and Neural Rendering options, and saves presets you can apply to other games.",
-            "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in Game Overrides → DLL naming overrides.\n'Deploy OptiScaler.ini' in the ⚙ resets the game's ini from your template."));
+            "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in Game Overrides → DLL naming overrides.\n'Replace with a fresh copy...' in the ⚙ resets the game's OptiScaler.ini from your template."));
 
         // Extras
         panel.Children.Add(BuildFaqSpecialSection("X", "AccentAmberBrush",
             "Extras (Optional)",
-            "The Extras section holds optional tools:\n• Frame generation unlocks: RTX 40 MFG and MFG Ada Unlock (RTX 40), 20/30 FG Unlock (RTX 20/30), RTX Encore (beta) and DLSS Enabler.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
+            "The Extras section holds optional tools:\n• Frame generation unlocks: Universal MFG Unlocker (RTX 40/30), MFG Ada Unlock (RTX 40), 20/30 FG Unlock (RTX 20/30), RTX Encore (beta) and DLSS Enabler.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
             "Most of these ask which file name to use when you install them. Names already used by RHI's other components are disabled, and any game file that gets replaced is backed up."));
 
         // NVIDIA Driver Settings

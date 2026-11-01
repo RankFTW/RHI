@@ -666,7 +666,7 @@ The **Extras** section holds optional tools:
 
 - **ASI Loader**.
 - **OptiScaler** (see [OptiScaler](#optiscaler)).
-- **MFG Unlocks**: **RTX Encore (Beta)**, **DLSS Enabler**, **20/30 FG Unlock**, **RTX 40 MFG**, **MFG Ada Unlock**.
+- **MFG Unlocks**: **RTX Encore (Beta)**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Ada Unlock**.
 - **API Upgrades**: **DXVK** and **dgVoodoo2** (see [DXVK and dgVoodoo2](#dxvk-and-dgvoodoo2)).
 
 Several of these are "proxy" DLLs that load by taking a system DLL's name. When you install one, RHI asks which name to use. Names RHI's other components already use are disabled. If the game already has a file with that name, RHI backs it up and restores it on uninstall.
@@ -677,10 +677,10 @@ Several of these are "proxy" DLLs that load by taking a system DLL's name. When 
 | **RTX Encore (Beta)** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40. Its ⚙ can deploy the NR DLL. |
 | **DLSS Enabler** | DLSS Frame Generation support through a proxy DLL (`version.dll` works for most games). Not available while OptiScaler is installed, as OptiScaler includes it. |
 | **20/30 FG Unlock** | DLSS Frame Generation (up to 6X) on RTX 20 and 30 Series, DX12 only, NVIDIA driver R580 or newer. Installs a proxy DLL (start with `version.dll`; if FG doesn't appear in the game, try the next name), `dlssg_sm86.ini` and the `dlssg_sm86` folder; uninstall removes all of it. Its ⚙ sets Frame Generation on/off, Engine (DLSS or XeSS), Max Frames (2X–6X), Preset (A, B, or C for FG Lite), Speed Tier and Super Resolution (preset M/L, with faster INT8 kernels), and opens the ini and log. Settings are kept when the mod updates. |
-| **RTX 40 MFG** | Multi frame generation beyond 2x (up to 6x) on RTX 40 Series. Press Backspace in-game for its menu. |
+| **Universal MFG Unlocker** | Formerly RTX 40 MFG. Multi frame generation beyond 2x (up to 6x) on RTX 40 and 30 Series (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. RHI also installs the Intel XeSS files XeMFG needs, in an `RTXMFG-XeSS` folder. With OptiScaler nightly, F5 or DLSS NR installed it goes in as an OptiScaler plugin (`OptiScaler\plugins\MFGUnlocker.asi`); pick DLSSG or XeFG as FG Output in OptiScaler's ⚙. Press Backspace in-game for its menu. |
 | **MFG Ada Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). |
 
-RTX 40 MFG and MFG Ada Unlock can't be installed together, and 20/30 FG Unlock is blocked while MFG Ada Unlock is installed.
+Universal MFG Unlocker and MFG Ada Unlock can't be installed together, and 20/30 FG Unlock is blocked while MFG Ada Unlock is installed.
 
 ---
 
@@ -735,7 +735,7 @@ Settings are written straight into the game's `OptiScaler.ini`. Until OptiScaler
 - **Engine.ini Settings** (Unreal games): Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin.
 - **Neural Rendering Settings** (DLSS NR, F5): NR Runtime version, NR Enabled, Run Before SR, Passes, Working Scale, Apply to Finished Picture.
 - **Presets** (non-Stable variants): four global slots. **Save** stores the current settings; click a slot to apply it to any game.
-- **Deploy OptiScaler.ini** replaces the game's ini with a fresh copy of your template. It doesn't keep the settings above.
+- **Replace with a fresh copy...** (at the bottom, asks first) replaces the game's OptiScaler.ini with a fresh copy of your template. It doesn't keep the settings above.
 
 ### Info and templates
 
@@ -1116,7 +1116,7 @@ RHI downloads these from their official sources. All credit goes to their author
 | [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) | ThirteenAG | See repository |
 | [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) | jlrouzies-fr | See repository |
 | [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge) | NIGos | See repository |
-| [RTX 40 MFG Unlock](https://github.com/dashdogy/RTX40MFG-Unlock) | dashdogy | See repository |
+| [Universal MFG Unlocker](https://github.com/dashdogy/MFG-Unlocker) | dashdogy | See repository |
 | [MFG Ada Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg | See repository |
 | [20/30 FG Unlock](https://github.com/sdli1995/dlssg_for_sm86) | sdli1995 | See repository |
 | [RTX Encore](https://github.com/SilyNoMeta/rtx-encore) | SilyNoMeta | See repository |

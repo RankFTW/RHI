@@ -38,6 +38,15 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static Func<string, string, string?>? CustomReShadeSelectionResolver { get; set; }
 
+    /// <summary>
+    /// Delegate (gameName, store) → true when the game has "Load ReShade as ASI" on. Set during
+    /// app initialization. Every ReShade install/update then deploys as <see cref="RsAsiName"/>.
+    /// </summary>
+    public static Func<string, string, bool>? RsAsiModeResolver { get; set; }
+
+    /// <summary>ReShade's file name when loaded by an ASI loader.</summary>
+    public static string RsAsiName(bool use32Bit) => use32Bit ? "ReShade32.asi" : "ReShade64.asi";
+
     // ── URLs & filenames ──────────────────────────────────────────────────────────
 
     // ReShade is bundled alongside the app exe

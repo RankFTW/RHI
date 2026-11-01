@@ -1,4 +1,5 @@
 using System.Text;
+using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
 
@@ -13,6 +14,21 @@ public partial class OptiScalerService : IOptiScalerService
     public const string IniFileName = "OptiScaler.ini";
     public const string ReShadeCoexistName = "ReShade64.dll";
     public const string AddonType = "OptiScaler";
+
+    // ── Hooks for components that live in OptiScaler\plugins (set by MainViewModel) ──
+
+    /// <summary>
+    /// Called during an OptiScaler 10 install (nightly, F5, DLSS NR), just before OptiScaler's files
+    /// are copied, so a component installed as a proxy DLL can move into OptiScaler\plugins first
+    /// (and OptiScaler's own DLL can never overwrite it).
+    /// </summary>
+    public static Action<GameCardViewModel>? BeforeV10DeployHook { get; set; }
+
+    /// <summary>Called when an install that ran <see cref="BeforeV10DeployHook"/> fails, to move things back out.</summary>
+    public static Action<GameCardViewModel>? V10InstallFailedHook { get; set; }
+
+    /// <summary>Called during uninstall just before the OptiScaler\ folder (and its plugins) is deleted.</summary>
+    public static Action<GameCardViewModel>? BeforeOptiScalerFolderRemovedHook { get; set; }
 
     /// <summary>
     /// Default OptiScaler DLL name for a game with no override: winmm.dll for Vulkan games

@@ -1,5 +1,6 @@
-// MainWindow.Events.Components.OptiScaler.Footer.cs — Pinned bottom area of the OptiScaler cog dialog:
-// preset slots (Nightly / DLSS NR / F5), Deploy OptiScaler.ini and tips. Stays visible while the body scrolls.
+// MainWindow.Events.Components.OptiScaler.Footer.cs — Pinned bottom area of the OptiScaler cog dialog
+// (Open / Replace OptiScaler.ini and tips; stays visible while the body scrolls), plus capturing and applying presets.
+// The Presets panel itself is in MainWindow.Events.Components.OptiScaler.Presets.cs.
 
 using System;
 using System.IO;
@@ -16,7 +17,7 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
-    private FrameworkElement BuildOsCogFooter(OsCogContext ctx, bool showPresets, bool isInstalled)
+    private FrameworkElement BuildOsCogFooter(OsCogContext ctx, bool isInstalled)
     {
         var card = ctx.Card;
         var footer = new StackPanel { Spacing = 8 };
@@ -37,39 +38,47 @@ public sealed partial class MainWindow
             status.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        if (showPresets)
-        {
-            footer.Children.Add(new TextBlock
-            {
-                Text = "Presets",
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            });
-            footer.Children.Add(BuildOsPresetSlots(ctx, ShowStatus));
-            footer.Children.Add(MakeOsFooterNote(
-                "Save stores the settings above in a slot shared by all games. Click a slot's name to apply it to this game."));
-        }
-
-        footer.Children.Add(MakeOsFooterNote(
-            "Deploy only if the game has no OptiScaler.ini yet or you want a fresh one: it replaces the file and resets most settings above."));
-
         var iniPath = string.IsNullOrEmpty(card.InstallPath) ? null : Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
         var openBtn = ctx.Cog.MakeOpenFileButton("Open OptiScaler.ini", iniPath);
-        var deployBtn = ctx.Cog.MakeButton("Deploy OptiScaler.ini", CogButtonKind.Primary, () =>
+
+        // Replacing resets most settings, so it asks first (a flyout: a second dialog can't open over the cog)
+        var replaceBtn = CogDialog.StyledButton("Replace with a fresh copy...", CogButtonKind.Secondary);
+        ToolTipService.SetToolTip(replaceBtn,
+            "Replaces this game's OptiScaler.ini with a fresh copy of RHI's template. Use it if the game has no OptiScaler.ini yet or you want to start over.");
+        var confirmBtn = CogDialog.StyledButton("Replace", CogButtonKind.Danger, compact: true);
+        var confirmPanel = new StackPanel { Spacing = 8, MaxWidth = 300 };
+        confirmPanel.Children.Add(new TextBlock
         {
+            Text = "Replace this game's OptiScaler.ini with a fresh copy? Most settings above are reset.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12,
+        });
+        confirmPanel.Children.Add(confirmBtn);
+        var confirmFlyout = new Flyout { Content = confirmPanel };
+        replaceBtn.Flyout = confirmFlyout;
+        confirmBtn.Click += (_, _) =>
+        {
+            confirmFlyout.Hide();
             DeployOsIniFromCog(card, ShowStatus);
             openBtn.IsEnabled = iniPath != null && File.Exists(iniPath);
-        });
+        };
+
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        buttons.Children.Add(deployBtn);
         buttons.Children.Add(openBtn);
+        buttons.Children.Add(replaceBtn);
+        var replaceNote = MakeOsFooterNote("A fresh copy resets most settings.");
+        replaceNote.VerticalAlignment = VerticalAlignment.Center;
+        replaceNote.Margin = new Thickness(4, 0, 0, 0);
+        buttons.Children.Add(replaceNote);
         footer.Children.Add(buttons);
 
-        footer.Children.Add(MakeOsFooterNote(
-            "Crashing with ReShade and OptiScaler both installed? Rename ReShade (e.g. to d3d12.dll) with DLL Naming Overrides in the Overrides panel."));
+        var tip = MakeOsFooterNote(
+            "Crashing with ReShade and OptiScaler both installed? Rename ReShade (for example to d3d12.dll) in Game Overrides › DLL naming.");
+        tip.FontSize = 12;
+        tip.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+        footer.Children.Add(tip);
 
-        // Not installed: presets and Deploy are unavailable
+        // Not installed: Replace is unavailable
         if (!isInstalled)
         {
             foreach (var child in footer.Children.OfType<FrameworkElement>())
@@ -115,99 +124,6 @@ public sealed partial class MainWindow
     }
 
     // ── Presets ──────────────────────────────────────────────────────────────────
-
-    private Grid BuildOsPresetSlots(OsCogContext ctx, Action<string, bool> showStatus)
-    {
-        // Load global presets from disk
-        var presets = OsPresetService.Load();
-
-        var presetsGrid = new Grid { ColumnSpacing = 8 };
-        for (int c = 0; c < 4; c++)
-            presetsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        for (int slotIndex = 0; slotIndex < 4; slotIndex++)
-        {
-            int i = slotIndex; // capture for lambdas
-            var preset = presets[i];
-            bool hasData = preset != null;
-
-            // Name row: [TextBox][Save]
-            var nameBox = CogDialog.MakeTextBox(preset?.Name ?? "", $"Slot {i + 1}");
-            nameBox.MinWidth = 0;
-            nameBox.Padding = new Thickness(6, 4, 6, 4);
-
-            var saveBtn = CogDialog.StyledButton("Save", CogButtonKind.Secondary, compact: true);
-            ToolTipService.SetToolTip(saveBtn, "Save the current settings into this slot");
-
-            var nameRow = CogDialog.Inline(nameBox, saveBtn);
-            nameRow.ColumnSpacing = 4;
-
-            // Apply button
-            var applyBtn = CogDialog.StyledButton(hasData ? (preset!.Name ?? $"Slot {i + 1}") : $"Slot {i + 1}", CogButtonKind.Secondary, compact: true);
-            applyBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
-            applyBtn.IsEnabled = hasData;
-            applyBtn.Opacity = hasData ? 1.0 : CogDialog.DisabledOpacity;
-            ToolTipService.SetToolTip(applyBtn, hasData
-                ? "Apply this preset to the current game"
-                : "No preset saved yet. Click Save to store the current settings.");
-
-            // Name editing
-            nameBox.TextChanged += (s, ev) =>
-            {
-                if (presets[i] == null) presets[i] = new OsPreset();
-                presets[i]!.Name = string.IsNullOrWhiteSpace(nameBox.Text) ? null : nameBox.Text;
-                applyBtn.Content = presets[i]!.Name ?? $"Slot {i + 1}";
-                OsPresetService.Save(presets);
-            };
-
-            // Save
-            saveBtn.Click += (s, ev) =>
-            {
-                try
-                {
-                    if (presets[i] == null) presets[i] = new OsPreset();
-                    var p = presets[i]!;
-                    CaptureOsPreset(ctx, p); // preserves the existing name
-                    OsPresetService.Save(presets);
-                    applyBtn.IsEnabled = true;
-                    applyBtn.Opacity = 1.0;
-                    applyBtn.Content = p.Name ?? $"Slot {i + 1}";
-                    ToolTipService.SetToolTip(applyBtn, "Apply this preset to the current game");
-                    showStatus($"Saved the current settings to {p.Name ?? $"Slot {i + 1}"}.", true);
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[OsPreset.Save] Slot {i + 1} — {ex.Message}");
-                    showStatus($"Couldn't save the preset: {ex.Message}", false);
-                }
-            };
-
-            // Apply
-            applyBtn.Click += (s, ev) =>
-            {
-                var p = presets[i];
-                if (p == null) return;
-                try
-                {
-                    ApplyOsPreset(ctx.Card, p);
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[OsPreset.Apply] Slot {i + 1} — {ex.Message}");
-                    showStatus($"Couldn't apply the preset: {ex.Message}", false);
-                    return;
-                }
-                ReopenOsCog(ctx);
-            };
-
-            var slotPanel = new StackPanel { Spacing = 4 };
-            slotPanel.Children.Add(nameRow);
-            slotPanel.Children.Add(applyBtn);
-            Grid.SetColumn(slotPanel, i);
-            presetsGrid.Children.Add(slotPanel);
-        }
-        return presetsGrid;
-    }
 
     /// <summary>Copies the dialog's current selections into <paramref name="p"/> (name untouched).</summary>
     private static void CaptureOsPreset(OsCogContext ctx, OsPreset p)
@@ -281,6 +197,18 @@ public sealed partial class MainWindow
         if (p.FgInput != null)            ViewModel.SetOsFgInput(card.GameName, p.FgInput, store);
         if (p.FgOutput != null)           ViewModel.SetOsFgOutput(card.GameName, p.FgOutput, store);
         if (p.FgNvngxReplacement != null) ViewModel.SetOsFgNvngxReplacement(card.GameName, p.FgNvngxReplacement, store);
+        // Streamline version: "latest" = the newest in the DLSS manifest
+        string? slVersion = null;
+        if (!string.IsNullOrEmpty(p.StreamlineVersion))
+        {
+            var slVersions = App.Services.GetRequiredService<IDlssStreamlineService>().StreamlineVersions;
+            slVersion = p.StreamlineVersion.Equals("latest", StringComparison.OrdinalIgnoreCase)
+                ? slVersions.FirstOrDefault()
+                : slVersions.FirstOrDefault(v => v.Equals(p.StreamlineVersion, StringComparison.OrdinalIgnoreCase));
+            if (slVersion != null) ViewModel.SetOsStreamlineVersion(card.GameName, slVersion, store);
+            else CrashReporter.Log($"[OsPreset.Apply] Streamline version '{p.StreamlineVersion}' not in the DLSS manifest; keeping the current one");
+        }
+
         if (p.DeployStreamline.HasValue)
         {
             ViewModel.SetOsDeployStreamline(card.GameName, p.DeployStreamline.Value, store);
@@ -292,8 +220,14 @@ public sealed partial class MainWindow
                     var d = Path.Combine(card.InstallPath, "OptiScaler");
                     if (p.DeployStreamline.Value)
                     {
-                        _optiScalerService.DeployStreamlineToGame(card.InstallPath);
+                        var deployVersion = slVersion ?? ViewModel.GetOsStreamlineVersion(card.GameName, store);
+                        _optiScalerService.DeployStreamlineToGame(card.InstallPath, deployVersion);
                         _ = _dlssEnablerService.InstallAsync(d);
+                        // Downloads the version if it isn't staged yet, as the cog's version dropdown does
+                        if (!string.IsNullOrEmpty(deployVersion))
+                            App.Services.GetRequiredService<IDlssStreamlineService>()
+                                .SwapStreamlineAsync(Path.Combine(d, "Streamline"), deployVersion)
+                                .SafeFireAndForget("OsPreset.SwapStreamline");
                     }
                     else
                     {

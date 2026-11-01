@@ -57,7 +57,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40-series GPUs. Requires ReShade. In-memory only, no files modified.");
+        ToolTipService.SetToolTip(label, "MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40 Series GPUs, or Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50 Series. Requires ReShade.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -111,7 +111,7 @@ public partial class DetailPanelBuilder
         }
         else if (rtx40Conflict)
         {
-            btnLabel   = "⚠  RTX 40 MFG installed";
+            btnLabel   = "⚠  Universal MFG Unlocker installed";
             btnEnabled = false;
         }
         else if (!staged)
@@ -142,7 +142,7 @@ public partial class DetailPanelBuilder
         if (!rsInstalled)
             ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Ada Unlock requires it");
         else if (rtx40Conflict)
-            ToolTipService.SetToolTip(installBtn, "RTX 40 MFG Unlock (ASI version) is already installed and conflicts. Remove it first.");
+            ToolTipService.SetToolTip(installBtn, "Universal MFG Unlocker is already installed and conflicts. Remove it first.");
 
         installBtn.Click += async (s, e) =>
         {
@@ -198,7 +198,9 @@ public partial class DetailPanelBuilder
             try
             {
                 var cog = new CogDialog("MFG Ada Unlock", _window.Content.XamlRoot);
-                cog.AddIntro("MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.");
+                cog.AddIntro("MFG Ada Unlock has two modes, chosen in its ReShade overlay panel:");
+                cog.AddNote("• DLSS frame generation: unlocks 3x, 4x and 6x on RTX 40 Series GPUs. Needs a recent DLSS Frame Generation DLL (310 or newer).");
+                cog.AddNote("• Intel XeMFG: 2x to 6x on RTX 20 to RTX 50 Series GPUs. Choose it under General › Frame generation method, restart the game, then click \"Install / update files\" in the panel to get Intel's XeSS files. Repeat that after a game update.");
                 cog.AddNote("Configure it in the ReShade overlay in-game.");
                 cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
                     async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx")); }));

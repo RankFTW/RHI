@@ -248,6 +248,12 @@ public partial class MainViewModel
             return _gameNameService.CustomReShadeSelection.TryGetValue(gameName, out sel) ? sel : null;
         };
 
+        // Wire up per-game "Load ReShade as ASI"
+        AuxInstallService.RsAsiModeResolver = (gameName, store) => GetRsAsiMode(gameName, store);
+
+        // Universal MFG Unlocker moves in and out of OptiScaler\plugins with OptiScaler 10 builds
+        WireMfgPluginHooks();
+
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)
         {
@@ -454,6 +460,7 @@ public partial class MainViewModel
             var dlssManifestTask = Task.Run(async () => {
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS manifest fetch failed — {ex.Message}"); }
+                await OsPresetService.FetchManifestAsync(_http);
             });
             // Initialize DLSS preset service (loads NVAPI + caches driver profiles)
             _ = Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed — {ex.Message}"); } });

@@ -37,6 +37,7 @@ public partial class OptiScalerService
         string variant = "Stable",
         string? nightlyBuildHint = null)
     {
+        bool ranV10Hook = false; // set once plugin-folder components have been moved in
         try
         {
             // ── 1. First-time warning check ──────────────────────────────────
@@ -195,6 +196,15 @@ public partial class OptiScalerService
             catch (Exception rsEx)
             {
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] ReShade rename failed — {rsEx.Message}");
+            }
+
+            // ── 4c. Components that belong in OptiScaler\plugins on OptiScaler 10 builds ──
+            // (Universal MFG Unlocker) move there before OptiScaler's files are copied.
+            if (isNightly || isDlssNrOrF5)
+            {
+                ranV10Hook = true;
+                try { BeforeV10DeployHook?.Invoke(card); }
+                catch (Exception hookEx) { CrashReporter.Log($"[OptiScalerService.InstallAsync] Plugin move hook failed — {hookEx.Message}"); }
             }
 
             // ── 5. Deploy all files from staging to game folder ──────────────
@@ -421,11 +431,20 @@ public partial class OptiScalerService
                     var stagedAsi = Path.Combine(OptiPatcherStagingDir, OptiPatcherFileName);
                     if (File.Exists(stagedAsi))
                     {
-                        var pluginsDir = Path.Combine(card.InstallPath, "plugins");
+                        // OptiScaler\plugins for OptiScaler 10 builds, plugins\ for 0.9 stable
+                        var pluginsDir = GetPluginsDir(card.InstallPath);
                         Directory.CreateDirectory(pluginsDir);
                         var destAsi = Path.Combine(pluginsDir, OptiPatcherFileName);
                         File.Copy(stagedAsi, destAsi, overwrite: true);
-                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed OptiPatcher.asi to plugins folder");
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed OptiPatcher.asi to '{Path.GetRelativePath(card.InstallPath, pluginsDir)}'");
+                        // A copy left in the root plugins\ by an older RHI is never read by OptiScaler 10
+                        var staleAsi = Path.Combine(card.InstallPath, "plugins", OptiPatcherFileName);
+                        if (!staleAsi.Equals(destAsi, StringComparison.OrdinalIgnoreCase) && File.Exists(staleAsi))
+                        {
+                            File.Delete(staleAsi);
+                            var rootPlugins = Path.GetDirectoryName(staleAsi)!;
+                            if (!Directory.EnumerateFileSystemEntries(rootPlugins).Any()) Directory.Delete(rootPlugins);
+                        }
                         progress?.Report(("OptiPatcher deployed", 90));
                     }
                     else
@@ -571,6 +590,11 @@ public partial class OptiScalerService
         {
             CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName} — {ex.Message}");
             progress?.Report(($"Install failed: {ex.Message}", 0));
+            if (ranV10Hook)
+            {
+                try { V10InstallFailedHook?.Invoke(card); }
+                catch (Exception hookEx) { CrashReporter.Log($"[OptiScalerService.InstallAsync] Plugin restore hook failed — {hookEx.Message}"); }
+            }
             return null;
         }
     }
@@ -841,8 +865,11 @@ public partial class OptiScalerService
                 var gameSubDir = Path.Combine(gameDir, dirName);
                 if (!Directory.Exists(gameSubDir)) continue;
 
+                // OptiScaler\plugins is cleaned up in steps 4b–4d, after DXVK DLLs are moved back out
+                var osPluginsPrefix = Path.Combine(gameDir, "OptiScaler", "plugins") + Path.DirectorySeparatorChar;
                 foreach (var subFile in Directory.GetFiles(gameSubDir, "*", SearchOption.AllDirectories))
                 {
+                    if (subFile.StartsWith(osPluginsPrefix, StringComparison.OrdinalIgnoreCase)) continue;
                     try
                     {
                         File.Delete(subFile);
@@ -873,11 +900,15 @@ public partial class OptiScalerService
             // ── 4b. Clean up OptiPatcher ─────────────────────────────────────
             try
             {
-                var optiPatcherPath = Path.Combine(gameDir, "plugins", OptiPatcherFileName);
-                if (File.Exists(optiPatcherPath))
+                // OptiScaler\plugins (OptiScaler 10 builds) and plugins\ (0.9 stable, or older RHI)
+                foreach (var dir in new[] { Path.Combine(gameDir, "OptiScaler", "plugins"), Path.Combine(gameDir, "plugins") })
                 {
-                    File.Delete(optiPatcherPath);
-                    CrashReporter.Log("[OptiScalerService.Uninstall] Deleted OptiPatcher.asi from plugins folder");
+                    var optiPatcherPath = Path.Combine(dir, OptiPatcherFileName);
+                    if (File.Exists(optiPatcherPath))
+                    {
+                        File.Delete(optiPatcherPath);
+                        CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted OptiPatcher.asi from '{Path.GetRelativePath(gameDir, dir)}'");
+                    }
                 }
 
                 var pluginsDir = Path.Combine(gameDir, "plugins");
@@ -933,6 +964,14 @@ public partial class OptiScalerService
             // Done after DXVK restore so any DLLs in OptiScaler/plugins/ are
             // moved back to the game root before the folder is deleted.
             var optiScalerSubDir = Path.Combine(gameDir, "OptiScaler");
+
+            // Components loaded as OptiScaler plugins (Universal MFG Unlocker) move back out first
+            if (Directory.Exists(Path.Combine(optiScalerSubDir, "plugins")))
+            {
+                try { BeforeOptiScalerFolderRemovedHook?.Invoke(card); }
+                catch (Exception hookEx) { CrashReporter.Log($"[OptiScalerService.Uninstall] Plugin move-out hook failed — {hookEx.Message}"); }
+            }
+
             if (Directory.Exists(optiScalerSubDir))
             {
                 try
@@ -1151,7 +1190,8 @@ public partial class OptiScalerService
                 var gameSubDir = Path.Combine(gameDir, dirName);
                 if (Directory.Exists(gameSubDir))
                 {
-                    try { Directory.Delete(gameSubDir, recursive: true); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Removed old subdir: {dirName}"); }
+                    // Keep OptiScaler\plugins: OptiPatcher, DXVK coexistence DLLs and other plugins live there
+                    try { DeleteDirKeepingPlugins(gameSubDir); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Cleared old subdir (plugins kept): {dirName}"); }
                     catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.UpdateAsync] Failed to remove subdir {dirName} — {ex.Message}"); }
                 }
             }
@@ -1594,6 +1634,67 @@ public partial class OptiScalerService
         if (!found)
             lines.Add("LoadReshade=true");
         File.WriteAllLines(iniPath, lines);
+    }
+
+    // ── Plugins folder ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Folder OptiScaler loads plugins (*.asi, same-name DLLs) from. OptiScaler 10 builds
+    /// (nightly, F5, DLSS NR) install an OptiScaler\ subfolder and look in OptiScaler\plugins;
+    /// the 0.9 stable build has no subfolder and looks in &lt;game&gt;\plugins.
+    /// </summary>
+    public static string GetPluginsDir(string gameDir) =>
+        Directory.Exists(Path.Combine(gameDir, "OptiScaler"))
+            ? Path.Combine(gameDir, "OptiScaler", "plugins")
+            : Path.Combine(gameDir, "plugins");
+
+    /// <summary>
+    /// Before this fix RHI always put OptiPatcher.asi in &lt;game&gt;\plugins, which OptiScaler 10
+    /// builds never read. Moves it into OptiScaler\plugins and removes the old root plugins
+    /// folder if that leaves it empty (the root folder can belong to the game, so never forced).
+    /// </summary>
+    public static void MoveOptiPatcherToPluginsDir(string gameDir)
+    {
+        if (string.IsNullOrEmpty(gameDir)) return;
+        var rootPlugins = Path.Combine(gameDir, "plugins");
+        var target      = GetPluginsDir(gameDir);
+        if (target.Equals(rootPlugins, StringComparison.OrdinalIgnoreCase)) return; // 0.9 layout — already right
+        var oldAsi = Path.Combine(rootPlugins, OptiPatcherFileName);
+        if (!File.Exists(oldAsi)) return;
+        try
+        {
+            Directory.CreateDirectory(target);
+            File.Move(oldAsi, Path.Combine(target, OptiPatcherFileName), overwrite: true);
+            CrashReporter.Log($"[OptiScalerService.MoveOptiPatcherToPluginsDir] Moved OptiPatcher.asi to OptiScaler\\plugins in '{gameDir}'");
+            if (!Directory.EnumerateFileSystemEntries(rootPlugins).Any())
+                Directory.Delete(rootPlugins);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[OptiScalerService.MoveOptiPatcherToPluginsDir] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public void MoveOptiPatcherForAllGames()
+    {
+        foreach (var rec in LoadAllRecords().Where(r => !string.IsNullOrEmpty(r.InstallPath)))
+            MoveOptiPatcherToPluginsDir(rec.InstallPath);
+    }
+
+    /// <summary>
+    /// Empties <paramref name="dir"/> except its plugins subfolder, which holds things other
+    /// components put there (OptiPatcher, DXVK coexistence DLLs, Universal MFG Unlocker).
+    /// </summary>
+    private static void DeleteDirKeepingPlugins(string dir)
+    {
+        foreach (var file in Directory.GetFiles(dir))
+            File.Delete(file);
+        foreach (var sub in Directory.GetDirectories(dir))
+        {
+            if (Path.GetFileName(sub).Equals("plugins", StringComparison.OrdinalIgnoreCase)) continue;
+            Directory.Delete(sub, recursive: true);
+        }
     }
 
     /// <summary>

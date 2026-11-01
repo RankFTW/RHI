@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "RealDlssFg",
+      "name": "Real DLSS FG",
+      "description": "NVIDIA's own DLSS frame generation through OptiScaler, with Reflex forced on. For RTX 40 and 50 cards.",
+      "fgEnabled": "true",
+      "fgInput": "upscaler",
+      "fgOutput": "dlssg",
+      "fgNvngxReplacement": "None",
+      "deployStreamline": true,
+      "deployDlssEnabler": true,
+      "streamlineVersion": "latest",
+      "hudFix": "true",
+      "forceReflex": "2",
+      "useGamesReflexMarkers": "false"
+    },
+    {
+      "id": "DlssEnablerFg",
+      "name": "DLSS Enabler FG",
+      "description": "DLSS frame generation through DLSS Enabler, for cards without DLSS frame generation.",
+      "fgEnabled": "true",
+      "fgInput": "upscaler",
+      "fgOutput": "dlssg",
+      "fgNvngxReplacement": "Arturs",
+      "deployStreamline": true,
+      "deployDlssEnabler": true,
+      "streamlineVersion": "latest",
+      "hudFix": "true",
+      "forceReflex": "0",
+      "useGamesReflexMarkers": "true"
+    },
+    {
+      "id": "UmfgXefg",
+      "name": "UMFG XeFG",
+      "description": "XeSS frame generation beyond 2x with Universal MFG Unlocker, which is installed if it's missing.",
+      "fgEnabled": "true",
+      "fgInput": "upscaler",
+      "fgOutput": "xefg",
+      "deployStreamline": true,
+      "deployDlssEnabler": true,
+      "streamlineVersion": "latest",
+      "hudFix": "true",
+      "forceReflex": "0",
+      "useGamesReflexMarkers": "true",
+      "installUniversalMfg": true
+    }
+  ]
+}
