@@ -291,6 +291,7 @@ public partial class SettingsHandler
     private void OnSettingsPageOpened(bool wasAlreadyOpen)
     {
         EnsureSettingsPageHooks();
+        EnsureNvAppLimitsPanel();
         EnsureSettingsNavigation();
         StartUpdateCountdown();
         if (wasAlreadyOpen || _settingsScroll == null) return; // keep the current position

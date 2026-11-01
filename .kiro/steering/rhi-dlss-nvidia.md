@@ -171,3 +171,6 @@ fileMatchPattern: "*Dlss*,*Streamline*,*DlssPreset*,*NvidiaProfile*,*Nvidia*"
 ## profileNameOverrides
 - Manifest field forces `FindProfile` to use specific NVIDIA profile name.
 - Checked FIRST in `FindProfileUncached`, before all matching passes.
+
+## NVIDIA App override limits
+- The NVIDIA App marks games it hasn't approved with `Disable_{FG,RR,SR,RR_Model,SR_Model}_Override` flags (`ApplicationStorage.json` as JSON bools, every `fingerprint.db` under `%LOCALAPPDATA%\NVIDIA Corporation\NVIDIA app\NvBackend\` as XML-ish `<...>1</...>` text) and undoes driver-profile DLSS overrides (RHI, Profile Inspector) on them. `NvAppOverrideLimitService.RemoveLimits` (Settings › Driver Settings › Profiles button, `SettingsHandler.NvAppLimits.cs`) clears them like JPersson77's nVAppAppApp.ps1: backup to `%LOCALAPPDATA%\RHI\NvAppBackup\<timestamp>\` (last 5 kept), regex replace (non-text files skipped), `fingerprint.db` set read-only, then restarts `NVDisplay.ContainerLocalSystem` + `NvContainerLocalSystem` via an elevated (`runas`) PowerShell. Driver / NVIDIA App updates can restore the flags; users re-run it.
