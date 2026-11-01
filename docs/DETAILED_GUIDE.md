@@ -186,7 +186,7 @@ The API decides the ReShade DLL name, whether DXVK and generic Luma are offered,
 
 ### Renaming, hiding and favourites
 
-- **Rename**: Game Overrides → **Game name (editable)**, then press Enter. **Reset** goes back to the detected name. Your settings move with the game.
+- **Rename**: Game Overrides → **Game name**, then press Enter. **Reset name** goes back to the detected name. Your settings move with the game.
 - **Hide** and **Favourite**: header buttons or the right-click menu. Saved per game and store.
 - Some multi-game folders (collections) are split into separate entries by the remote manifest.
 
@@ -296,7 +296,7 @@ By default, RHI uses the **RHI Database**: a curated list of named mods, UE-Exte
 
 ### How mods are matched
 
-RHI matches each game by name (ignoring ™ and ® symbols). If the match is wrong or missing, set **Wiki mod name** in Game Overrides. To stop a game matching at all, set **Wiki lookup** to **Excluded**.
+RHI matches each game by name (ignoring ™ and ® symbols). If the match is wrong or missing, set **Wiki mod name** in Game Overrides. To stop a game matching at all, set the dropdown under **Wiki mod name** to **Ignore wiki**.
 
 When there's no named mod:
 
@@ -779,17 +779,17 @@ Per-game settings. Each one saves as soon as you change it.
 
 | Setting | What it does |
 |---|---|
-| **Game name (editable)** | Renames the game (press Enter). Your settings move with it. **Reset** restores the detected name. |
+| **Game name** | Renames the game (press Enter). Your settings move with it. **Reset name** restores the detected name. |
 | **Wiki mod name** | The exact mod name to match, when RHI matched the wrong RenoDX mod or none. |
-| **Wiki lookup** | **Included** / **Excluded**. Excluded stops RenoDX matching for this game. |
-| **DLL naming overrides** | Dropdowns for **ReShade**, **Display Commander** and **OptiScaler** file names. Changing one renames the installed file straight away; `--------` goes back to the default. **Reset DLL Names** resets all three. |
+| **Wiki lookup** | **Use wiki** / **Ignore wiki** (under Wiki mod name). Ignore wiki stops RenoDX matching for this game. |
+| **DLL naming overrides** | Dropdowns for **ReShade**, **Display Commander** and **OptiScaler** file names. Changing one renames the installed file straight away; `--------` goes back to the default. **Reset DLL names** resets all three. |
 | **ReShade Channel** | Stable, Nightly, Custom, No Addons or Legacy (see [ReShade Channel](#reshade-channel)). |
 | **Bitness** | Auto, 32-bit or 64-bit. Changing it uninstalls the game's components first, so they can be reinstalled with the right bitness. |
 | **Graphics API** | Auto, DirectX8, DirectX9, DirectX10, DirectX11, DirectX12, Vulkan or OpenGL. Switching to or from Vulkan changes how ReShade is installed. Use this when a game supports more than one API and you want a specific one. |
-| **Update Inclusion** | Choose which of this game's components Update All updates: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, plus DXVK and RE Framework where relevant. |
+| **Update inclusion** | **Choose components...** picks which of this game's components Update All updates: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, plus DXVK and RE Framework where relevant. |
 | **Shaders** / **Addons** | Per-game shader and addon modes (see [Shader Packs](#per-game-shaders) and [ReShade Addons](#per-game-addons)). |
 | **Select ReShade Preset** | Deploy ReShade presets (see [ReShade Presets](#reshade-presets)). |
-| **Launch executable** | The exe to launch instead of the auto-detected one. **Browse** to pick it, **Reset** to clear it. |
+| **Launch executable** | The exe to launch instead of the auto-detected one. **Browse** to pick it. **Reset launch options** clears it and the launch arguments. |
 | **Launch arguments** | Command-line arguments used when launching from RHI. |
 
 The HDR and RES buttons, DXVK, and the NVIDIA settings are also per game, but they live in their own sections.

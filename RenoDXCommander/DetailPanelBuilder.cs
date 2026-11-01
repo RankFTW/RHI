@@ -301,14 +301,7 @@ public partial class DetailPanelBuilder
 
         // Utility buttons — set Tag for event handlers
         _window.DetailFavBtn.Tag = card;
-        _window.DetailFavIcon.Text = "Favourite";
-        var favColor = card.IsFavourite
-            ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
-            : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
-        _window.DetailFavIcon.Foreground = new SolidColorBrush(favColor);
-        _window.DetailFavBtn.BorderBrush = card.IsFavourite
-            ? new SolidColorBrush(((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color)
-            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        ApplyFavouriteButtonStyle(_window.DetailFavBtn, _window.DetailFavIcon, card.IsFavourite);
 
         _window.DetailHideBtn.Tag = card;
         _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
@@ -630,6 +623,20 @@ public partial class DetailPanelBuilder
         const double SectionPadding = 28;
         var available = w - SectionPadding - overhead - (numCols - 1) * spacing;
         return Math.Max(80, available / numCols);
+    }
+
+    /// <summary>
+    /// Favourite button look. Favourited: amber "Favourited" text with the same quiet border as
+    /// the buttons beside it (a full amber outline stood out too much). Not favourited: plain.
+    /// </summary>
+    internal static void ApplyFavouriteButtonStyle(Button btn, TextBlock label, bool isFavourite)
+    {
+        label.Text = isFavourite ? "Favourited" : "Favourite";
+        label.Foreground = UIFactory.Brush(isFavourite ? ResourceKeys.AccentAmberBrush : ResourceKeys.ChipTextBrush);
+        btn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        ToolTipService.SetToolTip(btn, isFavourite
+            ? "Favourite. Click to remove it from Favourites."
+            : "Add this game to Favourites (find it with the Favourites filter).");
     }
 
     /// <summary>HDR button tooltip that states the current setting for this game.</summary>

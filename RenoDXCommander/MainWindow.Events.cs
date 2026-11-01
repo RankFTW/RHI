@@ -1197,14 +1197,7 @@ public sealed partial class MainWindow
         ViewModel.ToggleFavouriteCommand.Execute(card);
 
         // Refresh the detail panel icon to reflect the new state
-        DetailFavIcon.Text = "Favourite";
-        var favColor = card.IsFavourite
-            ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
-            : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
-        DetailFavIcon.Foreground = new SolidColorBrush(favColor);
-        DetailFavBtn.BorderBrush = card.IsFavourite
-            ? new SolidColorBrush(((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color)
-            : (Brush)Application.Current.Resources[ResourceKeys.BorderSubtleBrush];
+        DetailPanelBuilder.ApplyFavouriteButtonStyle(DetailFavBtn, DetailFavIcon, card.IsFavourite);
     }
 
     // ── Card handlers ─────────────────────────────────────────────────────────────

@@ -34,6 +34,20 @@ public partial class DetailPanelBuilder
         public Action? ResetAction; // stored separately so mgmt panel can call it directly (automation peer fails on collapsed buttons)
     }
 
+    // Wiki lookup dropdown items (Game Overrides, under Wiki mod name)
+    internal const string WikiIncludedItem = "Use wiki";
+    internal const string WikiExcludedItem = "Ignore wiki";
+
+    /// <summary>Plain grey look shared by the Game Overrides reset buttons (name, DLL names, launch options).</summary>
+    internal static void ApplyResetButtonStyle(Button btn)
+    {
+        btn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        btn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+        btn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush);
+        btn.BorderThickness = new Thickness(1);
+        btn.CornerRadius = new CornerRadius(8);
+    }
+
     public void BuildOverridesPanel(GameCardViewModel card)
     {
         // Abort any in-progress drag before clearing the header row — prevents stale
@@ -142,13 +156,13 @@ public partial class DetailPanelBuilder
         // ── Game name + Wiki name ────────────────────────────────────────────────
         var detectedBox = new TextBox
         {
-            Header = "Game name (editable)",
+            Header = "Game name",
             Text = gameName,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(detectedBox,
-            "The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name.");
+            "The display name for this game. Edit and press Enter to rename. Reset name reverts to the auto-detected store name.");
         var wikiBox = new TextBox
         {
             Header = "Wiki mod name",
@@ -206,7 +220,7 @@ public partial class DetailPanelBuilder
         string DllOverrideLabelTip(bool hasOverride) => hasOverride
             ? "Rename the ReShade, Display Commander and OptiScaler DLLs for this game."
             : "Rename the ReShade, Display Commander and OptiScaler DLLs for this game.\n"
-              + "Reset DLL Names is available once a name has been overridden.";
+              + "Reset DLL names is available once a name has been overridden.";
         bool _updatingDropdowns = false; // declared early so UpdateAllDropdowns can use it
 
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
@@ -566,36 +580,31 @@ public partial class DetailPanelBuilder
         resetWikiRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         resetWikiRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        // Restyle reset button to blue accent
-        resetBtn.Content = "Reset";
+        resetBtn.Content = "Reset name";
         resetBtn.FontSize = 12;
         resetBtn.Height = 32;
         resetBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
         resetBtn.VerticalAlignment = VerticalAlignment.Stretch;
         resetBtn.Padding = new Thickness(10, 6, 10, 6);
-        resetBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
-        resetBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
-        resetBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
-        resetBtn.BorderThickness = new Thickness(1);
-        resetBtn.CornerRadius = new CornerRadius(8);
+        ApplyResetButtonStyle(resetBtn);
         Grid.SetColumn(resetBtn, 0);
         resetWikiRow.Children.Add(resetBtn);
 
         // Wiki lookup ComboBox (replaces ToggleSwitch)
-        var wikiExcludeItems = new[] { "Included", "Excluded" };
+        var wikiExcludeItems = new[] { WikiIncludedItem, WikiExcludedItem };
         var wikiExcludeCombo = new ComboBox
         {
             ItemsSource = wikiExcludeItems,
-            SelectedItem = _window.ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included",
+            SelectedItem = _window.ViewModel.IsWikiExcluded(gameName) ? WikiExcludedItem : WikiIncludedItem,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(wikiExcludeCombo,
-            "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
+            "Use wiki: look this game up on the RenoDX and Luma wikis to find its mod.\nIgnore wiki: skip wiki lookups for this game.");
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
             var selected = wikiExcludeCombo.SelectedItem as string;
-            bool shouldExclude = selected == "Excluded";
+            bool shouldExclude = selected == WikiExcludedItem;
             if (shouldExclude != _window.ViewModel.IsWikiExcluded(capturedName))
                 _window.ViewModel.ToggleWikiExclusion(capturedName);
         };
@@ -629,7 +638,7 @@ public partial class DetailPanelBuilder
         {
             Text = "DLL naming overrides",
             FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         };
         ToolTipService.SetToolTip(dllOverrideLabel, DllOverrideLabelTip(_window.ViewModel.HasDllOverride(gameName)));
         topRightColumn.Children.Add(dllOverrideLabel);
@@ -643,9 +652,9 @@ public partial class DetailPanelBuilder
         dllBoxesGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         // Label row
-        var rsLabel = new TextBlock { Text = "ReShade", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
-        var dcLabel = new TextBlock { Text = "Display Commander", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
-        var osLabel = new TextBlock { Text = "OptiScaler", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
+        var rsLabel = new TextBlock { Text = "ReShade", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var dcLabel = new TextBlock { Text = "Display Commander", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var osLabel = new TextBlock { Text = "OptiScaler", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
         Grid.SetColumn(rsLabel, 0); Grid.SetRow(rsLabel, 0);
         Grid.SetColumn(dcLabel, 1); Grid.SetRow(dcLabel, 0);
         Grid.SetColumn(osLabel, 2); Grid.SetRow(osLabel, 0);
@@ -664,18 +673,14 @@ public partial class DetailPanelBuilder
         // Reset DLL Names button — reverts all three DLLs to defaults and clears the config
         resetDllBtn = new Button
         {
-            Content = "Reset DLL Names",
+            Content = "Reset DLL names",
             FontSize = 12,
-            Height = 28,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Padding = new Thickness(10, 4, 10, 4),
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(10, 6, 10, 6),
             IsEnabled = _window.ViewModel.HasDllOverride(gameName),
-            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
         };
+        ApplyResetButtonStyle(resetDllBtn);
         ToolTipService.SetToolTip(resetDllBtn,
             "Revert all DLL names back to defaults and clear saved overrides.");
         resetDllBtn.Click += async (s, e) =>
