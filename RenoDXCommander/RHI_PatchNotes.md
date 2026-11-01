@@ -24,7 +24,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - ReShade's ⚙ has a new Load ReShade as ASI option. Turning it on renames ReShade to `ReShade64.asi` (`ReShade32.asi` for 32-bit games), so an ASI loader can load it. Turning it off puts the normal DLL name back. Installs, updates and Update All keep the `.asi` name. While it's on, ReShade's DLL name in Game Overrides is greyed out. RHI doesn't install an ASI loader for you; use ASI Loader in Extras or another loader. Not available for Vulkan games.
 
 **Find a setting**
-- A search box at the top of Settings. Type part of a setting's name or description to list every match and where it lives, then click one to jump straight to it.
+- A search box at the top of Settings. Type part of a setting's name or description to list every match and where it lives, then click one to jump straight to it. The setting is scrolled to the middle of the window, and it and its card are briefly outlined in blue.
 
 **OptiScaler presets**
 - OptiScaler's ⚙ now opens with a Presets panel, on every OptiScaler version including Stable. Recommended presets are one click:

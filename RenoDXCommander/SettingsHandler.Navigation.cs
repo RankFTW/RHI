@@ -914,35 +914,151 @@ public partial class SettingsHandler
         ExitSettingsSearch(clearBox: true, restoreScroll: false);
         _window.SettingsCardsPanel.UpdateLayout();
 
-        var y = GetTopInSettingsContent(entry.Element)
-                ?? (entry.Card != null ? GetTopInSettingsContent(entry.Card) : null);
+        // Centre the setting (its row when there is one) vertically in the window
+        FrameworkElement? anchor = null;
+        try { anchor = FindSettingRow(entry.Element, entry.Card); }
+        catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.GoToSearchResult] {ex.Message}"); }
+        anchor ??= entry.Element;
+        var y = GetTopInSettingsContent(anchor);
+        if (y == null && entry.Card != null) { anchor = entry.Card; y = GetTopInSettingsContent(entry.Card); }
         if (y == null) return;
-        double target = Math.Clamp(y.Value - 80, 0, Math.Max(0, sv.ScrollableHeight));
+        double height = Math.Min(anchor.ActualHeight, sv.ViewportHeight);
+        double offset = sv.ViewportHeight > 0 ? (sv.ViewportHeight - height) / 2 : 80;
+        double target = Math.Clamp(y.Value - offset, 0, Math.Max(0, sv.ScrollableHeight));
         _pinnedSectionKey = entry.SectionKey;
         _pinnedOffset = target;
         _navAnimating = false;
         sv.ChangeView(null, target, null, true);
         SetHighlightedSection(entry.SectionKey);
-        FlashCard(entry.Card);
+        FlashCard(entry.Card, entry.Element);
     }
 
-    private void FlashCard(Border? card)
+    private void FlashCard(Border? card, FrameworkElement? element = null)
     {
         EndCardFlash();
-        if (card == null || _cardFlashTimer == null) return;
-        _flashCard = card;
-        _flashOriginalBrush = card.BorderBrush;
-        card.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
-        _cardFlashTimer.Start();
+        if (_cardFlashTimer == null) return;
+        if (card != null)
+        {
+            _flashCard = card;
+            _flashOriginalBrush = card.BorderBrush;
+            card.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+        }
+        try { FlashSettingRow(element, card); }
+        catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.FlashSettingRow] {ex.Message}"); }
+        if (_flashCard != null || _flashRow != null) _cardFlashTimer.Start();
     }
 
     private void EndCardFlash()
     {
         _cardFlashTimer?.Stop();
-        if (_flashCard == null) return;
-        _flashCard.BorderBrush = _flashOriginalBrush;
-        _flashCard = null;
-        _flashOriginalBrush = null;
+        if (_flashCard != null)
+        {
+            _flashCard.BorderBrush = _flashOriginalBrush;
+            _flashCard = null;
+            _flashOriginalBrush = null;
+        }
+        EndRowFlash();
+    }
+
+    // ── Setting row flash ─────────────────────────────────────────────────────
+    // The matched setting gets its own blue outline alongside the card's. Rows are Grids/StackPanels,
+    // so the border is drawn on the panel itself; the extra padding and border are cancelled out with a
+    // negative margin so nothing around it moves.
+
+    private const double RowFlashPad = 5;
+    private const double RowFlashThickness = 1.5;
+
+    private FrameworkElement? _flashRow;
+    private Brush? _flashRowBrush;
+    private Thickness _flashRowThickness, _flashRowPadding, _flashRowMargin;
+    private CornerRadius _flashRowCorner;
+
+    private void FlashSettingRow(FrameworkElement? element, Border? card)
+    {
+        var row = FindSettingRow(element, card);
+        if (row == null) return;
+        var blue = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+
+        if (row is Control ctl)
+        {
+            // A named button on its own: outline the button (it already has a border)
+            _flashRow = ctl;
+            _flashRowBrush = ctl.BorderBrush;
+            _flashRowThickness = ctl.BorderThickness;
+            ctl.BorderBrush = blue;
+            if (ctl.BorderThickness.Left < 1) ctl.BorderThickness = new Thickness(1);
+            return;
+        }
+
+        double grow = RowFlashPad + RowFlashThickness;
+        Thickness Grow(Thickness t, double d) => new(t.Left + d, t.Top + d, t.Right + d, t.Bottom + d);
+        switch (row)
+        {
+            case Grid g:
+                _flashRow = g;
+                _flashRowBrush = g.BorderBrush; _flashRowThickness = g.BorderThickness;
+                _flashRowPadding = g.Padding; _flashRowMargin = g.Margin; _flashRowCorner = g.CornerRadius;
+                g.Margin = Grow(g.Margin, -grow);
+                g.Padding = Grow(g.Padding, RowFlashPad);
+                g.BorderThickness = Grow(g.BorderThickness, RowFlashThickness);
+                g.CornerRadius = new CornerRadius(6);
+                g.BorderBrush = blue;
+                break;
+            case StackPanel sp:
+                _flashRow = sp;
+                _flashRowBrush = sp.BorderBrush; _flashRowThickness = sp.BorderThickness;
+                _flashRowPadding = sp.Padding; _flashRowMargin = sp.Margin; _flashRowCorner = sp.CornerRadius;
+                sp.Margin = Grow(sp.Margin, -grow);
+                sp.Padding = Grow(sp.Padding, RowFlashPad);
+                sp.BorderThickness = Grow(sp.BorderThickness, RowFlashThickness);
+                sp.CornerRadius = new CornerRadius(6);
+                sp.BorderBrush = blue;
+                break;
+        }
+    }
+
+    private void EndRowFlash()
+    {
+        var row = _flashRow;
+        _flashRow = null;
+        switch (row)
+        {
+            case Control ctl:
+                ctl.BorderBrush = _flashRowBrush;
+                ctl.BorderThickness = _flashRowThickness;
+                break;
+            case Grid g:
+                g.BorderBrush = _flashRowBrush; g.BorderThickness = _flashRowThickness;
+                g.Padding = _flashRowPadding; g.Margin = _flashRowMargin; g.CornerRadius = _flashRowCorner;
+                break;
+            case StackPanel sp:
+                sp.BorderBrush = _flashRowBrush; sp.BorderThickness = _flashRowThickness;
+                sp.Padding = _flashRowPadding; sp.Margin = _flashRowMargin; sp.CornerRadius = _flashRowCorner;
+                break;
+        }
+        _flashRowBrush = null;
+    }
+
+    /// <summary>
+    /// The element to outline for a search result: a button with its own text is outlined by itself;
+    /// anything else walks up to the row that sits directly in a vertical StackPanel (the setting row).
+    /// Returns null for card titles, help lines and anything that can't draw a border.
+    /// </summary>
+    private static FrameworkElement? FindSettingRow(FrameworkElement? element, Border? card)
+    {
+        if (element == null) return null;
+        if (element is ButtonBase btn && btn.Content is string s && s.Any(char.IsLetterOrDigit))
+            return btn;
+
+        FrameworkElement current = element;
+        while (true)
+        {
+            var parent = VisualTreeHelper.GetParent(current) as FrameworkElement;
+            if (parent == null || ReferenceEquals(parent, card)) return null;
+            if (parent is StackPanel { Orientation: Orientation.Vertical })
+                return current is Grid or StackPanel or ButtonBase ? current : null;
+            current = parent;
+        }
     }
 
     // ── Text extraction helpers ───────────────────────────────────────────────
