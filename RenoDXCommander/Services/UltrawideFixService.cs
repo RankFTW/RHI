@@ -33,7 +33,7 @@ public partial class UltrawideFixService : IUltrawideFixService
     private static readonly string RoseCachePath  = Path.Combine(CacheDir, "rose_uw_readme.md");
     private static readonly string P1xelCachePath = Path.Combine(CacheDir, "p1xel_uw_readme.md");
 
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(4);
 
     // ── Lookup dictionaries (normalized game name → URL) ──────────────────────
     private Dictionary<string, string> _lyallLookup  = new(StringComparer.Ordinal);
@@ -70,22 +70,22 @@ public partial class UltrawideFixService : IUltrawideFixService
     }
 
     /// <inheritdoc />
-    public async Task InitAsync()
+    public async Task InitAsync(bool forceRefresh = false)
     {
         // Fetch all three sources in parallel
         var lyallTask = Task.Run(async () =>
         {
-            try { await InitLyallAsync(); }
+            try { await InitLyallAsync(forceRefresh); }
             catch (Exception ex) { CrashReporter.Log($"[UltrawideFixService] Lyall init failed — {ex.Message}"); }
         });
         var roseTask = Task.Run(async () =>
         {
-            try { await InitRoseAsync(); }
+            try { await InitRoseAsync(forceRefresh); }
             catch (Exception ex) { CrashReporter.Log($"[UltrawideFixService] Rose init failed — {ex.Message}"); }
         });
         var p1xelTask = Task.Run(async () =>
         {
-            try { await InitP1xelAsync(); }
+            try { await InitP1xelAsync(forceRefresh); }
             catch (Exception ex) { CrashReporter.Log($"[UltrawideFixService] p1xel init failed — {ex.Message}"); }
         });
 
@@ -159,9 +159,9 @@ public partial class UltrawideFixService : IUltrawideFixService
 
     // ── Lyall (Codeberg API) ──────────────────────────────────────────────────
 
-    private async Task InitLyallAsync()
+    private async Task InitLyallAsync(bool forceRefresh)
     {
-        var json = await FetchOrLoadCache(LyallApiUrl, LyallCachePath, "Lyall");
+        var json = await FetchOrLoadCache(LyallApiUrl, LyallCachePath, "Lyall", forceRefresh);
         if (json == null) return;
 
         try
@@ -201,9 +201,9 @@ public partial class UltrawideFixService : IUltrawideFixService
 
     // ── RoseTheFlower (GitHub raw README) ─────────────────────────────────────
 
-    private async Task InitRoseAsync()
+    private async Task InitRoseAsync(bool forceRefresh)
     {
-        var readme = await FetchOrLoadCache(RoseReadmeUrl, RoseCachePath, "Rose");
+        var readme = await FetchOrLoadCache(RoseReadmeUrl, RoseCachePath, "Rose", forceRefresh);
         if (readme == null) return;
 
         try
@@ -289,9 +289,9 @@ public partial class UltrawideFixService : IUltrawideFixService
 
     // ── p1xel8ted (GitHub raw README) ─────────────────────────────────────────
 
-    private async Task InitP1xelAsync()
+    private async Task InitP1xelAsync(bool forceRefresh)
     {
-        var readme = await FetchOrLoadCache(P1xelReadmeUrl, P1xelCachePath, "p1xel");
+        var readme = await FetchOrLoadCache(P1xelReadmeUrl, P1xelCachePath, "p1xel", forceRefresh);
         if (readme == null) return;
 
         try
@@ -322,13 +322,13 @@ public partial class UltrawideFixService : IUltrawideFixService
 
     // ── Shared fetch/cache helper ─────────────────────────────────────────────
 
-    private async Task<string?> FetchOrLoadCache(string url, string cachePath, string label)
+    private async Task<string?> FetchOrLoadCache(string url, string cachePath, string label, bool forceRefresh)
     {
         // Check cache freshness
         bool cacheFresh = false;
         try
         {
-            if (File.Exists(cachePath))
+            if (!forceRefresh && File.Exists(cachePath))
             {
                 var lastWrite = File.GetLastWriteTimeUtc(cachePath);
                 cacheFresh = (DateTime.UtcNow - lastWrite) < CacheTtl;

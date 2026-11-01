@@ -284,11 +284,11 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService central data load failed — {ex.Message}"); }
             });
             var uwFixInitTask = Task.Run(async () => {
-                try { await _uwFixService.InitAsync(); }
+                try { await _uwFixService.InitAsync(forceRefresh: forceRescan); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
             var ultraPlusInitTask = Task.Run(async () => {
-                try { await _ultraPlusService.InitAsync(); }
+                try { await _ultraPlusService.InitAsync(forceRefresh: forceRescan); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltraPlusService init failed — {ex.Message}"); }
             });
 

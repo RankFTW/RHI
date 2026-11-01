@@ -5,7 +5,7 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Fetches the Ultra+ game list from theultraplace.com/games/, caches to disk
-/// with a 24-hour TTL, builds a normalized-name lookup dictionary, and resolves
+/// with a 4-hour TTL (matches the periodic update check), builds a normalized-name lookup dictionary, and resolves
 /// per-game Ultra+ page URLs.
 /// </summary>
 public partial class UltraPlusService : IUltraPlusService
@@ -19,7 +19,7 @@ public partial class UltraPlusService : IUltraPlusService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "ultraplus_games.html");
 
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(4);
 
     /// <summary>Normalized game name → Ultra+ page URL.</summary>
     private Dictionary<string, string> _lookup = new(StringComparer.Ordinal);
@@ -35,7 +35,7 @@ public partial class UltraPlusService : IUltraPlusService
     }
 
     /// <inheritdoc />
-    public async Task InitAsync()
+    public async Task InitAsync(bool forceRefresh = false)
     {
         string? html = null;
 
@@ -43,7 +43,7 @@ public partial class UltraPlusService : IUltraPlusService
         bool cacheFresh = false;
         try
         {
-            if (File.Exists(CachePath))
+            if (!forceRefresh && File.Exists(CachePath))
             {
                 var lastWrite = File.GetLastWriteTimeUtc(CachePath);
                 cacheFresh = (DateTime.UtcNow - lastWrite) < CacheTtl;

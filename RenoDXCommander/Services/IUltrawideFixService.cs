@@ -5,15 +5,15 @@ namespace RenoDXCommander.Services;
 /// <summary>
 /// Fetches ultrawide fix data from multiple sources (Lyall/Codeberg,
 /// RoseTheFlower/GitHub, p1xel8ted/GitHub), caches to disk with a
-/// 24-hour TTL, and resolves per-game fix URLs with tiered priority.
+/// 4-hour TTL, and resolves per-game fix URLs with tiered priority.
 /// </summary>
 public interface IUltrawideFixService
 {
     /// <summary>
     /// Fetches all sources (or loads from cache), builds the lookup dictionaries.
-    /// Called once at startup.
+    /// <paramref name="forceRefresh"/> skips the cache age check (Refresh button).
     /// </summary>
-    Task InitAsync();
+    Task InitAsync(bool forceRefresh = false);
 
     /// <summary>
     /// Returns the best ultrawide fix URL for a game, or null if none exists.
