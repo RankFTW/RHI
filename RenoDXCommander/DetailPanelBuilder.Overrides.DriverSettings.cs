@@ -30,7 +30,40 @@ public partial class DetailPanelBuilder
         uint ReBarEnableMode,
         uint ReBarMode,
         ulong GlobalReBarSizeLimit,
+        uint? PerGameFpsLimit, uint GlobalFpsLimit,
         bool IsAdmin);
+
+    private const string DriverSummaryTag = "DriverSummary";   // collapsed-only header summary
+
+    /// <summary>
+    /// Footer line under the driver settings: "Driver 617.42 · ✓ Running as admin — …".
+    /// The driver version is shown here when expanded; when collapsed it's in the header summary.
+    /// </summary>
+    private TextBlock MakeDriverFooterText(bool elevated, Thickness margin)
+    {
+        var tb = new TextBlock
+        {
+            FontSize          = 10,
+            TextWrapping      = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin            = margin,
+        };
+        var driverVer = _dlssPresetService.DriverVersionString;
+        if (!string.IsNullOrEmpty(driverVer))
+            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text       = $"Driver {driverVer}  ·  ",
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            });
+        tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+        {
+            Text = elevated
+                ? "✓ Running as admin — all driver profile settings are writable."
+                : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
+            Foreground = UIFactory.Brush(elevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
+        });
+        return tb;
+    }
 
     private void BuildDriverProfileSection(GameCardViewModel card, string capturedName)
     {
@@ -45,10 +78,10 @@ public partial class DetailPanelBuilder
         var driverSettings  = _window.ViewModel.Settings;
         bool driverCollapsed = driverSettings.CollapsedDetailSections.Contains(driverSectionKey);
 
+        // Driver version goes in the collapsed summary, not the title, so the
+        // title matches the other sections.
         var driverVer = _dlssPresetService.DriverVersionString;
-        var driverHeaderText = string.IsNullOrEmpty(driverVer)
-            ? "Driver Settings"
-            : $"Driver Settings — Driver {driverVer}";
+        var driverHeaderText = "Driver Settings";
 
         var driverArrow = new TextBlock
         {
@@ -88,10 +121,11 @@ public partial class DetailPanelBuilder
             bool nowCollapsed = driverBody.Visibility == Visibility.Visible;
             driverBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             driverArrow.Text = nowCollapsed ? "▶" : "▼";
-            // Show/hide the summary TextBlock at index 3 (appended after data is loaded)
-            if (_driverHeaderRow != null && _driverHeaderRow.Children.Count > 3
-                && _driverHeaderRow.Children[3] is TextBlock driverSummaryTb)
-                driverSummaryTb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            // Summary shows only while collapsed
+            if (_driverHeaderRow != null)
+                foreach (var child in _driverHeaderRow.Children)
+                    if (child is TextBlock { Tag: DriverSummaryTag } tb)
+                        tb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
             if (nowCollapsed) driverSettings.CollapsedDetailSections.Add(driverSectionKey);
             else              driverSettings.CollapsedDetailSections.Remove(driverSectionKey);
             _window.ViewModel.SaveSettingsPublic();
@@ -101,17 +135,17 @@ public partial class DetailPanelBuilder
 
         if (!_dlssPresetService.IsSupported)
         {
-            bool elevated = VulkanLayerService.IsRunningAsAdmin();
-            driverBody.Children.Add(new TextBlock
+            // No profile data to read: the summary is just the driver version
+            if (!string.IsNullOrEmpty(driverVer)
+                && DetailPanelBuilder.MakeSectionSummaryInlines(new[] { ("Driver", (string?)driverVer) }) is { } verTb)
             {
-                Text = elevated
-                    ? "✓ Running as admin — all driver profile settings are writable."
-                    : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
-                FontSize     = 10,
-                Foreground   = UIFactory.Brush(elevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
-                TextWrapping = TextWrapping.Wrap,
-                Margin       = new Thickness(0, 4, 0, 0),
-            });
+                verTb.Tag = DriverSummaryTag;
+                verTb.Visibility = driverCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                driverHeaderRow.Children.Add(verTb);
+            }
+
+            bool elevated = VulkanLayerService.IsRunningAsAdmin();
+            driverBody.Children.Add(MakeDriverFooterText(elevated, new Thickness(0, 4, 0, 0)));
             return;
         }
 
@@ -158,6 +192,8 @@ public partial class DetailPanelBuilder
                         ReBarEnableMode:          svc.GetReBarEnableMode(gameName, installPath),
                         ReBarMode:                svc.GetReBarMode(gameName, installPath),
                         GlobalReBarSizeLimit:     svc.GetGlobalReBarSizeLimit(),
+                        PerGameFpsLimit:          svc.GetPerGameFpsLimit(gameName, installPath),
+                        GlobalFpsLimit:           svc.GetGlobalFpsLimit(),
                         IsAdmin:                  VulkanLayerService.IsRunningAsAdmin());
                 }, scanCt);
                 using var delayCts = new CancellationTokenSource();
@@ -207,8 +243,9 @@ public partial class DetailPanelBuilder
                 // Update collapsed summary — appended at index 3 of driverHeaderRow
                 if (_driverHeaderRow != null && data != null)
                 {
-                    while (_driverHeaderRow.Children.Count > 3)
-                        _driverHeaderRow.Children.RemoveAt(3);
+                    for (int i = _driverHeaderRow.Children.Count - 1; i >= 3; i--)
+                        if (_driverHeaderRow.Children[i] is TextBlock { Tag: DriverSummaryTag })
+                            _driverHeaderRow.Children.RemoveAt(i);
 
                     var vsyncName = DlssPresetService.VSyncModeOptions
                         .FirstOrDefault(o => o.Value == data.VSyncMode).Name ?? "Default";
@@ -218,18 +255,21 @@ public partial class DetailPanelBuilder
                                   : data.ReBarEnableMode == 0 ? "Off"
                                   : null; // Auto = default, omit from summary
 
-                    var summaryEntries = new System.Collections.Generic.List<(string, string?)>
-                    {
-                        ("VSync", vsyncName),
-                    };
+                    var summaryEntries = new System.Collections.Generic.List<(string, string?)>();
+                    if (!string.IsNullOrEmpty(driverVer))
+                        summaryEntries.Add(("Driver", driverVer));
+                    summaryEntries.Add(("VSync", vsyncName));
                     if (smoothName != null)
                         summaryEntries.Add(("Smooth", smoothName));
                     if (rebarName != null)
                         summaryEntries.Add(("ReBAR", rebarName));
+                    if (data.PerGameFpsLimit is uint capFps)
+                        summaryEntries.Add(("FPS Limit", capFps == 0 ? "Off" : $"{capFps}"));
                     var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries);
                     if (summaryTb != null)
                     {
-                        summaryTb.Visibility = driverCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                        summaryTb.Tag = DriverSummaryTag;
+                        summaryTb.Visibility = driverBody.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
                         _driverHeaderRow.Children.Add(summaryTb);
                     }
                 }
@@ -567,10 +607,10 @@ public partial class DetailPanelBuilder
             nvidiaGrid.Children.Add(MakeDlssDivider(5));
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:SmoothMotion done({capturedName})");
 
-            // ── Column 6: Other (Power, G-Sync, Restore) ──
+            // ── Column 6: Other (Power, G-Sync, FPS Limit) ──
             var powerCol = new StackPanel { Spacing = 4 };
             var powerLabel = new TextBlock { Text = "Other", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(powerLabel, "Power management, G-Sync control, and profile reset.");
+            ToolTipService.SetToolTip(powerLabel, "Power management, G-Sync control and the driver frame rate limit for this game.");
             powerCol.Children.Add(powerLabel);
 
             // Power Management Mode
@@ -629,8 +669,112 @@ public partial class DetailPanelBuilder
                 gsyncInit = false;
             }
 
-            // Restore Profile Defaults button (label spacer to align with 3rd row combos)
-            powerCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+            // Per-game FPS limit (FPS Limiter V3). "Global" removes the game's own value so it follows the Settings page limit.
+            {
+                powerCol.Children.Add(new TextBlock { Text = "FPS Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var presets = DlssPresetService.FpsLimiterPresets;
+                var globalFps = d.GlobalFpsLimit;
+                var globalItem = globalFps == 0 ? "Global (Off)" : $"Global ({globalFps} FPS)";
+
+                // Builds the item list; a custom per-game value gets its own entry just above "Custom..."
+                (string[] Items, int Index) BuildFpsItems(uint? perGame)
+                {
+                    var list = new List<string> { globalItem };
+                    list.AddRange(presets.Select(o => o.Name));
+                    if (perGame == null) return (list.ToArray(), 0);
+                    int presetIdx = Array.FindIndex(presets, o => o.Value == perGame.Value && o.Value != uint.MaxValue);
+                    if (presetIdx >= 0) return (list.ToArray(), presetIdx + 1);
+                    list.Insert(list.Count - 1, $"{perGame.Value} FPS (Custom)");
+                    return (list.ToArray(), list.Count - 2);
+                }
+
+                uint? currentFps = d.PerGameFpsLimit;
+                var (fpsItems, fpsIdx) = BuildFpsItems(currentFps);
+                var fpsCombo = new ComboBox
+                {
+                    ItemsSource = fpsItems,
+                    SelectedIndex = fpsIdx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                    MaxDropDownHeight = 300,
+                };
+                bool hasFrameLimiter = card.UlStatus is GameStatus.Installed or GameStatus.UpdateAvailable
+                                    || card.DcStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
+                var fpsTip = "NVIDIA driver frame rate limit for this game only. Global follows the limit set on the Settings page. Off turns the driver limit off for this game even when a global limit is set.";
+                if (hasFrameLimiter)
+                    fpsTip += "\n\nReLimiter or Display Commander is installed for this game, so RHI set the driver limit to Off. Using both limiters at once can cause stutter.";
+                ToolTipService.SetToolTip(fpsCombo, fpsTip);
+
+                var fpsInit = true;
+                fpsCombo.SelectionChanged += async (s, ev) =>
+                {
+                    if (fpsInit) return;
+                    try
+                    {
+                        var items = (string[])fpsCombo.ItemsSource;
+                        int i = fpsCombo.SelectedIndex;
+                        if (i < 0 || i >= items.Length) return;
+                        var selected = items[i];
+
+                        if (i == 0)
+                        {
+                            currentFps = null;
+                            _ = Task.Run(() => nvidiaPresetService.ClearPerGameFpsLimit(capturedName, installPathSafe));
+                            return;
+                        }
+                        if (selected.EndsWith("(Custom)", StringComparison.Ordinal))
+                            return; // re-selected the existing custom value
+
+                        int presetIdx = Array.FindIndex(presets, o => o.Name == selected);
+                        if (presetIdx < 0) return;
+                        if (presets[presetIdx].Value != uint.MaxValue)
+                        {
+                            var value = presets[presetIdx].Value;
+                            currentFps = value;
+                            _ = Task.Run(() => nvidiaPresetService.SetPerGameFpsLimit(capturedName, installPathSafe, value));
+                            return;
+                        }
+
+                        // "Custom..." — ask for a value
+                        var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
+                        var dialog = new ContentDialog
+                        {
+                            Title = "Custom FPS Limit",
+                            Content = textBox,
+                            PrimaryButtonText = "Set",
+                            CloseButtonText = "Cancel",
+                            XamlRoot = fpsCombo.XamlRoot ?? _window.Content.XamlRoot,
+                            RequestedTheme = ElementTheme.Dark,
+                        };
+                        var result = await DialogService.ShowSafeAsync(dialog);
+                        uint? newFps = null;
+                        if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text.Trim(), out var fps) && fps >= 20 && fps <= 1000)
+                            newFps = fps;
+
+                        if (newFps is uint chosen)
+                        {
+                            currentFps = chosen;
+                            _ = Task.Run(() => nvidiaPresetService.SetPerGameFpsLimit(capturedName, installPathSafe, chosen));
+                        }
+                        // Rebuild the list (adds the custom entry, or reverts the selection on cancel)
+                        var (newItems, newIdx) = BuildFpsItems(currentFps);
+                        fpsInit = true;
+                        fpsCombo.ItemsSource = newItems;
+                        fpsCombo.SelectedIndex = newIdx;
+                        fpsInit = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        fpsInit = false;
+                        CrashReporter.Log($"[DetailPanelBuilder.FpsLimitCombo] Error for '{capturedName}' — {ex.Message}");
+                    }
+                };
+                powerCol.Children.Add(fpsCombo);
+                fpsInit = false;
+            }
+
+            // Restore Profile Defaults button — sits in the footer row under this column
             var restoreProfileBtn = new Button
             {
                 Content = "Restore Defaults",
@@ -685,7 +829,6 @@ public partial class DetailPanelBuilder
                     }
                 }
             };
-            powerCol.Children.Add(restoreProfileBtn);
 
             Grid.SetColumn(powerCol, 6);
             nvidiaGrid.Children.Add(powerCol);
@@ -826,6 +969,15 @@ public partial class DetailPanelBuilder
             // DLSS components (S.T.A.L.K.E.R. 2 and similar).
             var targetPanel = nvBody ?? _window.NvidiaProfileDriverPanel;
             var isElevatedCapture = d.IsAdmin;
+            restoreProfileBtn.IsEnabled = isElevatedCapture && nvidiaPresetService.IsSupported;
+            restoreProfileBtn.Opacity = isElevatedCapture ? 1.0 : 0.4;
+            // Footer row: admin notice on the left, Restore Defaults under the Other column (fixed widths, see above)
+            double gridW = ColCount * colW + overhead;
+            var footerGrid = new Grid { ColumnSpacing = ColSpacing, Margin = new Thickness(0, 8, 0, 0) };
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0, gridW - colW - ColSpacing)) });
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
+            Grid.SetColumn(restoreProfileBtn, 1);
+            footerGrid.Children.Add(restoreProfileBtn);
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddToTree({capturedName})");
             var enqueued = _window.DispatcherQueue?.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
@@ -837,17 +989,9 @@ public partial class DetailPanelBuilder
                     targetPanel.Children.Add(nvidiaGrid);
                     _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingNotice({capturedName})");
 
-                    // Admin notice appended after the grid so it stays at the bottom
-                    targetPanel.Children.Add(new TextBlock
-                    {
-                        Text = isElevatedCapture
-                            ? "✓ Running as admin — all driver profile settings are writable."
-                            : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
-                        FontSize = 10,
-                        Foreground = UIFactory.Brush(isElevatedCapture ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
-                        TextWrapping = TextWrapping.Wrap,
-                        Margin = new Thickness(0, 8, 0, 0),
-                    });
+                    // Footer (admin notice + Restore Defaults) appended after the grid so it stays at the bottom
+                    footerGrid.Children.Add(MakeDriverFooterText(isElevatedCapture, new Thickness(0)));
+                    targetPanel.Children.Add(footerGrid);
                     _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Done({capturedName})");
                 });
             CrashReporter.Log($"[BuildDriverProfileSectionWithData] TryEnqueue(Low) for grid add returned {enqueued?.ToString() ?? "null (no dispatcher)"} for '{capturedName}'");
@@ -857,16 +1001,7 @@ public partial class DetailPanelBuilder
         if (!nvidiaPresetService.IsSupported)
         {
             bool isElevated = d.IsAdmin;
-            (nvBody ?? _window.NvidiaProfileDriverPanel).Children.Add(new TextBlock
-            {
-                Text = isElevated
-                    ? "✓ Running as admin — all driver profile settings are writable."
-                    : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
-                FontSize = 10,
-                Foreground = UIFactory.Brush(isElevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 8, 0, 0),
-            });
+            (nvBody ?? _window.NvidiaProfileDriverPanel).Children.Add(MakeDriverFooterText(isElevated, new Thickness(0, 8, 0, 0)));
         }
     }
 }

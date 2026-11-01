@@ -281,6 +281,43 @@ public partial class DlssPresetService
         }
     }
 
+    /// <summary>
+    /// Like <see cref="GetSettingRawNvApi"/>, but returns null unless the setting is stored on
+    /// this profile itself. NvAPI_DRS_GetSetting also returns values inherited from the
+    /// global/base profile; settingLocation (offset 4108) is 0 only for the profile's own value.
+    /// </summary>
+    private uint? GetOwnSettingRawNvApi(IntPtr sessionHandle, IntPtr profileHandle, uint settingId)
+    {
+        EnsureNativeFunctions();
+        if (_nativeGetSettingPtr == null) return null;
+
+        const int STRUCT_SIZE = 12320;
+        var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+        try
+        {
+            unsafe
+            {
+                new Span<byte>((void*)ptr, STRUCT_SIZE).Clear();
+            }
+            Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
+
+            uint extraParam = 0;
+            int result = _nativeGetSettingPtr(sessionHandle, profileHandle, settingId, ptr, ref extraParam);
+            if (result != 0)
+                return null;
+
+            const int NVDRS_CURRENT_PROFILE_LOCATION = 0;
+            if (Marshal.ReadInt32(ptr, 4108) != NVDRS_CURRENT_PROFILE_LOCATION)
+                return null;
+
+            return (uint)Marshal.ReadInt32(ptr, 8220);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+    }
+
     // ── Setting IDs ───────────────────────────────────────────────────────────
     private const uint NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF3;
     private const uint NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF7;
@@ -717,6 +754,70 @@ public partial class DlssPresetService
     /// <summary>Sets the per-game FPS Limiter V3 value. Used to disable the driver cap when a software limiter is installed.</summary>
     public bool SetPerGameFpsLimit(string gameName, string installPath, uint fps)
         => SetPreset(gameName, installPath, FPS_LIMITER_V3_ID, fps);
+
+    /// <summary>
+    /// Gets the FPS Limiter V3 value set on this game's own profile.
+    /// Returns null when the game has no value of its own (it follows the global limit).
+    /// </summary>
+    public uint? GetPerGameFpsLimit(string gameName, string installPath)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null) return null;
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.GetPerGameFpsLimit] Lock timeout for '{gameName}' — NVAPI may be hung.");
+            return null;
+        }
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return null;
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(profile.Handle);
+            if (sH == IntPtr.Zero || pH == IntPtr.Zero) return null;
+            return GetOwnSettingRawNvApi(sH, pH, FPS_LIMITER_V3_ID);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.GetPerGameFpsLimit] Error for '{gameName}' — {ex.Message}");
+            return null;
+        }
+        finally
+        {
+            _sessionLock.Release();
+        }
+    }
+
+    /// <summary>Removes the game's own FPS Limiter V3 value so it follows the global limit again.</summary>
+    public bool ClearPerGameFpsLimit(string gameName, string installPath)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null) return false;
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.ClearPerGameFpsLimit] Lock timeout for '{gameName}' — NVAPI may be hung. Skipping.");
+            return false;
+        }
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return true; // no profile = nothing to clear
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(profile.Handle);
+            if (sH == IntPtr.Zero || pH == IntPtr.Zero) return false;
+            if (GetOwnSettingRawNvApi(sH, pH, FPS_LIMITER_V3_ID) == null) return true; // already following global
+            bool ok = DeleteSettingRawNvApi(sH, pH, FPS_LIMITER_V3_ID);
+            CrashReporter.Log($"[DlssPresetService.ClearPerGameFpsLimit] '{gameName}' → global ({(ok ? "ok" : "failed")})");
+            return ok;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.ClearPerGameFpsLimit] Error for '{gameName}' — {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            _sessionLock.Release();
+        }
+    }
 
     // ── Lilium HDR DXVK Present Method ────────────────────────────────────────
 

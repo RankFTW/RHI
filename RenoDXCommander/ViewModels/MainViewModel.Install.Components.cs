@@ -559,7 +559,7 @@ public partial class MainViewModel
             catch { /* best effort */ }
 
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
-            try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
+            try { _dlssPresetService.ClearPerGameFpsLimit(card.GameName, card.InstallPath); }
             catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallUl] Failed to restore driver FPS limiter — {ex.Message}"); }
 
             card.UlInstalledFile = null;
@@ -890,7 +890,7 @@ public partial class MainViewModel
                 _auxInstaller.RemoveRecord(dcRecord);
 
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
-            try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
+            try { _dlssPresetService.ClearPerGameFpsLimit(card.GameName, card.InstallPath); }
             catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallDc] Failed to restore driver FPS limiter — {ex.Message}"); }
 
             card.DcInstalledFile = null;

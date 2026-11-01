@@ -12,6 +12,11 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ## v2.8.9 Beta 2
 
+### New
+
+**Per-game FPS limit**
+- Driver Settings on each game's page now has an FPS Limit option, so you can cap a single game without setting a limit for every game. Global follows the limit on the Settings page, Off turns the driver limit off for that game, and Custom... lets you enter any value from 20 to 1000. Restore Defaults has moved to the bottom row of Driver Settings to make room.
+
 ### Changes
 
 **20/30 FG Unlock**
@@ -24,6 +29,9 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Settings save as soon as you change them everywhere, including dgVoodoo2, RTX Encore and ShortFuse DLSS Tool, which used to need an Apply or Save button. RTX HDR and Auto HDR keep their Apply button because they use sliders.
 - New buttons: Open relimiter.ini, Open DisplayCommander.ini and Open OptiScaler.ini.
 - Components with nothing to set (DOF Fix, ASI Loader, DLSS Enabler) and Luma on non-Unreal games now say so instead of showing an empty window.
+
+**Ultra+ and ultrawide fixes**
+- Refresh now always fetches the latest Ultra+ and ultrawide fix lists, and RHI checks them every 4 hours instead of once a day, so newly released mods show up much sooner.
 
 **Settings**
 - Settings is now organised into 8 sections: General, Accounts & Data, ReShade & RenoDX, Display & HDR, DLSS / Streamline, Driver Settings, Components, and Tools & Maintenance. Related settings are together (for example every update setting is in General › Updates), and DLSS / Streamline and Driver Settings use the same names as the sections in each game's panel. Nothing was removed.
@@ -40,6 +48,14 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Toggles say Off / On everywhere (Automatic Updates, DLSS Inputs, DLSS and G-Sync On-Screen Indicator).
 - Added labels to the OptiScaler overlay key and the colour settings monitor, and tooltips to GPU Type, DLSS Inputs, the overlay keys, G-Sync On-Screen Indicator, Colour Depth and Dynamic Range. The FPS Limit tooltip now says that choosing a cap turns the per-game FPS limit off for ReLimiter and Display Commander games.
 - Clearer names: Update Inclusion is now Components to check › Choose, Cache All Shaders is Download all shaders, HDR Auto-Toggle is Windows HDR, Resolution Auto-Toggle is Change resolution, Mass Preset Install is ReShade preset, the folder buttons are RHI data, Downloads, Custom and Logs, and the GitHub sign-in button is "Sign in with GitHub instead" (a token is the recommended option). The components summary uses full names, and the "DC.ini" button is now "DisplayCommander.ini".
+
+**Game page**
+- The mod author badge now says which mod it's for (for example "RenoDX: Marat"), as it already did when a game had both RenoDX and Luma authors.
+- The Driver Settings heading now matches the other sections. The driver version is now on the line at the bottom of the section, next to the admin note, and is the first item in the summary when the section is collapsed.
+- Hovering the HDR and RES buttons now tells you whether they're on for that game, and whether that comes from the game itself or from Settings.
+
+**Status bar**
+- The bottom-left of the window now shows what RHI is doing in the background, such as checking for new games, checking for updates or updating DLSS. When nothing is running it shows when RHI last checked for updates and when the next check is due. The game and ReShade counts are still shown above the game list.
 
 **Quick Start**
 - The Quick Start guide has been rewritten to match the current app. It now covers Neural Rendering, the Extras section, OptiScaler's variants, RTX HDR and Auto HDR, the HDR and RES buttons and adding a GitHub token, and out-of-date steps have been corrected.
@@ -75,6 +91,14 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Fixed a typed screenshot folder, addon watch folder or peak nits value being lost unless you pressed Enter (or Apply). They now also save when you click away. A typed addon watch folder that doesn't exist isn't saved, and RHI tells you.
 - Fixed out-of-date text in Settings: the Nexus Mods description, and the pointers to each game's DLSS / Streamline and Driver Settings sections.
 - Fixed opening Settings for the first time redeploying shaders to every game.
+
+**DLSS / Streamline auto-update**
+- Fixed a game that had just been auto-updated being skipped if auto-update ran again before RHI next rescanned it. The new version was stored as "310.10.0.0" instead of "310.10.0", so it no longer matched.
+- Fixed the auto-update log counting only Super Resolution updates. Games where only Ray Reconstruction or Frame Generation was updated are now counted.
+
+**Game page**
+- Fixed the Components section sitting slightly out of line with the sections below it and being a little taller.
+- Fixed a section's ≡ handle staying highlighted after dragging it to a new position.
 
 **Tooltips**
 - Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.

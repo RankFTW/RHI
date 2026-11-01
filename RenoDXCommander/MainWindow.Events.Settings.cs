@@ -1496,6 +1496,7 @@ public sealed partial class MainWindow
         DetailHdrToggleText.Foreground = hdrActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+        ToolTipService.SetToolTip(DetailHdrToggleBtn, DetailPanelBuilder.HdrToggleTooltip(hdrActive, isOverride: true));
     }
 
     // ── Resolution Auto-Toggle handlers (dev-only) ────────────────────────────
@@ -1660,6 +1661,7 @@ public sealed partial class MainWindow
         DetailResToggleText.Foreground = resActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+        ToolTipService.SetToolTip(DetailResToggleBtn, DetailPanelBuilder.ResToggleTooltip(resActive, isOverride: true));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

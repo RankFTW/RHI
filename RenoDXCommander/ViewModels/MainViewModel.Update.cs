@@ -226,6 +226,7 @@ public partial class MainViewModel
             try
             {
                 _crashReporter.Log("[MainViewModel] Periodic update check triggered (4h timer)");
+                using var activity = BeginActivity("Refreshing mod lists...");
 
                 // Re-fetch manifest (picks up new game entries, overrides, etc.)
                 try

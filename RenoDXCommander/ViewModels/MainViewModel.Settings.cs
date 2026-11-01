@@ -2027,6 +2027,10 @@ public partial class MainViewModel
 
         if (!dlssHasNewVersion && !slHasNewVersion) return;
 
+        using var activity = BeginActivity(dlssHasNewVersion && _settingsViewModel.AutoUpdateDlss
+            ? $"Updating DLSS to {newestDlss}..."
+            : $"Updating Streamline to {newestSl}...");
+
         int dlssUpdated = 0, slUpdated = 0;
 
         foreach (var card in _allCards)
@@ -2037,6 +2041,7 @@ public partial class MainViewModel
             // ── DLSS Auto-Update (SR, RR, FG all use the same version set) ──
             if (_settingsViewModel.AutoUpdateDlss && dlssHasNewVersion)
             {
+                bool gameUpdated = false;
                 try
                 {
                     // SR
@@ -2045,8 +2050,8 @@ public partial class MainViewModel
                         && !(card.DlssInstalledVersion?.StartsWith("1.") == true))
                     {
                         await _dlssStreamlineService.SwapDlssAsync(card.DlssDetection.DlssPath, newestDlss);
-                        card.DlssInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssPath);
-                        dlssUpdated++;
+                        card.DlssInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssPath));
+                        gameUpdated = true;
                     }
                     // RR
                     if (card.DlssDetection.DlssdPath != null
@@ -2054,7 +2059,8 @@ public partial class MainViewModel
                         && !(card.DlssdInstalledVersion?.StartsWith("1.") == true))
                     {
                         await _dlssStreamlineService.SwapDlssdAsync(card.DlssDetection.DlssdPath, newestDlss);
-                        card.DlssdInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssdPath);
+                        card.DlssdInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssdPath));
+                        gameUpdated = true;
                     }
                     // FG
                     if (card.DlssDetection.DlssgPath != null
@@ -2062,7 +2068,8 @@ public partial class MainViewModel
                         && !(card.DlssgInstalledVersion?.StartsWith("1.") == true))
                     {
                         await _dlssStreamlineService.SwapDlssgAsync(card.DlssDetection.DlssgPath, newestDlss);
-                        card.DlssgInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssgPath);
+                        card.DlssgInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssgPath));
+                        gameUpdated = true;
                     }
                     // NR (dev-only)
                     if (FeatureFlags.DlssNr
@@ -2070,13 +2077,15 @@ public partial class MainViewModel
                         && string.Equals(card.DlssnrInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase))
                     {
                         await _dlssStreamlineService.SwapDlssnrAsync(card.DlssDetection.DlssnrPath, newestDlss);
-                        card.DlssnrInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssnrPath);
+                        card.DlssnrInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssnrPath));
+                        gameUpdated = true;
                     }
                 }
                 catch (Exception ex)
                 {
                     _crashReporter.Log($"[RunDlssAutoUpdateAsync] DLSS auto-update failed for '{card.GameName}' — {ex.Message}");
                 }
+                if (gameUpdated) dlssUpdated++;
             }
 
             // ── Streamline Auto-Update ──
@@ -2089,8 +2098,8 @@ public partial class MainViewModel
                         && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true))
                     {
                         await _dlssStreamlineService.SwapStreamlineAsync(card.DlssDetection.StreamlineFolder, newestSl);
-                        card.StreamlineInstalledVersion = _dlssStreamlineService.GetFileVersion(
-                            card.DlssDetection.StreamlineInterposerPath ?? "");
+                        card.StreamlineInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(
+                            card.DlssDetection.StreamlineInterposerPath ?? ""));
                         slUpdated++;
                     }
                 }

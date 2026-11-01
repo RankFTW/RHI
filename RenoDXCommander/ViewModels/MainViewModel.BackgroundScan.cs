@@ -23,6 +23,7 @@ public partial class MainViewModel
     {
         IsBackgroundScanning = true;
         BackgroundScanStatusText = "Scanning for changes...";
+        using var activity = BeginActivity("Checking for new games and mod info...");
         _crashReporter.Log("[MainViewModel.RunBackgroundScanAndMergeAsync] Starting background scan...");
 
         try

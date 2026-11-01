@@ -388,9 +388,9 @@ public partial class GameCardViewModel
             if (lumaAvailable && rdxAuthor == null)
                 return new[] { $"Luma: {lumaAuthor}" };
 
-            // RenoDX only
+            // RenoDX only: prefixed too, so the badge says what the name is
             if (rdxAuthor != null)
-                return SplitAuthors(rdxAuthor).ToArray();
+                return new[] { $"RenoDX: {rdxAuthor}" };
 
             return Array.Empty<string>();
         }

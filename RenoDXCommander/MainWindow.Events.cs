@@ -740,13 +740,7 @@ public sealed partial class MainWindow
             var msg = lnkPath != null
                 ? $"Shortcut created on Desktop for {card.GameName}"
                 : $"Failed to create shortcut for {card.GameName}";
-            StatusBarText.Text = msg;
-            _ = Task.Delay(8000).ContinueWith(_ =>
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    if (StatusBarText.Text == msg)
-                        StatusBarText.Text = ViewModel.StatusText;
-                }));
+            ShowStatusBarMessage(msg, TimeSpan.FromSeconds(8));
         }
         catch (Exception ex)
         {

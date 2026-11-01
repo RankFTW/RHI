@@ -250,6 +250,7 @@ public sealed partial class MainWindow : Window
         ViewModel.PeriodicAppUpdateCheck = () =>
             CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
+        StartStatusBarTimer();
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // When the filtered game list changes, preserve selection if the selected game is still visible
         ViewModel.DisplayedGames.CollectionChanged += (_, _) =>
@@ -426,6 +427,7 @@ public sealed partial class MainWindow : Window
         _shutdownSignalTimer?.Stop();
         _launchTimer?.Stop();
         _selectionDebounceTimer?.Stop();
+        StopStatusBarTimer();
         _crashReporter.Log("[Shutdown] Sequence started");
         RunShutdownStep("dialogs", DialogService.Stop);
         RunShutdownStep("background timers", ViewModel.StopBackgroundWork);

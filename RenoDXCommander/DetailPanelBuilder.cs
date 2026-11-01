@@ -340,6 +340,7 @@ public partial class DetailPanelBuilder
         _window.DetailHdrToggleText.Foreground = hdrActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+        ToolTipService.SetToolTip(_window.DetailHdrToggleBtn, HdrToggleTooltip(hdrActive, hdrOverride != null));
 
         // RES toggle button — hidden unless feature enabled
         if (FeatureFlags.ResolutionControl)
@@ -361,6 +362,7 @@ public partial class DetailPanelBuilder
             _window.DetailResToggleText.Foreground = resActive
                 ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
                 : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+            ToolTipService.SetToolTip(_window.DetailResToggleBtn, ResToggleTooltip(resActive, resOverride != null));
         }
         else
         {
@@ -577,6 +579,7 @@ public partial class DetailPanelBuilder
 
     // Drag state
     private Border?  _dragBorder;
+    private TextBlock? _dragHandle; // reset to grey on drag end (PointerExited is skipped mid-drag)
     private uint     _dragPointerId;
     private double   _dragStartY;
     private int      _dragStartIdx;
@@ -611,6 +614,24 @@ public partial class DetailPanelBuilder
 
     /// <summary>
     /// </summary>
+    /// <summary>HDR button tooltip that states the current setting for this game.</summary>
+    internal static string HdrToggleTooltip(bool active, bool isOverride)
+    {
+        var source = isOverride ? "set for this game" : "following Settings › Display & HDR";
+        return active
+            ? $"Windows HDR: On ({source}).\nWhen you launch the game from RHI, Windows HDR is turned on, then back off when the game closes.\nClick to turn off for this game."
+            : $"Windows HDR: Off ({source}).\nClick to turn Windows HDR on when you launch this game from RHI (and back off when it closes).";
+    }
+
+    /// <summary>RES button tooltip that states the current setting for this game.</summary>
+    internal static string ResToggleTooltip(bool active, bool isOverride)
+    {
+        var source = isOverride ? "set for this game" : "following Settings › Display & HDR";
+        return active
+            ? $"Change resolution: On ({source}).\nWhen you launch the game from RHI, the display switches to your target resolution, then back when the game closes.\nClick to turn off for this game."
+            : $"Change resolution: Off ({source}).\nClick to switch to your target resolution when you launch this game from RHI (and back when it closes).";
+    }
+
     internal TextBlock MakeDragHandle(Border container)
     {
         var handle = new TextBlock
@@ -645,6 +666,7 @@ public partial class DetailPanelBuilder
             if (idx < 2) return;
 
             _dragBorder      = container;
+            _dragHandle      = handle;
             _dragPointerId   = e.Pointer.PointerId;
             _dragStartY      = e.GetCurrentPoint(_window.DetailPanel).Position.Y;
             _dragStartIdx    = idx;
@@ -726,6 +748,8 @@ public partial class DetailPanelBuilder
         panel.PointerCaptureLost  -= DetailPanel_PointerCaptureLost;
         if (_dragBorder != null) _dragBorder.Opacity = 1.0;
         _dragBorder = null;
+        if (_dragHandle != null) _dragHandle.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
+        _dragHandle = null;
         if (save) _window.DispatcherQueue.TryEnqueue(SaveSectionOrder);
     }
 

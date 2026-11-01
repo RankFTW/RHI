@@ -22,13 +22,18 @@ There is only one layout (Detail). `DetailPanel` StackPanel = 2 header Grids (ga
 2. `GameOverrides` → `OverridesContainer` → `OverridesPanel`
 3. `NeuralRendering` → `NeuralRenderingContainer` → `NeuralRenderingPanel`
 4. `NvidiaProfileDlss` → `NvidiaProfileDlssContainer` → `NvidiaProfileDlssPanel` ("DLSS / Streamline")
-5. `NvidiaProfileDriver` → `NvidiaProfileDriverContainer` → `NvidiaProfileDriverPanel` ("Driver Settings — Driver x")
+5. `NvidiaProfileDriver` → `NvidiaProfileDriverContainer` → `NvidiaProfileDriverPanel` ("Driver Settings"; driver version is the first summary item)
 6. `Management` → `ManagementContainer` → `ManagementPanel` (Change install folder, Reset / Remove game, Reset Overrides, Copy Report)
 7. `Extras` → `ExtrasContainer` → `ExtrasPanel` (ASI Loader, OptiScaler, MFG unlocks, DXVK, dgVoodoo2)
 
 - `NvidiaProfileContainer` is a legacy Border kept collapsed for migration; never show it. Old setting key `NvidiaProfile` migrates to `NvidiaProfileDlss` + `NvidiaProfileDriver`.
 - Every section collapses (heading click, `CollapsedDetailSections`) and reorders (≡ drag handle, `DetailSectionOrder`); both persist in settings. `ApplySectionOrder()` must run after all sections are populated and visible. Collapsed headers show a summary (`MakeSectionSummaryInlines`).
 - New sections: add a key to `DefaultSectionOrder`, a container in `GetSectionContainer`, and a summary.
+
+## Status bar (bottom left)
+- `MainWindow.StatusBar.cs` owns `StatusBarText`; never set its Text directly. Priority: `ShowStatusBarMessage(msg, duration)` (one-off notices) > loading/Refresh progress (`StatusText` + `SubStatusText`) > `ViewModel.CurrentActivityText` > offline/error `StatusText` > idle "Last checked: … · Next check in …" (refreshed every 15 s, Minimal mode wording matches the Settings countdown).
+- Background work reports itself with `using var activity = BeginActivity("Checking for updates...");` (`MainViewModel.Activity.cs`, thread-safe, overlapping activities show the newest). Used by the background scan, `CheckForUpdatesAsync`, the 4 h periodic refresh and DLSS/Streamline auto-update. New long-running background work should do the same.
+- Game and ReShade counts live above the game list (`GameCountText`/`InstalledCountText`), not in the status bar.
 
 ## ComboBox Patterns
 - Simple strings ("Global", "Stable", "Nightly") — not verbose labels

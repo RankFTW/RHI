@@ -42,6 +42,7 @@ public sealed partial class MainWindow
                     if (!silent) SettingsBtn.IsEnabled = !loading;
                     // Lock Back button during refresh from Settings page
                     SettingsBackBtn.IsEnabled = !loading;
+                    RefreshStatusBar();
                     if (!silent) StatusDot.Fill = new SolidColorBrush(loading
                         ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
                         : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentGreenBrush]).Color);
@@ -55,29 +56,15 @@ public sealed partial class MainWindow
                         // Show one-line notice in status bar if this session was auto-restarted after a freeze
                         if (ViewModel.WasAutoRestarted)
                         {
-                            var msg = "⚠ RHI restarted after a UI freeze — check Settings → session log for details";
-                            // Defer slightly so StatusText updates that fire immediately after loading
-                            // don't overwrite the notice before the user sees it.
-                            _ = System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
-                                DispatcherQueue?.TryEnqueue(() =>
-                                {
-                                    StatusBarText.Text = msg;
-                                    _ = System.Threading.Tasks.Task.Delay(12_000).ContinueWith(__ =>
-                                        DispatcherQueue?.TryEnqueue(() => { if (StatusBarText.Text == msg) StatusBarText.Text = ViewModel.StatusText; }));
-                                }));
+                            ShowStatusBarMessage("⚠ RHI restarted after a UI freeze — check Settings → session log for details",
+                                TimeSpan.FromSeconds(12));
                         }
 
                         // Show one-line notice if the GitHub token was found to be expired/revoked at startup
                         if (App._gitHubTokenExpiredOnStartup)
                         {
-                            var msg = "⚠ GitHub session expired — go to Settings → Accounts & Data and re-connect to restore the download rate limit";
-                            _ = System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
-                                DispatcherQueue?.TryEnqueue(() =>
-                                {
-                                    StatusBarText.Text = msg;
-                                    _ = System.Threading.Tasks.Task.Delay(15_000).ContinueWith(__ =>
-                                        DispatcherQueue?.TryEnqueue(() => { if (StatusBarText.Text == msg) StatusBarText.Text = ViewModel.StatusText; }));
-                                }));
+                            ShowStatusBarMessage("⚠ GitHub session expired — go to Settings → Accounts & Data and re-connect to restore the download rate limit",
+                                TimeSpan.FromSeconds(15));
                         }
                         // On Refresh (silent=true), the ListView still has its old item selected
                         // so SelectionChanged never fires and PopulateDetailPanel never runs.
@@ -115,8 +102,10 @@ public sealed partial class MainWindow
                 case nameof(ViewModel.SubStatusText):
                     LoadingTitle.Text    = ViewModel.StatusText;
                     LoadingSubtitle.Text = ViewModel.SubStatusText;
-                    StatusBarText.Text   = ViewModel.StatusText
-                        + (string.IsNullOrEmpty(ViewModel.SubStatusText) ? "" : $"  —  {ViewModel.SubStatusText}");
+                    RefreshStatusBar();
+                    break;
+                case nameof(ViewModel.CurrentActivityText):
+                    RefreshStatusBar();
                     break;
                 case nameof(ViewModel.InstalledCount):
                     InstalledCountText.Text = $"{ViewModel.InstalledCount} ReShade";

@@ -88,6 +88,8 @@ fileMatchPattern: "*Dlss*,*Streamline*,*DlssPreset*,*NvidiaProfile*,*Nvidia*"
 - Setting ID: `0x10835002`. Value: 0=Off, any uint=FPS cap.
 - Background variant: `0x10835005`.
 - RL/DC auto-disable driver FPS cap on install, delete on uninstall.
+- Per-game UI: Driver Settings › Other › FPS Limit. "Global" = no value on the game profile (`ClearPerGameFpsLimit`, raw delete); "Off" writes 0 (overrides a global cap).
+- `GetPerGameFpsLimit` uses `GetOwnSettingRawNvApi`: NvAPI_DRS_GetSetting also returns values inherited from the base profile, so check settingLocation (offset 4108, 0 = this profile) to tell "own value" from "inherited".
 
 ## Driver Profile Settings (VSync, Latency, Smooth Motion, Power, ReBAR)
 
