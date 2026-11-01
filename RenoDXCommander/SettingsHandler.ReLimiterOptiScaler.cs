@@ -176,7 +176,10 @@ public partial class SettingsHandler
         var refCheck = new CheckBox { Content = "RE Framework", IsChecked = !settings.GlobalSkipRefUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
 
         var checkPanel = new StackPanel { Spacing = 0 };
-        checkPanel.Children.Add(new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
+        var inclusionHeader = new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) };
+        ToolTipService.SetToolTip(inclusionHeader,
+            "A component is updated in a game only when it's on here and in that game's own update inclusion.\nTurning one off here skips it for every game, whatever the per-game setting.");
+        checkPanel.Children.Add(inclusionHeader);
         checkPanel.Children.Add(rsCheck);
         checkPanel.Children.Add(rdxCheck);
         checkPanel.Children.Add(ulCheck);

@@ -574,13 +574,17 @@ public partial class DetailPanelBuilder
 
         // ── Global update inclusion section (Middle Row right column) ────────────
         var globalUpdateColumn = new StackPanel { Spacing = 0 };
-        globalUpdateColumn.Children.Add(new TextBlock
+        var globalUpdateHeading = new TextBlock
         {
-            Text = "Global update inclusion",
+            Text = "Update inclusion",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 0, 0, 8),
-        });
+        };
+        ToolTipService.SetToolTip(globalUpdateHeading,
+            "Which components Update All updates for this game. This setting applies to this game only;\n"
+            + "components switched off in Settings (Components to check) are skipped for every game.");
+        globalUpdateColumn.Children.Add(globalUpdateHeading);
         globalUpdateColumn.Children.Add(toggleRow);
 
         // ── Middle Row vertical divider ──────────────────────────────────────────

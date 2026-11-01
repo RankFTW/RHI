@@ -144,6 +144,8 @@ public partial class SettingsHandler
                 BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_settingsSearchBox, "Find a setting");
+            ToolTipService.SetToolTip(_settingsSearchBox,
+                "Searches setting names, descriptions and tooltips as you type. Enter searches straight away, Esc clears.");
             _settingsSearchBox.TextChanged += SettingsSearchBox_TextChanged;
             _settingsSearchBox.KeyDown += SettingsSearchBox_KeyDown;
             _searchPanel = new StackPanel { Spacing = 4 };

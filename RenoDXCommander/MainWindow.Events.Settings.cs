@@ -2444,6 +2444,8 @@ public sealed partial class MainWindow
                     HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
                     VerticalAlignment   = VerticalAlignment.Center,
                 };
+                if (text == "Ultra+")
+                    ToolTipService.SetToolTip(tb, "Games with an Ultra+ graphics mod on theultraplace.com.");
                 Grid.SetColumn(tb, col);
                 headerGrid.Children.Add(tb);
             }
@@ -2480,6 +2482,10 @@ public sealed partial class MainWindow
                     VerticalAlignment   = VerticalAlignment.Center,
                 };
 
+                var statusTip = status == "Done" ? $"{modName} mod available."
+                              : status == "WIP"  ? $"{modName} mod work in progress."
+                              : $"{modName} mod not available.";
+
                 FrameworkElement cell = tick;
                 if (status != null && !string.IsNullOrEmpty(url)
                     && Uri.TryCreate(url, UriKind.Absolute, out var uri)
@@ -2494,8 +2500,12 @@ public sealed partial class MainWindow
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment   = VerticalAlignment.Center,
                     };
-                    ToolTipService.SetToolTip(link, $"Open {modName} page");
+                    ToolTipService.SetToolTip(link, $"{statusTip} Click to open its page.");
                     cell = link;
+                }
+                else
+                {
+                    ToolTipService.SetToolTip(tick, statusTip);
                 }
                 Grid.SetColumn(cell, col);
                 row.Children.Add(cell);
@@ -2517,6 +2527,7 @@ public sealed partial class MainWindow
                     VerticalAlignment = VerticalAlignment.Center,
                     TextTrimming      = TextTrimming.CharacterEllipsis,
                 };
+                ToolTipService.SetToolTip(nameBlock, entry.Name);
                 Grid.SetColumn(nameBlock, 0);
                 row.Children.Add(nameBlock);
 

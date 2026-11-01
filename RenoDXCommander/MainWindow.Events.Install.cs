@@ -430,7 +430,8 @@ public sealed partial class MainWindow
     {
         try
         {
-            if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)
+            // Clickable whenever the status is underlined (installed, update available, or Vulkan layer in use)
+            if (sender is TextBlock tb && tb.TextDecorations == Windows.UI.Text.TextDecorations.Underline)
                 await Windows.System.Launcher.LaunchUriAsync(new Uri("https://reshade.me"));
         }
         catch (Exception ex)

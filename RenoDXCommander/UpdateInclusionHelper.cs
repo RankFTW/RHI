@@ -27,18 +27,20 @@ public static class UpdateInclusionHelper
         string store = "")
     {
         summaryTb.Inlines.Clear();
+        // A component switched off in Settings (Components to check) is Off for every game
+        var s = viewModel.Settings;
         var items = new List<(string label, bool isOn)>
         {
-            ("RS", !viewModel.Settings.GlobalSkipRsUpdates && !viewModel.IsUpdateAllExcludedReShade(gameName, store)),
-            ("RDX", !viewModel.IsUpdateAllExcludedRenoDx(gameName, store)),
-            ("RL", !viewModel.IsUpdateAllExcludedUl(gameName, store)),
-            ("DC", !viewModel.IsUpdateAllExcludedDc(gameName, store)),
-            ("OS", !viewModel.IsUpdateAllExcludedOs(gameName, store)),
+            ("RS", !s.GlobalSkipRsUpdates && !viewModel.IsUpdateAllExcludedReShade(gameName, store)),
+            ("RDX", !s.GlobalSkipRdxUpdates && !viewModel.IsUpdateAllExcludedRenoDx(gameName, store)),
+            ("RL", !s.GlobalSkipUlUpdates && !viewModel.IsUpdateAllExcludedUl(gameName, store)),
+            ("DC", !s.GlobalSkipDcUpdates && !viewModel.IsUpdateAllExcludedDc(gameName, store)),
+            ("OS", !s.GlobalSkipOsUpdates && !viewModel.IsUpdateAllExcludedOs(gameName, store)),
         };
         if (isDxvkEnabled)
             items.Add(("DXVK", !viewModel.IsUpdateAllExcludedDxvk(gameName, store)));
         if (isREEngineGame)
-            items.Add(("REF", !viewModel.IsUpdateAllExcludedRef(gameName, store)));
+            items.Add(("REF", !s.GlobalSkipRefUpdates && !viewModel.IsUpdateAllExcludedRef(gameName, store)));
         for (int i = 0; i < items.Count; i++)
         {
             var (label, isOn) = items[i];
@@ -84,6 +86,9 @@ public static class UpdateInclusionHelper
         };
 
         RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled, store);
+        ToolTipService.SetToolTip(summaryText,
+            "Components Update All updates for this game. Components switched off in Settings show Off for every game.\n"
+            + "RS = ReShade, RDX = RenoDX, RL = ReLimiter, DC = Display Commander, OS = OptiScaler, REF = RE Framework.");
 
         var button = new Button
         {
@@ -132,7 +137,7 @@ public static class UpdateInclusionHelper
 
             var dialog = new ContentDialog
             {
-                Title = "Global Update Inclusion",
+                Title = "Update Inclusion",
                 Content = checkPanel,
                 PrimaryButtonText = "Save",
                 CloseButtonText = "Cancel",

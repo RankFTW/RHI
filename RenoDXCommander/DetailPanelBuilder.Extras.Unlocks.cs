@@ -76,6 +76,7 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(statusBlock, "Click to open GitHub releases");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx/releases"));
+            AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
@@ -371,6 +372,7 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/RankFTW/rhi-repo/releases"));
+            AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);

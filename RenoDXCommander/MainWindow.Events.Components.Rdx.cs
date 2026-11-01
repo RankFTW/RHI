@@ -374,7 +374,7 @@ public sealed partial class MainWindow
                 : isSwapchainEncoding? "Swapchain Encoding"
                 : isUseScrGb         ? "Swapchain Format"
                 : isCopyDest         ? "Copy Destinations"
-                : isSettingsMode     ? "Proxy Revert State"
+                : isSettingsMode     ? "Advanced Settings"
                 : isSwapChainCompat  ? "Swapchain Compat"
                 : isProxyRevert      ? "Proxy Revert State"
                 : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8)

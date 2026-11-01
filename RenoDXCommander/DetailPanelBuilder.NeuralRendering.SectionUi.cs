@@ -100,6 +100,8 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var nrHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        ToolTipService.SetToolTip(nrArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(nrTitle, SectionHeaderTooltip);
         nrHeaderRow.Children.Add(MakeDragHandle(_window.NeuralRenderingContainer));
         nrHeaderRow.Children.Add(nrArrow);
         nrHeaderRow.Children.Add(nrTitle);
@@ -135,7 +137,9 @@ public partial class DetailPanelBuilder
                 nrSummaryEntries.Add(("NR Method", methodLabel));
             if (nrDllPresent)
                 nrSummaryEntries.Add(("NR DLL", nrDllVersion));
-            nrSummary = DetailPanelBuilder.MakeSectionSummaryInlines(nrSummaryEntries);
+            nrSummary = DetailPanelBuilder.MakeSectionSummaryInlines(nrSummaryEntries,
+                "Installed Neural Rendering method and NR DLL (nvngx_dlssnr.dll) version.\n"
+                + "DLSS Tool (SF) = ShortFuse DLSS Tool.");
             if (nrSummary != null)
             {
                 nrSummary.Visibility = nrCollapsed ? Visibility.Visible : Visibility.Collapsed;
@@ -192,11 +196,28 @@ public partial class DetailPanelBuilder
                 methodCombo.SelectedItem = cbi;
         }
         if (methodCombo.SelectedIndex < 0) methodCombo.SelectedIndex = 0;
-        ToolTipService.SetToolTip(methodCombo,
+        // Explain greyed-out items (disabled ComboBoxItems show no tooltip of their own).
+        // Reasons mirror the Enabled conditions in methodItems above.
+        var greyedReasons = new List<string>();
+        if (is32Bit)
+            greyedReasons.Add("ShortFuse DLSS Tool, DLSS5 Tool and DX11 Bridge need a 64-bit game.");
+        else
+        {
+            if (card.GraphicsApi == GraphicsApiType.OpenGL)
+                greyedReasons.Add("ShortFuse DLSS Tool isn't available for OpenGL games.");
+            if (!hasDlss)
+                greyedReasons.Add("DLSS5 Tool and DX11 Bridge need a game with native DLSS.");
+            else if (!(isDx11 || isVulkan))
+                greyedReasons.Add("DLSS5 Tool + DX11 Bridge needs a DX11 or Vulkan game.");
+        }
+        var methodTip =
             "DLSS5 Tool: for DX12 native-DLSS games.\n" +
             "DLSS5 Tool + DX11 Bridge: for DX11/Vulkan native-DLSS games.\n" +
             "ShortFuse DLSS Tool: alternative full-stack install for native-DLSS games.\n" +
-            "DLSS5 Feeder: for games with no native DLSS (DX11, DX12, Vulkan, 32-bit).");
+            "DLSS5 Feeder: for games with no native DLSS (DX11, DX12, Vulkan, 32-bit).";
+        if (greyedReasons.Count > 0)
+            methodTip += "\n\nGreyed out for this game:\n" + string.Join("\n", greyedReasons);
+        ToolTipService.SetToolTip(methodCombo, methodTip);
         methodStack.Children.Add(methodCombo);
         Grid.SetColumn(methodStack, 0);
         row1.Children.Add(methodStack);
@@ -800,12 +821,17 @@ public partial class DetailPanelBuilder
 
             void Tag(string text, bool ok)
             {
-                statusPanel.Children.Add(new TextBlock
+                var tagText = new TextBlock
                 {
                     Text = text,
                     FontSize = 10,
                     Foreground = UIFactory.Brush(ok ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextTertiaryBrush),
-                });
+                };
+                if (text.StartsWith("✓", StringComparison.Ordinal) || text.StartsWith("✗", StringComparison.Ordinal))
+                    ToolTipService.SetToolTip(tagText, ok
+                        ? "Found in the game folder."
+                        : "Not found in the game folder.");
+                statusPanel.Children.Add(tagText);
             }
 
             var selectedKey = (methodCombo.SelectedItem as ComboBoxItem)?.Tag as string
@@ -964,6 +990,7 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
         };
+        ToolTipService.SetToolTip(removeBtn, "Remove the installed Neural Rendering method from this game.");
 
         // Cog button — always shown, opens method-specific settings
         var sfCogBtn = CogDialog.MakeCogButton("ShortFuse DLSS Tool settings");
@@ -1067,7 +1094,9 @@ public partial class DetailPanelBuilder
             addonVersionCombo.IsEnabled = true;
             ToolTipService.SetToolTip(addonVersionStack, selKey == NrMethodFeeder
                 ? "Version of renodx-dlss5.addon64 deployed as the neural consumer. Changing while installed swaps the file in-place."
-                : "Addon version to install. Changing while installed swaps the file in-place without a full reinstall.");
+                : selKey == NrMethodShortFuse
+                    ? "ShortFuse DLSS Tool (SF) addon version. Changing while installed swaps the file in-place without a full reinstall."
+                    : "Addon version to install. Changing while installed swaps the file in-place without a full reinstall.");
 
             // Pack version combo — enabled always when visible (swap-in-place supported while installed)
             packVersionStack.Opacity   = showPackVersion ? 1.0 : 0.4;
@@ -1525,9 +1554,16 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(costScalerLabel,
+        // The toggle is disabled in some states and WinUI shows no tooltip on disabled
+        // controls, so the reason is appended to this visible label's tooltip.
+        var costScalerLabelTip =
             "When On, installing a Neural Rendering method will also deploy the DLSS NR Cost Scaler proxy. " +
-            "Runs the neural model at reduced resolution (default 75%) for significant GPU savings while keeping native detail.");
+            "Runs the neural model at reduced resolution (default 75%) for significant GPU savings while keeping native detail.";
+        if (!costScalerSvc.IsStagingReady)
+            costScalerLabelTip += "\n\nNot available yet: the Cost Scaler hasn't been downloaded. It will be available after the next launch.";
+        else if (nrMethodInstalled)
+            costScalerLabelTip += "\n\nLocked while a Neural Rendering method is installed. Remove it first, set Cost Scaler On, then install again.";
+        ToolTipService.SetToolTip(costScalerLabel, costScalerLabelTip);
         var costScalerToggle = new ToggleSwitch
         {
             IsOn = costScalerPref,
@@ -1551,6 +1587,8 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.GetBrush("#5ECB7D"),
             VerticalAlignment = VerticalAlignment.Center,
         };
+        if (costScalerInstalled)
+            ToolTipService.SetToolTip(costScalerStatus, "The NR Cost Scaler is in the game folder.");
 
         // Toggle saves preference only — never installs or uninstalls
         costScalerToggle.Toggled += (s, ev) =>
@@ -1568,13 +1606,18 @@ public partial class DetailPanelBuilder
             // ── ZZZ Mode toggle — appended to the same row as Cost Scaler ────
             bool sfZzzPref = _window.ViewModel.GetSfZzzMode(gameName, store);
             costScalerRow.Children.Add(new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), VerticalAlignment = VerticalAlignment.Stretch, Margin = new Thickness(4, 0, 4, 0) });
-            costScalerRow.Children.Add(new TextBlock
+            const string zzzTip =
+                "When On, the ShortFuse addon is deployed as zzz_renodx-dlss.addon64 so it loads last in the ReShade addon order. " +
+                "Required for some games where other addons must initialise before the DLSS Tool.";
+            var zzzLabel = new TextBlock
             {
                 Text = "ZZZ Load Order",
                 FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-            });
+            };
+            ToolTipService.SetToolTip(zzzLabel, zzzTip);
+            costScalerRow.Children.Add(zzzLabel);
             var zzzToggle = new ToggleSwitch
             {
                 IsOn = sfZzzPref,
@@ -1582,9 +1625,7 @@ public partial class DetailPanelBuilder
                 VerticalAlignment = VerticalAlignment.Center,
                 MinWidth = 0,
             };
-            ToolTipService.SetToolTip(zzzToggle,
-                "When On, the ShortFuse addon is deployed as zzz_renodx-dlss.addon64 so it loads last in the ReShade addon order. " +
-                "Required for some games where other addons must initialise before the DLSS Tool.");
+            ToolTipService.SetToolTip(zzzToggle, zzzTip);
             zzzToggle.Toggled += (s, ev) =>
             {
                 bool newVal = zzzToggle.IsOn;

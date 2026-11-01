@@ -87,6 +87,11 @@ public partial class DetailPanelBuilder
             Tag = card,
             Opacity = isDisabled ? 0.35 : 1.0,
         };
+        // Same wording as the Components Info buttons (AddonInfoResolver.GetTooltip)
+        bool hasDxvkNotes = _window.ViewModel.Manifest?.DxvkGameNotes != null
+            && _window.ViewModel.Manifest.DxvkGameNotes.TryGetValue(card.GameName, out var dxvkNote)
+            && !string.IsNullOrWhiteSpace(dxvkNote.Notes);
+        ToolTipService.SetToolTip(infoBtn, hasDxvkNotes ? "Per-game notes available" : "General DXVK info");
         infoBtn.Click += (s, e) => _window.DxvkInfoButton_Click(s, e);
         Grid.SetColumn(infoBtn, 2);
         row.Children.Add(infoBtn);
@@ -182,8 +187,13 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
+        // The install button is disabled when the manifest lists no dgVoodoo2 versions and
+        // disabled buttons show no tooltip, so the reason is added to this label.
         ToolTipService.SetToolTip(label,
-            "dgVoodoo2 — translates DX9 calls to DX11, enabling ReShade compute shaders and DLSS5 Feeder on DX9 games.\nDeploys D3D9.dll + dgVoodoo.conf to the game folder.");
+            "dgVoodoo2 — translates DX9 calls to DX11, enabling ReShade compute shaders and DLSS5 Feeder on DX9 games.\nDeploys D3D9.dll + dgVoodoo.conf to the game folder."
+            + (manifest?.DgVoodooVersions?.Count > 0
+                ? ""
+                : "\n\nInstall isn't available right now: no dgVoodoo2 versions are listed in the online data. Try Refresh later."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 

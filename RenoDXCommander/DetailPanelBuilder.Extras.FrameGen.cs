@@ -78,6 +78,7 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/sdli1995/dlssg_for_sm86"));
+            AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
@@ -362,6 +363,7 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases page");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock/releases"));
+            AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);

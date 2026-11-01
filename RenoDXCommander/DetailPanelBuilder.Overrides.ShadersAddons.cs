@@ -169,6 +169,11 @@ public partial class DetailPanelBuilder
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         };
+        // The Addons combo is disabled under the "No Addons" ReShade channel and WinUI
+        // doesn't show tooltips on disabled controls, so the reason goes on the label.
+        if (card.UseNormalReShade)
+            ToolTipService.SetToolTip(addonLabel,
+                "Addons need the addon build of ReShade. Change the ReShade channel to enable this.");
         Grid.SetRow(addonLabel, 0); Grid.SetColumn(addonLabel, 1);
         shaderAddonGrid.Children.Add(addonLabel);
         Grid.SetRow(addonModeCombo, 1); Grid.SetColumn(addonModeCombo, 1);
@@ -284,6 +289,8 @@ public partial class DetailPanelBuilder
             TextWrapping = TextWrapping.NoWrap,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
+        ToolTipService.SetToolTip(exeHeaderText,
+            "The program RHI starts when you click Launch. Detected automatically unless you set one below.");
         launchExeHeaderPanel.Children.Add(exeHeaderText);
 
         // Async exe scan — updates the label without blocking the UI thread
@@ -459,6 +466,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
+        ToolTipService.SetToolTip(resetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, launch settings, update inclusion).");
         ctx.ResetOverridesBtn = resetOverridesBtn;
         Action resetAction = () =>
         {

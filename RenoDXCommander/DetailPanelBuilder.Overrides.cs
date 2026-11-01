@@ -74,6 +74,8 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
+        ToolTipService.SetToolTip(ovArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(ovTitle, SectionHeaderTooltip);
         _window.OverridesHeaderRow.Children.Add(MakeDragHandle(_window.OverridesContainer));
         _window.OverridesHeaderRow.Children.Add(ovArrow);
         _window.OverridesHeaderRow.Children.Add(ovTitle);
@@ -200,6 +202,11 @@ public partial class DetailPanelBuilder
 
         const string DllDefaultSentinel = "--------";
         Button? resetDllBtn = null; // declared early so lambdas can capture it
+        TextBlock? dllOverrideLabel = null; // declared early so UpdateAllDropdowns can refresh its tooltip
+        string DllOverrideLabelTip(bool hasOverride) => hasOverride
+            ? "Rename the ReShade, Display Commander and OptiScaler DLLs for this game."
+            : "Rename the ReShade, Display Commander and OptiScaler DLLs for this game.\n"
+              + "Reset DLL Names is available once a name has been overridden.";
         bool _updatingDropdowns = false; // declared early so UpdateAllDropdowns can use it
 
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
@@ -239,6 +246,8 @@ public partial class DetailPanelBuilder
             ItemsSource = dcNames,
             SelectedItem = DllDefaultSentinel,
         };
+        ToolTipService.SetToolTip(dcNameBox,
+            "Override the Display Commander DLL file name. Choose -------- for the default name.");
         if (!string.IsNullOrEmpty(existingDcName))
         {
             if (dcNames.Contains(existingDcName, StringComparer.OrdinalIgnoreCase))
@@ -274,6 +283,9 @@ public partial class DetailPanelBuilder
             ItemsSource = availableOsNames,
             SelectedItem = DllDefaultSentinel,
         };
+        ToolTipService.SetToolTip(osNameBox,
+            $"Override the OptiScaler DLL file name. Choose -------- to go back to the default name ({OptiScalerService.GetDefaultDllName(card.GraphicsApi)}).\n"
+            + "Names already used by ReShade or Display Commander for this game are left out.");
         if (!string.IsNullOrEmpty(existingOsName))
         {
             if (availableOsNames.Contains(existingOsName, StringComparer.OrdinalIgnoreCase))
@@ -311,7 +323,7 @@ public partial class DetailPanelBuilder
                 if (card.IsOsInstalled && !string.IsNullOrEmpty(currentOsInstalled)
                     && !string.IsNullOrEmpty(card.InstallPath))
                 {
-                    var defName = OptiScalerService.DefaultDllName;
+                    var defName = OptiScalerService.GetDefaultDllName(card.GraphicsApi);
                     var oldP = System.IO.Path.Combine(card.InstallPath, currentOsInstalled);
                     var newP = System.IO.Path.Combine(card.InstallPath, defName);
                     try
@@ -465,6 +477,8 @@ public partial class DetailPanelBuilder
                 // Enable Reset button when any override is active
                 if (resetDllBtn != null)
                     resetDllBtn.IsEnabled = _window.ViewModel.HasDllOverride(gameName);
+                if (dllOverrideLabel != null)
+                    ToolTipService.SetToolTip(dllOverrideLabel, DllOverrideLabelTip(_window.ViewModel.HasDllOverride(gameName)));
             }
             finally { _updatingDropdowns = false; }
         }
@@ -611,12 +625,13 @@ public partial class DetailPanelBuilder
         // Column 2: DLL naming override
         var topRightColumn = new StackPanel { Spacing = 6 };
 
-        var dllOverrideLabel = new TextBlock
+        dllOverrideLabel = new TextBlock
         {
             Text = "DLL naming overrides",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         };
+        ToolTipService.SetToolTip(dllOverrideLabel, DllOverrideLabelTip(_window.ViewModel.HasDllOverride(gameName)));
         topRightColumn.Children.Add(dllOverrideLabel);
 
         // 3 DLL name boxes side by side, always visible
@@ -676,7 +691,7 @@ public partial class DetailPanelBuilder
                     && !string.IsNullOrEmpty(card.OsInstalledFile)
                     && !string.IsNullOrEmpty(card.InstallPath))
                 {
-                    var defaultOsName = OptiScalerService.DefaultDllName; // "dxgi.dll"
+                    var defaultOsName = OptiScalerService.GetDefaultDllName(card.GraphicsApi); // dxgi.dll, winmm.dll for Vulkan
                     var osOldPath = System.IO.Path.Combine(card.InstallPath, card.OsInstalledFile);
                     var osNewPath = System.IO.Path.Combine(card.InstallPath, defaultOsName);
                     try

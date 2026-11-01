@@ -47,6 +47,8 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var exHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        ToolTipService.SetToolTip(exArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(exTitle, SectionHeaderTooltip);
         exHeaderRow.Children.Add(MakeDragHandle(_window.ExtrasContainer));
         exHeaderRow.Children.Add(exArrow);
         exHeaderRow.Children.Add(exTitle);
@@ -79,7 +81,7 @@ public partial class DetailPanelBuilder
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
         if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
         if (dgvInstalled)                                                                   exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
-        var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries);
+        var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries, "Extras installed for this game.");
         if (exSummary != null)
         {
             exSummary.Visibility = exCollapsed ? Visibility.Visible : Visibility.Collapsed;
@@ -200,13 +202,21 @@ public partial class DetailPanelBuilder
         });
     }
 
-    private static Grid MakeExtrasSeparator(string label)
+    /// <summary>Hand cursor over an underlined (clickable) version label, like the Components section.</summary>
+    private void AttachLinkCursor(TextBlock statusBlock)
+    {
+        statusBlock.PointerEntered += (s, e) => _window.LinkText_PointerEntered(s, e);
+        statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
+    }
+
+    private Grid MakeExtrasSeparator(string label)
     {
         var grid = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 2) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(350) }); // fixed — separator text is centred, exact width doesn't matter
+        // Same width as the rows' button column, so the label centres over the buttons
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(PanelColW(1, 0, 350, _window.ExtrasContainer.ActualWidth)) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
 
@@ -253,6 +263,10 @@ public partial class DetailPanelBuilder
             Opacity = osGreyed ? 0.35 : 1.0,
             Tag = card,
         };
+        // osGreyed == 32-bit: the install button and cog are disabled (no tooltips), so say why here.
+        ToolTipService.SetToolTip(label, osGreyed
+            ? "OptiScaler: upscaler and frame generation injector.\nNot available for 32-bit games."
+            : "OptiScaler: upscaler and frame generation injector.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -282,6 +296,7 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(statusBlock, "Click to open OptiScaler releases");
             statusBlock.PointerPressed += async (s, e) =>
                 await Windows.System.Launcher.LaunchUriAsync(new Uri(osWikiUrl));
+            AttachLinkCursor(statusBlock);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);

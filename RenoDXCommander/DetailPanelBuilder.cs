@@ -151,6 +151,8 @@ public partial class DetailPanelBuilder
         // 32-bit / 64-bit badge
         _window.Detail32BitBadge.Visibility = card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
         _window.Detail64BitBadge.Visibility = !card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
+        ToolTipService.SetToolTip(_window.Detail32BitBadge, "32-bit game. Some components aren't available for 32-bit games.");
+        ToolTipService.SetToolTip(_window.Detail64BitBadge, "64-bit game.");
 
         // Wiki status badge — hidden from main UI, shown inside Info button dialog instead
         _window.DetailWikiBadge.Visibility = Visibility.Collapsed;
@@ -231,6 +233,8 @@ public partial class DetailPanelBuilder
         if (!string.IsNullOrEmpty(fileLabel))
         {
             _window.DetailInstalledFile.Text = fileLabel;
+            ToolTipService.SetToolTip(_window.DetailInstalledFileBadge,
+                fileLabel.Contains('·') ? "Installed HDR mod files" : "Installed HDR mod file");
             _window.DetailInstalledFileBadge.Visibility = Visibility.Visible;
             _window.DetailSepModPlatform.Visibility = Visibility.Visible;
         }
@@ -308,6 +312,9 @@ public partial class DetailPanelBuilder
 
         _window.DetailHideBtn.Tag = card;
         _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
+        ToolTipService.SetToolTip(_window.DetailHideBtn, card.IsHidden
+            ? "Show this game in the game list again."
+            : "Hide this game from the sidebar (find it again in the Hidden filter)");
         _window.DetailHideBtn.Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Folder management buttons
@@ -399,6 +406,8 @@ public partial class DetailPanelBuilder
             _window.DetailComponentsArrow.Text = collapsed ? "▶" : "▼";
             _window.DetailComponentsBody.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
             _window.DetailComponentsTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+            ToolTipService.SetToolTip(_window.DetailComponentsArrow, SectionHeaderTooltip);
+            ToolTipService.SetToolTip(_window.DetailComponentsTitle, SectionHeaderTooltip);
 
             // Re-subscribe each time panel is populated (card changes)
             _window.DetailComponentsHeader.PointerPressed -= ComponentsHeader_PointerPressed;
@@ -447,7 +456,6 @@ public partial class DetailPanelBuilder
             CrashReporter.Log($"[PopulateDetailPanel] SLOW: '{card.GameName}' took {__sw.ElapsedMilliseconds}ms");
     }
 
-    /// <summary>
     /// <summary>
     /// Clears the graphics API badge panel and adds one badge per detected API.
     /// APIs are shown in a consistent order: DX8 → DX9 → DX10 → DX11 → DX12 → Vulkan → OpenGL.
@@ -513,6 +521,18 @@ public partial class DetailPanelBuilder
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = textBlock,
             };
+            var apiName = api switch
+            {
+                GraphicsApiType.DirectX8  => "DirectX 8",
+                GraphicsApiType.DirectX9  => "DirectX 9",
+                GraphicsApiType.DirectX10 => "DirectX 10",
+                GraphicsApiType.DirectX11 => "DirectX 11",
+                GraphicsApiType.DirectX12 => "DirectX 12",
+                GraphicsApiType.Vulkan    => "Vulkan",
+                GraphicsApiType.OpenGL    => "OpenGL",
+                _                         => label,
+            };
+            ToolTipService.SetToolTip(badge, $"Detected graphics API: {apiName}");
             window.DetailGraphicsApiBadgePanel.Children.Add(badge);
         }
 
@@ -612,8 +632,6 @@ public partial class DetailPanelBuilder
         return Math.Max(80, available / numCols);
     }
 
-    /// <summary>
-    /// </summary>
     /// <summary>HDR button tooltip that states the current setting for this game.</summary>
     internal static string HdrToggleTooltip(bool active, bool isOverride)
     {
@@ -632,6 +650,9 @@ public partial class DetailPanelBuilder
             : $"Change resolution: Off ({source}).\nClick to switch to your target resolution when you launch this game from RHI (and back when it closes).";
     }
 
+    /// <summary>Tooltip for the arrow + title of every collapsible detail section header.</summary>
+    internal const string SectionHeaderTooltip = "Click to collapse or expand";
+
     internal TextBlock MakeDragHandle(Border container)
     {
         var handle = new TextBlock
@@ -643,6 +664,7 @@ public partial class DetailPanelBuilder
             Margin            = new Thickness(0, 0, 8, 0),
             ManipulationMode  = Microsoft.UI.Xaml.Input.ManipulationModes.None,
         };
+        ToolTipService.SetToolTip(handle, "Drag to reorder sections");
 
         var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
         var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
@@ -864,7 +886,7 @@ public partial class DetailPanelBuilder
     /// Returns null when the list is empty (nothing installed/active → don't show anything).
     /// </summary>
     internal static TextBlock? MakeSectionSummaryInlines(
-        IEnumerable<(string Label, string? Version)> items)
+        IEnumerable<(string Label, string? Version)> items, string? tooltip = null)
     {
         var entries = items
             .Where(i => !string.IsNullOrWhiteSpace(i.Label))
@@ -906,6 +928,9 @@ public partial class DetailPanelBuilder
             }
         }
 
+        if (!string.IsNullOrEmpty(tooltip))
+            ToolTipService.SetToolTip(tb, tooltip);
+
         return tb;
     }
 
@@ -930,7 +955,7 @@ public partial class DetailPanelBuilder
         if (card.IsLumaInstalled)
             entries.Add(("Luma", "On"));
 
-        return MakeSectionSummaryInlines(entries);
+        return MakeSectionSummaryInlines(entries, "Installed components and versions.");
     }
 
     /// <summary>
@@ -989,6 +1014,10 @@ public partial class DetailPanelBuilder
             }
         }
 
-        return MakeSectionSummaryInlines(entries);
+        return MakeSectionSummaryInlines(entries,
+            "Game overrides that differ from the defaults.\n"
+            + "RS = ReShade, RDX = RenoDX, RL = ReLimiter, DC = Display Commander, OS = OptiScaler.\n"
+            + "API = graphics API override. Args = launch arguments. DLL = custom DLL file name.\n"
+            + "Excluded = components Update All skips for this game.");
     }
 }

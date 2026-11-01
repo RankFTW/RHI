@@ -209,7 +209,7 @@ public static class DlssDefaultsDialog
             }
         }
 
-        return new ComboBox
+        var versionCombo = new ComboBox
         {
             ItemsSource = items,
             SelectedIndex = selectedIdx,
@@ -217,6 +217,14 @@ public static class DlssDefaultsDialog
             HorizontalAlignment = HorizontalAlignment.Stretch,
             CornerRadius = new CornerRadius(6),
         };
+        ToolTipService.SetToolTip(versionCombo,
+            "Default: leaves the game's files as they are.\n"
+            + "A version: swaps in that version.\n"
+            + "Custom: copies in your own files from RHI's Custom folder."
+            + (includeDriverOverride
+                ? "\nNVIDIA Override: turns on the driver's override in the game's NVIDIA profile instead of swapping the DLL."
+                : ""));
+        return versionCombo;
     }
 
     private static ComboBox BuildPresetComboBox((string Name, uint Value)[] presets, uint currentDefault)
@@ -230,7 +238,7 @@ public static class DlssDefaultsDialog
             if (idx >= 0) selectedIdx = idx;
         }
 
-        return new ComboBox
+        var presetCombo = new ComboBox
         {
             ItemsSource = items,
             SelectedIndex = selectedIdx,
@@ -238,6 +246,9 @@ public static class DlssDefaultsDialog
             HorizontalAlignment = HorizontalAlignment.Stretch,
             CornerRadius = new CornerRadius(6),
         };
+        ToolTipService.SetToolTip(presetCombo,
+            "DLSS preset applied through the NVIDIA driver profile. Default leaves the game's preset unchanged.");
+        return presetCombo;
     }
 
     private static StackPanel BuildRenderScaleComboBox(uint currentDefault)
@@ -261,6 +272,9 @@ public static class DlssDefaultsDialog
             HorizontalAlignment = HorizontalAlignment.Stretch,
             CornerRadius = new CornerRadius(6),
         };
+        ToolTipService.SetToolTip(combo,
+            "Internal render resolution as a percentage of output resolution, set through the NVIDIA driver profile.\n"
+            + "Custom takes 33 to 100. Off leaves it unchanged.");
 
         // Inline TextBox shown when "Custom" is selected
         var customBox = new TextBox

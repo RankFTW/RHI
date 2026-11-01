@@ -158,6 +158,9 @@ public class MassDlssDeployDialog
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             Margin = new Thickness(0, 4, 0, 0),
         };
+        ToolTipService.SetToolTip(autoCreateCheck,
+            "If a game has no matching NVIDIA driver profile, create one so the presets can be applied. "
+            + "Also adds the game's exe to a matched profile that's missing it.");
         rightPanel.Children.Add(autoCreateCheck);
 
         // ── Separator ──
@@ -672,7 +675,7 @@ public class MassDlssDeployDialog
             if (presetIdx >= 0) selectedIdx = presetIdx + 1; // +1 for "None" at index 0
         }
 
-        return new ComboBox
+        var presetCombo = new ComboBox
         {
             ItemsSource = items,
             SelectedIndex = selectedIdx,
@@ -680,6 +683,9 @@ public class MassDlssDeployDialog
             CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(presetCombo,
+            "Preset applied through each game's NVIDIA driver profile. None leaves each game's current preset unchanged.");
+        return presetCombo;
     }
 
     private static uint GetPresetValue((string Name, uint Value)[] presets, string selection)

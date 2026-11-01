@@ -100,6 +100,8 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var driverHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        ToolTipService.SetToolTip(driverArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(driverTitle, SectionHeaderTooltip);
         driverHeaderRow.Children.Add(MakeDragHandle(_window.NvidiaProfileDriverContainer));
         driverHeaderRow.Children.Add(driverArrow);
         driverHeaderRow.Children.Add(driverTitle);
@@ -137,7 +139,8 @@ public partial class DetailPanelBuilder
         {
             // No profile data to read: the summary is just the driver version
             if (!string.IsNullOrEmpty(driverVer)
-                && DetailPanelBuilder.MakeSectionSummaryInlines(new[] { ("Driver", (string?)driverVer) }) is { } verTb)
+                && DetailPanelBuilder.MakeSectionSummaryInlines(new[] { ("Driver", (string?)driverVer) },
+                    "NVIDIA driver version.") is { } verTb)
             {
                 verTb.Tag = DriverSummaryTag;
                 verTb.Visibility = driverCollapsed ? Visibility.Visible : Visibility.Collapsed;
@@ -265,7 +268,9 @@ public partial class DetailPanelBuilder
                         summaryEntries.Add(("ReBAR", rebarName));
                     if (data.PerGameFpsLimit is uint capFps)
                         summaryEntries.Add(("FPS Limit", capFps == 0 ? "Off" : $"{capFps}"));
-                    var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries);
+                    var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries,
+                        "NVIDIA driver version and this game's driver profile settings.\n"
+                        + "VSync is always shown. Smooth (Smooth Motion), ReBAR and FPS Limit appear only when they differ from the default.");
                     if (summaryTb != null)
                     {
                         summaryTb.Tag = DriverSummaryTag;
@@ -421,7 +426,8 @@ public partial class DetailPanelBuilder
 
             // Low Latency Mode (in VSync column)
             {
-                vsyncCol.Children.Add(new TextBlock { Text = "Low Latency", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var lowLatencyLabel = new TextBlock { Text = "Low Latency", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+                vsyncCol.Children.Add(lowLatencyLabel);
                 var options = DlssPresetService.LowLatencyModeOptions;
                 uint current = d.LowLatencyMode;
                 var items = options.Select(o => o.Name).ToArray();
@@ -430,6 +436,11 @@ public partial class DetailPanelBuilder
                 // Locked to Ultra while Smooth Motion is enabled — must turn off Smooth Motion first
                 bool smoothOn = d.SmoothMotionEnable != 0;
                 bool latencyLocked = smoothOn;
+                // The combo is disabled while locked and disabled controls show no tooltip,
+                // so the reason goes on the visible label above it.
+                if (latencyLocked)
+                    ToolTipService.SetToolTip(lowLatencyLabel,
+                        "Low Latency is locked to Ultra while Smooth Motion is on. Turn Smooth Motion Off to change this.");
                 var combo2 = new ComboBox
                 {
                     ItemsSource = items,
@@ -532,7 +543,10 @@ public partial class DetailPanelBuilder
 
             // APIs
             {
-                smoothCol.Children.Add(new TextBlock { Text = "Allowed APIs", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var apisLabel = new TextBlock { Text = "Allowed APIs", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+                if (!smoothMotionEnabled)
+                    ToolTipService.SetToolTip(apisLabel, "Turn Smooth Motion On to change this.");
+                smoothCol.Children.Add(apisLabel);
                 var options = DlssPresetService.SmoothMotionApisOptions;
                 uint current = d.SmoothMotionApis;
                 var items = options.Select(o => o.Name).ToArray();
@@ -565,7 +579,10 @@ public partial class DetailPanelBuilder
 
             // Flip Pacing (combined — sets both Fullscreen and Windowed together)
             {
-                smoothCol.Children.Add(new TextBlock { Text = "Flip Pacing", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var flipPacingLabel = new TextBlock { Text = "Flip Pacing", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+                if (!smoothMotionEnabled)
+                    ToolTipService.SetToolTip(flipPacingLabel, "Turn Smooth Motion On to change this.");
+                smoothCol.Children.Add(flipPacingLabel);
                 var options = DlssPresetService.SmoothMotionFlipPacingFsOptions;
                 uint current = d.SmoothMotionFlipPacingFs;
                 var items = options.Select(o => o.Name).ToArray();
@@ -881,7 +898,10 @@ public partial class DetailPanelBuilder
 
             // Mode
             {
-                rebarCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var rebarModeLabel = new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+                if (!rebarEnabled)
+                    ToolTipService.SetToolTip(rebarModeLabel, "Set ReBAR Enable to On to change this.");
+                rebarCol.Children.Add(rebarModeLabel);
                 uint rebarMode = d.ReBarMode;
                 var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToList();
 
@@ -916,7 +936,10 @@ public partial class DetailPanelBuilder
 
             // Size Limit — always shows actual size values (no Global option)
             {
-                rebarCol.Children.Add(new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var rebarSizeLabel = new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+                if (!rebarEnabled)
+                    ToolTipService.SetToolTip(rebarSizeLabel, "Set ReBAR Enable to On to change this.");
+                rebarCol.Children.Add(rebarSizeLabel);
 
                 var sizeItems = new List<string>();
                 var sizeValues = new List<ulong>();

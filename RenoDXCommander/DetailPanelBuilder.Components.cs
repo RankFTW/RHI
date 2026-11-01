@@ -58,15 +58,42 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         });
 
-        grid.Children.Add(new TextBlock
+        var arrow = new TextBlock
         {
             Text = "◄",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        ToolTipService.SetToolTip(arrow, "This game has notes, see Info.");
+        grid.Children.Add(arrow);
 
         return grid;
+    }
+
+    /// <summary>
+    /// Sets a state-dependent tooltip on a component row's status/version text.
+    /// <paramref name="clickTarget"/> describes where clicking the status goes (null = not clickable
+    /// in this state), matching the *_PointerPressed handlers in MainWindow.Events.Install.cs.
+    /// </summary>
+    private static void SetComponentStatusTooltip(TextBlock status, bool installed, bool update, string? clickTarget)
+    {
+        string? tip;
+        if (status.Text.StartsWith("Installing", StringComparison.Ordinal))
+            tip = null;
+        else if (update)
+            tip = clickTarget != null
+                ? $"Update available. Click to open {clickTarget}."
+                : "Installed. An update is available.";
+        else if (installed)
+            tip = clickTarget != null
+                ? $"Installed version. Click to open {clickTarget}."
+                : "Installed version.";
+        else if (status.Text == "Ready")
+            tip = "Not installed.";
+        else
+            tip = null;
+        ToolTipService.SetToolTip(status, tip);
     }
 
     /// <summary>
@@ -127,6 +154,9 @@ public partial class DetailPanelBuilder
             _window.DetailRefStatus.TextDecorations = card.IsRefInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
+            SetComponentStatusTooltip(_window.DetailRefStatus, card.IsRefInstalled,
+                card.RefStatus == GameStatus.UpdateAvailable,
+                card.IsRefInstalled ? "the REFramework nightly releases page" : null);
             _window.DetailRefInstallBtn.Tag = card;
             _window.DetailRefInstallBtn.Content = WithInfoArrow(card.RefActionLabel, HasRealInfoContent(card, AddonType.REFramework), card.RefStatus == GameStatus.UpdateAvailable, _window.DetailRefInstallBtn);
             _window.DetailRefInstallBtn.IsEnabled = card.IsRefNotInstalling;
@@ -167,6 +197,9 @@ public partial class DetailPanelBuilder
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#A0AABB");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
+                SetComponentStatusTooltip(_window.DetailRsStatus, rsIniExists,
+                    rsIniExists && card.RsStatus == GameStatus.UpdateAvailable,
+                    rsIniExists ? "reshade.me" : null);
                 _window.DetailRsInstallBtn.Tag = card;
                 _window.DetailRsInstallBtn.Content = WithInfoArrow(card.RsActionLabel, HasRealInfoContent(card, AddonType.ReShade), card.RsStatus == GameStatus.UpdateAvailable, _window.DetailRsInstallBtn);
                 _window.DetailRsInstallBtn.IsEnabled = card.IsRsNotInstalling;
@@ -180,7 +213,6 @@ public partial class DetailPanelBuilder
                 _window.DetailRsDeleteBtn.Tag = card;
                 _window.DetailRsDeleteBtn.Opacity = rsIniExists ? 1 : 0;
                 _window.DetailRsDeleteBtn.IsHitTestVisible = rsIniExists;
-                _window.DetailRsDeleteBtn.IsHitTestVisible = rsIniExists;
             }
             else
             {
@@ -190,6 +222,9 @@ public partial class DetailPanelBuilder
                 _window.DetailRsStatus.TextDecorations = card.IsRsInstalled
                     ? Windows.UI.Text.TextDecorations.Underline
                     : Windows.UI.Text.TextDecorations.None;
+                SetComponentStatusTooltip(_window.DetailRsStatus, card.IsRsInstalled,
+                    card.RsStatus == GameStatus.UpdateAvailable,
+                    card.IsRsInstalled ? "reshade.me" : null);
                 _window.DetailRsInstallBtn.Tag = card;
                 _window.DetailRsInstallBtn.Content = WithInfoArrow(card.RsActionLabel, HasRealInfoContent(card, AddonType.ReShade), card.RsStatus == GameStatus.UpdateAvailable, _window.DetailRsInstallBtn);
                 _window.DetailRsInstallBtn.IsEnabled = card.IsRsNotInstalling;
@@ -244,6 +279,11 @@ public partial class DetailPanelBuilder
                 : (card.IsDcInstalled || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlStatus.Opacity = ulGreyed ? 0.35 : 1.0;
+            SetComponentStatusTooltip(_window.DetailUlStatus, card.IsUlInstalled,
+                card.UlStatus == GameStatus.UpdateAvailable,
+                card.UlStatus == GameStatus.UpdateAvailable && _window.ViewModel.LatestUlReleasePageUrl != null
+                    ? "the latest ReLimiter release page"
+                    : card.IsUlInstalled ? "the ReLimiter feature guide" : null);
             _window.DetailUlInstallBtn.Tag = card;
             var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
             if (card.IsDcInstalled || card.UseNormalReShade)
@@ -294,6 +334,9 @@ public partial class DetailPanelBuilder
                 : (card.IsUlInstalled || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDcStatus.Opacity = dcGreyed ? 0.35 : 1.0;
+            SetComponentStatusTooltip(_window.DetailDcStatus, card.IsDcInstalled,
+                card.DcStatus == GameStatus.UpdateAvailable,
+                card.IsDcInstalled ? "the Display Commander latest build page" : null);
             _window.DetailDcInstallBtn.Tag = card;
             var dcLabel = WithInfoArrow(card.DcActionLabel, HasRealInfoContent(card, AddonType.DisplayCommander), card.DcStatus == GameStatus.UpdateAvailable, _window.DetailDcInstallBtn);
             if (card.IsUlInstalled || card.UseNormalReShade)
@@ -337,6 +380,10 @@ public partial class DetailPanelBuilder
             _window.DetailDofFixStatus.TextDecorations = card.IsDofFixInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
+            SetComponentStatusTooltip(_window.DetailDofFixStatus, card.IsDofFixInstalled,
+                card.DofFixStatus == GameStatus.UpdateAvailable,
+                card.IsDofFixInstalled && !string.IsNullOrEmpty(card.DofFixInstalledVersion)
+                    ? "the installed version's release page" : null);
             _window.DetailDofFixInstallBtn.Tag = card;
             _window.DetailDofFixInstallBtn.Content = WithInfoArrow(card.DofFixActionLabel, true, card.DofFixStatus == GameStatus.UpdateAvailable, _window.DetailDofFixInstallBtn);
             _window.DetailDofFixInstallBtn.IsEnabled = card.DofFixInstallEnabled && !dofGreyed;
@@ -388,6 +435,9 @@ public partial class DetailPanelBuilder
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
+                SetComponentStatusTooltip(_window.DetailRdxStatus, card.IsRdxInstalled,
+                    card.Status == GameStatus.UpdateAvailable,
+                    card.IsRdxInstalled ? "the mod's page" : null);
                 var extLabel = WithInfoArrow(card.ExternalDisplayLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
@@ -422,6 +472,9 @@ public partial class DetailPanelBuilder
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
+                SetComponentStatusTooltip(_window.DetailRdxStatus, card.IsRdxInstalled,
+                    card.Status == GameStatus.UpdateAvailable,
+                    card.IsRdxInstalled ? "the mod's page" : null);
                 var rdxLabel = WithInfoArrow(card.InstallActionLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.InstallActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
@@ -454,6 +507,9 @@ public partial class DetailPanelBuilder
             _window.DetailLumaStatus.TextDecorations = card.IsLumaInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
+            SetComponentStatusTooltip(_window.DetailLumaStatus, card.IsLumaInstalled,
+                card.LumaStatus == GameStatus.UpdateAvailable,
+                card.IsLumaInstalled ? "the Luma releases page" : null);
             _window.DetailLumaInstallBtn.Tag = card;
             _window.DetailLumaInstallBtn.Content = WithInfoArrow(card.LumaActionLabel, HasRealInfoContent(card, AddonType.Luma), card.LumaStatus == GameStatus.UpdateAvailable, _window.DetailLumaInstallBtn);
             _window.DetailLumaInstallBtn.IsEnabled = card.IsLumaNotInstalling;

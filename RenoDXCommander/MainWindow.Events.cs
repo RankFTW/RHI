@@ -1068,6 +1068,9 @@ public sealed partial class MainWindow
             };
 
             chip.Click += CustomFilterChip_Click;
+            ToolTipService.SetToolTip(chip, string.IsNullOrWhiteSpace(filter.Query)
+                ? "Saved filter.\nRight-click to delete."
+                : $"Saved filter: \"{filter.Query}\"\nRight-click to delete.");
 
             // Right-click context menu with "Delete" option (Req 5.1–5.5)
             var flyout = new MenuFlyout();

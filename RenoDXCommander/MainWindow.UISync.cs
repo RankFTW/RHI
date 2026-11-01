@@ -46,6 +46,9 @@ public sealed partial class MainWindow
                     if (!silent) StatusDot.Fill = new SolidColorBrush(loading
                         ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
                         : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentGreenBrush]).Color);
+                    if (!silent) ToolTipService.SetToolTip(StatusDot, loading
+                        ? "Scanning your game library…"
+                        : "Game library up to date.");
                     if (!loading)
                     {
                         if (!silent) ViewModel.MarkInitialized();

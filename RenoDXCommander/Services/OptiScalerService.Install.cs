@@ -116,7 +116,7 @@ public partial class OptiScalerService
             if (effectiveDllName == DefaultDllName
                 && card.GraphicsApi == Models.GraphicsApiType.Vulkan)
             {
-                effectiveDllName = "winmm.dll";
+                effectiveDllName = GetDefaultDllName(card.GraphicsApi);
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: Vulkan game — auto-selected winmm.dll");
             }
 

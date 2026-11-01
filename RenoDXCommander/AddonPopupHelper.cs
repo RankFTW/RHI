@@ -133,6 +133,7 @@ public static class AddonPopupHelper
                 VerticalAlignment = VerticalAlignment.Center,
                 Visibility = isDownloaded ? Visibility.Visible : Visibility.Collapsed,
             };
+            ToolTipService.SetToolTip(tickMark, "Downloaded.");
             nameRow.Children.Add(tickMark);
             textPanel.Children.Add(nameRow);
 
@@ -330,13 +331,15 @@ public static class AddonPopupHelper
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                     Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 });
-                nameRow.Children.Add(new TextBlock
+                var localTick = new TextBlock
                 {
                     Text = "✓",
                     FontSize = 13,
                     Foreground = Brush(ResourceKeys.AccentGreenBrush),
                     VerticalAlignment = VerticalAlignment.Center,
-                });
+                };
+                ToolTipService.SetToolTip(localTick, "Local file.");
+                nameRow.Children.Add(localTick);
                 textPanel.Children.Add(nameRow);
 
                 if (!string.IsNullOrEmpty(entry.PackageDescription))

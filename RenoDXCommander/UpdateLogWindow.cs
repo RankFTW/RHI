@@ -124,15 +124,39 @@ public sealed class UpdateLogWindow : Window
             Foreground  = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
         };
-        clearBtn.Click += (_, _) =>
+        ToolTipService.SetToolTip(clearBtn, "Delete the whole update history. This can't be undone.");
+        clearBtn.Click += async (_, _) =>
         {
-            _updateLogService.Clear();
-            DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                listPanel.Children.Clear();
-                BuildEntryList(listPanel);
-                countText.Text = "No updates recorded yet.";
-            });
+                // This window has its own XamlRoot, so a ContentDialog can be shown here.
+                var xamlRoot = clearBtn.XamlRoot;
+                if (xamlRoot == null) return;
+                var confirm = new ContentDialog
+                {
+                    Title             = "Clear update history?",
+                    Content           = "This deletes every entry in the update history. It can't be undone.",
+                    PrimaryButtonText = "Clear History",
+                    CloseButtonText   = "Cancel",
+                    DefaultButton     = ContentDialogButton.Close,
+                    XamlRoot          = xamlRoot,
+                    RequestedTheme    = ElementTheme.Dark,
+                };
+                if (await DialogService.ShowSafeAsync(confirm) != ContentDialogResult.Primary) return;
+
+                _updateLogService.Clear();
+                CrashReporter.Log("[UpdateLogWindow.ClearHistory] Update history cleared");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    listPanel.Children.Clear();
+                    BuildEntryList(listPanel);
+                    countText.Text = "No updates recorded yet.";
+                });
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[UpdateLogWindow.ClearHistory] Failed — {ex.Message}");
+            }
         };
         Grid.SetColumn(clearBtn, 1);
         footerRow.Children.Add(clearBtn);
@@ -253,6 +277,8 @@ public sealed class UpdateLogWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming      = TextTrimming.CharacterEllipsis,
         };
+        if (!string.IsNullOrEmpty(versionStr))
+            ToolTipService.SetToolTip(versionText, versionStr);
         Grid.SetColumn(versionText, 2);
         row.Children.Add(versionText);
 

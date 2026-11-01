@@ -23,13 +23,21 @@ public partial class DetailPanelBuilder
     {
         var col = new StackPanel { Spacing = 4, Opacity = isPresent ? 1.0 : 0.4 };
 
-        col.Children.Add(new TextBlock
+        var columnLabel = new TextBlock
         {
             Text = label,
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        });
+        };
+        // The column is dimmed (and its version combo usually disabled) when the DLL is
+        // missing or is 1.x. Disabled controls show no tooltip, so the reason goes on the label.
+        if (!isPresent)
+            ToolTipService.SetToolTip(columnLabel,
+                installedVersion?.StartsWith("1.") == true
+                    ? "DLSS / Streamline 1.x can't be swapped to 2.x or newer."
+                    : "This game doesn't include this DLL.");
+        col.Children.Add(columnLabel);
 
         // Version ComboBox
         var versionLabel = new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
@@ -278,6 +286,8 @@ public partial class DetailPanelBuilder
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         MaxLength = 3,
                     };
+                    ToolTipService.SetToolTip(inputBox,
+                        "Render scale as a percentage of output resolution (33 to 100). Enter to apply, Esc to cancel.");
                     inputBox.KeyDown += (ks, ke) =>
                     {
                         if (ke.Key == Windows.System.VirtualKey.Enter)

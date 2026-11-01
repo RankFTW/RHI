@@ -14,6 +14,13 @@ public partial class OptiScalerService : IOptiScalerService
     public const string ReShadeCoexistName = "ReShade64.dll";
     public const string AddonType = "OptiScaler";
 
+    /// <summary>
+    /// Default OptiScaler DLL name for a game with no override: winmm.dll for Vulkan games
+    /// (dxgi.dll doesn't load there), dxgi.dll otherwise.
+    /// </summary>
+    public static string GetDefaultDllName(Models.GraphicsApiType api)
+        => api == Models.GraphicsApiType.Vulkan ? "winmm.dll" : DefaultDllName;
+
     public static readonly string[] SupportedDllNames =
     [
         "dxgi.dll", "winmm.dll", "d3d11.dll", "d3d12.dll", "dbghelp.dll",

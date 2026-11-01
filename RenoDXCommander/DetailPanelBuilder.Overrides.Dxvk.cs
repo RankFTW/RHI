@@ -44,6 +44,8 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var mgmtHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        ToolTipService.SetToolTip(mgmtArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(mgmtTitle, SectionHeaderTooltip);
         mgmtHeaderRow.Children.Add(MakeDragHandle(_window.ManagementContainer));
         mgmtHeaderRow.Children.Add(mgmtArrow);
         mgmtHeaderRow.Children.Add(mgmtTitle);

@@ -227,40 +227,49 @@
                             <StackPanel Spacing="4">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <Button x:Name="FilterDetected" Content="All Games" Tag="Detected"
+                                            ToolTipService.ToolTip="Show every game except hidden ones."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipActiveBrush}" Foreground="White"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterInstalled" Content="Installed" Tag="Installed"
+                                            ToolTipService.ToolTip="Show games with ReShade installed."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterFavourites" Content="Favourites" Tag="Favourites"
+                                            ToolTipService.ToolTip="Show your favourite games, including hidden ones."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterHidden" Content="Hidden" Tag="Hidden"
+                                            ToolTipService.ToolTip="Show games you've hidden."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <Button x:Name="FilterUnreal" Content="Unreal" Tag="Unreal"
+                                            ToolTipService.ToolTip="Show Unreal Engine games. Combines with the other engine and mod filters."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterUnity" Content="Unity" Tag="Unity"
+                                            ToolTipService.ToolTip="Show Unity games. Combines with the other engine and mod filters."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterOther" Content="Other" Tag="Other"
+                                            ToolTipService.ToolTip="Show games that use neither Unreal nor Unity. Combines with the other engine and mod filters."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterRenoDX" Content="RenoDX" Tag="RenoDX"
+                                            ToolTipService.ToolTip="Show games with a RenoDX HDR mod, including the generic Unreal and Unity mods. Combines with the other engine and mod filters."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                     <Button x:Name="FilterLuma" Content="Luma" Tag="Luma"
+                                            ToolTipService.ToolTip="Show games with a Luma mod available. Combines with the other engine and mod filters."
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
@@ -276,10 +285,13 @@
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{StaticResource AccentGreenDimBrush}"/>
                                 <TextBlock x:Name="GameCountText" Text="0 shown"
+                                           ToolTipService.ToolTip="Games shown with the current filters."
                                            FontSize="11" Foreground="{StaticResource TextDisabledBrush}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="InstalledCountText" Text="0 installed"
+                                <TextBlock x:Name="InstalledCountText" Text="0 ReShade"
+                                           ToolTipService.ToolTip="Games with ReShade installed."
                                            FontSize="11" Foreground="{StaticResource AccentGreenDimBrush}" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="HiddenCountText" Text=""
+                                           ToolTipService.ToolTip="Hidden games. Use the Hidden filter to see them."
                                            FontSize="11" Foreground="{StaticResource AccentPurpleDimBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
@@ -302,6 +314,7 @@
                                             BorderBrush="{x:Bind SidebarItemBorderBrush, Mode=OneWay}"
                                             BorderThickness="1" CornerRadius="6" Padding="8,6"
                                             RightTapped="GameRow_RightTapped"
+                                            ToolTipService.ToolTip="{x:Bind SidebarTooltip, Mode=OneWay}"
                                             Tag="{x:Bind}">
                                         <Grid ColumnSpacing="6">
                                             <Grid.ColumnDefinitions>
@@ -309,7 +322,8 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <Grid Grid.Column="0" Width="16" VerticalAlignment="Center">
+                                            <Grid Grid.Column="0" Width="16" VerticalAlignment="Center"
+                                                  ToolTipService.ToolTip="{x:Bind Source}">
                                                 <Image Width="14" Height="14"
                                                        Stretch="Uniform"
                                                        Visibility="{x:Bind SourceIconImageVisibility}">
@@ -329,6 +343,7 @@
                                             <Ellipse Grid.Column="2" Width="8" Height="8"
                                                      Fill="{StaticResource AccentGreenBrush}" VerticalAlignment="Center"
                                                      Margin="4,0,2,0"
+                                                     ToolTipService.ToolTip="Update available for an installed component."
                                                      Visibility="{x:Bind UpdateBadgeVisibility, Mode=OneWay}"/>
                                         </Grid>
                                     </Border>
@@ -360,6 +375,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Bottom">
                                 <TextBlock x:Name="DetailGameName" x:FieldModifier="internal" FontSize="20" FontWeight="Bold"
+                                           ToolTipService.ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                            Foreground="{StaticResource TextPrimaryBrush}"
                                            TextTrimming="CharacterEllipsis" MaxLines="1"/>
                                 <TextBlock x:Name="DetailInstallPath" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
@@ -739,6 +755,7 @@
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="3" Text="———  HDR Mods  ———" FontSize="11"
+                                               ToolTipService.ToolTip="RenoDX and Luma HDR mods. Install one or the other."
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
@@ -845,6 +862,7 @@
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="3" Text="——  Recommended  ——" FontSize="11"
+                                               ToolTipService.ToolTip="Fixes recommended for this game, such as the depth of field fix."
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
@@ -906,6 +924,7 @@
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="3" Text="———  Frame limiters — Choose one  ———" FontSize="11"
+                                               ToolTipService.ToolTip="ReLimiter and Display Commander both limit frame rate. Install only one."
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
@@ -1574,6 +1593,7 @@
                                                             <Button Grid.Column="1" x:Name="NexusConnectBtn" x:FieldModifier="internal"
                                                                     Content="Connect"
                                                                     Click="NexusConnectBtn_Click"
+                                                                    ToolTipService.ToolTip="Sign in to Nexus Mods in your browser so RHI can download mods from Nexus."
                                                                     Style="{StaticResource SettingsButtonStyle}" Foreground="{StaticResource SettingsLabelBrush}"/>
                                                         </Grid>
                                                     </Grid>
@@ -1581,6 +1601,7 @@
                                                                 Visibility="Collapsed" HorizontalAlignment="Right">
                                                         <Button Content="Disconnect"
                                                                 Click="NexusDisconnectBtn_Click"
+                                                                ToolTipService.ToolTip="Sign out of Nexus Mods and remove the saved key."
                                                                 Style="{StaticResource SettingsDangerButtonStyle}" Foreground="{StaticResource AccentRedBrush}">
                                                             <Button.Resources>
                                                                 <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="AccentRedBrush"/>
@@ -3207,6 +3228,7 @@
                 <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
                            FontSize="10" Foreground="{StaticResource AccentAmberDimBrush}"
                            TextTrimming="CharacterEllipsis" MaxLines="1"
+                           ToolTipService.ToolTip="ReShade, OptiScaler and DLSS/Streamline changes may be flagged by anti-cheat in online or multiplayer games. Remove them before playing online."
                            Text="⚠ ReShade, OptiScaler, and DLSS/Streamline modifications may trigger anti-cheat in online/multiplayer games"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="8">

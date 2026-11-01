@@ -54,6 +54,17 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - The Driver Settings heading now matches the other sections. The driver version is now on the line at the bottom of the section, next to the admin note, and is the first item in the summary when the section is collapsed.
 - Hovering the HDR and RES buttons now tells you whether they're on for that game, and whether that comes from the game itself or from Settings.
 
+**Tooltips**
+- Many more things now explain themselves when you hover them: the game list filters and counts, store icons and update dots in the game list, the Components row version numbers (and where clicking them goes), section dividers, the drag handles and section headings, the graphics API and 32/64-bit badges, and the shader, addon, Available Mods, DLSS defaults and batch DLSS deploy windows.
+- Greyed-out settings now say why they're unavailable (for example Low Latency while Smooth Motion is on, ReBAR Mode until ReBAR is enabled, DLSS columns for DLLs a game doesn't have, Quick Apply with no DLSS defaults set, and OptiScaler on 32-bit games).
+- The short summaries shown on collapsed sections explain their abbreviations (for example SR, RR, FG and SL in DLSS / Streamline, and RS, RDX, RL, DC and OS in Game Overrides).
+
+**Game list**
+- Greyed-out game names now mean ReShade isn't installed for that game. Previously a game was only greyed out when nothing at all was installed.
+
+**Confirmations**
+- Deleting a shader profile and clearing the update history now ask you to confirm first.
+
 **Status bar**
 - The bottom-left of the window now shows what RHI is doing in the background, such as checking for new games, checking for updates or updating DLSS. When nothing is running it shows when RHI last checked for updates and when the next check is due. The game and ReShade counts are still shown above the game list.
 
@@ -97,8 +108,18 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Fixed the auto-update log counting only Super Resolution updates. Games where only Ray Reconstruction or Frame Generation was updated are now counted.
 
 **Game page**
+- Fixed two RenoDX compatibility settings both being called "Proxy Revert State". The second one is now "Advanced Settings".
+- Fixed the Hide button's tooltip still saying "Hide" when the button shows "Show".
 - Fixed the Components section sitting slightly out of line with the sections below it and being a little taller.
 - Fixed a section's ≡ handle staying highlighted after dragging it to a new position.
+- Fixed the Update inclusion line in Game Overrides showing RenoDX, ReLimiter, Display Commander, OptiScaler or RE Framework as "On" when that component is switched off in Settings. The per-game heading is now "Update inclusion" (it was "Global update inclusion", but it only affects that game).
+- Fixed the ReShade version looking like a link when an update was available (or for Vulkan games) but doing nothing when clicked. It now opens reshade.me.
+- Fixed the version numbers in Extras (ASI Loader, OptiScaler, RTX Encore, 20/30 FG Unlock, RTX 40 MFG, MFG Ada Unlock and the other unlocks) not showing the hand cursor on hover, unlike the ones in Components.
+- Fixed the "MFG Unlocks" and "API Upgrades" dividers in Extras not being centred over the buttons like the dividers in Components.
+- Fixed choosing "--------" for the OptiScaler DLL name on a Vulkan game renaming it to dxgi.dll, which doesn't load there. It now goes back to winmm.dll, the name RHI installs it as on Vulkan games.
+
+**Addon Manager**
+- Fixed an addon that failed to download switching itself back off with no message. The row now says the download failed.
 
 **Tooltips**
 - Fixed out-of-date tooltips: Update All now lists every component it updates, the Neural Rendering "Deploy DLL" button no longer mentions the old addon picker route, and RTX 40 MFG no longer refers to the old `RTXMFG.dll` file name.

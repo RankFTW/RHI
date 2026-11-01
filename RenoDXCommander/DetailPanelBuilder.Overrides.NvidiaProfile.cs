@@ -43,6 +43,8 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var nvHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        ToolTipService.SetToolTip(nvArrow, SectionHeaderTooltip);
+        ToolTipService.SetToolTip(nvTitle, SectionHeaderTooltip);
         nvHeaderRow.Children.Add(MakeDragHandle(_window.NvidiaProfileDlssContainer));
         nvHeaderRow.Children.Add(nvArrow);
         nvHeaderRow.Children.Add(nvTitle);
@@ -321,6 +323,13 @@ public partial class DetailPanelBuilder
                 Opacity = (fgEnabled && presetService.IsSupported) ? 1.0 : 0.4,
             };
             ToolTipService.SetToolTip(mfgBtn, "Configure NVIDIA Multi Frame Generation: mode, frame count multiplier, and dynamic target frame rate. Requires 50 Series GPU.");
+            // Disabled buttons show no tooltip — when FG is present but NVAPI isn't available,
+            // explain on the "Frame Generation" column label instead (a missing FG DLL is
+            // already explained there by BuildDlssColumn).
+            if (fgEnabled && !presetService.IsSupported
+                && fgCol.Children.Count > 0 && fgCol.Children[0] is TextBlock fgLabel)
+                ToolTipService.SetToolTip(fgLabel,
+                    "Multi Frame Gen needs access to NVIDIA driver settings, which isn't available on this PC.");
             mfgBtn.Click += async (s, ev) =>
             {
                 var xamlRoot = (s as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
@@ -859,10 +868,21 @@ public partial class DetailPanelBuilder
                 _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
             };
 
-            // Add buttons to SL column: Quick Apply first, then spacer, then Restore All at bottom
-            slCol.Children.Add(applyBtn);
+            // Add buttons to SL column: Quick Apply first, then spacer, then Restore All at bottom.
+            // Each button sits in a transparent Border: WinUI shows no tooltip on a disabled
+            // button, so the wrapper carries the "why is this disabled" tooltip instead.
+            var applyWrap = new Border { Background = UIFactory.GetBrush("transparent"), Child = applyBtn };
+            if (!applyBtn.IsEnabled)
+                ToolTipService.SetToolTip(applyWrap, !hasDefaults
+                    ? "Set DLSS defaults in Settings › DLSS / Streamline to use Quick Apply."
+                    : "This game has no DLSS or Streamline DLLs to apply defaults to.");
+            var restoreWrap = new Border { Background = UIFactory.GetBrush("transparent"), Child = dlssRestoreBtn };
+            if (!dlssRestoreBtn.IsEnabled)
+                ToolTipService.SetToolTip(restoreWrap,
+                    "Nothing to restore: no DLLs have been swapped and no presets or overrides are set for this game.");
+            slCol.Children.Add(applyWrap);
             slCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
-            slCol.Children.Add(dlssRestoreBtn);
+            slCol.Children.Add(restoreWrap);
 
             // Override column opacity so buttons aren't dimmed by the SL column's 0.4 opacity.
             // Manually dim the SL label and version combo if Streamline isn't present.
@@ -872,7 +892,7 @@ public partial class DetailPanelBuilder
                 // Dim the SL-specific children (label, version sub-label, combo, etc.) but not buttons
                 foreach (var child in slCol.Children.OfType<UIElement>())
                 {
-                    if (child != applyBtn && child != dlssRestoreBtn)
+                    if (child != applyWrap && child != restoreWrap)
                         child.Opacity = 0.4;
                 }
             }
@@ -942,7 +962,12 @@ public partial class DetailPanelBuilder
             if (card.HasStreamline)
                 nvSummaryEntries.Add(("SL", card.StreamlineInstalledVersion));
 
-            var nvSummaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(nvSummaryEntries);
+            var nvSummaryTip = "SR = Super Resolution, RR = Ray Reconstruction, FG = Frame Generation, "
+                + (FeatureFlags.DlssNr && card.HasDlssnr ? "NR = Neural Rendering, " : "")
+                + "SL = Streamline.\nEach shows DLL version · preset · render scale.";
+            if (nvSummaryEntries.Any(e => e.Item2 == "NV Override"))
+                nvSummaryTip += "\nNV Override = the NVIDIA driver supplies the DLL.";
+            var nvSummaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(nvSummaryEntries, nvSummaryTip);
             if (nvSummaryTb != null)
             {
                 var nvCollapsed = _window.ViewModel.Settings.CollapsedDetailSections
