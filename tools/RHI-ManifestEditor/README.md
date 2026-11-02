@@ -14,6 +14,7 @@ A Windows app for editing RHI's `manifest.json` without touching raw JSON.
 - **Check** runs the same checks as `tools/check-manifest.py` (valid JSON, duplicate keys, keys that differ only by case in case-insensitive fields), plus conflicting game settings (32 and 64-bit, contradicting UE-Extended lists). Save warns before writing a file with problems.
 - **Review changes** shows a line diff against the last save, with Discard.
 - Undo/Redo cover every change. Shortcuts: Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+F.
+- Back/Forward (the arrows top left, the mouse's side buttons, or Alt+Left/Right) move between the pages you've visited, like a browser, and return to where each page was scrolled.
 - If the file changes on disk (for example after `git pull`) and you have no unsaved edits, it reloads by itself. With unsaved edits, Save asks before overwriting.
 
 Saving only changes the characters you edited: no reformatting, re-sorting or re-escaping, line endings kept. Alphabetical lists stay alphabetical; other lists get new entries at the end (dgVoodoo2 versions at the top, because the first one is the default).

@@ -41,7 +41,7 @@ public sealed class MainWindow : Window, IEditorHost
     private readonly Grid _root = new();
     private readonly TextBlock _fileText = Ui.T("", 12, fg: Ui.Secondary, wrap: false);
     private readonly TextBlock _statusText = Ui.T("", 12, fg: Ui.Secondary, wrap: false);
-    private readonly Button _saveBtn, _undoBtn, _redoBtn, _reviewBtn, _checkBtn;
+    private readonly Button _saveBtn, _undoBtn, _redoBtn, _reviewBtn, _checkBtn, _backBtn, _forwardBtn;
     private readonly TextBlock _checkText = Ui.T("Check", 14, wrap: false);
     private readonly ToggleButton _fieldsTab = new() { Content = "Fields", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ToggleButton _gamesTab = new() { Content = "Games", HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -81,6 +81,14 @@ public sealed class MainWindow : Window, IEditorHost
         _undoBtn = Ui.Btn("Undo", Undo, tooltip: "Undo (Ctrl+Z)");
         _redoBtn = Ui.Btn("Redo", Redo, tooltip: "Redo (Ctrl+Y)");
         _reviewBtn = Ui.Btn("Review changes", () => _ = ShowReviewAsync(), tooltip: "See every line you changed since the last save");
+        _backBtn = new Button { Content = new FontIcon { Glyph = "", FontSize = 14 }, IsEnabled = false, Padding = new Thickness(10, 8, 10, 8) };
+        _backBtn.Click += (_, _) => GoBack();
+        ToolTipService.SetToolTip(_backBtn, "Back (mouse back button, Alt+Left)");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_backBtn, "Back");
+        _forwardBtn = new Button { Content = new FontIcon { Glyph = "", FontSize = 14 }, IsEnabled = false, Padding = new Thickness(10, 8, 10, 8) };
+        _forwardBtn.Click += (_, _) => GoForward();
+        ToolTipService.SetToolTip(_forwardBtn, "Forward (mouse forward button, Alt+Right)");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_forwardBtn, "Forward");
         _checkBtn = new Button { Content = _checkText };
         ToolTipService.SetToolTip(_checkBtn, "Problems that would break the manifest for users, and conflicting settings");
         _checkBtn.Click += (_, _) => _ = ShowIssuesAsync();
@@ -109,7 +117,9 @@ public sealed class MainWindow : Window, IEditorHost
         var openLink = new HyperlinkButton { Content = "Open another file...", Padding = new Thickness(6, 0, 6, 0), FontSize = 12 };
         openLink.Click += (_, _) => _ = PickFileAsync();
         var titleBlock = Ui.V(0, Ui.T("RHI Manifest Editor", 18, bold: true, wrap: false), Ui.H(4, _fileText, openLink));
-        top.Children.Add(titleBlock);
+        var nav = Ui.H(4, _backBtn, _forwardBtn);
+        nav.VerticalAlignment = VerticalAlignment.Center;
+        top.Children.Add(Ui.H(14, nav, titleBlock));
         var buttons = Ui.H(8, _checkBtn, _reviewBtn, _undoBtn, _redoBtn, _saveBtn);
         buttons.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(buttons, 1);
@@ -189,11 +199,17 @@ public sealed class MainWindow : Window, IEditorHost
             _search.Focus(FocusState.Keyboard);
             _search.SelectAll();
         });
+        AddAccel(VirtualKey.Left, GoBack, VirtualKeyModifiers.Menu);
+        AddAccel(VirtualKey.Right, GoForward, VirtualKeyModifiers.Menu);
+        AddAccel(VirtualKey.GoBack, GoBack, VirtualKeyModifiers.None);
+        AddAccel(VirtualKey.GoForward, GoForward, VirtualKeyModifiers.None);
+        // Mouse back/forward buttons. handledEventsToo: text boxes and buttons mark presses handled.
+        _root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(OnRootPointerPressed), true);
     }
 
-    private void AddAccel(VirtualKey key, Action action)
+    private void AddAccel(VirtualKey key, Action action, VirtualKeyModifiers modifiers = VirtualKeyModifiers.Control)
     {
-        var acc = new KeyboardAccelerator { Key = key, Modifiers = VirtualKeyModifiers.Control };
+        var acc = new KeyboardAccelerator { Key = key, Modifiers = modifiers };
         acc.Invoked += (_, e) => { e.Handled = true; action(); };
         _root.KeyboardAccelerators.Add(acc);
     }
@@ -493,6 +509,7 @@ public sealed class MainWindow : Window, IEditorHost
         p.Margin = new Thickness(28, 24, 28, 24);
         p.MaxWidth = 760;
         p.HorizontalAlignment = HorizontalAlignment.Left;
+        Visit(new Loc(_mode, null));
         _content.Content = p;
     }
 
@@ -508,6 +525,7 @@ public sealed class MainWindow : Window, IEditorHost
         _currentGame = name;
         _settings.LastGame = name;
         _settings.Save();
+        Visit(new Loc(Mode.Games, name));
         _gameEditor = new GameEditor(this, name);
         var offset = _content.VerticalOffset;
         bool same = (_content.Content as FrameworkElement)?.Tag as string == "game:" + name;
@@ -523,6 +541,7 @@ public sealed class MainWindow : Window, IEditorHost
     {
         if (_doc == null) return;
         Flush();
+        Visit(new Loc(Mode.Global, id));
         _currentGlobal = id;
         _gameEditor = null;
         var offset = _content.VerticalOffset;
@@ -541,6 +560,7 @@ public sealed class MainWindow : Window, IEditorHost
         Flush();
         _currentField = key;
         if (_settings.LastField != key) { _settings.LastField = key; _settings.Save(); }
+        Visit(new Loc(Mode.Fields, key));
         _gameEditor = null;
         var offset = _content.VerticalOffset;
         bool same = (_content.Content as FrameworkElement)?.Tag as string == "field:" + key;
@@ -548,6 +568,81 @@ public sealed class MainWindow : Window, IEditorHost
         page.Tag = "field:" + key;
         _content.Content = page;
         _content.ChangeView(null, same ? offset : 0, null, true);
+    }
+
+    // ── Back / forward ───────────────────────────────────────────────────────
+
+    /// <summary>A page in the navigation history. Offset is where it was scrolled to when you left it.</summary>
+    private sealed record Loc(Mode Mode, string? Id)
+    {
+        public double Offset { get; set; }
+    }
+
+    private readonly Stack<Loc> _back = new();
+    private readonly Stack<Loc> _forward = new();
+    private Loc? _here;
+    private bool _navigating;
+
+    /// <summary>Called by every page method before it replaces the page. Records the page being left.</summary>
+    private void Visit(Loc loc)
+    {
+        // Same page rebuilt (edit, undo, list refresh). Compare Mode and Id only: Offset is part of record equality.
+        if (_here != null && _here.Mode == loc.Mode && _here.Id == loc.Id) return;
+        if (_here != null && !_navigating)
+        {
+            _here.Offset = _content.VerticalOffset;
+            _back.Push(_here);
+            _forward.Clear();
+        }
+        _here = loc;
+        UpdateNavButtons();
+    }
+
+    private void GoBack() => Go(_back, _forward);
+    private void GoForward() => Go(_forward, _back);
+
+    private void Go(Stack<Loc> from, Stack<Loc> to)
+    {
+        if (_doc == null || _dialogOpen || from.Count == 0) return;
+        Flush();
+        var target = from.Pop();
+        if (_here != null)
+        {
+            _here.Offset = _content.VerticalOffset;
+            to.Push(_here);
+        }
+        _navigating = true;
+        try
+        {
+            _here = null;  // so Visit records the target without pushing
+            switch (target.Mode)
+            {
+                case Mode.Fields: _currentField = target.Id; break;
+                case Mode.Games: _currentGame = target.Id; break;
+                case Mode.Global: _currentGlobal = target.Id; break;
+            }
+            if (target.Mode == Mode.Games && target.Id != null) OpenGame(target.Id);
+            else SetMode(target.Mode);
+        }
+        finally { _navigating = false; }
+        if (_here != null) _here.Offset = target.Offset;
+        // Restore the scroll position once the page has been laid out
+        var offset = target.Offset;
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => _content.ChangeView(null, offset, null, true));
+        UpdateNavButtons();
+    }
+
+    private void UpdateNavButtons()
+    {
+        _backBtn.IsEnabled = _back.Count > 0;
+        _forwardBtn.IsEnabled = _forward.Count > 0;
+    }
+
+    private void OnRootPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        var props = e.GetCurrentPoint(_root).Properties;
+        if (props.IsXButton1Pressed) { GoBack(); e.Handled = true; }
+        else if (props.IsXButton2Pressed) { GoForward(); e.Handled = true; }
     }
 
     private void RebuildCurrentPage()
