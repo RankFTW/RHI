@@ -760,15 +760,6 @@ public partial class MainViewModel : ObservableObject
 
     public BatchObservableCollection<GameCardViewModel> DisplayedGames { get; } = new();
 
-    // UE common warnings shown at bottom of every generic UE info dialog
-    private const string UnrealWarnings =
-        "\n\n⚠ COMMON UNREAL ENGINE MOD WARNINGS\n\n" +
-        "🖥 Black Screen on Launch\n" +
-        "Upgrade `R10G10B10A2_UNORM` → `output size`\n" +
-        "Unlock upgrade sliders: Settings Mode → Advanced, then restart game.\n\n" +
-        "🖥 DLSS FG Flickering\n" +
-        "Replace DLSSG DLL with older 3.8.x (locks FG x2) or use DLSS FIX (beta) from Discord.";
-
     public MainViewModel(
         HttpClient http,
         IModInstallService installer,

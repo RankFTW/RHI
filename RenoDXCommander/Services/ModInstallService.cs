@@ -171,12 +171,20 @@ public class ModInstallService : IModInstallService
                     candidates.Add($"https://clshortfuse.github.io/renodx/{fn}");
                 }
 
-                // Generic fallback for any github.io URL: try GitHub Releases
-                if (uri.Host.EndsWith("github.io", StringComparison.OrdinalIgnoreCase))
+                // Generic fallback for any github.io URL: try GitHub Releases.
+                // <owner>.github.io/<repo>/<file> → the owner's own snapshot release first
+                // (e.g. marat569's UE-Extended), for users whose network blocks github.io.
+                if (uri.Host.EndsWith(".github.io", StringComparison.OrdinalIgnoreCase))
                 {
                     var fn2 = Path.GetFileName(uri.LocalPath);
                     if (!string.IsNullOrEmpty(fn2))
+                    {
+                        var owner    = uri.Host[..^".github.io".Length];
+                        var segments = uri.AbsolutePath.Trim('/').Split('/');
+                        if (owner.Length > 0 && segments.Length == 2)
+                            candidates.Add($"https://github.com/{owner}/{segments[0]}/releases/download/snapshot/{fn2}");
                         candidates.Add($"https://github.com/clshortfuse/renodx/releases/download/snapshot/{fn2}");
+                    }
                 }
             }
             catch (Exception ex) { CrashReporter.Log($"[ModInstallService.InstallAsync] Failed to build fallback URL candidates — {ex.Message}"); }

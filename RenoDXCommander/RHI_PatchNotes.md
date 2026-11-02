@@ -41,6 +41,9 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ### Changes
 
+**RenoDX Info**
+- The Info window for generic Unreal Engine games no longer shows the outdated "Common Unreal Engine mod warnings" block (black screen on launch, DLSS FG flickering). Game-specific notes are still shown.
+
 **Universal MFG Unlocker**
 - RTX 40 MFG is now called Universal MFG Unlocker, matching the mod's new name. It now also supports RTX 30 cards (RTX 20 is experimental) and XeSS frame generation on any GPU. Its links point to the mod's new GitHub page. Existing installs carry on working, with nothing to reinstall.
 - RHI now also installs the two Intel files the mod's XeSS frame generation needs (`libxess_fg.dll` and `libxell.dll`, in an `RTXMFG-XeSS` folder next to the mod). Before, ticking "XeMFG standalone" in the mod's menu said these files were missing. Games that already have the mod get them automatically on the next launch. If you put your own copies there, RHI leaves them alone. Removing the mod removes RHI's copies.
@@ -150,6 +153,12 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - In Settings, added labels to the OptiScaler overlay key and the colour settings monitor, and tooltips to GPU Type, DLSS Inputs, the overlay keys, G-Sync On-Screen Indicator, Colour Depth and Dynamic Range. The FPS Limit tooltip now explains that choosing a cap turns off the per-game FPS limit in ReLimiter and Display Commander games.
 
 ### Bug Fixes
+
+**RenoDX**
+- Fixed RenoDX mods hosted on a modder's own site (such as UE-Extended) failing to install when that site can't be reached from your network. RHI now falls back to the same file on the modder's GitHub release.
+
+**Luma**
+- Fixed some Luma mods being listed twice in Available Mods when the Luma wiki's name has extra text in brackets, such as "Metro Redux" and "Metro Redux (2033 and Last Light)".
 
 **20/30 FG Unlock**
 - Fixed 20/30 FG Unlock not working since the mod's 0.4.0 release. The mod now comes as a package, but RHI was only copying its loader DLL, so frame generation never started. RHI now installs the full package (the proxy DLL, `dlssg_sm86.ini` and the `dlssg_sm86` folder) and tracks it so it can be removed cleanly. Games that already have it installed are repaired automatically.

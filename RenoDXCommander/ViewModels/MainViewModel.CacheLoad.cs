@@ -66,29 +66,11 @@ public partial class MainViewModel
             return effectiveMod.Notes ?? "";
         }
 
-        var notesParts = new List<string>();
-
-        if (effectiveMod.IsGenericUnreal)
-        {
-            var specific = GetGenericNote(gameName, genericNotes);
-            if (!string.IsNullOrEmpty(specific))
-            {
-                notesParts.Add("📋 Game-specific settings:");
-                notesParts.Add(specific);
-            }
-            notesParts.Add(UnrealWarnings);
-        }
-        else // Unity
-        {
-            var specific = GetGenericNote(gameName, genericNotes);
-            if (!string.IsNullOrEmpty(specific))
-            {
-                notesParts.Add("📋 Game-specific settings:");
-                notesParts.Add(specific);
-            }
-        }
-
-        return string.Join("\n", notesParts);
+        // Generic Unreal / Unity — game-specific DB comment only
+        var specific = GetGenericNote(gameName, genericNotes);
+        return string.IsNullOrEmpty(specific)
+            ? ""
+            : "📋 Game-specific settings:\n" + specific;
     }
 
     /// <summary>

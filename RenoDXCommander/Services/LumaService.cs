@@ -1108,11 +1108,16 @@ public class LumaService : ILumaService
         foreach (var wm in wikiMods)
         {
             var norm = NormalizeForMerge(wm.Name);
+            // Wiki names can carry a bracketed suffix the release zip lacks:
+            // "Metro Redux (2033 and Last Light)" vs Luma-Metro_Redux.zip
+            var baseNorm = NormalizeForMerge(StripBracketed(wm.Name));
             wikiNorms.Add(norm);
+            wikiNorms.Add(baseNorm);
 
             // Case 2: wiki entry has no download URL and no Nexus URL — fill in from release asset
             if (wm.DownloadUrl == null && wm.NexusUrl == null
-                && releaseByNorm.TryGetValue(norm, out var match))
+                && (releaseByNorm.TryGetValue(norm, out var match)
+                    || releaseByNorm.TryGetValue(baseNorm, out match)))
             {
                 merged.Add(new LumaMod
                 {
@@ -1145,6 +1150,9 @@ public class LumaService : ILumaService
 
         return merged;
     }
+
+    private static string StripBracketed(string name)
+        => System.Text.RegularExpressions.Regex.Replace(name, @"\s*\([^)]*\)", "").Trim();
 
     private static string NormalizeForMerge(string name)
     {
