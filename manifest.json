@@ -842,6 +842,9 @@
     },
     "METAL GEAR SOLID 4: Guns of the Patriots": {
       "luma": "Make sure to switch the game to DX11 before installing Luma."
+    },
+    "Cyberpunk 2077": {
+      "renodx": "The Github version of RenoDX for Cyberpunk is outdated for version 2.5 of the game. Please go to the Cyberpunk channel on the RenoDX Discord and check the pinned messages."
     }
   },
   "forceExternalOnly": {
