@@ -41,6 +41,12 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ### Changes
 
+**Display Commander settings**
+- Display Commander's ⚙ now has its main settings, so you can set them before starting the game: FPS Limit (VRR presets or your own value), FPS Limiter Mode, Inject Reflex, Window Mode, the four Reflex options and Win+Up grace time. They're saved in the game's DisplayCommander.ini and use the same names as Display Commander's in-game menu.
+
+**Steam Community link**
+- Clicking the store badge at the top of a game's page (Steam, Epic, GOG and so on) opens the game's Steam Community page. This works for games from any store as long as the game is on Steam, using the Steam AppID from PCGamingWiki when RHI didn't get it from Steam.
+
 **RenoDX Info**
 - The Info window for generic Unreal Engine games no longer shows the outdated "Common Unreal Engine mod warnings" block (black screen on launch, DLSS FG flickering). Game-specific notes are still shown.
 

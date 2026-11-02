@@ -17,6 +17,25 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
+    /// <summary>VRR frame rate caps (same as the global settings), used by the ReLimiter and Display Commander ⚙.</summary>
+    private static readonly (int Fps, string Label)[] VrrFpsPresets =
+    {
+        (59,  "59 (60Hz VRR)"),
+        (73,  "73 (75Hz VRR)"),
+        (97,  "97 (100Hz VRR)"),
+        (116, "116 (120Hz VRR)"),
+        (138, "138 (144Hz VRR)"),
+        (157, "157 (165Hz VRR)"),
+        (171, "171 (180Hz VRR)"),
+        (189, "189 (200Hz VRR)"),
+        (224, "224 (240Hz VRR)"),
+        (258, "258 (280Hz VRR)"),
+        (275, "275 (300Hz VRR)"),
+        (324, "324 (360Hz VRR)"),
+        (416, "416 (480Hz VRR)"),
+        (431, "431 (500Hz VRR)"),
+    };
+
     private async void UlCogButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -70,24 +89,7 @@ public sealed partial class MainWindow
             if (!ulIniExists)
                 cog.AddWarning("Deploy relimiter.ini (under Files) to change these settings.");
 
-            // VRR preset options (same as global settings)
-            var vrrPresets = new (int Fps, string Label)[]
-            {
-                (59,  "59 (60Hz VRR)"),
-                (73,  "73 (75Hz VRR)"),
-                (97,  "97 (100Hz VRR)"),
-                (116, "116 (120Hz VRR)"),
-                (138, "138 (144Hz VRR)"),
-                (157, "157 (165Hz VRR)"),
-                (171, "171 (180Hz VRR)"),
-                (189, "189 (200Hz VRR)"),
-                (224, "224 (240Hz VRR)"),
-                (258, "258 (280Hz VRR)"),
-                (275, "275 (300Hz VRR)"),
-                (324, "324 (360Hz VRR)"),
-                (416, "416 (480Hz VRR)"),
-                (431, "431 (500Hz VRR)"),
-            };
+            var vrrPresets = VrrFpsPresets;
             var vrrFpsSet = new HashSet<int>(vrrPresets.Select(p => p.Fps));
 
             // Items: Off, presets, "<n> (Custom)" when the current value isn't a preset, "Custom..."
@@ -287,34 +289,4 @@ public sealed partial class MainWindow
         }
     }
 
-    private async void DcCogButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-            // DisplayCommander.ini lives in the addon deploy path (honours AddonPath in reshade.ini), same as CopyDcIni
-            string? dcIniFile = string.IsNullOrEmpty(card.InstallPath)
-                ? null
-                : Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), "DisplayCommander.ini");
-
-            var cog = new CogDialog("Display Commander", Content.XamlRoot);
-            cog.AddSection("Files");
-            var openIniBtn = cog.MakeOpenFileButton("Open DisplayCommander.ini", dcIniFile);
-            var deployBtn = cog.MakeButton("Deploy DisplayCommander.ini", CogButtonKind.Primary, () =>
-            {
-                if (string.IsNullOrEmpty(card.InstallPath)) return;
-                AuxInstallService.CopyDcIni(card.InstallPath);
-                openIniBtn.IsEnabled = dcIniFile != null && File.Exists(dcIniFile);
-                cog.SetSuccess("DisplayCommander.ini copied to the game folder.");
-                CrashReporter.Log($"[MainWindow.DcCogButton_Click] Deployed DisplayCommander.ini for '{card.GameName}'");
-            }, "Copies RHI's DisplayCommander.ini template into the game folder, replacing the game's current one.");
-            cog.AddButtons(deployBtn, openIniBtn);
-
-            await cog.ShowAsync();
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.DcCogButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
-        }
-    }
 }

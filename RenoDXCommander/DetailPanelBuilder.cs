@@ -111,6 +111,7 @@ public partial class DetailPanelBuilder
         }
         _window.DetailSourceText.Text = card.Source;
         _window.DetailSourceBadge.Visibility = string.IsNullOrEmpty(card.Source) ? Visibility.Collapsed : Visibility.Visible;
+        UpdateStoreBadgeLink(card);
 
         // Engine badge
         if (!string.IsNullOrEmpty(card.EngineHint))
