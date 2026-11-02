@@ -1004,14 +1004,14 @@ After copying, read from `g:\RDXC\Logs\`. For "latest log" requests, sort by Las
 - Each property returns `DevUnlockService.IsUnlocked || _manifestFlags?.FlagName == true`
 - `FeatureFlags.ApplyManifest(manifest?.FeatureFlags)` called in both `MainViewModel.Init.cs` and `MainViewModel.BackgroundScan.cs` after `DlssPresetService.ApplyManifestPresets`
 - `Models/RemoteManifest.cs` — `ManifestFeatureFlags` class + `FeatureFlags` property on `RemoteManifest`
-- Manifest editor's `RemoteManifest.cs` also has `ManifestFeatureFlags` so the editor preserves the flags on save
+- The manifest editor (`tools/RHI-ManifestEditor`) edits the file text directly, so it keeps every flag; flags it doesn't know are still listed under Global settings > Feature flags
 
 **What stays as `DevUnlockService.IsUnlocked` (intentional):**
 - `DlssPresetService.ApplyManifestPresets` — gates dev preset *content* (SR/RR/FG dev presets from `dlssPresetsDev`), not a feature visibility gate
 - `DlssStreamlineService.BuildVersionList` — gates dev *version entries* (from `DlssDev`, `DlssdDev`, etc.), not a feature visibility gate
 
 **Adding a new feature flag:**
-1. Add `bool? MyFeature { get; set; }` with `[JsonPropertyName("myFeature")]` to `ManifestFeatureFlags` in both `RemoteManifest.cs` files (app + editor)
+1. Add `bool? MyFeature { get; set; }` with `[JsonPropertyName("myFeature")]` to `ManifestFeatureFlags` in `RemoteManifest.cs` (and a friendly label in the editor's `GlobalEditor.KnownFlags`)
 2. Add `public static bool MyFeature => DevUnlockService.IsUnlocked || _manifestFlags?.MyFeature == true;` to `FeatureFlags.cs`
 3. Replace all `DevUnlockService.IsUnlocked` gates for that feature with `FeatureFlags.MyFeature`
 4. Add `"myFeature": false` to `featureFlags` in `manifest.json`
@@ -1036,7 +1036,7 @@ After copying, read from `g:\RDXC\Logs\`. For "latest log" requests, sort by Las
 - **JSON key**: `"blacklistPrefixes"` — a `List<string>` in `RemoteManifest`.
 - **Check**: Applied in `MainViewModel.Init.cs` and `MainViewModel.BackgroundScan.cs` alongside the exact-match `_manifestBlacklist` check. Uses `g.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)`.
 - **Current entries**: `"Battle.net."` — covers all Battle.net launcher pseudo-games.
-- **Manifest editor**: Editable in Detection page under "blacklistPrefixes" expander.
+- **Manifest editor**: Global settings > Hide by name prefix.
 
 ## DLSS Trusted Cache Version Bump
 

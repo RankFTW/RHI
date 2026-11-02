@@ -11,6 +11,12 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 - Special characters (®, ™) in game names cause matching issues — add both variants
 - **No duplicate JSON keys** — parser only sees the last one, silently ignoring earlier entries
 
+## Manifest Editor (tools/RHI-ManifestEditor)
+- Three views: Fields (default; pick a field, see and edit every game in it), Games (every field for one game, names from the local RHI library) and Global (non-game fields, with Raw JSON as a fallback for anything else).
+- Saves are text-preserving (`Json/JsonDoc.cs` splices only the edited characters; CRLF, escapes and order untouched), so diffs stay small. Never reintroduce whole-file re-serialisation.
+- **New manifest field: add it to `Catalog.cs`** (per-game: a `GameField` in the right group, plus `ListKeys` if it's a list of game names) or a section in `UI/GlobalEditor.cs`. Otherwise it's only editable through Raw JSON.
+- Built-in checks mirror `tools/check-manifest.py` (case-insensitive field list read from `ManifestService.cs`). Publish: `tools/RHI-ManifestEditor/publish.bat`.
+
 ## Core Fields
 
 | Field | Purpose |

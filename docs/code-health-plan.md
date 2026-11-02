@@ -171,7 +171,7 @@ These make future features cheaper to build. Do them in this order; each is safe
   - `preferences.json`, `games.json` (per-game overrides) and `installs.json`
   - each through `JsonStore<T>` (atomic write, `.bak`, quarantine on corrupt, `schemaVersion` with migrations)
 - [ ] Store Hidden and Favourite in one place. Today they live in two places, merged as a union.
-- [ ] ManifestEditor duplicates the `RemoteManifest` model. Share the model through a linked file or a small shared project.
+- [x] ManifestEditor duplicated the `RemoteManifest` model. Resolved by the Nov 2026 rewrite: the editor edits the JSON text directly (no model), and reads the case-insensitive field list from `ManifestService.cs`.
 
 ### 4.6 UI helpers
 
