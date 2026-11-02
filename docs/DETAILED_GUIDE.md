@@ -666,7 +666,7 @@ The **Extras** section holds optional tools:
 
 - **ASI Loader**.
 - **OptiScaler** (see [OptiScaler](#optiscaler)).
-- **MFG Unlocks**: **RTX Encore (Beta)**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Ada Unlock**.
+- **MFG Unlocks**: **RTX Encore**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Ada Unlock**.
 - **API Upgrades**: **DXVK** and **dgVoodoo2** (see [DXVK and dgVoodoo2](#dxvk-and-dgvoodoo2)).
 
 Several of these are "proxy" DLLs that load by taking a system DLL's name. When you install one, RHI asks which name to use. Names RHI's other components already use are disabled. If the game already has a file with that name, RHI backs it up and restores it on uninstall.
@@ -674,11 +674,11 @@ Several of these are "proxy" DLLs that load by taking a system DLL's name. When 
 | Tool | What it does |
 |---|---|
 | **ASI Loader** ([Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)) | Loads `.asi` plugins. Recommended names are marked. If the chosen name already exists, the existing file is renamed to `<name>Hooked.dll` and still loaded. |
-| **RTX Encore (Beta)** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40. Its ⚙ can deploy the NR DLL. |
+| **RTX Encore** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40, and XeSS frame generation in place of a game's DLSS FG. RHI also installs the Intel XeSS files its XeFG engine needs, in an `rtx-encore-runtimes\intel` folder. Its ⚙ sets frame generation (engine, mode, multiplier, FG preset, frame limit), XeFG, generated frame quality, HUD/UI, upscaling (XeSS, DLSS render scale, Fast Super Resolution, SR/RR presets), Smooth Motion, Neural Rendering and compatibility options before you launch, and can deploy the NR DLL (`nvngx_dlssnr.dll` 310.9.16). Settings are saved to the game's `rtx-encore.jsonc`; everything else is in RTX Encore's in-game menu (Insert). |
 | **DLSS Enabler** | DLSS Frame Generation support through a proxy DLL (`version.dll` works for most games). Not available while OptiScaler is installed, as OptiScaler includes it. |
 | **20/30 FG Unlock** | DLSS Frame Generation (up to 6X) on RTX 20 and 30 Series, DX12 only, NVIDIA driver R580 or newer. Installs a proxy DLL (start with `version.dll`; if FG doesn't appear in the game, try the next name), `dlssg_sm86.ini` and the `dlssg_sm86` folder; uninstall removes all of it. Its ⚙ sets Frame Generation on/off, Engine (DLSS or XeSS), Max Frames (2X–6X), Preset (A, B, or C for FG Lite), Speed Tier and Super Resolution (preset M/L, with faster INT8 kernels), and opens the ini and log. Settings are kept when the mod updates. |
 | **Universal MFG Unlocker** | Formerly RTX 40 MFG. Multi frame generation beyond 2x (up to 6x) on RTX 40 and 30 Series (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. RHI also installs the Intel XeSS files XeMFG needs, in an `RTXMFG-XeSS` folder. With OptiScaler nightly, F5 or DLSS NR installed it goes in as an OptiScaler plugin (`OptiScaler\plugins\MFGUnlocker.asi`); pick DLSSG or XeFG as FG Output in OptiScaler's ⚙. Press Backspace in-game for its menu. |
-| **MFG Ada Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). |
+| **MFG Ada Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). RHI also installs the Intel XeSS files its XeMFG modes need in the game folder (a game's own older copies are backed up and restored on uninstall). Its ⚙ sets the frame generation method (DLSS-G, XeMFG (CUDA) or XeMFG via DLSS-G (XMX)) and DLSS-SR input, saved to `MFGAdaUnlock.ini`. As of MFG Ada Unlock 1.8.0 it works in DirectX 12 games (Vulkan experimental); the ⚙ warns on other APIs. |
 
 Universal MFG Unlocker and MFG Ada Unlock can't be installed together, and 20/30 FG Unlock is blocked while MFG Ada Unlock is installed.
 

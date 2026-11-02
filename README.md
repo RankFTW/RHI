@@ -60,7 +60,7 @@ Pin versions of each tool and of `nvngx_dlssnr.dll`, and optionally add the **NR
 
 - **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR variants. Upscaler, frame generation, Reflex, preset and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
 - **Multi Frame Generation**: set Fixed or Dynamic MFG (2x–6x) and a target frame rate on RTX 50 Series.
-- **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore (beta) and DLSS Enabler.
+- **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
 - **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker.
 
 ## Frame limiters

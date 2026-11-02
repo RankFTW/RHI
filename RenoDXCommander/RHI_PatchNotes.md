@@ -128,13 +128,18 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - The ⚙ window warns when a game can't use MFG Ada Unlock: as of the mod's version 1.8.0 it works in DirectX 12 games, experimentally in Vulkan games, and not in DirectX 11 or older games.
 
 **RTX Encore**
-- The ⚙ window now has RTX Encore's frame generation settings that need a game restart, so you can set them before you play:
-  - Frame generation: Engine (Game, DLSS-FG or XeFG), Mode, Multiplier, DLSS FG preset, Flip metering bypass and Frame limit
+- RTX Encore is no longer labelled Beta.
+- The ⚙ window now has RTX Encore's settings, so you can set them before you play:
+  - Frame generation: Engine (Game, DLSS-FG or XeFG), Mode, Multiplier, DLSS FG preset, Dynamic target FPS, Dynamic up to 6x, Flip metering bypass and Frame limit
   - XeFG engine: NVIDIA Tensor Cores, Variable pacing above 2x, HUD/UI handling and UI alpha
   - Generated frame quality: High-multiplier quality, Frame protection, Fast frame generation and Protection tuning
+  - HUD and UI: Auto UI recomposition, UI assist and Force UI recomposition
+  - Upscaling: Upscaler (Game or XeSS), XeSS on Tensor Cores, DLSS render scale (with a custom scale), Fast Super Resolution (RTX 30), DLSS SR and RR presets, SR HDR input and SR auto exposure
   - Smooth Motion, and the graphics API it needs (filled in from the game's)
+  - Neural Rendering: on/off, NR model, NR precision and NR fast processing
+  - Compatibility: GPU series, NVIDIA App FG models, Disable in-game menu, FG in menus and Ray-traced HairWorks
 
-  They're saved straight to the game's `rtx-encore.jsonc`, changing only that setting and keeping the file's comments. If the game has no settings file yet, RHI creates one with just your settings and RTX Encore adds the rest the first time the game starts. Everything else stays in RTX Encore's in-game menu (Insert). There's also an Open rtx-encore.jsonc button.
+  They're saved straight to the game's `rtx-encore.jsonc`, changing only that setting and keeping the file's comments. If the game has no settings file yet, RHI creates one with just your settings and RTX Encore adds the rest the first time the game starts. The overlay, Neural Rendering styles, shortcuts and diagnostics stay in RTX Encore's in-game menu (Insert). There's also an Open rtx-encore.jsonc button.
 - Installing RTX Encore now also installs the two Intel XeSS files its XeFG engine needs, in RTX Encore's own `rtx-encore-runtimes\intel` folder, so the game's own Intel files are never touched. Games that already have RTX Encore get them on the next launch. Removing RTX Encore removes them.
 - The Neural Rendering DLL RHI deploys for RTX Encore is now `nvngx_dlssnr.dll` 310.9.16. Games where RHI deployed 310.8.0 for RTX Encore are moved to 310.9.16 on the next launch.
 

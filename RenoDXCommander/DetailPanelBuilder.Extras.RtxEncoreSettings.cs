@@ -1,7 +1,8 @@
-// DetailPanelBuilder.Extras.RtxEncoreSettings.cs -- RTX Encore ⚙: the frame generation settings that
-// need a game restart (so they can be set before launching), the Neural Rendering DLL and the Intel
-// XeSS files status. Settings are edited in place in rtx-encore.jsonc (RtxEncoreConfig), beside the mod.
-// Everything else stays in RTX Encore's in-game menu (Insert).
+// DetailPanelBuilder.Extras.RtxEncoreSettings.cs -- RTX Encore ⚙: settings worth choosing before launch
+// (frame generation, XeFG, HUD/UI, upscaling, Smooth Motion, Neural Rendering core options, compatibility),
+// the Neural Rendering DLL and the Intel XeSS files status. Settings are edited in place in
+// rtx-encore.jsonc (RtxEncoreConfig), beside the mod. The overlay, NR styles/per-pass tuning, shortcuts
+// and diagnostics stay in RTX Encore's in-game menu (Insert).
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -29,8 +30,8 @@ public partial class DetailPanelBuilder
         bool canEdit = cfgPath != null;
 
         var cog = new CogDialog("RTX Encore", _window.Content.XamlRoot);
-        cog.AddIntro("The settings below need a game restart, so you can set them before you play. " +
-                     "Everything else is in RTX Encore's in-game menu (Insert).");
+        cog.AddIntro("Set these before you play. Most need a game restart to apply (the tooltips say which). " +
+                     "The overlay, Neural Rendering styles, shortcuts and diagnostics are in RTX Encore's in-game menu (Insert).");
         if (!canEdit)
             cog.AddNote("Install RTX Encore to change these settings.");
         else if (!File.Exists(cfgPath))
@@ -62,11 +63,18 @@ public partial class DetailPanelBuilder
             }, isEnabled: canEdit);
         }
 
+        void MarkSaved() { if (openCfgBtn != null) openCfgBtn.IsEnabled = true; }
+
+        // A number box bound to one setting in rtx-encore.jsonc
+        CogDialog.CompactCell Number(string label, string help, string section, string key, int min, int max, int defaultValue) =>
+            new(label, help, BuildRtxEncoreNumberBox(cog, cfgPath, gameName, section, key, label, min, max, defaultValue, MarkSaved));
+
         // ── Frame generation ────────────────────────────────────────────────────
         cog.AddSection("Frame generation");
         var xefgControls = new List<Control>();
         void SetXefgEnabled(bool on) { foreach (var c in xefgControls) c.IsEnabled = canEdit && on; }
         ComboBox? multiplierCombo = null;
+        var dynamicControls = new List<Control>();
 
         var engineCell = Choice("Engine",
             "Game keeps the game's own frame generation. XeFG replaces the game's DLSS frame generation with Intel XeSS frame generation. " +
@@ -79,7 +87,11 @@ public partial class DetailPanelBuilder
             "Dynamic: frame generation adapts toward a target frame rate (the monitor's refresh rate by default).",
             "frameGeneration", "mode",
             new[] { "Game decides", "Fixed", "Dynamic" }, new[] { "game", "fixed", "dynamic" }, "game",
-            i => { if (multiplierCombo != null) multiplierCombo.IsEnabled = canEdit && i == 1; });
+            i =>
+            {
+                if (multiplierCombo != null) multiplierCombo.IsEnabled = canEdit && i == 1;
+                foreach (var c in dynamicControls) c.IsEnabled = canEdit && i == 2;
+            });
         var multiplierCell = Choice("Multiplier",
             "Used in Fixed mode. 5x and 6x are experimental. On an 8 GB card, 2x or 3x is the safer starting point.",
             "frameGeneration", "multiplier",
@@ -94,10 +106,19 @@ public partial class DetailPanelBuilder
         var flipCell = Choice("Flip metering bypass",
             "Streamline paces the generated frames itself instead of NVIDIA's flip metering. Try it when 3x or 4x looks choppy while 2x is smooth. Restart the game to apply.",
             "frameGeneration", "flipMeteringBypass", RtxOffOn, RtxOffOnValues, "false");
-        var fpsCell = new CogDialog.CompactCell("Frame limit (FPS)",
+        var fpsCell = Number("Frame limit (FPS)",
             "1 to 1000 FPS, or 0 for no RTX Encore limit. Applied through Reflex, or through XeLL with XeFG (needs a restart then). Generated frames may count toward the limit. Press Enter or click away to save.",
-            BuildRtxEncoreFpsBox(cog, cfgPath, gameName, () => { if (openCfgBtn != null) openCfgBtn.IsEnabled = true; }));
-        cog.AddCompactGrid(engineCell, modeCell, multiplierCell, presetCell, flipCell, fpsCell);
+            "nativeMenuFeatures", "reflexFrameLimit", 0, 1000, 0);
+        var targetCell = Number("Dynamic target FPS",
+            "Used in Dynamic mode: the frame rate frame generation adapts toward. 0 follows the refresh rate of the monitor showing the game. Press Enter or click away to save.",
+            "frameGeneration", "dynamicTargetFrameRate", 0, 1000, 0);
+        var exp56Cell = Choice("Dynamic up to 6x",
+            "Lets Dynamic mode go up to 5x and 6x (needs plenty of VRAM). Off: Dynamic stays at 4x or less.",
+            "frameGeneration", "dynamicExperimental56", RtxOffOn, RtxOffOnValues, "false");
+        dynamicControls.AddRange(new[] { targetCell.Control, exp56Cell.Control }.OfType<Control>());
+        bool isDynamic = ((ComboBox)modeCell.Control).SelectedIndex == 2;
+        foreach (var c in dynamicControls) c.IsEnabled = canEdit && isDynamic;
+        cog.AddCompactGrid(engineCell, modeCell, multiplierCell, presetCell, targetCell, exp56Cell, flipCell, fpsCell);
 
         // ── XeFG ────────────────────────────────────────────────────────────────
         cog.AddSection("XeFG engine");
@@ -135,6 +156,63 @@ public partial class DetailPanelBuilder
                 "Refined (default) or Classic. Restart the game to apply.",
                 "imageQuality", "protectionTuning", new[] { "Refined", "Classic" }, new[] { "refined", "classic" }, "refined"));
 
+        // ── HUD and UI ──────────────────────────────────────────────────────────
+        cog.AddSection("HUD and UI (DLSS FG)");
+        cog.AddCompactGrid(
+            Choice("Auto UI recomposition",
+                "Turns DLSS FG's UI recomposition on when the game provides HUD-less images, even if the game doesn't ask for it. Off follows the game. " +
+                "Turn it off in No Man's Sky (duplicated generated frames).",
+                "hudUi", "autoUiRecomposition", RtxOffOn, RtxOffOnValues, "true"),
+            Choice("UI assist",
+                "DirectX 12: captures the HUD-less scene and builds the UI layer itself when the game doesn't provide them.",
+                "hudUi", "uiAssist", RtxOffOn, RtxOffOnValues, "true"),
+            Choice("Force UI recomposition",
+                "Asks DLSS FG to recompose the HUD separately even when the game doesn't request it.",
+                "hudUi", "forceUiRecomposition", RtxOffOn, RtxOffOnValues, "false"));
+
+        // ── Upscaling ───────────────────────────────────────────────────────────
+        cog.AddSection("Upscaling");
+        var customScaleCell = Number("Custom render scale (%)",
+            "Render scale in percent (50 to 100) when DLSS render scale is Custom. Press Enter or click away to save.",
+            "dlssSuperResolution", "dlssCustomScale", 50, 100, 67);
+        var renderScaleCell = Choice("DLSS render scale",
+            "Forces the DLSS render resolution. Game: no override. The game must already use DLSS.",
+            "dlssSuperResolution", "dlssRenderScale",
+            new[] { "Game", "DLAA", "Quality", "Balanced", "Performance", "Ultra Performance", "Custom" },
+            new[] { "game", "dlaa", "quality", "balanced", "performance", "ultra-performance", "custom" }, "game",
+            i => ((Control)customScaleCell.Control).IsEnabled = canEdit && i == 6);
+        ((Control)customScaleCell.Control).IsEnabled = canEdit && ((ComboBox)renderScaleCell.Control).SelectedIndex == 6;
+        cog.AddCompactGrid(
+            Choice("Upscaler",
+                "Game keeps the game's DLSS Super Resolution. XeSS replaces compatible DLSS Super Resolution with Intel XeSS. " +
+                "Applies live in DirectX; Vulkan needs XeSS set before the game starts.",
+                "renderingEngines", "reconstructionEngine", new[] { "Game", "XeSS" }, new[] { "game", "xess" }, "game"),
+            Choice("XeSS on Tensor Cores (experimental)",
+                "Runs XeSS Super Resolution on NVIDIA Tensor Cores (RTX 30, 40 and 50, DirectX 12, driver 621.01 or 621.12; tested on the RTX 4090). " +
+                "If it can't be used, standard XeSS runs instead. Applies live.",
+                "xess", "xessTensorCores", RtxOffOn, RtxOffOnValues, "false"),
+            renderScaleCell,
+            customScaleCell,
+            Choice("Fast Super Resolution",
+                "RTX 30 only, DirectX 12: faster DLSS Super Resolution for presets L and M. The image is very close to NVIDIA's but not identical. Restart the game to apply.",
+                "dlssSuperResolution", "fastSuperResolution", RtxOffOn, RtxOffOnValues, "false"),
+            Choice("DLSS SR preset",
+                "Game: no override. Applies to all quality modes; which presets work depends on the game's DLSS DLL. A to F are legacy. Applies live.",
+                "dlssPresets", "dlssSrPreset",
+                new[] { "Game", "Default", "A", "B", "C", "D", "E", "F", "J", "K", "L", "M" },
+                new[] { "game", "default", "a", "b", "c", "d", "e", "f", "j", "k", "l", "m" }, "game"),
+            Choice("DLSS RR preset",
+                "Ray Reconstruction preset. Game: no override. A to C are legacy; D, E and F need nvngx_dlssd 310.9.1 or newer. Doesn't turn RR on. Applies live.",
+                "dlssPresets", "dlssRrPreset",
+                new[] { "Game", "Default", "A", "B", "C", "D", "E", "F" },
+                new[] { "game", "default", "a", "b", "c", "d", "e", "f" }, "game"),
+            Choice("SR HDR input",
+                "Colour input mode for the upscaler. Game: follow the game. On: HDR linear input. Off: SDR input. Doesn't turn on display HDR. Restart the game to apply.",
+                "superResolutionInputs", "srHdr", new[] { "Game", "On", "Off" }, new[] { "game", "on", "off" }, "game"),
+            Choice("SR auto exposure",
+                "Upscaler auto exposure. Game: follow the game. Some DLSS presets (L) force it. XeSS auto exposure costs GPU time and isn't recommended for SDR. Restart the game to apply.",
+                "superResolutionInputs", "srAutoExposure", new[] { "Game", "On", "Off" }, new[] { "game", "on", "off" }, "game"));
+
         // ── Smooth Motion ───────────────────────────────────────────────────────
         cog.AddSection("Smooth Motion");
         var gameApiValue = card.GraphicsApi switch
@@ -163,6 +241,38 @@ public partial class DetailPanelBuilder
         // ── Neural Rendering DLL ────────────────────────────────────────────────
         cog.AddSection("Neural Rendering");
         AddRtxEncoreNrSetting(cog, card, svc, installPath, isInstalled, nrDeployed);
+        cog.AddCompactGrid(
+            Choice("Neural Rendering",
+                "Turns DLSS Neural Rendering on. Needs the NR DLL above. The first launch prepares it in the background. Applies live.",
+                "neuralRendering/core", "nrEnabled", RtxOffOn, RtxOffOnValues, "false"),
+            Choice("NR model",
+                "B (default): smaller and much faster. A: the larger network of NR 310.8.0. Auto: the DLL's choice (B). Applies live.",
+                "dlssPresets", "dlssNrPreset", new[] { "B", "A", "Auto" }, new[] { "b", "a", "auto" }, "b"),
+            Choice("NR precision",
+                "RTX 20 and 30: Exact gives the same output as NVIDIA; Fast is quicker with small image differences. No effect on RTX 40 and 50. Restart the game to apply.",
+                "neuralRendering/optimizations", "nrPrecision", new[] { "Exact", "Fast" }, new[] { "exact", "fast" }, "exact"),
+            Choice("NR fast processing",
+                "Faster Neural Rendering processing with exactly the same output. Restart the game to apply.",
+                "neuralRendering/optimizations", "nrFastProcessing", RtxOffOn, RtxOffOnValues, "true"));
+
+        // ── Compatibility ───────────────────────────────────────────────────────
+        cog.AddSection("Compatibility");
+        cog.AddCompactGrid(
+            Choice("GPU series",
+                "Leave on Auto unless RTX Encore detects your GPU wrongly. Restart the game to apply.",
+                "general", "gpuSeries", new[] { "Auto", "RTX 40", "RTX 30", "RTX 20" }, new[] { "auto", "rtx40", "rtx30", "rtx20" }, "auto"),
+            Choice("NVIDIA App FG models",
+                "Loads the frame generation models the NVIDIA App downloaded. Restart the game to apply.",
+                "compatibility", "forceOTA", RtxOffOn, RtxOffOnValues, "false"),
+            Choice("Disable in-game menu",
+                "For games that reject RTX Encore's in-game menu (Star Wars Outlaws). Frame generation keeps working; change settings here instead. Restart the game to apply.",
+                "compatibility", "disableInGameMenu", RtxOffOn, RtxOffOnValues, "false"),
+            Choice("FG in menus",
+                "Keeps frame generation running in menus and loading screens. Leave Off: idling at 1x there avoids device-hang crashes.",
+                "compatibility", "disableMenuDetection", RtxOffOn, RtxOffOnValues, "false"),
+            Choice("Ray-traced HairWorks",
+                "Prepares the ray-traced HairWorks conversion in games with a verified profile. The game's own hair setting still decides. Restart the game to apply.",
+                "nativeMenuFeatures", "hairEnabled", RtxOffOn, RtxOffOnValues, "true"));
 
         // ── Intel XeSS files ────────────────────────────────────────────────────
         if (modDir != null)
@@ -181,11 +291,13 @@ public partial class DetailPanelBuilder
         await cog.ShowAsync();
     }
 
-    /// <summary>Frame limit box: saves on Enter and when focus leaves (0 to 1000).</summary>
-    private static TextBox BuildRtxEncoreFpsBox(CogDialog cog, string? cfgPath, string gameName, Action onSaved)
+    /// <summary>Whole-number box for one rtx-encore.jsonc setting: saves on Enter and when focus leaves.</summary>
+    private static TextBox BuildRtxEncoreNumberBox(CogDialog cog, string? cfgPath, string gameName,
+        string section, string key, string label, int min, int max, int defaultValue, Action onSaved)
     {
-        var current = cfgPath != null ? RtxEncoreConfig.Get(cfgPath, "nativeMenuFeatures", "reflexFrameLimit") : null;
-        var box = CogDialog.MakeTextBox(current ?? "0", "0");
+        var fallback = defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var current = cfgPath != null ? RtxEncoreConfig.Get(cfgPath, section, key) : null;
+        var box = CogDialog.MakeTextBox(current ?? fallback, fallback);
         box.IsEnabled = cfgPath != null;
         string saved = box.Text;
         void Save()
@@ -193,25 +305,25 @@ public partial class DetailPanelBuilder
             if (cfgPath == null) return;
             var text = box.Text.Trim();
             if (text == saved) return;
-            if (!int.TryParse(text, out var fps) || fps < 0 || fps > 1000)
+            if (!int.TryParse(text, out var value) || value < min || value > max)
             {
-                cog.SetError("Frame limit must be a number from 0 to 1000.");
+                cog.SetError($"{label} must be a number from {min} to {max}.");
                 box.Text = saved;
                 return;
             }
             try
             {
-                RtxEncoreConfig.SetInt(cfgPath, "nativeMenuFeatures", "reflexFrameLimit", fps);
-                saved = fps.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                RtxEncoreConfig.SetInt(cfgPath, section, key, value);
+                saved = value.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 box.Text = saved;
-                CrashReporter.Log($"[RtxEncoreCog] '{gameName}': nativeMenuFeatures.reflexFrameLimit = {fps}");
+                CrashReporter.Log($"[RtxEncoreCog] '{gameName}': {section}.{key} = {value}");
                 onSaved();
-                cog.SetSuccess(fps == 0 ? "Saved: no RTX Encore frame limit." : $"Saved: {fps} FPS limit. Restart the game if it's running.");
+                cog.SetSuccess("Saved. Restart the game if it's running.");
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             {
-                CrashReporter.Log($"[RtxEncoreCog] Frame limit save failed — {ex.Message}");
-                cog.SetError($"Couldn't save the frame limit: {ex.Message}");
+                CrashReporter.Log($"[RtxEncoreCog] {section}.{key} save failed — {ex.Message}");
+                cog.SetError($"Couldn't save {label}: {ex.Message}");
                 box.Text = saved;
             }
         }

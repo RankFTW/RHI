@@ -79,7 +79,7 @@ Pin versions of each tool and of nvngx_dlssnr.dll, and optionally add the NR Cos
 
 [b]Multi Frame Generation[/b]: Fixed or Dynamic MFG (2x–6x) with a target frame rate on RTX 50 Series.
 
-[b]Unlocks for older cards[/b]: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore (beta) and DLSS Enabler.
+[b]Unlocks for older cards[/b]: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
 
 [b]Ultimate ASI Loader[/b] and [b]dgVoodoo2[/b], with a filename picker.
 

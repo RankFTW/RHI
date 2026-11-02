@@ -108,6 +108,48 @@ public class RtxEncoreConfigTests : IDisposable
     }
 
     [Fact]
+    public void Nested_ExistingKey_ChangesOnlyThatValue()
+    {
+        File.WriteAllText(PathOf, Sample);
+        Assert.Equal("9", RtxEncoreConfig.Get(PathOf, "other/nested", "multiplier"));
+        RtxEncoreConfig.SetInt(PathOf, "other/nested", "multiplier", 5);
+        Assert.Equal("5", RtxEncoreConfig.Get(PathOf, "other/nested", "multiplier"));
+        Assert.Equal("7", RtxEncoreConfig.Get(PathOf, "other", "multiplier"));
+        Assert.Equal("4", RtxEncoreConfig.Get(PathOf, "frameGeneration", "multiplier"));
+        AssertValidJsonc(PathOf);
+    }
+
+    [Fact]
+    public void Nested_MissingSections_AreAdded()
+    {
+        File.WriteAllText(PathOf, Sample);
+        RtxEncoreConfig.SetBool(PathOf, "other/nested", "flag", true);                 // key in an existing nested section
+        RtxEncoreConfig.SetString(PathOf, "other/fresh", "mode", "fast");              // new nested section in an existing parent
+        RtxEncoreConfig.SetString(PathOf, "neuralRendering/optimizations", "nrPrecision", "fast"); // new parent and child
+        RtxEncoreConfig.SetBool(PathOf, "neuralRendering/core", "nrEnabled", true);    // new child in the new parent
+        AssertValidJsonc(PathOf);
+        Assert.Equal("true", RtxEncoreConfig.Get(PathOf, "other/nested", "flag"));
+        Assert.Equal("fast", RtxEncoreConfig.Get(PathOf, "other/fresh", "mode"));
+        Assert.Equal("fast", RtxEncoreConfig.Get(PathOf, "neuralRendering/optimizations", "nrPrecision"));
+        Assert.Equal("true", RtxEncoreConfig.Get(PathOf, "neuralRendering/core", "nrEnabled"));
+        Assert.Equal("9", RtxEncoreConfig.Get(PathOf, "other/nested", "multiplier"));
+    }
+
+    [Fact]
+    public void Nested_NoFile_CreatesValidFile()
+    {
+        RtxEncoreConfig.SetString(PathOf, "neuralRendering/optimizations", "nrPrecision", "fast");
+        RtxEncoreConfig.SetBool(PathOf, "neuralRendering/optimizations", "nrFastProcessing", false);
+        RtxEncoreConfig.SetBool(PathOf, "neuralRendering/core", "nrEnabled", true);
+        RtxEncoreConfig.SetInt(PathOf, "frameGeneration", "multiplier", 3);
+        AssertValidJsonc(PathOf);
+        Assert.Equal("fast", RtxEncoreConfig.Get(PathOf, "neuralRendering/optimizations", "nrPrecision"));
+        Assert.Equal("false", RtxEncoreConfig.Get(PathOf, "neuralRendering/optimizations", "nrFastProcessing"));
+        Assert.Equal("true", RtxEncoreConfig.Get(PathOf, "neuralRendering/core", "nrEnabled"));
+        Assert.Equal("3", RtxEncoreConfig.Get(PathOf, "frameGeneration", "multiplier"));
+    }
+
+    [Fact]
     public void Get_MissingFileOrKey_ReturnsNull()
     {
         Assert.Null(RtxEncoreConfig.Get(PathOf, "frameGeneration", "multiplier"));
