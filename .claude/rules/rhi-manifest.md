@@ -20,6 +20,7 @@ paths:
 - Saves are text-preserving (`Json/JsonDoc.cs` splices only the edited characters; CRLF, escapes and order untouched), so diffs stay small. Never reintroduce whole-file re-serialisation.
 - **New manifest field: add it to `Catalog.cs`** (per-game: a `GameField` in the right group, plus `ListKeys` if it's a list of game names) or a section in `UI/GlobalEditor.cs`. Otherwise it's only editable through Raw JSON.
 - Built-in checks mirror `tools/check-manifest.py` (case-insensitive field list read from `ManifestService.cs`). Publish: `tools/RHI-ManifestEditor/publish.bat`.
+- "Push to GitHub..." does the push-manifest workflow from the editor: checks + `check-manifest.py`, commit message, optional patch note line (added to the newest version's `### Manifest Updates`), commit of only those files via a temporary git index (other local work untouched), push, rebase-and-retry if main moved.
 
 ## Core Fields
 

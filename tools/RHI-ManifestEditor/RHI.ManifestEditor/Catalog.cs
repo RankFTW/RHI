@@ -89,9 +89,10 @@ public static class Catalog
         }),
         new("Engine and graphics API", "Override what RHI detects about the game's engine, API and bitness.", new GameField[]
         {
-            new() { Key = "engineHintOverrides", Kind = FieldKind.Text, Label = "Engine version",
-                Help = "Shown on the engine badge. For Unreal games it also decides UE4 vs UE5 behaviour (Engine.ini HDR keys, DOF Fix). Use when RHI can't detect the version.",
-                Placeholder = "e.g. Unreal Engine 5.4.3" },
+            new() { Key = "engineHintOverrides", Kind = FieldKind.Text, Label = "Engine name or version",
+                Help = "Shown on the engine badge exactly as typed, for any engine (e.g. KojiPro Engine). For Unreal games, write \"Unreal Engine\" plus the version: " +
+                       "that decides UE4 vs UE5 behaviour (Engine.ini HDR keys, DOF Fix). It only changes the label: it doesn't move the game between the Unreal, Unity and Other filters.",
+                Placeholder = "e.g. Unreal Engine 5.4.3 or KojiPro Engine" },
             new() { Key = "graphicsApiOverrides", Kind = FieldKind.Api, Label = "Graphics API",
                 Help = "Replaces RHI's API detection. Tick more than one for games with several APIs. Decides ReShade's DLL name and whether DXVK is offered." },
             new() { Key = "bitness", Kind = FieldKind.Bitness, Label = "32 or 64-bit",

@@ -12,6 +12,7 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 - **No duplicate JSON keys** — parser only sees the last one, silently ignoring earlier entries
 
 ## Manifest Editor (tools/RHI-ManifestEditor)
+- "Push to GitHub..." does the push-manifest workflow from the editor: checks + `check-manifest.py`, commit message, optional patch note line (added to the newest version's `### Manifest Updates`), commit of only those files via a temporary git index (other local work untouched), push, rebase-and-retry if main moved.
 - Three views: Fields (default; pick a field, see and edit every game in it), Games (every field for one game, names from the local RHI library) and Global (non-game fields, with Raw JSON as a fallback for anything else).
 - Saves are text-preserving (`Json/JsonDoc.cs` splices only the edited characters; CRLF, escapes and order untouched), so diffs stay small. Never reintroduce whole-file re-serialisation.
 - **New manifest field: add it to `Catalog.cs`** (per-game: a `GameField` in the right group, plus `ListKeys` if it's a list of game names) or a section in `UI/GlobalEditor.cs`. Otherwise it's only editable through Raw JSON.

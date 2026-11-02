@@ -13,7 +13,7 @@ using Windows.System;
 
 namespace RHI.ManifestEditor.UI;
 
-public sealed class MainWindow : Window, IEditorHost
+public sealed partial class MainWindow : Window, IEditorHost
 {
     private enum Mode { Fields, Games, Global }
 
@@ -67,6 +67,9 @@ public sealed class MainWindow : Window, IEditorHost
     {
         Title = "RHI Manifest Editor";
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 980));
+        var icon = Win32.LoadAppIcon();   // the exe's own icon (ApplicationIcon); single-file, so no loose .ico
+        if (icon != IntPtr.Zero)
+            AppWindow.SetIcon(Microsoft.UI.Win32Interop.GetIconIdFromIcon(icon));
 
         _deferTimer = DispatcherQueue.CreateTimer();
         _deferTimer.Interval = TimeSpan.FromMilliseconds(500);
@@ -120,7 +123,9 @@ public sealed class MainWindow : Window, IEditorHost
         var nav = Ui.H(4, _backBtn, _forwardBtn);
         nav.VerticalAlignment = VerticalAlignment.Center;
         top.Children.Add(Ui.H(14, nav, titleBlock));
-        var buttons = Ui.H(8, _checkBtn, _reviewBtn, _undoBtn, _redoBtn, _saveBtn);
+        var pushBtn = Ui.Btn("Push to GitHub...", () => _ = PushAsync(),
+            tooltip: "Commit manifest.json and push it to main. Pushing makes it live for every RHI user.");
+        var buttons = Ui.H(8, _checkBtn, _reviewBtn, _undoBtn, _redoBtn, _saveBtn, pushBtn);
         buttons.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(buttons, 1);
         top.Children.Add(buttons);
@@ -867,10 +872,29 @@ public sealed class MainWindow : Window, IEditorHost
         if (_doc == null) return;
         Flush();
         var lines = LineDiff.Compute(_doc.SavedText, _doc.Text);
+        int added = lines.Count(l => l.Kind == DiffKind.Added), removed = lines.Count(l => l.Kind == DiffKind.Removed);
+        var scroll = DiffView(lines, "No changes since the last save.", 620);
+        var d = MakeDialog($"Changes since the last save (+{added} / -{removed} lines)", scroll);
+        d.PrimaryButtonText = "Save";
+        d.SecondaryButtonText = "Discard all changes";
+        d.CloseButtonText = "Close";
+        d.DefaultButton = ContentDialogButton.Close;
+        var r = await ShowDialogAsync(d);
+        if (r == ContentDialogResult.Primary) await SaveAsync();
+        else if (r == ContentDialogResult.Secondary
+                 && await Confirm("Discard all changes", "Go back to the file as it was last saved? (You can still undo this.)", "Discard", danger: true))
+        {
+            _doc.ReplaceAll(_doc.SavedText);
+            SetStatus("Changes discarded.");
+        }
+    }
+
+    /// <summary>Line diff as coloured monospace rows in a scroll viewer.</summary>
+    private static ScrollViewer DiffView(List<DiffLine> lines, string emptyText, double maxHeight)
+    {
         var panel = new StackPanel();
         var mono = new FontFamily("Cascadia Mono, Consolas");
-        if (lines.Count == 0) panel.Children.Add(Ui.T("No changes since the last save.", 14));
-        int added = lines.Count(l => l.Kind == DiffKind.Added), removed = lines.Count(l => l.Kind == DiffKind.Removed);
+        if (lines.Count == 0) panel.Children.Add(Ui.T(emptyText, 14));
         foreach (var l in lines)
         {
             if (l.Kind == DiffKind.Gap)
@@ -899,27 +923,14 @@ public sealed class MainWindow : Window, IEditorHost
                 },
             });
         }
-        var scroll = new ScrollViewer
+        return new ScrollViewer
         {
             Content = panel,
-            MaxHeight = 620,
+            MaxHeight = maxHeight,
             Width = 940,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollMode = ScrollMode.Auto,
         };
-        var d = MakeDialog($"Changes since the last save (+{added} / -{removed} lines)", scroll);
-        d.PrimaryButtonText = "Save";
-        d.SecondaryButtonText = "Discard all changes";
-        d.CloseButtonText = "Close";
-        d.DefaultButton = ContentDialogButton.Close;
-        var r = await ShowDialogAsync(d);
-        if (r == ContentDialogResult.Primary) await SaveAsync();
-        else if (r == ContentDialogResult.Secondary
-                 && await Confirm("Discard all changes", "Go back to the file as it was last saved? (You can still undo this.)", "Discard", danger: true))
-        {
-            _doc.ReplaceAll(_doc.SavedText);
-            SetStatus("Changes discarded.");
-        }
     }
 
     private async Task ShowIssuesAsync()

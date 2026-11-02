@@ -14,6 +14,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>RHI.ManifestEditor</AssemblyName>
+    <ApplicationIcon>..\..\Shared\icons\manifest-editor.ico</ApplicationIcon>
     <AssemblyTitle>RHI Manifest Editor</AssemblyTitle>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0.0</FileVersion>

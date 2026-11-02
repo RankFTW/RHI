@@ -19,7 +19,11 @@ A Windows app for editing RHI's `manifest.json` without touching raw JSON.
 
 Saving only changes the characters you edited: no reformatting, re-sorting or re-escaping, line endings kept. Alphabetical lists stay alphabetical; other lists get new entries at the end (dgVoodoo2 versions at the top, because the first one is the default).
 
-Pushing `manifest.json` to `main` makes it live for every user. Follow the "Push manifest" steps in `CLAUDE.md`.
+**Push to GitHub...** commits `manifest.json` and pushes it to `main`, which makes it live for every user:
+- It shows the changes since the last commit and asks for a commit message (`Manifest: ...`) and an optional patch note line. The note goes under `### Manifest Updates` in the newest version of `RenoDXCommander/RHI_PatchNotes.md`.
+- It saves, runs the editor's checks and `tools/check-manifest.py`, then commits only `manifest.json` (and the patch note line). The commit is built in a temporary git index, so other uncommitted or staged work in the checkout isn't included.
+- If GitHub has newer commits, it runs `git pull --rebase --autostash` and pushes again. If that fails, the commit stays local and the error is shown.
+- It uses git from PATH with your normal git credentials. The checkout must be on `main`.
 
 ## Code
 
@@ -33,6 +37,7 @@ Pushing `manifest.json` to `main` makes it live for every user. Follow the "Push
 | `UI/GameEditor.cs` | The game page |
 | `UI/GlobalEditor.cs` | Global settings pages |
 | `UI/MainWindow.cs` | Window, game list, save, review, checks, dialogs |
+| `UI/MainWindow.Push.cs`, `Services/Git.cs` | Push to GitHub (commit through a temporary index, push, rebase and retry) and the patch note insert |
 | `Services/Checks.cs` | Manifest checks (reads the case-insensitive field list from `RenoDXCommander/Services/ManifestService.cs`) |
 
 **Adding a new manifest field:** add a `GameField` to the right group in `Catalog.cs` (and to `ListKeys` if it's a list of game names), or a section to `UI/GlobalEditor.cs` for a global field. Fields that aren't listed can still be edited under Raw JSON.
