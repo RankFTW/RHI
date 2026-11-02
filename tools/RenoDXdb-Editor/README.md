@@ -40,14 +40,16 @@ The token is stored as `github_token.txt` next to the exe. Keep this file privat
 | **Open JSON** | Open any local `.json` file (DB type inferred from filename) |
 | **Save** | Save the current file to disk |
 | **Save As** | Save to a new path |
-| **↻ Sync** | Re-download all four DB files from GitHub and check for changes |
-| **↑ Push** | Commit and push the current file to rhi-repo on GitHub |
-| **🔑 Token** | Set or update your GitHub Personal Access Token |
-| **◀ Change DB** | Return to the DB selector screen |
-| **+ New** | Add a new entry (inserted alphabetically) |
+| **Sync** | Re-download all four DB files from GitHub and check for changes |
+| **Push** | Commit and push the current file to rhi-repo on GitHub |
+| **Token** | Set or update your GitHub Personal Access Token |
+| **Change DB** | Return to the DB selector screen |
+| **New** | Add a new entry (inserted alphabetically) |
 | **Delete** | Delete the selected entry |
-| **Wiki Check** | Scrape the RenoDX wiki and find entries not yet in the current DB (see below) |
-| Search box | Filter the list by name / author / comments |
+| **Check Wiki** | Scrape the RenoDX wiki and find entries not yet in the current DB (see below) |
+| Search box (above the list) | Filter the list by name / author / comments |
+
+The look (Fluent dark theme, matching the manifest editor) comes from `tools/Shared/Wpf/` (`FluentDark.xaml` + `Theme.cs`), shared with the PCGW Editor and linked in from the `.csproj`.
 
 ---
 

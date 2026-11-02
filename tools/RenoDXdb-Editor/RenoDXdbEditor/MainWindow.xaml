@@ -1,606 +1,443 @@
 <Window x:Class="RenoDXdbEditor.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RenoDXdb Editor" Height="740" Width="1160" MinWidth="860" MinHeight="540"
-        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13">
+        xmlns:t="clr-namespace:RhiTools.Theme"
+        Title="RenoDXdb Editor" Height="760" Width="1180" MinWidth="860" MinHeight="540"
+        Style="{StaticResource ThemedWindow}">
 
     <Window.Resources>
-        <!-- Base TextBox -->
-        <Style TargetType="TextBox">
-            <Setter Property="Background"       Value="#252540"/>
-            <Setter Property="Foreground"       Value="#E0E0F0"/>
-            <Setter Property="BorderBrush"      Value="#444466"/>
-            <Setter Property="BorderThickness"  Value="1"/>
-            <Setter Property="Padding"          Value="6,4"/>
-            <Setter Property="CaretBrush"       Value="#E0E0F0"/>
-            <Setter Property="SelectionBrush"   Value="#5555AA"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-        <!-- Label -->
-        <Style TargetType="Label">
-            <Setter Property="Foreground" Value="#AAAACC"/>
-            <Setter Property="Padding"    Value="0,6,0,2"/>
-        </Style>
-        <!-- Base Button -->
-        <Style TargetType="Button">
-            <Setter Property="Background"      Value="#333355"/>
-            <Setter Property="Foreground"      Value="#E0E0F0"/>
-            <Setter Property="BorderBrush"     Value="#555577"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="12,5"/>
-            <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#444466"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#222244"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Accent (blue) -->
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#2255AA"/>
-            <Setter Property="BorderBrush" Value="#3366CC"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#3366BB"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#114488"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Green (push) -->
-        <Style x:Key="GreenButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#226633"/>
-            <Setter Property="BorderBrush" Value="#338844"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#337744"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Danger (red) -->
-        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#882222"/>
-            <Setter Property="BorderBrush" Value="#AA3333"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#AA3333"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- ComboBox -->
-        <Style TargetType="ComboBox">
-            <Setter Property="Background"      Value="#252540"/>
-            <Setter Property="Foreground"      Value="#E0E0F0"/>
-            <Setter Property="BorderBrush"     Value="#444466"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="6,4"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="20"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.ColumnSpan="2"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="3"/>
-                            <ContentPresenter Grid.Column="0"
-                                              Margin="{TemplateBinding Padding}"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              VerticalAlignment="Center"
-                                              TextBlock.Foreground="{TemplateBinding Foreground}"/>
-                            <TextBlock Grid.Column="1" Text="▾" Foreground="#AAAACC"
-                                       VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="10"/>
-                            <ToggleButton Grid.ColumnSpan="2" Opacity="0"
-                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
-                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True">
-                                <Border Background="#252540" BorderBrush="#444466" BorderThickness="1" CornerRadius="3">
-                                    <ScrollViewer MaxHeight="300">
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="#252540"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Setter Property="Padding"    Value="8,5"/>
+        <!-- Database picker card: lifts on hover -->
+        <Style x:Key="DbCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="18,18,18,16"/>
+            <Setter Property="MinHeight" Value="196"/>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#333366"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#2255AA"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource CardBgHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource FlyoutStroke}"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
-        <!-- ListBox -->
-        <Style TargetType="ListBox">
-            <Setter Property="Background"  Value="#14142A"/>
-            <Setter Property="BorderBrush" Value="#333355"/>
-            <Setter Property="Foreground"  Value="#E0E0F0"/>
+        <Style x:Key="DbIconTile" TargetType="Border">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
         </Style>
-        <Style TargetType="ListBoxItem">
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#2255AA"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#252550"/>
-                </Trigger>
-            </Style.Triggers>
+        <Style x:Key="DbCardTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+        <Style x:Key="DbFileName" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}"/>
+            <Setter Property="Margin" Value="0,3,0,8"/>
+        </Style>
+        <Style x:Key="DbStatus" TargetType="Border" BasedOn="{StaticResource Pill}">
+            <Setter Property="Margin" Value="0,14,0,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
         </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- 0: toolbar -->
+            <RowDefinition Height="Auto"/>   <!-- 0: command bar -->
             <RowDefinition Height="*"/>      <!-- 1: content (selector OR editor) -->
             <RowDefinition Height="Auto"/>   <!-- 2: status bar -->
         </Grid.RowDefinitions>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             ROW 0 — Toolbar
+             ROW 0 — Command bar
              ══════════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
-                BorderThickness="0,0,0,1" Padding="10,7">
-            <WrapPanel Orientation="Horizontal">
+        <Border Grid.Row="0" Style="{StaticResource CommandBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- Always visible: Open, Save, Save As -->
-                <Button Content="Open JSON" Click="OpenFile_Click" Padding="11,5"/>
-                <Button x:Name="SaveBtn" Content="Save" Style="{StaticResource AccentButton}"
-                        Padding="11,5" IsEnabled="{Binding HasFile}" Margin="6,0,0,0"
-                        Click="SaveFile_Click"/>
-                <Button x:Name="SaveAsBtn" Content="Save As" Padding="11,5"
-                        IsEnabled="{Binding HasFile}" Margin="6,0,0,0"
-                        Click="SaveFileAs_Click"/>
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Back to selector -->
+                    <Button x:Name="BackBtn" Content="Change DB" Click="BackToSelector_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE72B;"
+                            IsEnabled="{Binding HasFile}" ToolTip="Return to DB selector"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
 
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
+                    <!-- File -->
+                    <Button Content="Open JSON" Click="OpenFile_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE8E5;"/>
+                    <Button x:Name="SaveBtn" Content="Save" Click="SaveFile_Click"
+                            Style="{StaticResource AccentButton}" t:Ui.Icon="&#xE74E;"
+                            Margin="4,0,0,0" IsEnabled="{Binding HasFile}"/>
+                    <Button x:Name="SaveAsBtn" Content="Save As" Click="SaveFileAs_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE792;"
+                            Margin="4,0,0,0" IsEnabled="{Binding HasFile}"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
 
-                <!-- Sync controls -->
-                <Button x:Name="SyncBtn" Content="↻ Sync" Padding="11,5"
-                        Click="Sync_Click" ToolTip="Download latest from GitHub and check for changes"/>
-                <Button x:Name="PushBtn" Content="↑ Push" Style="{StaticResource GreenButton}"
-                        Padding="11,5" Margin="6,0,0,0" IsEnabled="{Binding HasFile}"
-                        Click="Push_Click" ToolTip="Commit and push current file to rhi-repo on GitHub"/>
-                <Button x:Name="TokenBtn" Content="🔑 Token" Padding="11,5" Margin="6,0,0,0"
-                        Click="Token_Click" ToolTip="Set GitHub personal access token"/>
+                    <!-- Sync -->
+                    <Button x:Name="SyncBtn" Content="Sync" Click="Sync_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE895;"
+                            ToolTip="Download latest from GitHub and check for changes"/>
+                    <Button x:Name="PushBtn" Content="Push" Click="Push_Click"
+                            Style="{StaticResource GreenButton}" t:Ui.Icon="&#xE898;"
+                            Margin="4,0,0,0" IsEnabled="{Binding HasFile}"
+                            ToolTip="Commit and push current file to rhi-repo on GitHub"/>
+                    <Button x:Name="TokenBtn" Content="Token" Click="Token_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE8D7;"
+                            Margin="4,0,0,0" ToolTip="Set GitHub personal access token"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
 
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
+                    <!-- Entries -->
+                    <Button x:Name="NewBtn" Content="New" Click="NewEntry_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE710;"
+                            IsEnabled="{Binding HasFile}"/>
+                    <Button x:Name="DeleteBtn" Content="Delete" Click="DeleteEntry_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE74D;"
+                            Margin="4,0,0,0" IsEnabled="{Binding HasSelection}"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
 
-                <!-- Back to selector -->
-                <Button x:Name="BackBtn" Content="◀ Change DB" Padding="11,5"
-                        IsEnabled="{Binding HasFile}" Click="BackToSelector_Click"
-                        ToolTip="Return to DB selector"/>
+                    <!-- Wiki check -->
+                    <Button x:Name="WikiCheckBtn" Content="Check Wiki" Click="WikiCheck_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE774;"
+                            IsEnabled="{Binding CanCheckWiki}"
+                            ToolTip="Fetch the RenoDX wiki and find Done mods not yet in the DB"/>
+                </WrapPanel>
 
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-
-                <!-- Edit operations -->
-                <Button x:Name="NewBtn" Content="+ New" Style="{StaticResource AccentButton}"
-                        Padding="11,5" IsEnabled="{Binding HasFile}" Click="NewEntry_Click"/>
-                <Button x:Name="DeleteBtn" Content="Delete" Style="{StaticResource DangerButton}"
-                        Padding="11,5" Margin="6,0,0,0" IsEnabled="{Binding HasSelection}"
-                        Click="DeleteEntry_Click"/>
-
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-
-                <!-- Wiki check — Named Mods only -->
-                <Button x:Name="WikiCheckBtn" Content="↓ Check Wiki"
-                        Padding="11,5" IsEnabled="{Binding CanCheckWiki}"
-                        Click="WikiCheck_Click"
-                        ToolTip="Fetch the RenoDX wiki and find Done mods not yet in the DB"/>
-
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-
-                <!-- Search -->
-                <TextBox x:Name="SearchBox" Width="190" TextChanged="SearchBox_TextChanged"
-                         ToolTip="Filter by name / author"/>
-                <TextBlock Text="🔍" VerticalAlignment="Center" Foreground="#AAAACC" Margin="4,0,0,0"/>
-                <TextBlock x:Name="CountLabel" VerticalAlignment="Center"
-                           Foreground="#AAAACC" Margin="10,0,0,0" FontSize="11"/>
-            </WrapPanel>
+            </Grid>
         </Border>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             ROW 1 — Content area (three panels, only one visible at a time)
+             ROW 1 — Content area (only one panel visible at a time)
              ══════════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="1">
 
             <!-- ── PANEL A: DB Selector ─────────────────────────────────── -->
-            <Grid x:Name="SelectorPanel" Visibility="Visible">
+            <Border x:Name="SelectorPanel" Visibility="Visible" Style="{StaticResource Layer}"
+                    BorderThickness="0,1,0,0" CornerRadius="0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Margin="0,40,0,40" Width="840">
+                                Margin="24,40,24,40" Width="940">
 
-                        <TextBlock Text="RenoDXdb Editor" FontSize="26" FontWeight="Bold"
-                                   Foreground="#8888FF" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Select a database to open and edit"
-                                   Foreground="#AAAACC" FontSize="13" HorizontalAlignment="Center"
-                                   Margin="0,6,0,32"/>
+                        <TextBlock Text="RenoDXdb Editor" Style="{StaticResource PageTitle}" FontSize="28"/>
+                        <TextBlock Text="Pick a database to open and edit."
+                                   Style="{StaticResource Caption}" FontSize="14" Margin="0,4,0,20"/>
 
                         <!-- Sync status -->
-                        <Border x:Name="SyncStatusBorder" Background="#1E1E38"
-                                BorderBrush="#333355" BorderThickness="1"
-                                CornerRadius="6" Padding="14,10" Margin="0,0,0,24">
-                            <StackPanel>
-                                <TextBlock x:Name="SyncStatusLabel"
-                                           Text="Syncing from GitHub..."
-                                           Foreground="#AAAACC" FontSize="12"
-                                           TextWrapping="Wrap"/>
+                        <Border x:Name="SyncStatusBorder" Style="{StaticResource Card}" Padding="14,11" Margin="0,0,0,20">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE895;" Style="{StaticResource Glyph}" FontSize="14"
+                                           Foreground="{DynamicResource AccentText}" Margin="0,0,12,0"/>
+                                <TextBlock x:Name="SyncStatusLabel" Text="Syncing from GitHub..."
+                                           Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- DB choice cards — all three in one row -->
-                        <Grid Margin="0,0,0,16">
+                        <!-- DB choice cards, all four in one row -->
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Named Mods card -->
-                            <Button Grid.Column="0" Click="OpenNamedMods_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent"
-                                    VerticalAlignment="Stretch">
-                                <Border Background="#1E1E3A" BorderBrush="#444488"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
-                                        Height="178" VerticalAlignment="Stretch">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#6677CC"/>
-                                                    <Setter Property="Background"  Value="#25255A"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="📦 Named Mods" FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="#BBBBFF"/>
-                                        <TextBlock Text="RenoDXdb.json" Foreground="#6666AA"
-                                                   FontSize="11" Margin="0,4,0,8"/>
-                                        <TextBlock Text="RenoDX addon mods — name, author, snapshot URLs, Nexus, Discord links."
-                                                   Foreground="#AAAACC" FontSize="11"
-                                                   TextWrapping="Wrap"/>
-                                        <Border x:Name="NamedModsStatus" Margin="0,12,0,0"
-                                                Background="#252540" CornerRadius="4" Padding="8,4">
-                                            <TextBlock x:Name="NamedModsStatusLabel"
-                                                       Text="Not synced" Foreground="#666688"
-                                                       FontSize="11"/>
+                            <!-- Named Mods -->
+                            <Button Grid.Column="0" Click="OpenNamedMods_Click" Style="{StaticResource CardButton}">
+                                <Border Style="{StaticResource DbCard}">
+                                    <DockPanel LastChildFill="False">
+                                        <StackPanel DockPanel.Dock="Top">
+                                            <Border Style="{StaticResource DbIconTile}" Background="#1F3A52">
+                                                <TextBlock Text="&#xE7B8;" Style="{StaticResource Glyph}" FontSize="18" Foreground="#8FD1FF"/>
+                                            </Border>
+                                            <TextBlock Text="Named Mods" Style="{StaticResource DbCardTitle}"/>
+                                            <TextBlock Text="RenoDXdb.json" Style="{StaticResource DbFileName}"/>
+                                            <TextBlock Text="RenoDX addon mods: name, author, snapshot URLs, Nexus and Discord links."
+                                                       Style="{StaticResource Caption}"/>
+                                        </StackPanel>
+                                        <Border x:Name="NamedModsStatus" DockPanel.Dock="Bottom" Style="{StaticResource DbStatus}">
+                                            <TextBlock x:Name="NamedModsStatusLabel" Text="Not synced" FontSize="11"
+                                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"/>
                                         </Border>
-                                    </StackPanel>
+                                    </DockPanel>
                                 </Border>
                             </Button>
 
-                            <!-- Unreal card -->
-                            <Button Grid.Column="2" Click="OpenUnreal_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent"
-                                    VerticalAlignment="Stretch">
-                                <Border Background="#1E2E2E" BorderBrush="#448844"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
-                                        Height="178" VerticalAlignment="Stretch">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#66AA66"/>
-                                                    <Setter Property="Background"  Value="#253A25"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="🎮 Unreal Games" FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="#AAFFAA"/>
-                                        <TextBlock Text="RenoDXdb-unreal.json" Foreground="#558855"
-                                                   FontSize="11" Margin="0,4,0,8"/>
-                                        <TextBlock Text="UE-Extended game entries — HDR method, Engine.ini upgrade format and size."
-                                                   Foreground="#AAAACC" FontSize="11"
-                                                   TextWrapping="Wrap"/>
-                                        <Border x:Name="UnrealStatus" Margin="0,12,0,0"
-                                                Background="#1A2A1A" CornerRadius="4" Padding="8,4">
-                                            <TextBlock x:Name="UnrealStatusLabel"
-                                                       Text="Not synced" Foreground="#446644"
-                                                       FontSize="11"/>
+                            <!-- Unreal -->
+                            <Button Grid.Column="2" Click="OpenUnreal_Click" Style="{StaticResource CardButton}">
+                                <Border Style="{StaticResource DbCard}">
+                                    <DockPanel LastChildFill="False">
+                                        <StackPanel DockPanel.Dock="Top">
+                                            <Border Style="{StaticResource DbIconTile}" Background="#24402A">
+                                                <TextBlock Text="&#xE7FC;" Style="{StaticResource Glyph}" FontSize="18" Foreground="#9FE592"/>
+                                            </Border>
+                                            <TextBlock Text="Unreal Games" Style="{StaticResource DbCardTitle}"/>
+                                            <TextBlock Text="RenoDXdb-unreal.json" Style="{StaticResource DbFileName}"/>
+                                            <TextBlock Text="UE-Extended entries: HDR method, Engine.ini upgrade format and size."
+                                                       Style="{StaticResource Caption}"/>
+                                        </StackPanel>
+                                        <Border x:Name="UnrealStatus" DockPanel.Dock="Bottom" Style="{StaticResource DbStatus}">
+                                            <TextBlock x:Name="UnrealStatusLabel" Text="Not synced" FontSize="11"
+                                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"/>
                                         </Border>
-                                    </StackPanel>
+                                    </DockPanel>
                                 </Border>
                             </Button>
 
-                            <!-- Unity card -->
-                            <Button Grid.Column="4" Click="OpenUnity_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent"
-                                    VerticalAlignment="Stretch">
-                                <Border Background="#1E1E2E" BorderBrush="#886644"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
-                                        Height="178" VerticalAlignment="Stretch">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#BBAA66"/>
-                                                    <Setter Property="Background"  Value="#2A2A1A"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="🎲 Unity Games" FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="#FFDDAA"/>
-                                        <TextBlock Text="RenoDXdb-unity.json" Foreground="#886644"
-                                                   FontSize="11" Margin="0,4,0,8"/>
-                                        <TextBlock Text="Unity engine game entries — upgrade format, comments."
-                                                   Foreground="#AAAACC" FontSize="11"
-                                                   TextWrapping="Wrap"/>
-                                        <Border Margin="0,12,0,0"
-                                                Background="#1A1A14" CornerRadius="4" Padding="8,4">
-                                            <TextBlock x:Name="UnityStatusLabel"
-                                                       Text="Not synced" Foreground="#664422"
-                                                       FontSize="11"/>
+                            <!-- Unity -->
+                            <Button Grid.Column="4" Click="OpenUnity_Click" Style="{StaticResource CardButton}">
+                                <Border Style="{StaticResource DbCard}">
+                                    <DockPanel LastChildFill="False">
+                                        <StackPanel DockPanel.Dock="Top">
+                                            <Border Style="{StaticResource DbIconTile}" Background="#47391A">
+                                                <TextBlock Text="&#xECA5;" Style="{StaticResource Glyph}" FontSize="18" Foreground="#FFD27A"/>
+                                            </Border>
+                                            <TextBlock Text="Unity Games" Style="{StaticResource DbCardTitle}"/>
+                                            <TextBlock Text="RenoDXdb-unity.json" Style="{StaticResource DbFileName}"/>
+                                            <TextBlock Text="Unity engine entries: upgrade format and comments."
+                                                       Style="{StaticResource Caption}"/>
+                                        </StackPanel>
+                                        <Border DockPanel.Dock="Bottom" Style="{StaticResource DbStatus}">
+                                            <TextBlock x:Name="UnityStatusLabel" Text="Not synced" FontSize="11"
+                                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"/>
                                         </Border>
-                                    </StackPanel>
+                                    </DockPanel>
                                 </Border>
                             </Button>
-                            <!-- Source card -->
-                            <Button Grid.Column="6" Click="OpenSource_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent"
-                                    VerticalAlignment="Stretch">
-                                <Border Background="#2E1E1E" BorderBrush="#AA5544"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
-                                        Height="178" VerticalAlignment="Stretch">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#DD7766"/>
-                                                    <Setter Property="Background"  Value="#3A2420"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="Source Games" FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="#FFBBAA"/>
-                                        <TextBlock Text="RenoDXdb-source.json" Foreground="#AA6655"
-                                                   FontSize="11" Margin="0,4,0,8"/>
-                                        <TextBlock Text="Source engine game entries — 32/64-bit addon, comments."
-                                                   Foreground="#AAAACC" FontSize="11"
-                                                   TextWrapping="Wrap"/>
-                                        <Border Margin="0,12,0,0"
-                                                Background="#241614" CornerRadius="4" Padding="8,4">
-                                            <TextBlock x:Name="SourceStatusLabel"
-                                                       Text="Not synced" Foreground="#664433"
-                                                       FontSize="11"/>
+
+                            <!-- Source -->
+                            <Button Grid.Column="6" Click="OpenSource_Click" Style="{StaticResource CardButton}">
+                                <Border Style="{StaticResource DbCard}">
+                                    <DockPanel LastChildFill="False">
+                                        <StackPanel DockPanel.Dock="Top">
+                                            <Border Style="{StaticResource DbIconTile}" Background="#4A2A26">
+                                                <TextBlock Text="&#xE943;" Style="{StaticResource Glyph}" FontSize="18" Foreground="#FFAB9E"/>
+                                            </Border>
+                                            <TextBlock Text="Source Games" Style="{StaticResource DbCardTitle}"/>
+                                            <TextBlock Text="RenoDXdb-source.json" Style="{StaticResource DbFileName}"/>
+                                            <TextBlock Text="Source engine entries: 32/64-bit addon and comments."
+                                                       Style="{StaticResource Caption}"/>
+                                        </StackPanel>
+                                        <Border DockPanel.Dock="Bottom" Style="{StaticResource DbStatus}">
+                                            <TextBlock x:Name="SourceStatusLabel" Text="Not synced" FontSize="11"
+                                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"/>
                                         </Border>
-                                    </StackPanel>
+                                    </DockPanel>
                                 </Border>
                             </Button>
                         </Grid>
 
-                        <!-- Or open local -->
-                        <TextBlock Text="or open a local file with Open JSON ↑"
-                                   Foreground="#555577" FontSize="11"
-                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Text="Or open a local file with Open JSON in the bar above."
+                                   Style="{StaticResource Hint}" HorizontalAlignment="Center" Margin="0,18,0,0"/>
                     </StackPanel>
                 </ScrollViewer>
-            </Grid>
+            </Border>
 
             <!-- ── PANEL B: Editor (list + right panel) ─────────────────── -->
             <Grid x:Name="EditorPanel" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="280" MinWidth="180"/>
-                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="290" MinWidth="180"/>
+                    <ColumnDefinition Width="6"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Game list -->
-                <ListBox x:Name="GameList" Grid.Column="0"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         SelectionChanged="GameList_SelectionChanged"
-                         BorderThickness="0,0,1,0" BorderBrush="#333355"
-                         DisplayMemberPath="DisplayName"/>
+                <!-- Search + game list -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="10,8,6,8">
+                        <Grid>
+                            <TextBox x:Name="SearchBox" TextChanged="SearchBox_TextChanged" Padding="8,6,32,6"
+                                     t:Ui.Placeholder="Search name or author"
+                                     ToolTip="Filter by name / author"/>
+                            <TextBlock Text="&#xE721;" Style="{StaticResource Glyph}" FontSize="13"
+                                       HorizontalAlignment="Right" Margin="0,0,11,0" IsHitTestVisible="False"
+                                       Foreground="{DynamicResource TextSecondary}"/>
+                        </Grid>
+                        <TextBlock x:Name="CountLabel" Style="{StaticResource Hint}" Margin="2,6,0,0"/>
+                    </StackPanel>
+                    <ListBox x:Name="GameList" Grid.Row="1" Margin="4,0,0,0"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             SelectionChanged="GameList_SelectionChanged"
+                             DisplayMemberPath="DisplayName"/>
+                </Grid>
 
-                <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                              Background="#333355" Cursor="SizeWE"/>
+                <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Cursor="SizeWE"/>
 
                 <!-- Right: scrollable editor area -->
-                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="20,14,20,14">
-                    <StackPanel x:Name="RightPanel" IsEnabled="{Binding HasSelection}">
+                <Border Grid.Column="2" Style="{StaticResource Layer}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24,32,24">
+                        <StackPanel x:Name="RightPanel" IsEnabled="{Binding HasSelection}" MaxWidth="880">
 
-                        <!-- DB header -->
-                        <TextBlock x:Name="EditorTitle" Text="Game Details"
-                                   FontSize="16" FontWeight="Bold"
-                                   Foreground="#8888FF" Margin="0,0,0,14"/>
+                            <!-- DB header (text set from code) -->
+                            <TextBlock x:Name="EditorTitle" Text="Game Details"
+                                       Style="{StaticResource PageTitle}" Margin="0,0,0,20"/>
 
-                        <!-- ── Named Mods fields ────────────────────────── -->
-                        <StackPanel x:Name="NamedModsFields">
-                            <Label Content="Game Name *"/>
-                            <TextBox x:Name="NameBox" TextChanged="Field_Changed"/>
+                            <!-- ── Named Mods fields ────────────────────────── -->
+                            <StackPanel x:Name="NamedModsFields">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Mod" Style="{StaticResource SectionTitle}"/>
+                                        <Label Content="Game name *"/>
+                                        <TextBox x:Name="NameBox" TextChanged="Field_Changed"/>
+                                        <Grid Margin="0,14,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160"/>
+                                                <ColumnDefinition Width="16"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <Label Content="Status *"/>
+                                                <ComboBox x:Name="StatusCombo" SelectionChanged="Field_Changed">
+                                                    <ComboBoxItem Content="Done"/>
+                                                    <ComboBoxItem Content="WIP"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <Label Content="Author *"/>
+                                                <TextBox x:Name="AuthorBox" TextChanged="Field_Changed"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
-                            <Label Content="Status *" Margin="0,8,0,0"/>
-                            <ComboBox x:Name="StatusCombo" SelectionChanged="Field_Changed">
-                                <ComboBoxItem Content="Done"/>
-                                <ComboBoxItem Content="WIP"/>
-                            </ComboBox>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Snapshots" Style="{StaticResource SectionTitle}"/>
+                                        <Label Content="64-bit (.addon64)"/>
+                                        <TextBox x:Name="SnapshotUrlBox" TextChanged="Field_Changed"
+                                                 Style="{StaticResource MonoTextBox}"/>
+                                        <Label Content="32-bit (.addon32)" Margin="0,14,0,0"/>
+                                        <TextBox x:Name="SnapshotUrl32Box" TextChanged="Field_Changed"
+                                                 Style="{StaticResource MonoTextBox}"/>
+                                    </StackPanel>
+                                </Border>
 
-                            <Label Content="Author *" Margin="0,8,0,0"/>
-                            <TextBox x:Name="AuthorBox" TextChanged="Field_Changed"/>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Links" Style="{StaticResource SectionTitle}"/>
+                                        <Label Content="Nexus / GameBanana URL"/>
+                                        <TextBox x:Name="NexusUrlBox" TextChanged="Field_Changed"
+                                                 Style="{StaticResource MonoTextBox}"/>
+                                        <Label Content="Discord URL" Margin="0,14,0,0"/>
+                                        <TextBox x:Name="DiscordUrlBox" TextChanged="Field_Changed"
+                                                 Style="{StaticResource MonoTextBox}"/>
+                                        <Label Content="Discussion URL (GitHub Discussions)" Margin="0,14,0,0"/>
+                                        <TextBox x:Name="DiscussionUrlBox" TextChanged="Field_Changed"
+                                                 Style="{StaticResource MonoTextBox}"/>
+                                    </StackPanel>
+                                </Border>
 
-                            <Label Content="Snapshot URL (64-bit .addon64)" Margin="0,8,0,0"/>
-                            <TextBox x:Name="SnapshotUrlBox" TextChanged="Field_Changed"/>
-
-                            <Label Content="Snapshot URL (32-bit .addon32)" Margin="0,8,0,0"/>
-                            <TextBox x:Name="SnapshotUrl32Box" TextChanged="Field_Changed"/>
-
-                            <Label Content="Nexus / GameBanana URL" Margin="0,8,0,0"/>
-                            <TextBox x:Name="NexusUrlBox" TextChanged="Field_Changed"/>
-
-                            <Label Content="Discord URL" Margin="0,8,0,0"/>
-                            <TextBox x:Name="DiscordUrlBox" TextChanged="Field_Changed"/>
-
-                            <Label Content="Discussion URL (GitHub Discussions)" Margin="0,8,0,0"/>
-                            <TextBox x:Name="DiscussionUrlBox" TextChanged="Field_Changed"/>
-
-                            <Label Content="Notes" Margin="0,8,0,0"/>
-                            <TextBox x:Name="NotesBox" TextChanged="Field_Changed"
-                                     TextWrapping="Wrap" AcceptsReturn="True" Height="80"
-                                     VerticalScrollBarVisibility="Auto"/>
-                        </StackPanel>
-
-                        <!-- ── Unreal fields ────────────────────────────── -->
-                        <StackPanel x:Name="UnrealFields" Visibility="Collapsed">
-                            <Label Content="Game Name *"/>
-                            <TextBox x:Name="UNameBox" TextChanged="Field_Changed"/>
-
-                            <Label Content="Status *" Margin="0,8,0,0"/>
-                            <ComboBox x:Name="UStatusCombo" SelectionChanged="Field_Changed">
-                                <ComboBoxItem Content="Done"/>
-                                <ComboBoxItem Content="WIP"/>
-                            </ComboBox>
-
-                            <Label x:Name="UMethodLabel" Content="Method" Margin="0,8,0,0"/>
-                            <ComboBox x:Name="UMethodCombo" SelectionChanged="Field_Changed">
-                                <ComboBoxItem Content="(none)" Tag=""/>
-                                <ComboBoxItem Content="native"/>
-                                <ComboBoxItem Content="ini"/>
-                                <ComboBoxItem Content="upgrade"/>
-                            </ComboBox>
-
-                            <Label x:Name="UBitnessLabel" Content="Bitness" Margin="0,8,0,0" Visibility="Collapsed"/>
-                            <ComboBox x:Name="UBitnessCombo" SelectionChanged="Field_Changed" Visibility="Collapsed">
-                                <ComboBoxItem Content="(unknown)" Tag=""/>
-                                <ComboBoxItem Content="32-bit" Tag="32"/>
-                                <ComboBoxItem Content="64-bit" Tag="64"/>
-                                <ComboBoxItem Content="Both 32 and 64-bit" Tag="both"/>
-                            </ComboBox>
-
-                            <StackPanel x:Name="UpgradesSection">
-
-                            <!-- Upgrades two-column grid -->
-                            <Label Content="Upgrades" Margin="0,8,0,0"/>
-                            <TextBlock Text="Each row is one upgrade: pick a format token and a size token. Leave both blank to add no upgrade."
-                                       Foreground="#666688" FontSize="11" TextWrapping="Wrap"
-                                       Margin="0,0,0,6"/>
-
-                            <!-- Column headers -->
-                            <Grid Margin="0,0,0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="36"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Format" Foreground="#8888AA" FontSize="11"/>
-                                <TextBlock Grid.Column="2" Text="Size" Foreground="#8888AA" FontSize="11"/>
-                            </Grid>
-
-                            <StackPanel x:Name="UpgradesPanel"/>
-
-                            <Button Content="+ Add Upgrade Row" HorizontalAlignment="Left"
-                                    Margin="0,8,0,0" Padding="10,4"
-                                    Click="AddUpgradeRow_Click"/>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Notes" Style="{StaticResource SectionTitle}"/>
+                                        <TextBox x:Name="NotesBox" TextChanged="Field_Changed"
+                                                 TextWrapping="Wrap" AcceptsReturn="True" Height="90"
+                                                 VerticalScrollBarVisibility="Auto"/>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
-                            <Label Content="Comments" Margin="0,8,0,0"/>
-                            <TextBox x:Name="UCommentsBox" TextChanged="Field_Changed"
-                                     TextWrapping="Wrap" AcceptsReturn="True" Height="72"
-                                     VerticalScrollBarVisibility="Auto"/>
-                        </StackPanel>
+                            <!-- ── Unreal / Unity / Source fields ─────────── -->
+                            <StackPanel x:Name="UnrealFields" Visibility="Collapsed">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Game" Style="{StaticResource SectionTitle}"/>
+                                        <Label Content="Game name *"/>
+                                        <TextBox x:Name="UNameBox" TextChanged="Field_Changed"/>
+                                        <Grid Margin="0,14,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="16"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <Label Content="Status *"/>
+                                                <ComboBox x:Name="UStatusCombo" SelectionChanged="Field_Changed">
+                                                    <ComboBoxItem Content="Done"/>
+                                                    <ComboBoxItem Content="WIP"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <Label x:Name="UMethodLabel" Content="Method"/>
+                                                <ComboBox x:Name="UMethodCombo" SelectionChanged="Field_Changed">
+                                                    <ComboBoxItem Content="(none)" Tag=""/>
+                                                    <ComboBoxItem Content="native"/>
+                                                    <ComboBoxItem Content="ini"/>
+                                                    <ComboBoxItem Content="upgrade"/>
+                                                </ComboBox>
+                                                <Label x:Name="UBitnessLabel" Content="Bitness" Visibility="Collapsed"/>
+                                                <ComboBox x:Name="UBitnessCombo" SelectionChanged="Field_Changed" Visibility="Collapsed">
+                                                    <ComboBoxItem Content="(unknown)" Tag=""/>
+                                                    <ComboBoxItem Content="32-bit" Tag="32"/>
+                                                    <ComboBoxItem Content="64-bit" Tag="64"/>
+                                                    <ComboBoxItem Content="Both 32 and 64-bit" Tag="both"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
-                        <TextBlock x:Name="StatusLabel" Foreground="#55CC77"
-                                   Margin="0,8,0,0" FontSize="11"/>
-                    </StackPanel>
-                </ScrollViewer>
+                                <Border x:Name="UpgradesSection" Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Upgrades" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/>
+                                        <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,12"
+                                                   Text="Each row is one upgrade: pick a format token and a size token. Leave both blank to add no upgrade."/>
+
+                                        <!-- Column headers -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="36"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Format" FontSize="12" Foreground="{DynamicResource TextTertiary}"/>
+                                            <TextBlock Grid.Column="2" Text="Size" FontSize="12" Foreground="{DynamicResource TextTertiary}"/>
+                                        </Grid>
+
+                                        <StackPanel x:Name="UpgradesPanel"/>
+
+                                        <Button Content="Add upgrade row" Click="AddUpgradeRow_Click"
+                                                Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE710;"
+                                                HorizontalAlignment="Left" Margin="-8,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Comments" Style="{StaticResource SectionTitle}"/>
+                                        <TextBox x:Name="UCommentsBox" TextChanged="Field_Changed"
+                                                 TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                                                 VerticalScrollBarVisibility="Auto"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock x:Name="StatusLabel" Foreground="{DynamicResource SuccessText}"
+                                       Margin="2,2,0,0" FontSize="12"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
             </Grid>
         </Grid>
 
         <!-- ══════════════════════════════════════════════════════════════════
              ROW 2 — Status bar
              ══════════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="2" Background="#0F0F1E" BorderBrush="#333355"
-                BorderThickness="0,1,0,0" Padding="10,4">
-            <TextBlock x:Name="StatusBar" Foreground="#8888AA" FontSize="11"
+        <Border Grid.Row="2" Style="{StaticResource StatusBarBorder}">
+            <TextBlock x:Name="StatusBar" TextTrimming="CharacterEllipsis"
                        Text="Select a database above to get started"/>
         </Border>
     </Grid>

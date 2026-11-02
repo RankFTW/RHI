@@ -54,7 +54,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task AutoSyncAsync()
     {
-        SetSyncStatus("Syncing from GitHub…", "#FFCC44");
+        SetSyncStatus("Syncing from GitHub…", RhiTools.Theme.Ui.CautionHex);
         var result = await PcgwDataService.FetchAsync(_githubToken);
         if (result.Success)
         {
@@ -63,7 +63,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             SetSyncStatus(result.HasDiff
                 ? "⚠ Remote differs from local"
-                : $"✓ Synced ({_allGames.Count:N0} games)", result.HasDiff ? "#FFAA44" : "#55CC77");
+                : $"✓ Synced ({_allGames.Count:N0} games)", result.HasDiff ? RhiTools.Theme.Ui.CautionHex : RhiTools.Theme.Ui.SuccessHex);
 
             // Auto-load local file if nothing is open
             if (!HasFile && File.Exists(PcgwDataService.LocalPath))
@@ -71,7 +71,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            SetSyncStatus($"Sync failed — {result.Error}", "#EE5555");
+            SetSyncStatus($"Sync failed — {result.Error}", RhiTools.Theme.Ui.CriticalHex);
             if (File.Exists(PcgwDataService.LocalPath))
                 LoadFile(PcgwDataService.LocalPath);
         }
@@ -169,17 +169,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private async Task SyncAndReloadAsync()
     {
         if (_isDirty && !ConfirmDiscard()) return;
-        SetSyncStatus("Syncing…", "#FFCC44");
+        SetSyncStatus("Syncing…", RhiTools.Theme.Ui.CautionHex);
         var result = await PcgwDataService.FetchAsync(_githubToken);
         if (result.Success)
         {
             await PcgwDataService.SaveLocalAsync(result.RemoteContent!);
             LoadFile(PcgwDataService.LocalPath);
-            SetSyncStatus($"✓ Synced at {DateTime.Now:HH:mm:ss}", "#55CC77");
+            SetSyncStatus($"✓ Synced at {DateTime.Now:HH:mm:ss}", RhiTools.Theme.Ui.SuccessHex);
         }
         else
         {
-            SetSyncStatus($"✗ Sync failed — {result.Error}", "#EE5555");
+            SetSyncStatus($"✗ Sync failed — {result.Error}", RhiTools.Theme.Ui.CriticalHex);
             MessageBox.Show($"Sync failed:\n{result.Error}", "Sync Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -292,7 +292,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (!int.TryParse(SteamAppIdBox.Text.Trim(), out int appId) &&
             !string.IsNullOrWhiteSpace(SteamAppIdBox.Text.Trim()))
         {
-            GameStatusLabel.Foreground = new SolidColorBrush(Colors.Tomato);
+            GameStatusLabel.Foreground = RhiTools.Theme.Ui.Critical;
             GameStatusLabel.Text = "⚠ Steam AppID must be a number.";
             return;
         }
@@ -312,7 +312,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _data.Games[vm.PageName] = vm.ToRaw();
         MarkDirty();
 
-        GameStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+        GameStatusLabel.Foreground = RhiTools.Theme.Ui.Success;
         GameStatusLabel.Text = "✓ Changes applied.";
 
         // Refresh the list item display name
@@ -407,7 +407,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (string.IsNullOrWhiteSpace(detectedName) || string.IsNullOrWhiteSpace(pcgwPage))
         {
-            MappingStatusLabel.Foreground = new SolidColorBrush(Colors.Tomato);
+            MappingStatusLabel.Foreground = RhiTools.Theme.Ui.Critical;
             MappingStatusLabel.Text = "⚠ Both fields are required.";
             return;
         }
@@ -429,7 +429,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         MappingList.SelectedItem = vm;
 
         MarkDirty();
-        MappingStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+        MappingStatusLabel.Foreground = RhiTools.Theme.Ui.Success;
         MappingStatusLabel.Text = "✓ Mapping saved.";
     }
 

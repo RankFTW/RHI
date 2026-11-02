@@ -8,6 +8,11 @@
     <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>RenoDXdbEditor</AssemblyName>
-    <ApplicationIcon></ApplicationIcon>
+    <ApplicationIcon>..\..\Shared\icons\renodxdb-editor.ico</ApplicationIcon>
   </PropertyGroup>
+  <!-- Shared Fluent dark theme (also used by the other WPF tool) -->
+  <ItemGroup>
+    <Page Include="..\..\Shared\Wpf\FluentDark.xaml" Link="Theme\FluentDark.xaml" />
+    <Compile Include="..\..\Shared\Wpf\Theme.cs" Link="Theme\Theme.cs" />
+  </ItemGroup>
 </Project>

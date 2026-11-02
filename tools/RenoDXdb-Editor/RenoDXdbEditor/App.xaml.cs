@@ -15,6 +15,7 @@ public partial class App : System.Windows.Application
             ex.Handled = true;
         };
 
+        RhiTools.Theme.Ui.ApplyAccent(this);
         base.OnStartup(e);
     }
 }

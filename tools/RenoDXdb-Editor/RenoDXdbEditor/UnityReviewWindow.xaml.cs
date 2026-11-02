@@ -95,10 +95,6 @@ public partial class UnityReviewWindow : Window
 
     // ── Upgrade rows (same Unity keys/values as the main editor) ──────────────
 
-    private static readonly SolidColorBrush FieldBg     = new(Color.FromRgb(0x25, 0x25, 0x40));
-    private static readonly SolidColorBrush FieldFg     = new(Color.FromRgb(0xE0, 0xE0, 0xF0));
-    private static readonly SolidColorBrush FieldBorder = new(Color.FromRgb(0x44, 0x44, 0x66));
-
     private void BuildUpgradeRows(List<(string Key, string Value)> pairs)
     {
         UpgradesPanel.Children.Clear();
@@ -113,7 +109,7 @@ public partial class UnityReviewWindow : Window
 
     private void AddUpgradeRow(string key, string value)
     {
-        var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -135,12 +131,8 @@ public partial class UnityReviewWindow : Window
 
         var removeBtn = new Button
         {
-            Content = "✕", Padding = new Thickness(0), Width = 28, Height = 26,
             ToolTip = "Remove this row",
-            Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x1A, 0x1A)),
-            Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xAA, 0xAA)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x66, 0x33, 0x33)),
-            HorizontalAlignment = HorizontalAlignment.Right,
+            Style = (Style)FindResource("RemoveButton"),
         };
         removeBtn.Click += (_, _) => UpgradesPanel.Children.Remove(grid);
         Grid.SetColumn(removeBtn, 3);
@@ -153,7 +145,7 @@ public partial class UnityReviewWindow : Window
 
     private static ComboBox NewCombo() => new()
     {
-        Background = FieldBg, Foreground = FieldFg, BorderBrush = FieldBorder, FontSize = 12,
+        FontSize = 12,
     };
 
     private static void SelectByTag(ComboBox combo, string tag)

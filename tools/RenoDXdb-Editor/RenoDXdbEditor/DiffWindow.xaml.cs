@@ -20,8 +20,9 @@ public partial class DiffWindow : Window
         {
             Title = "Preview Push";
             HeaderLabel.Text = "Review your changes before pushing to GitHub.";
-            HeaderLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
-            OverwriteBtn.Content = "↑ Push";
+            HeaderLabel.Foreground = RhiTools.Theme.Ui.Success;
+            OverwriteBtn.Content = "Push";
+            RhiTools.Theme.Ui.SetIcon(OverwriteBtn, "\uE898");
             // Flip legend: local is "before", pushed is "after"
             AddedLegend.Text    = "Added (new)";
             RemovedLegend.Text  = "Removed";
@@ -96,17 +97,17 @@ public partial class DiffWindow : Window
 /// <summary>View-model for a single diff line, providing display properties for binding.</summary>
 internal class DiffLineVm
 {
-    private static readonly SolidColorBrush SameFg       = new(Color.FromRgb(0xBB, 0xBB, 0xCC));
-    private static readonly SolidColorBrush AddedFg      = new(Color.FromRgb(0x88, 0xEE, 0x88));
-    private static readonly SolidColorBrush RemovedFg    = new(Color.FromRgb(0xEE, 0x88, 0x88));
-    private static readonly SolidColorBrush SeparatorFg  = new(Color.FromRgb(0x66, 0x66, 0x88));
-    private static readonly SolidColorBrush SameBg       = new(Color.FromRgb(0x0F, 0x0F, 0x1E));
-    private static readonly SolidColorBrush AddedBg      = new(Color.FromRgb(0x1A, 0x33, 0x1A));
-    private static readonly SolidColorBrush RemovedBg    = new(Color.FromRgb(0x33, 0x1A, 0x1A));
-    private static readonly SolidColorBrush SeparatorBg  = new(Color.FromRgb(0x14, 0x14, 0x28));
-    private static readonly SolidColorBrush AddedGutter   = new(Color.FromRgb(0x55, 0xCC, 0x77));
-    private static readonly SolidColorBrush RemovedGutter = new(Color.FromRgb(0xEE, 0x55, 0x55));
-    private static readonly SolidColorBrush SameGutter    = new(Color.FromRgb(0x55, 0x55, 0x77));
+    private static readonly SolidColorBrush SameFg       = new(Color.FromRgb(0xC5, 0xC5, 0xC5));
+    private static readonly SolidColorBrush AddedFg      = new(Color.FromRgb(0xB4, 0xEF, 0xA9));
+    private static readonly SolidColorBrush RemovedFg    = new(Color.FromRgb(0xFF, 0xB3, 0xBB));
+    private static readonly SolidColorBrush SeparatorFg  = new(Color.FromRgb(0x80, 0x80, 0x80));
+    private static readonly SolidColorBrush SameBg       = new(Color.FromArgb(0x00, 0, 0, 0));
+    private static readonly SolidColorBrush AddedBg      = new(Color.FromRgb(0x1F, 0x33, 0x1D));
+    private static readonly SolidColorBrush RemovedBg    = new(Color.FromRgb(0x3D, 0x22, 0x24));
+    private static readonly SolidColorBrush SeparatorBg  = new(Color.FromRgb(0x24, 0x24, 0x24));
+    private static readonly SolidColorBrush AddedGutter   = new(Color.FromRgb(0x6C, 0xCB, 0x5F));
+    private static readonly SolidColorBrush RemovedGutter = new(Color.FromRgb(0xFF, 0x99, 0xA4));
+    private static readonly SolidColorBrush SameGutter    = new(Color.FromRgb(0x5A, 0x5A, 0x5A));
 
     public string DisplayText  { get; }
     public Brush  FgColor      { get; }

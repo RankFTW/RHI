@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>RhiStats</RootNamespace>
     <AssemblyName>RHI-Stats</AssemblyName>
+    <ApplicationIcon>..\Shared\icons\rhi-stats.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 </Project>

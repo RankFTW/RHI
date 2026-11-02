@@ -1,207 +1,64 @@
 <Window x:Class="PCGWEditor.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PCGW Editor" Height="760" Width="1180" MinWidth="900" MinHeight="540"
-        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13">
-
-    <Window.Resources>
-        <Style TargetType="TextBox">
-            <Setter Property="Background"      Value="#252540"/>
-            <Setter Property="Foreground"      Value="#E0E0F0"/>
-            <Setter Property="BorderBrush"     Value="#444466"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="6,4"/>
-            <Setter Property="CaretBrush"      Value="#E0E0F0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="Label">
-            <Setter Property="Foreground" Value="#AAAACC"/>
-            <Setter Property="Padding"    Value="0,6,0,2"/>
-        </Style>
-        <Style TargetType="CheckBox">
-            <Setter Property="Foreground"  Value="#E0E0F0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Margin"      Value="0,4,16,4"/>
-        </Style>
-        <Style TargetType="Button">
-            <Setter Property="Background"      Value="#333355"/>
-            <Setter Property="Foreground"      Value="#E0E0F0"/>
-            <Setter Property="BorderBrush"     Value="#555577"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="12,5"/>
-            <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#444466"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#2255AA"/>
-            <Setter Property="BorderBrush" Value="#3366CC"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#3366BB"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="GreenButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#226633"/>
-            <Setter Property="BorderBrush" Value="#338844"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#337744"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background"  Value="#882222"/>
-            <Setter Property="BorderBrush" Value="#AA3333"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#AA3333"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ListBox">
-            <Setter Property="Background"  Value="#14142A"/>
-            <Setter Property="BorderBrush" Value="#333355"/>
-            <Setter Property="Foreground"  Value="#E0E0F0"/>
-        </Style>
-        <Style TargetType="ListBoxItem">
-            <Setter Property="Padding"    Value="8,5"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected"   Value="True">
-                    <Setter Property="Background" Value="#2255AA"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#252550"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style TargetType="TabControl">
-            <Setter Property="Background"  Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="#333355"/>
-        </Style>
-        <Style TargetType="TabItem">
-            <Setter Property="Background"  Value="#14142A"/>
-            <Setter Property="Foreground"  Value="#AAAACC"/>
-            <Setter Property="BorderBrush" Value="#333355"/>
-            <Setter Property="Padding"     Value="14,6"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#1A1A2E"/>
-                    <Setter Property="Foreground" Value="#BBBBFF"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
+        xmlns:t="clr-namespace:RhiTools.Theme"
+        Title="PCGW Editor" Height="780" Width="1200" MinWidth="900" MinHeight="540"
+        Style="{StaticResource ThemedWindow}">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- toolbar -->
-            <RowDefinition Height="*"/>     <!-- content -->
+            <RowDefinition Height="Auto"/>  <!-- command bar -->
+            <RowDefinition Height="*"/>     <!-- tabs + content -->
             <RowDefinition Height="Auto"/>  <!-- status bar -->
         </Grid.RowDefinitions>
 
-        <!-- ══ Toolbar ══ -->
-        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
-                BorderThickness="0,0,0,1" Padding="10,7">
-            <WrapPanel Orientation="Horizontal">
-                <Button x:Name="OpenBtn"  Content="Open JSON" Click="Open_Click" Padding="11,5"/>
-                <Button x:Name="SaveBtn"  Content="Save"      Click="Save_Click"
-                        Style="{StaticResource AccentButton}" Padding="11,5" Margin="6,0,0,0"
-                        IsEnabled="False"/>
-                <Button x:Name="SaveAsBtn" Content="Save As"  Click="SaveAs_Click"
-                        Padding="11,5" Margin="6,0,0,0" IsEnabled="False"/>
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-                <Button x:Name="SyncBtn"   Content="↻ Sync"         Click="Sync_Click"
-                        Padding="11,5" ToolTip="Download latest pcgw_data.json from GitHub"/>
-                <Button x:Name="PushBtn"   Content="↑ Push"         Click="Push_Click"
-                        Style="{StaticResource GreenButton}" Padding="11,5" Margin="6,0,0,0"
-                        IsEnabled="False" ToolTip="Push current file to GitHub"/>
-                <Button x:Name="TokenBtn"  Content="🔑 Token"        Click="Token_Click"
-                        Padding="11,5" Margin="6,0,0,0"/>
-                <Button x:Name="PcgwCredsBtn" Content="🔑 PCGW"    Click="PcgwCreds_Click"
-                        Padding="11,5" Margin="6,0,0,0"
-                        ToolTip="Set PCGW bot credentials for fetching data"/>
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-                <Button x:Name="FetchUpdatesBtn" Content="⬇ Fetch Updates" Click="FetchUpdates_Click"
-                        Padding="11,5"
-                        ToolTip="Fetch only pages changed since the last run (fast, ~30 seconds)"/>
-                <Button x:Name="FetchAllBtn"     Content="⬇ Full Refresh"  Click="FetchAll_Click"
-                        Padding="11,5" Margin="6,0,0,0"
-                        ToolTip="Fetch all games from PCGW (~5 minutes)"/>
-                <Button x:Name="CancelFetchBtn"  Content="✕ Cancel"        Click="CancelFetch_Click"
-                        Style="{StaticResource DangerButton}"
-                        Padding="11,5" Margin="6,0,0,0"
-                        Visibility="Collapsed"
-                        ToolTip="Cancel the in-progress fetch"/>
-                <Separator Width="1" Background="#444466" Margin="10,0"/>
-                <TextBlock Text="Search:" Foreground="#AAAACC" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBox x:Name="SearchBox" Width="200" TextChanged="Search_Changed"
-                         ToolTip="Filter by game name or Steam AppID"/>
-                <TextBlock x:Name="CountLabel" VerticalAlignment="Center"
-                           Foreground="#AAAACC" Margin="10,0,0,0" FontSize="11"/>
-            </WrapPanel>
+        <!-- ══ Command bar ══ -->
+        <Border Grid.Row="0" Style="{StaticResource CommandBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="OpenBtn" Content="Open JSON" Click="Open_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE8E5;"/>
+                    <Button x:Name="SaveBtn" Content="Save" Click="Save_Click"
+                            Style="{StaticResource AccentButton}" t:Ui.Icon="&#xE74E;"
+                            Margin="4,0,0,0" IsEnabled="False"/>
+                    <Button x:Name="SaveAsBtn" Content="Save As" Click="SaveAs_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE792;"
+                            Margin="4,0,0,0" IsEnabled="False"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
+                    <Button x:Name="SyncBtn" Content="Sync" Click="Sync_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE895;"
+                            ToolTip="Download latest pcgw_data.json from GitHub"/>
+                    <Button x:Name="PushBtn" Content="Push" Click="Push_Click"
+                            Style="{StaticResource GreenButton}" t:Ui.Icon="&#xE898;"
+                            Margin="4,0,0,0" IsEnabled="False"
+                            ToolTip="Push current file to GitHub"/>
+                    <Button x:Name="TokenBtn" Content="Token" Click="Token_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE8D7;"
+                            Margin="4,0,0,0" ToolTip="Set GitHub personal access token"/>
+                    <Button x:Name="PcgwCredsBtn" Content="PCGW login" Click="PcgwCreds_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE77B;"
+                            Margin="4,0,0,0"
+                            ToolTip="Set PCGW bot credentials for fetching data"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
+                    <Button x:Name="FetchUpdatesBtn" Content="Fetch Updates" Click="FetchUpdates_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE896;"
+                            ToolTip="Fetch only pages changed since the last run (fast, ~30 seconds)"/>
+                    <Button x:Name="FetchAllBtn" Content="Full Refresh" Click="FetchAll_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE72C;"
+                            Margin="4,0,0,0"
+                            ToolTip="Fetch all games from PCGW (~5 minutes)"/>
+                    <Button x:Name="CancelFetchBtn" Content="Cancel" Click="CancelFetch_Click"
+                            Style="{StaticResource DangerButton}" t:Ui.Icon="&#xE711;"
+                            Margin="4,0,0,0" Visibility="Collapsed"
+                            ToolTip="Cancel the in-progress fetch"/>
+                </WrapPanel>
+
+            </Grid>
         </Border>
 
         <!-- ══ Content ══ -->
@@ -212,80 +69,140 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="180"/>
-                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="6"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Game list -->
-                    <ListBox x:Name="GameList" Grid.Column="0"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             SelectionChanged="GameList_Changed"
-                             BorderThickness="0,0,1,0" BorderBrush="#333355"
-                             DisplayMemberPath="DisplayName"/>
+                    <!-- Search + game list -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Margin="10,0,6,8">
+                            <Grid>
+                                <TextBox x:Name="SearchBox" TextChanged="Search_Changed" Padding="8,6,32,6"
+                                         t:Ui.Placeholder="Search name or Steam AppID"
+                                         ToolTip="Filter by game name or Steam AppID"/>
+                                <TextBlock Text="&#xE721;" Style="{StaticResource Glyph}" FontSize="13"
+                                           HorizontalAlignment="Right" Margin="0,0,11,0" IsHitTestVisible="False"
+                                           Foreground="{DynamicResource TextSecondary}"/>
+                            </Grid>
+                            <TextBlock x:Name="CountLabel" Style="{StaticResource Hint}" Margin="2,6,0,0"/>
+                        </StackPanel>
+                        <ListBox x:Name="GameList" Grid.Row="1" Margin="4,0,0,0"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 SelectionChanged="GameList_Changed"
+                                 DisplayMemberPath="DisplayName"/>
+                    </Grid>
 
-                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                                  Background="#333355" Cursor="SizeWE"/>
+                    <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Cursor="SizeWE"/>
 
                     <!-- Game editor -->
-                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="20,14,20,14">
-                        <StackPanel x:Name="GameEditorPanel" IsEnabled="False">
+                    <Border Grid.Column="2" Style="{StaticResource Layer}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24,32,24">
+                            <StackPanel x:Name="GameEditorPanel" IsEnabled="False" MaxWidth="880"
+                                        HorizontalAlignment="Stretch">
 
-                            <TextBlock Text="Game Details" FontSize="16" FontWeight="Bold"
-                                       Foreground="#8888FF" Margin="0,0,0,16"/>
+                                <!-- Header: the selected page's title -->
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PageTitle}">
+                                            <Setter Property="Text" Value="{Binding Text, ElementName=PageNameBox}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=PageNameBox}" Value="">
+                                                    <Setter Property="Text" Value="Select a game"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiary}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,22">
+                                    <TextBlock Text="&#xE71B;" Style="{StaticResource Glyph}" FontSize="12"
+                                               Foreground="{DynamicResource AccentText}" Margin="0,1,6,0"/>
+                                    <TextBlock x:Name="WikiUrlBlock" Style="{StaticResource LinkText}"
+                                               MouseLeftButtonDown="WikiUrl_Click"
+                                               ToolTip="Open the PCGamingWiki page (derived from the page name)"/>
+                                </StackPanel>
 
-                            <!-- Page name (read-only — PCGW page title is the key) -->
-                            <Label Content="PCGW Page Name"/>
-                            <TextBox x:Name="PageNameBox" IsReadOnly="True"
-                                     Background="#1A1A38" Foreground="#AAAACC"/>
+                                <!-- Page -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Page" Style="{StaticResource SectionTitle}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="16"/>
+                                                <ColumnDefinition Width="200"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <!-- Read-only: the PCGW page title is the key -->
+                                                <Label Content="PCGW page name"/>
+                                                <TextBox x:Name="PageNameBox" IsReadOnly="True"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <Label Content="Steam AppID"/>
+                                                <TextBox x:Name="SteamAppIdBox" TextChanged="GameField_Changed"
+                                                         Style="{StaticResource MonoTextBox}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
-                            <Label Content="Steam AppID" Margin="0,8,0,0"/>
-                            <TextBox x:Name="SteamAppIdBox" TextChanged="GameField_Changed"/>
+                                <!-- APIs -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Graphics API support" Style="{StaticResource SectionTitle}"/>
+                                        <WrapPanel>
+                                            <CheckBox x:Name="Dx9Check"    Content="DirectX 9"  Click="GameField_Changed"/>
+                                            <CheckBox x:Name="Dx10Check"   Content="DirectX 10" Click="GameField_Changed"/>
+                                            <CheckBox x:Name="Dx11Check"   Content="DirectX 11" Click="GameField_Changed"/>
+                                            <CheckBox x:Name="Dx12Check"   Content="DirectX 12" Click="GameField_Changed"/>
+                                            <CheckBox x:Name="VulkanCheck" Content="Vulkan"     Click="GameField_Changed"/>
+                                            <CheckBox x:Name="OpenGLCheck" Content="OpenGL"     Click="GameField_Changed"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
 
-                            <!-- API checkboxes -->
-                            <Label Content="Graphics API Support" Margin="0,12,0,0"/>
-                            <WrapPanel Margin="0,4,0,0">
-                                <CheckBox x:Name="Dx9Check"    Content="DirectX 9"   Click="GameField_Changed"/>
-                                <CheckBox x:Name="Dx10Check"   Content="DirectX 10"  Click="GameField_Changed"/>
-                                <CheckBox x:Name="Dx11Check"   Content="DirectX 11"  Click="GameField_Changed"/>
-                                <CheckBox x:Name="Dx12Check"   Content="DirectX 12"  Click="GameField_Changed"/>
-                                <CheckBox x:Name="VulkanCheck" Content="Vulkan"       Click="GameField_Changed"/>
-                                <CheckBox x:Name="OpenGLCheck" Content="OpenGL"       Click="GameField_Changed"/>
-                            </WrapPanel>
+                                <!-- Config paths -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Config paths" Style="{StaticResource SectionTitle}"/>
+                                        <Label Content="Windows / Steam"/>
+                                        <TextBox x:Name="ConfigPathBox" TextChanged="GameField_Changed"
+                                                 Style="{StaticResource MonoTextBox}" TextWrapping="Wrap"/>
+                                        <TextBlock Style="{StaticResource Hint}"
+                                                   Text="e.g. %LOCALAPPDATA%\GameName\Saved\Config\WindowsNoEditor"/>
 
-                            <!-- Config paths -->
-                            <Label Content="Config Path (Windows / Steam)" Margin="0,12,0,0"/>
-                            <TextBox x:Name="ConfigPathBox" TextChanged="GameField_Changed"
-                                     TextWrapping="Wrap"/>
-                            <TextBlock Text="e.g. %LOCALAPPDATA%\GameName\Saved\Config\WindowsNoEditor"
-                                       Foreground="#555577" FontSize="11" Margin="0,2,0,0"/>
+                                        <Label Content="Microsoft Store / Xbox" Margin="0,14,0,0"/>
+                                        <TextBox x:Name="ConfigPathXboxBox" TextChanged="GameField_Changed"
+                                                 Style="{StaticResource MonoTextBox}" TextWrapping="Wrap"/>
+                                        <TextBlock Style="{StaticResource Hint}"
+                                                   Text="e.g. %LOCALAPPDATA%\GameName\Saved\Config\WinGDK"/>
+                                    </StackPanel>
+                                </Border>
 
-                            <Label Content="Config Path (Microsoft Store / Xbox)" Margin="0,8,0,0"/>
-                            <TextBox x:Name="ConfigPathXboxBox" TextChanged="GameField_Changed"
-                                     TextWrapping="Wrap"/>
-                            <TextBlock Text="e.g. %LOCALAPPDATA%\GameName\Saved\Config\WinGDK"
-                                       Foreground="#555577" FontSize="11" Margin="0,2,0,0"/>
+                                <!-- Engine -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Engine" Style="{StaticResource SectionTitle}"/>
+                                        <TextBox x:Name="EngineBox" TextChanged="GameField_Changed" TextWrapping="Wrap"/>
+                                        <TextBlock Style="{StaticResource Hint}"
+                                                   Text="e.g. Unreal Engine 5, Unity, NW.js, Northlight"/>
+                                    </StackPanel>
+                                </Border>
 
-                            <!-- Engine name -->
-                            <Label Content="Engine" Margin="0,8,0,0"/>
-                            <TextBox x:Name="EngineBox" TextChanged="GameField_Changed"
-                                     TextWrapping="Wrap"/>
-                            <TextBlock Text="e.g. Unreal Engine 5, Unity, NW.js, Northlight"
-                                       Foreground="#555577" FontSize="11" Margin="0,2,0,0"/>
-
-                            <!-- PCGW wiki link -->
-                            <Label Content="PCGW Wiki URL (derived)" Margin="0,12,0,0"/>
-                            <TextBlock x:Name="WikiUrlBlock" Foreground="#8899CC" FontSize="11"
-                                       TextWrapping="Wrap" Margin="0,0,0,4" Cursor="Hand"
-                                       MouseLeftButtonDown="WikiUrl_Click"/>
-
-                            <!-- Apply button -->
-                            <Button Content="Apply Changes" Click="ApplyGame_Click"
-                                    Style="{StaticResource AccentButton}"
-                                    Margin="0,18,0,0" HorizontalAlignment="Left" Padding="16,7"/>
-                            <TextBlock x:Name="GameStatusLabel" Foreground="#55CC77"
-                                       Margin="0,8,0,0" FontSize="11"/>
-                        </StackPanel>
-                    </ScrollViewer>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <Button Content="Apply Changes" Click="ApplyGame_Click"
+                                            Style="{StaticResource AccentButton}" t:Ui.Icon="&#xE73E;"
+                                            Padding="16,6"/>
+                                    <TextBlock x:Name="GameStatusLabel" Foreground="{DynamicResource SuccessText}"
+                                               VerticalAlignment="Center" Margin="14,0,0,0" FontSize="12"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
                 </Grid>
             </TabItem>
 
@@ -293,101 +210,117 @@
             <TabItem Header="Name Mappings">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>  <!-- toolbar row -->
+                        <RowDefinition Height="Auto"/>  <!-- actions -->
                         <RowDefinition Height="*"/>     <!-- list + editor -->
                     </Grid.RowDefinitions>
 
-                    <!-- Mapping toolbar -->
-                    <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
-                            BorderThickness="0,0,0,1" Padding="10,6">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Map detected game name → PCGW page title"
-                                       Foreground="#AAAACC" FontSize="11" VerticalAlignment="Center"
-                                       Margin="0,0,16,0"/>
-                            <Button Content="+ Add Mapping" Click="AddMapping_Click"
-                                    Style="{StaticResource AccentButton}" Padding="10,4"/>
-                            <Button x:Name="DeleteMappingBtn" Content="Delete"
-                                    Style="{StaticResource DangerButton}" Padding="10,4"
-                                    Margin="6,0,0,0" IsEnabled="False" Click="DeleteMapping_Click"/>
-                        </StackPanel>
-                    </Border>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="14,2,14,10">
+                        <Button Content="Add Mapping" Click="AddMapping_Click"
+                                Style="{StaticResource AccentButton}" t:Ui.Icon="&#xE710;"/>
+                        <Button x:Name="DeleteMappingBtn" Content="Delete" Click="DeleteMapping_Click"
+                                Style="{StaticResource DangerButton}" t:Ui.Icon="&#xE74D;"
+                                Margin="8,0,0,0" IsEnabled="False"/>
+                        <TextBlock Text="Map a detected game name to a PCGamingWiki page title."
+                                   Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </StackPanel>
 
-                    <!-- Split: list left, editor right -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="340" MinWidth="200"/>
-                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="6"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Mappings list -->
-                        <ListBox x:Name="MappingList" Grid.Column="0"
+                        <ListBox x:Name="MappingList" Grid.Column="0" Margin="4,0,0,0"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 SelectionChanged="MappingList_Changed"
-                                 BorderThickness="0,0,1,0" BorderBrush="#333355">
+                                 SelectionChanged="MappingList_Changed">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
                                         <TextBlock Text="{Binding DetectedName}" FontWeight="SemiBold"
-                                                   Foreground="#E0E0F0" FontSize="12"/>
-                                        <TextBlock Text="{Binding PcgwPageName}" Foreground="#8899CC"
-                                                   FontSize="11" Margin="0,1,0,0"/>
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <TextBlock Text="&#xE72A;" Style="{StaticResource Glyph}" FontSize="10"
+                                                       Foreground="{DynamicResource TextTertiary}" Margin="0,1,6,0"/>
+                                            <TextBlock Text="{Binding PcgwPageName}" FontSize="12"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                                      Background="#333355" Cursor="SizeWE"/>
+                        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Cursor="SizeWE"/>
 
                         <!-- Mapping editor -->
-                        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
-                                      Padding="20,14,20,14">
-                            <StackPanel x:Name="MappingEditorPanel" IsEnabled="False">
+                        <Border Grid.Column="2" Style="{StaticResource Layer}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24,32,24">
+                                <StackPanel x:Name="MappingEditorPanel" IsEnabled="False" MaxWidth="880">
 
-                                <TextBlock Text="Name Mapping" FontSize="16" FontWeight="Bold"
-                                           Foreground="#8888FF" Margin="0,0,0,16"/>
+                                    <TextBlock Margin="0,0,0,22">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource PageTitle}">
+                                                <Setter Property="Text" Value="{Binding Text, ElementName=DetectedNameBox}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=DetectedNameBox}" Value="">
+                                                        <Setter Property="Text" Value="Name mapping"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextTertiary}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
 
-                                <Label Content="Detected Game Name *"/>
-                                <TextBlock Text="The name RHI detects from the store folder or game library."
-                                           Foreground="#555577" FontSize="11" Margin="0,0,0,4"/>
-                                <TextBox x:Name="DetectedNameBox" TextChanged="MappingField_Changed"/>
+                                    <Border Style="{StaticResource Card}">
+                                        <StackPanel>
+                                            <Label Content="Detected game name *"/>
+                                            <TextBox x:Name="DetectedNameBox" TextChanged="MappingField_Changed"/>
+                                            <TextBlock Style="{StaticResource Hint}"
+                                                       Text="The name RHI detects from the store folder or game library."/>
 
-                                <Label Content="PCGW Page Title *" Margin="0,12,0,0"/>
-                                <TextBlock Text="The exact title of the PCGamingWiki page (not the full URL)."
-                                           Foreground="#555577" FontSize="11" Margin="0,0,0,4"/>
-                                <TextBox x:Name="PcgwPageNameBox" TextChanged="MappingField_Changed"/>
+                                            <Label Content="PCGW page title *" Margin="0,14,0,0"/>
+                                            <TextBox x:Name="PcgwPageNameBox" TextChanged="MappingField_Changed"/>
+                                            <TextBlock Style="{StaticResource Hint}"
+                                                       Text="The exact title of the PCGamingWiki page (not the full URL)."/>
 
-                                <Label Content="Derived URL (auto)" Margin="0,12,0,0"/>
-                                <TextBlock x:Name="MappingUrlBlock" Foreground="#8899CC" FontSize="11"
-                                           TextWrapping="Wrap" Cursor="Hand"
-                                           MouseLeftButtonDown="MappingUrl_Click"/>
+                                            <Label Content="Page URL" Margin="0,14,0,0"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE71B;" Style="{StaticResource Glyph}" FontSize="12"
+                                                           Foreground="{DynamicResource AccentText}" Margin="0,1,6,0"/>
+                                                <TextBlock x:Name="MappingUrlBlock" Style="{StaticResource LinkText}"
+                                                           MouseLeftButtonDown="MappingUrl_Click"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
 
-                                <Button Content="Apply Changes" Click="ApplyMapping_Click"
-                                        Style="{StaticResource AccentButton}"
-                                        Margin="0,18,0,0" HorizontalAlignment="Left" Padding="16,7"/>
-                                <TextBlock x:Name="MappingStatusLabel" Foreground="#55CC77"
-                                           Margin="0,8,0,0" FontSize="11"/>
-                            </StackPanel>
-                        </ScrollViewer>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button Content="Apply Changes" Click="ApplyMapping_Click"
+                                                Style="{StaticResource AccentButton}" t:Ui.Icon="&#xE73E;"
+                                                Padding="16,6"/>
+                                        <TextBlock x:Name="MappingStatusLabel" Foreground="{DynamicResource SuccessText}"
+                                                   VerticalAlignment="Center" Margin="14,0,0,0" FontSize="12"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
                     </Grid>
                 </Grid>
             </TabItem>
         </TabControl>
 
         <!-- ══ Status bar ══ -->
-        <Border Grid.Row="2" Background="#0F0F1E" BorderBrush="#333355"
-                BorderThickness="0,1,0,0" Padding="10,4">
+        <Border Grid.Row="2" Style="{StaticResource StatusBarBorder}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatusBar" Foreground="#8888AA" FontSize="11"
-                           Text="Open a pcgw_data.json file or sync from GitHub to get started."
-                           VerticalAlignment="Center"/>
-                <TextBlock x:Name="SyncStatusLabel" Grid.Column="1" Foreground="#AAAACC"
-                           FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock x:Name="StatusBar" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           Text="Open a pcgw_data.json file or sync from GitHub to get started."/>
+                <TextBlock x:Name="SyncStatusLabel" Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0"/>
             </Grid>
         </Border>
     </Grid>

@@ -13,6 +13,7 @@ public partial class App : System.Windows.Application
                 System.Windows.MessageBoxImage.Error);
             ex.Handled = true;
         };
+        RhiTools.Theme.Ui.ApplyAccent(this);
         base.OnStartup(e);
     }
 }
