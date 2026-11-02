@@ -165,6 +165,9 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ### Bug Fixes
 
+**Unreal Engine config folder**
+- Fixed the Config button missing, and UE-Extended's Engine.ini settings not being written, for Unreal Engine games where PCGamingWiki lists more than one config location (such as Phantom Blade Zero and A Way Out).
+
 **RenoDX**
 - Fixed RenoDX mods hosted on a modder's own site (such as UE-Extended) failing to install when that site can't be reached from your network. RHI now falls back to the same file on the modder's GitHub release.
 

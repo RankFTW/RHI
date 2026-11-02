@@ -944,9 +944,9 @@ public partial class MainViewModel
                     }
                     else
                     {
-                        var chosenPath = isXboxCard
+                        var chosenPath = AuxInstallService.PcgwConfigPathToCandidates(isXboxCard
                             ? pcgwInfo?.ConfigPathXbox
-                            : pcgwInfo?.ConfigPath;
+                            : pcgwInfo?.ConfigPath);
 
                         if (chosenPath != null
                             && (engine == EngineType.Unreal

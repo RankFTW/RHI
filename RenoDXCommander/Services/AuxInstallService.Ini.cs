@@ -1825,6 +1825,48 @@ public partial class AuxInstallService
     // ── AppData / game config root resolution ────────────────────────────────────
 
     /// <summary>
+    /// Turns a PCGamingWiki config path into a '|'-separated list of folders that
+    /// <see cref="ResolveEngineIniDir"/> and <see cref="ResolveGameConfigRoot"/> can use.
+    /// PCGW data can list several locations in one string ("a, b") and include entries that
+    /// can't be resolved (&lt;path-to-game&gt; placeholders, wildcards); those are dropped,
+    /// file names are trimmed to their folder, and when any entry is a Config folder only
+    /// Config folders are kept (Engine.ini must not land in a save or docs folder).
+    /// Returns null when nothing usable is left, so auto-detection takes over.
+    /// </summary>
+    public static string? PcgwConfigPathToCandidates(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+
+        var result = new List<string>();
+        foreach (var part in raw.Split(new[] { "|", ", " }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var p = part.Trim().Replace('/', '\\').TrimEnd('\\', ',').Trim();
+            if (p.Length == 0) continue;
+
+            // A file name (or *.ini wildcard) at the end: keep its folder
+            var last = p[(p.LastIndexOf('\\') + 1)..];
+            if (System.Text.RegularExpressions.Regex.IsMatch(last, @"\.[a-zA-Z0-9*]{2,5}$"))
+            {
+                var idx = p.LastIndexOf('\\');
+                if (idx <= 0) continue;
+                p = p[..idx];
+            }
+
+            if (p.IndexOfAny(new[] { '<', '>', '*', '?', '"' }) >= 0) continue;
+            if (!p.StartsWith('%')) continue; // must be an env-var path (%LOCALAPPDATA%, %USERPROFILE%...)
+
+            if (!result.Contains(p, StringComparer.OrdinalIgnoreCase)) result.Add(p);
+        }
+
+        static bool IsConfigDir(string p) =>
+            p.EndsWith("\\Config", StringComparison.OrdinalIgnoreCase)
+            || p.Contains("\\Config\\", StringComparison.OrdinalIgnoreCase);
+        if (result.Any(IsConfigDir)) result = result.Where(IsConfigDir).ToList();
+
+        return result.Count == 0 ? null : string.Join("|", result);
+    }
+
+    /// <summary>
     /// Resolves the game's AppData / Documents config root folder.
     /// Used to determine whether the AppData button should be shown for a game.
     /// Pre-compute this on a background thread (BuildCards / CacheLoad) and cache

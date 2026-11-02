@@ -959,7 +959,8 @@ public partial class MainViewModel
                     // Xbox: only apply when PCGW has an explicit Microsoft Store path
                     if (!isXboxCard || pcgwInfo?.ConfigPathXbox != null)
                     {
-                        var chosenPath = isXboxCard ? pcgwInfo?.ConfigPathXbox : pcgwInfo?.ConfigPath;
+                        var chosenPath = AuxInstallService.PcgwConfigPathToCandidates(
+                            isXboxCard ? pcgwInfo?.ConfigPathXbox : pcgwInfo?.ConfigPath);
                         if (chosenPath != null)
                             newCard.EngineIniProjectOverride = chosenPath;
                     }
