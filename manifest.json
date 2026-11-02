@@ -1530,6 +1530,12 @@
       "description": "Fixes washed-out HDR screenshots in Discord. Strips the cICP colour chunk from ReShade PNG screenshots so Discord displays them correctly using the embedded ICC profile instead. No configuration needed \u2014 runs silently in the background.",
       "releaseApiUrl": "https://api.github.com/repos/Jahbanny/reshade-screenshot-discord-fix/releases/latest",
       "repositoryUrl": "https://github.com/Jahbanny/reshade-screenshot-discord-fix"
+    },
+    "rest-badassbaboon": {
+      "packageName": "ReshadeEffectShaderToggler (REST) by BadassBaboon",
+      "description": "Updated fork of REST: applies ReShade effects at a chosen point in the frame (for example under the HUD) using groups of game shaders. Adds auto scene colour for DLSS and dynamic resolution games, Vulkan shader hunting, technique routing, HUD suppression and controller shortcuts. Requires ReShade 6.8 or newer. Choose this or the original REST by 4lex4nder, not both.",
+      "releaseApiUrl": "https://api.github.com/repos/BadassBaboon/ReshadeEffectShaderToggler/releases/latest",
+      "repositoryUrl": "https://github.com/BadassBaboon/ReshadeEffectShaderToggler"
     }
   },
   "renodxExtraSettings": [

@@ -214,6 +214,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 ### Manifest Updates
 - Added dgVoodoo2 v2.87.6, now the default version for new installs.
 - Added the Zenteon+ Shaders pack by Zenteon (free on Patreon): screen-space reflections, ZenRT path tracing, TurboGI, two bloom shaders, ZXpose and more. It includes everything in ZenteonFX, so choose one or the other.
+- Added BadassBaboon's updated fork of REST (ReshadeEffectShaderToggler) to the Addon Manager. It adds auto scene colour for DLSS and dynamic resolution games, Vulkan shader hunting, technique routing, HUD suppression and controller shortcuts, and needs ReShade 6.8 or newer. Choose it or the original REST, not both.
 
 ## v2.8.8
 
