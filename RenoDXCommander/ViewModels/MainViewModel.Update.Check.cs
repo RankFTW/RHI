@@ -290,7 +290,7 @@ public partial class MainViewModel
                             OldVersion    = rtxOldVersion,
                             NewVersion    = rtxEncoreSvc.StagedVersion,
                         });
-                        foreach (var c in cards.Where(c => !string.IsNullOrEmpty(c.InstallPath)))
+                        foreach (var c in cards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))) // hidden games are left alone
                         {
                             var installedAs = GetRtxEncoreInstalledAs(c.GameName, c.Source ?? "");
                             if (!string.IsNullOrEmpty(installedAs) && rtxEncoreSvc.IsInstalledIn(c.InstallPath!, installedAs))

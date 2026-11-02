@@ -274,9 +274,20 @@ public class Rtx40MfgService
     /// </summary>
     public bool DeployXessFiles(string installPath)
     {
-        if (string.IsNullOrEmpty(installPath) || !IsXessStagingReady) return false;
-        var dir    = Path.Combine(installPath, XessFolderName);
-        var marker = Path.Combine(dir, XessMarkerFile);
+        if (string.IsNullOrEmpty(installPath)) return false;
+        var dir = Path.Combine(installPath, XessFolderName);
+        return DeployXessFilesTo(dir, Path.Combine(dir, XessMarkerFile));
+    }
+
+    /// <summary>
+    /// Copies the staged XeSS runtime into <paramref name="dir"/>, recording what RHI copied in <paramref name="marker"/>.
+    /// Files RHI didn't copy are kept, unless <paramref name="replaceOtherVersions"/>: then a different version
+    /// (e.g. the game's own older XeSS FG files) is moved to <c>&lt;file&gt;.mfgada-original</c> and replaced.
+    /// An identical copy is always left as it is.
+    /// </summary>
+    private bool DeployXessFilesTo(string dir, string marker, bool replaceOtherVersions = false)
+    {
+        if (!IsXessStagingReady) return false;
         try
         {
             Directory.CreateDirectory(dir);
@@ -284,12 +295,28 @@ public class Rtx40MfgService
             foreach (var file in XessFiles)
             {
                 var dest = Path.Combine(dir, file);
-                if (File.Exists(dest) && !owned.Contains(file))
+                var staged = Path.Combine(XessStagingDir, file);
+                if (File.Exists(dest))
                 {
-                    _crashReporter.Log($"[Rtx40MfgService.DeployXessFiles] Keeping the user's own '{file}' in '{dir}'");
-                    continue;
+                    if (replaceOtherVersions)
+                    {
+                        // Already the right file: nothing to do (and if RHI didn't copy it, it isn't RHI's to remove)
+                        if (SameContent(dest, staged)) continue;
+                        // A different version (the game's own, or put back by a game update): keep it as the backup
+                        var backup = dest + AdaBackupSuffix;
+                        if (!File.Exists(backup)) // never overwrite the first backup: it's the game's original
+                        {
+                            File.Move(dest, backup);
+                            _crashReporter.Log($"[Rtx40MfgService.DeployXessFiles] Backed up '{file}' ({FileVersionOf(backup)}) to '{Path.GetFileName(backup)}'");
+                        }
+                    }
+                    else if (!owned.Contains(file))
+                    {
+                        _crashReporter.Log($"[Rtx40MfgService.DeployXessFiles] Keeping the user's own '{file}' in '{dir}'");
+                        continue;
+                    }
                 }
-                File.Copy(Path.Combine(XessStagingDir, file), dest, overwrite: true);
+                File.Copy(staged, dest, overwrite: true);
                 owned.Add(file);
             }
             File.WriteAllLines(marker, owned);
@@ -326,24 +353,229 @@ public class Rtx40MfgService
 
     private void RemoveXessFiles(string installPath)
     {
-        var dir    = Path.Combine(installPath, XessFolderName);
-        var marker = Path.Combine(dir, XessMarkerFile);
+        var dir = Path.Combine(installPath, XessFolderName);
+        RemoveXessFilesFrom(dir, Path.Combine(dir, XessMarkerFile), onlyIfUnchanged: false, deleteEmptyDir: true);
+    }
+
+    /// <summary>
+    /// Deletes the XeSS files listed in <paramref name="marker"/>. With <paramref name="onlyIfUnchanged"/>,
+    /// a listed file is kept when it no longer matches RHI's staged copy (something else replaced it).
+    /// </summary>
+    private void RemoveXessFilesFrom(string dir, string marker, bool onlyIfUnchanged, bool deleteEmptyDir, bool restoreBackups = false)
+    {
         if (!File.Exists(marker)) return; // RHI didn't create it — leave the user's files alone
         try
         {
             foreach (var file in ReadXessMarker(marker))
             {
                 var p = Path.Combine(dir, file);
-                if (File.Exists(p)) File.Delete(p);
+                var backup = p + AdaBackupSuffix;
+                if (File.Exists(p))
+                {
+                    var staged = Path.Combine(XessStagingDir, file);
+                    if (onlyIfUnchanged && File.Exists(staged) && !SameContent(p, staged))
+                    {
+                        _crashReporter.Log($"[Rtx40MfgService.RemoveXessFiles] Keeping '{p}': it was replaced after RHI copied it");
+                        continue;
+                    }
+                    File.Delete(p);
+                }
+                // Put the game's own copy back
+                if (restoreBackups && File.Exists(backup))
+                {
+                    File.Move(backup, p);
+                    _crashReporter.Log($"[Rtx40MfgService.RemoveXessFiles] Restored the game's own '{file}'");
+                }
             }
             File.Delete(marker);
-            if (!Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir);
+            if (deleteEmptyDir && !Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir);
             _crashReporter.Log($"[Rtx40MfgService.RemoveXessFiles] Removed RHI's XeSS runtime from '{dir}'");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _crashReporter.Log($"[Rtx40MfgService.RemoveXessFiles] Failed for '{dir}' — {ex.Message}");
         }
+    }
+
+    private static bool SameContent(string a, string b)
+    {
+        var fa0 = new FileInfo(a);
+        var fb0 = new FileInfo(b);
+        if (fa0.Length != fb0.Length) return false;
+        // File.Copy keeps the modified time, so an RHI copy matches its staged source without hashing
+        if (fa0.LastWriteTimeUtc == fb0.LastWriteTimeUtc) return true;
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        byte[] ha, hb;
+        using (var fa = File.OpenRead(a)) ha = sha.ComputeHash(fa);
+        using (var fb = File.OpenRead(b)) hb = sha.ComputeHash(fb);
+        return ha.AsSpan().SequenceEqual(hb);
+    }
+
+    // ── XeSS runtime for RTX Encore ─────────────────────────────────────────────
+    // RTX Encore's XeFG engine needs the same two files. Its Hub installs them in a private
+    // rtx-encore-runtimes\intel folder beside the mod, which the mod checks first; RHI uses that folder
+    // too, so the game's own Intel files are never touched. A marker lists what RHI copied.
+
+    /// <summary>Folder (beside the RTX Encore DLL) for its Intel runtimes.</summary>
+    public const string EncoreRuntimeRelDir = @"rtx-encore-runtimes\intel";
+
+    public bool DeployEncoreXessFiles(string modDir)
+    {
+        if (string.IsNullOrEmpty(modDir)) return false;
+        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
+        return DeployXessFilesTo(dir, Path.Combine(dir, XessMarkerFile));
+    }
+
+    /// <summary>Removes RHI's copies (and the folders, when nothing else is left in them).</summary>
+    public void RemoveEncoreXessFiles(string modDir)
+    {
+        if (string.IsNullOrEmpty(modDir)) return;
+        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
+        RemoveXessFilesFrom(dir, Path.Combine(dir, XessMarkerFile), onlyIfUnchanged: false, deleteEmptyDir: true);
+        try
+        {
+            var parent = Path.GetDirectoryName(dir);
+            if (parent != null && Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any())
+                Directory.Delete(parent);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[Rtx40MfgService.RemoveEncoreXessFiles] Couldn't remove the empty runtimes folder — {ex.Message}");
+        }
+    }
+
+    /// <summary>True before RHI has set the folder up, when the files aren't there yet. Never re-creates files removed later.</summary>
+    public static bool NeedsEncoreXessFiles(string modDir)
+    {
+        if (string.IsNullOrEmpty(modDir)) return false;
+        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
+        if (File.Exists(Path.Combine(dir, XessMarkerFile))) return false;
+        return !XessFiles.All(f => File.Exists(Path.Combine(dir, f)));
+    }
+
+    /// <summary>True when both Intel files are in RTX Encore's runtime folder.</summary>
+    public static bool HasEncoreXessFiles(string modDir)
+        => !string.IsNullOrEmpty(modDir) && XessFiles.All(f => File.Exists(Path.Combine(modDir, EncoreRuntimeRelDir, f)));
+
+    // ── XeSS runtime for MFG Ada Unlock ─────────────────────────────────────────
+    // MFG Ada Unlock (a ReShade addon) needs the same two Intel files for its XeMFG mode, directly in
+    // the game's exe folder (its dependency checker looks in "Game folder"). The pinned v3.0.2 files
+    // match the exact hashes the mod accepts. A marker beside them lists what RHI copied.
+
+    /// <summary>Marker in the game folder listing the XeSS files RHI copied for MFG Ada Unlock.</summary>
+    public const string AdaXessMarkerFile = "MFGAdaUnlock.rhi-xess.txt";
+
+    /// <summary>Suffix for the game's own XeSS FG files that RHI replaced for MFG Ada Unlock (restored on removal).</summary>
+    public const string AdaBackupSuffix = ".mfgada-original";
+
+    /// <summary>The versions MFG Ada Unlock accepts (it checks exact hashes; these are the matching file versions).</summary>
+    private static readonly Dictionary<string, string[]> AdaAcceptedVersions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["libxess_fg.dll"] = new[] { "1.3.1.78" },
+        ["libxell.dll"]    = new[] { "1.3.2.10", "1.3.0.5" },
+    };
+
+    /// <summary>
+    /// Copies the XeSS runtime into the game folder for MFG Ada Unlock. The mod only accepts exact versions,
+    /// so a different version already there (often the game's own older XeSS FG files) is backed up as
+    /// <c>&lt;file&gt;.mfgada-original</c> and replaced. Identical copies are left as they are.
+    /// </summary>
+    public bool DeployAdaXessFiles(string installPath)
+        => !string.IsNullOrEmpty(installPath)
+           && DeployXessFilesTo(installPath, Path.Combine(installPath, AdaXessMarkerFile), replaceOtherVersions: true);
+
+    /// <summary>Removes the XeSS files RHI copied for MFG Ada Unlock (only those still unchanged) and restores the game's own.</summary>
+    public void RemoveAdaXessFiles(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath)) return;
+        RemoveXessFilesFrom(installPath, Path.Combine(installPath, AdaXessMarkerFile),
+            onlyIfUnchanged: true, deleteEmptyDir: false, restoreBackups: true);
+    }
+
+    /// <summary>
+    /// True when the game folder needs RHI's XeSS files for MFG Ada Unlock: before RHI has set them up,
+    /// when either is missing or a different version; afterwards, only when one is a different version
+    /// (e.g. a game update put the game's own back). Files the user deleted after RHI copied them aren't re-created.
+    /// Compares with the staged files, so call after <see cref="EnsureXessStagingAsync"/>.
+    /// </summary>
+    private bool NeedsAdaXessFiles(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath) || !IsXessStagingReady) return false;
+        bool hasMarker = File.Exists(Path.Combine(installPath, AdaXessMarkerFile));
+        foreach (var file in XessFiles)
+        {
+            var p = Path.Combine(installPath, file);
+            if (!File.Exists(p)) { if (!hasMarker) return true; continue; }
+            if (!SameContent(p, Path.Combine(XessStagingDir, file))) return true;
+        }
+        return false;
+    }
+
+    public static bool HasAdaXessMarker(string installPath)
+        => !string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, AdaXessMarkerFile));
+
+    public enum AdaXessState { Ready, Missing, WrongVersion }
+
+    /// <summary>
+    /// The XeSS files' state in the game folder for the ⚙ (version check only, no hashing).
+    /// <paramref name="detail"/> lists missing or wrong-version files.
+    /// </summary>
+    public static AdaXessState GetAdaXessState(string installPath, out string detail)
+    {
+        var missing = new List<string>();
+        var wrong = new List<string>();
+        foreach (var file in XessFiles)
+        {
+            var p = string.IsNullOrEmpty(installPath) ? "" : Path.Combine(installPath, file);
+            if (p.Length == 0 || !File.Exists(p)) { missing.Add(file); continue; }
+            var v = FileVersionOf(p);
+            if (!AdaAcceptedVersions[file].Contains(v)) wrong.Add($"{file} {v}");
+        }
+        if (missing.Count > 0) { detail = string.Join(", ", missing); return AdaXessState.Missing; }
+        if (wrong.Count > 0) { detail = string.Join(", ", wrong); return AdaXessState.WrongVersion; }
+        detail = "";
+        return AdaXessState.Ready;
+    }
+
+    private static string FileVersionOf(string path)
+    {
+        try
+        {
+            var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(path);
+            return $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}.{vi.FilePrivatePart}";
+        }
+        catch (FileNotFoundException) { return "unknown"; }
+    }
+
+    /// <summary>
+    /// Launch / 4 h catch-up for MFG Ada Unlock: games with the mod get the right XeSS files (replacing
+    /// other versions, with a backup); games where the mod was removed some other way (e.g. Addon Manager)
+    /// lose RHI's copies and get their own back. Runs in the background (hashing large DLLs).
+    /// </summary>
+    public void ReconcileAdaXessFiles(IEnumerable<(string InstallPath, bool AdaInstalled)> games)
+    {
+        var list = games.Where(g => !string.IsNullOrEmpty(g.InstallPath)).ToList();
+        if (list.Count == 0) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                foreach (var g in list.Where(g => !g.AdaInstalled && HasAdaXessMarker(g.InstallPath)))
+                    RemoveAdaXessFiles(g.InstallPath);
+
+                var withMod = list.Where(g => g.AdaInstalled).Select(g => g.InstallPath)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                if (withMod.Count == 0) return;
+                await EnsureXessStagingAsync().ConfigureAwait(false);
+                foreach (var path in withMod)
+                    if (NeedsAdaXessFiles(path) && DeployAdaXessFiles(path))
+                        _crashReporter.Log($"[Rtx40MfgService.ReconcileAdaXessFiles] Installed XeSS files for MFG Ada Unlock in '{path}'");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HttpRequestException)
+            {
+                _crashReporter.Log($"[Rtx40MfgService.ReconcileAdaXessFiles] Failed — {ex.Message}");
+            }
+        });
     }
 
     public async Task EnsureStagingAsync()

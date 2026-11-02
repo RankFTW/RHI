@@ -465,6 +465,8 @@ public partial class MainViewModel
                     _optiScalerService.MoveOptiPatcherForAllGames(); // one-off fix for nightly / F5 / DLSS NR installs
                     ReconcileMfgPlacementForAllGames();              // mod as OptiScaler plugin where OptiScaler 10 is installed
                     _rtx40MfgService.UpdateInstalledGames(GetRtx40MfgInstalls());
+                    ReconcileMfgAdaXessFiles();
+                    ReconcileRtxEncoreFiles();
                     UpdateDlssg2030Installs();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Cost Scaler/RTX40MFG auto-deploy failed — {ex.Message}"); }

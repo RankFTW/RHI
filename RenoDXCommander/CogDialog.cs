@@ -211,6 +211,87 @@ internal sealed class CogDialog
         IsEnabled = isEnabled,
     };
 
+    // ── Compact two-per-row grid ────────────────────────────────────────────────
+    // For dialogs with many small settings (user preference): label | control | gap | label | control,
+    // with each setting's help as a tooltip on both the label and the control.
+
+    /// <summary>One cell of <see cref="AddCompactGrid"/>.</summary>
+    public sealed record CompactCell(string Label, string? Help, FrameworkElement Control);
+
+    private const double CompactControlWidth = 160;
+
+    /// <summary>
+    /// A dropdown for the compact grid that calls <paramref name="onChanged"/> when the user picks an item
+    /// (never during construction). Returning false, or throwing, reverts the pick; errors show in the status line.
+    /// </summary>
+    public CompactCell CompactCombo(string label, string? help, IList<string> items, int selectedIndex,
+        Func<int, bool> onChanged, bool isEnabled = true)
+    {
+        var combo = MakeCombo(items, selectedIndex, isEnabled);
+        int last = combo.SelectedIndex;
+        bool reverting = false;
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (reverting || combo.SelectedIndex < 0 || combo.SelectedIndex == last) return;
+            bool keep;
+            try { keep = onChanged(combo.SelectedIndex); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[CogDialog] '{_title}' / '{label}' change failed — {ex.Message}");
+                SetError($"Couldn't change {label}: {ex.Message}");
+                keep = false;
+            }
+            if (keep) { last = combo.SelectedIndex; return; }
+            reverting = true;
+            combo.SelectedIndex = last;
+            reverting = false;
+        };
+        return new CompactCell(label, help, combo);
+    }
+
+    /// <summary>Adds settings two per row. A null cell leaves that slot empty.</summary>
+    public Grid AddCompactGrid(params CompactCell?[] cells)
+    {
+        var grid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(CompactControlWidth) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0) }); // with ColumnSpacing: 24 px gap
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(CompactControlWidth) });
+        for (int r = 0; r < (cells.Length + 1) / 2; r++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        for (int i = 0; i < cells.Length; i++)
+        {
+            var cell = cells[i];
+            if (cell == null) continue;
+            int row = i / 2, col = i % 2 == 0 ? 0 : 3;
+            var label = new TextBlock
+            {
+                Text = cell.Label,
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            };
+            var control = cell.Control;
+            control.HorizontalAlignment = HorizontalAlignment.Stretch;
+            control.VerticalAlignment = VerticalAlignment.Center;
+            if (!string.IsNullOrWhiteSpace(cell.Help))
+            {
+                // Disabled controls don't show tooltips, so the label carries it too
+                ToolTipService.SetToolTip(label, cell.Help);
+                ToolTipService.SetToolTip(control, cell.Help);
+            }
+            Grid.SetRow(label, row); Grid.SetColumn(label, col);
+            Grid.SetRow(control, row); Grid.SetColumn(control, col + 1);
+            grid.Children.Add(label);
+            grid.Children.Add(control);
+        }
+        Add(grid);
+        return grid;
+    }
+
     /// <summary>A text box with the shared styling.</summary>
     public static TextBox MakeTextBox(string text = "", string? placeholder = null) => new()
     {

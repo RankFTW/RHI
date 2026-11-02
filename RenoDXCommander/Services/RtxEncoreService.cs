@@ -11,14 +11,15 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Manages the RTX Encore mod — staging, install, uninstall, update detection,
-/// and optional nvngx_dlssnr.dll 310.8.0 deployment.
+/// and optional nvngx_dlssnr.dll 310.9.16 deployment.
 ///
 /// RTX Encore is a single DLL deployed to the game folder under a user-chosen proxy name.
 /// GitHub: SilyNoMeta/rtx-encore — picks the first .zip asset in the latest release
 /// (asset filename varies per release, e.g. RTX-Encore-v1.0.0-beta.2.zip).
 ///
-/// NR DLL: nvngx_dlssnr.dll MUST be exactly version 310.8.0. RTX Encore refuses any other
-/// version. We use the cached NR DLL from DlssStreamlineService staging (%LocalAppData%\RHI\DLSS-NR\).
+/// NR DLL: RTX Encore 1.5.3 accepts nvngx_dlssnr.dll 310.8.0 or 310.9.16; RHI only deploys 310.9.16
+/// (older RHI deployments of 310.8.0 are moved to it when RTX Encore is the file's only owner).
+/// We use the cached NR DLL from DlssStreamlineService staging (%LocalAppData%\RHI\DLSS-NR\).
 /// The file is tracked via RhiInstallManifest SharedFiles so it is only deleted when no other
 /// component still owns it.
 /// </summary>
@@ -30,7 +31,9 @@ public class RtxEncoreService
     public  const string RepoUrl        = "https://github.com/SilyNoMeta/rtx-encore";
     public  const string StagedDllName  = "rtx-encore.dll";
     public  const string NrDllName      = "nvngx_dlssnr.dll";
-    public  const string NrRequiredVer  = "310.8.0";
+    public  const string NrRequiredVer  = "310.9.16";
+    /// <summary>The dlss_manifest.json "dlssnr" entry for <see cref="NrRequiredVer"/>.</summary>
+    public  const string NrManifestVersion = "310.9.16 (20/30/40/50)";
     public  const string ComponentName  = "RtxEncore";
     public  const string NrOwnerName    = "RtxEncore";
 
@@ -102,8 +105,37 @@ public class RtxEncoreService
 
     // ── NR DLL ────────────────────────────────────────────────────────────────
 
+    /// <summary>Folder holding the RTX Encore DLL (game folder, or plugins\ for the .asi), where its settings and runtimes live.</summary>
+    public string ModDir(string installPath, string installedAs)
+        => Path.GetDirectoryName(ResolveInstalledPath(installPath, installedAs)) ?? installPath;
+
+    /// <summary>Path of rtx-encore.jsonc for this install.</summary>
+    public string ConfigPath(string installPath, string installedAs)
+        => Path.Combine(ModDir(installPath, installedAs), RtxEncoreConfig.FileName);
+
+    /// <summary>Returns the cached 310.9.16 nvngx_dlssnr.dll, downloading it first when needed. Null if unavailable.</summary>
+    public async Task<string?> EnsureNrDllCachedAsync(IDlssStreamlineService dlss)
+        => GetNrDllCachedPath() ?? await dlss.EnsureSpecificDlssnrCachedAsync(NrManifestVersion).ConfigureAwait(false);
+
     /// <summary>
-    /// Returns the path to the cached 310.8.0 nvngx_dlssnr.dll from DLSS-NR staging,
+    /// Moves an RHI deployment of an older NR DLL (310.8.x, from earlier RHI versions) to 310.9.16.
+    /// Only when RTX Encore is the file's only owner, so a version chosen elsewhere is never replaced.
+    /// </summary>
+    public bool UpgradeNrDllIfOlder(string installPath)
+    {
+        var dest = Path.Combine(installPath, NrDllName);
+        if (!File.Exists(dest) || GetNrDllCachedPath() == null) return false;
+        var owners = RhiInstallManifest.GetSharedFileOwners(installPath, NrDllName);
+        if (owners.Count != 1 || !owners[0].Equals(NrOwnerName, StringComparison.OrdinalIgnoreCase)) return false;
+        var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(dest);
+        var ver = $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}";
+        if (ver == NrRequiredVer || !ver.StartsWith("310.8.", StringComparison.Ordinal)) return false;
+        _crashReporter.Log($"[RtxEncoreService.UpgradeNrDllIfOlder] '{installPath}': {ver} → {NrRequiredVer}");
+        return DeployNrDll(installPath);
+    }
+
+    /// <summary>
+    /// Returns the path to the cached 310.9.16 nvngx_dlssnr.dll from DLSS-NR staging,
     /// or null if not yet staged.
     /// </summary>
     public string? GetNrDllCachedPath()
@@ -115,7 +147,7 @@ public class RtxEncoreService
         var candidate = Path.Combine(nrBase, NrRequiredVer, NrDllName);
         if (File.Exists(candidate)) return candidate;
 
-        // Fallback: scan all version subfolders for 310.8.0
+        // Fallback: scan all version subfolders for the required version
         foreach (var dir in Directory.GetDirectories(nrBase))
         {
             var dirName = Path.GetFileName(dir);
@@ -129,7 +161,7 @@ public class RtxEncoreService
     }
 
     /// <summary>
-    /// Deploys nvngx_dlssnr.dll 310.8.0 to the game folder using the sentinel pattern
+    /// Deploys nvngx_dlssnr.dll 310.9.16 to the game folder using the sentinel pattern
     /// and registers RtxEncore as a SharedFile owner in rhi_install.txt.
     /// </summary>
     public bool DeployNrDll(string installPath)
@@ -137,7 +169,7 @@ public class RtxEncoreService
         var src = GetNrDllCachedPath();
         if (src == null)
         {
-            _crashReporter.Log("[RtxEncoreService.DeployNrDll] nvngx_dlssnr.dll 310.8.0 not staged — cannot deploy");
+            _crashReporter.Log($"[RtxEncoreService.DeployNrDll] nvngx_dlssnr.dll {NrRequiredVer} not staged — cannot deploy");
             return false;
         }
         var dest = Path.Combine(installPath, NrDllName);
@@ -146,7 +178,7 @@ public class RtxEncoreService
             AuxInstallService.SentinelBackup(dest);
             File.Copy(src, dest, overwrite: true);
             RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
-            _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Deployed {NrDllName} 310.8.0 to '{installPath}'");
+            _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Deployed {NrDllName} {NrRequiredVer} to '{installPath}'");
             return true;
         }
         catch (Exception ex)

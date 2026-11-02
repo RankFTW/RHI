@@ -119,7 +119,21 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
   - The DLL naming overrides heading and labels are no longer dimmer than the rest of the section.
 
 **MFG Ada Unlock**
-- Its tooltip and ⚙ window now cover the mod's new Intel XeMFG mode (2x to 6x on RTX 20 to RTX 50 Series), and explain how to get its XeSS files from the mod's own panel.
+- Its tooltip and ⚙ window now cover the mod's new Intel XeMFG mode (2x to 6x on RTX 20 to RTX 50 Series).
+- The ⚙ window has a Frame generation method setting, so you can choose NVIDIA DLSS-G, Intel XeMFG (CUDA) or XeMFG via DLSS-G (XMX) before starting the game. It's the same setting as in the mod's ReShade panel, saved to the game's `MFGAdaUnlock.ini`. With Intel XeMFG (CUDA) you can also turn on DLSS-SR input (experimental), which lets XeMFG work in games that have DLSS Super Resolution but no DLSS frame generation. There's also an Open MFGAdaUnlock.ini button.
+- Installing MFG Ada Unlock now also installs the two Intel XeSS files its XeMFG modes need (`libxess_fg.dll` and `libxell.dll`) in the game folder, so you no longer need to click "Install / update files" in the mod's panel. Games that already have the mod get them on the next launch. The mod only accepts these exact versions, so if the game ships its own older copies (for example Of Ash and Steel), RHI keeps them as a backup and replaces them. Removing the mod removes RHI's copies and puts the game's own back. The ⚙ window shows whether the right files are there.
+- The ⚙ window warns when a game can't use MFG Ada Unlock: as of the mod's version 1.8.0 it works in DirectX 12 games, experimentally in Vulkan games, and not in DirectX 11 or older games.
+
+**RTX Encore**
+- The ⚙ window now has RTX Encore's frame generation settings that need a game restart, so you can set them before you play:
+  - Frame generation: Engine (Game, DLSS-FG or XeFG), Mode, Multiplier, DLSS FG preset, Flip metering bypass and Frame limit
+  - XeFG engine: NVIDIA Tensor Cores, Variable pacing above 2x, HUD/UI handling and UI alpha
+  - Generated frame quality: High-multiplier quality, Frame protection, Fast frame generation and Protection tuning
+  - Smooth Motion, and the graphics API it needs (filled in from the game's)
+
+  They're saved straight to the game's `rtx-encore.jsonc`, changing only that setting and keeping the file's comments. If the game has no settings file yet, RHI creates one with just your settings and RTX Encore adds the rest the first time the game starts. Everything else stays in RTX Encore's in-game menu (Insert). There's also an Open rtx-encore.jsonc button.
+- Installing RTX Encore now also installs the two Intel XeSS files its XeFG engine needs, in RTX Encore's own `rtx-encore-runtimes\intel` folder, so the game's own Intel files are never touched. Games that already have RTX Encore get them on the next launch. Removing RTX Encore removes them.
+- The Neural Rendering DLL RHI deploys for RTX Encore is now `nvngx_dlssnr.dll` 310.9.16. Games where RHI deployed 310.8.0 for RTX Encore are moved to 310.9.16 on the next launch.
 
 **Quick Start**
 - The Quick Start guide has been rewritten to match the current app. It now covers Neural Rendering, the Extras section, OptiScaler's variants, RTX HDR and Auto HDR, the HDR and RES buttons, and adding a GitHub token. Steps that were out of date have been corrected.
@@ -199,6 +213,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ### Manifest Updates
 - Added dgVoodoo2 v2.87.6, now the default version for new installs.
+- Added the Zenteon+ Shaders pack by Zenteon (free on Patreon): screen-space reflections, ZenRT path tracing, TurboGI, two bloom shaders, ZXpose and more. It includes everything in ZenteonFX, so choose one or the other.
 
 ## v2.8.8
 

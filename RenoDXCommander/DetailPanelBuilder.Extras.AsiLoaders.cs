@@ -414,6 +414,7 @@ public partial class DetailPanelBuilder
             installBtn.IsEnabled = false; installBtn.Content = "Installing...";
             try
             {
+                var oldModDir = string.IsNullOrEmpty(currentDllName) ? null : svc.ModDir(installPath, currentDllName);
                 bool ok = await svc.InstallAsync(installPath, chosen, currentDllName);
                 if (ok)
                 {
@@ -422,16 +423,27 @@ public partial class DetailPanelBuilder
                     // If the user had NR DLL deployment enabled in the cog, deploy it now
                     if (_window.ViewModel.GetRtxEncoreNrDllDeployed(gameName, store))
                     {
-                        // Ensure 310.8.0 is cached — try with (50xx) suffix first (manifest key), then bare version
                         var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
-                        var cachedNr = svc.GetNrDllCachedPath()
-                                    ?? await dlssS.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)").ConfigureAwait(false)
-                                    ?? await dlssS.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer).ConfigureAwait(false);
-                        if (cachedNr != null)
-                            svc.DeployNrDll(installPath);
+                        if (await svc.EnsureNrDllCachedAsync(dlssS) != null)
+                            await Task.Run(() => svc.DeployNrDll(installPath));
                         else
-                            CrashReporter.Log("[RtxEncoreInstall] NR DLL 310.8.0 not available — skipping NR deploy");
+                            CrashReporter.Log($"[RtxEncoreInstall] NR DLL {RtxEncoreService.NrRequiredVer} not available — skipping NR deploy");
                     }
+
+                    // Intel XeSS files for the XeFG engine, in RTX Encore's own runtime folder beside the mod.
+                    // Not fatal: everything else works without them.
+                    installBtn.Content = "Installing XeSS files...";
+                    var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
+                    var newModDir = svc.ModDir(installPath, chosen);
+                    await mfgSvc.EnsureXessStagingAsync();
+                    bool xessOk = await Task.Run(() =>
+                    {
+                        if (oldModDir != null && !string.Equals(oldModDir, newModDir, StringComparison.OrdinalIgnoreCase))
+                            mfgSvc.RemoveEncoreXessFiles(oldModDir); // moved between the game folder and plugins\
+                        return mfgSvc.DeployEncoreXessFiles(newModDir);
+                    });
+                    if (!xessOk)
+                        CrashReporter.Log($"[RtxEncoreInstall] XeSS files not deployed to '{newModDir}' (download failed or folder not writable)");
 
                     RequestExtrasRebuild(card);
                 }
@@ -454,7 +466,10 @@ public partial class DetailPanelBuilder
         removeBtn2.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
+            var modDir = svc.ModDir(installPath, currentDllName); // before the DLL is gone
             svc.Uninstall(installPath, currentDllName, removeNrDll: nrDeployed);
+            var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
+            _ = Task.Run(() => mfgSvc.RemoveEncoreXessFiles(modDir));
             _window.ViewModel.SetRtxEncoreInstalledAs(gameName, null, store);
             if (nrDeployed) _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
             RequestExtrasRebuild(card);
@@ -463,124 +478,6 @@ public partial class DetailPanelBuilder
 
         body.Children.Add(row);
         _window.ViewModel.SetLastUiAction($"BuildRtxEncoreRow:Done({card.GameName})");
-    }
-
-    /// <summary>⚙ dialog for RTX Encore. The NR DLL choice applies as soon as it changes.</summary>
-    private async Task ShowRtxEncoreSettingsAsync(GameCardViewModel card, RtxEncoreService svc,
-        string installPath, bool isInstalled, bool nrDeployed)
-    {
-        var gameName = card.GameName;
-        var store    = card.Source ?? "";
-        var nrCachedPath = svc.GetNrDllCachedPath();
-
-        var cog = new CogDialog("RTX Encore", _window.Content.XamlRoot);
-        cog.AddSection("Neural Rendering (nvngx_dlssnr.dll)");
-        cog.AddIntro("RTX Encore requires nvngx_dlssnr.dll version 310.8.0 exactly. Other versions are refused.");
-
-        bool nrOn = nrDeployed;      // current state, updated as the user changes it
-        bool suppress = false;       // set while reverting the combo in code
-        ComboBox? nrCombo = null;
-
-        void Revert()
-        {
-            if (nrCombo == null) return;
-            suppress = true;
-            nrCombo.SelectedIndex = nrOn ? 1 : 0;
-            suppress = false;
-        }
-
-        async Task ApplyNrAsync(bool enableNr)
-        {
-            if (enableNr == nrOn) return;
-
-            // Always persist the preference, regardless of install state
-            _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, enableNr, store);
-
-            if (!isInstalled)
-            {
-                // Can't deploy to disk yet: the preference is saved and the DLL is deployed at install
-                nrOn = enableNr;
-                cog.SetSuccess(enableNr
-                    ? "Saved. nvngx_dlssnr.dll will be deployed when RTX Encore is installed."
-                    : "Saved.");
-                return;
-            }
-
-            if (enableNr)
-            {
-                if (nrCombo != null) nrCombo.IsEnabled = false;
-                try
-                {
-                    // Ensure 310.8.0 is cached: try with (50xx) suffix first (manifest key), then the bare version
-                    var cachedNrPath = svc.GetNrDllCachedPath();
-                    if (cachedNrPath == null)
-                    {
-                        cog.SetStatus("Downloading nvngx_dlssnr.dll 310.8.0...");
-                        var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
-                        cachedNrPath = await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)")
-                                    ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer);
-                    }
-                    if (cachedNrPath == null)
-                    {
-                        CrashReporter.Log("[RtxEncoreCog] 310.8.0 not available and download failed — NR DLL not deployed");
-                        _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
-                        Revert();
-                        cog.SetError("Couldn't download nvngx_dlssnr.dll 310.8.0. Nothing was deployed.");
-                        return;
-                    }
-                    bool ok = svc.DeployNrDll(installPath);
-                    if (ok)
-                    {
-                        nrOn = true;
-                        cog.SetSuccess("Deployed nvngx_dlssnr.dll 310.8.0 to the game folder.");
-                    }
-                    else
-                    {
-                        _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); // revert if deploy failed
-                        Revert();
-                        cog.SetError("Couldn't copy nvngx_dlssnr.dll into the game folder.");
-                    }
-                    RequestExtrasRebuild(card);
-                }
-                finally
-                {
-                    if (nrCombo != null) nrCombo.IsEnabled = true;
-                }
-            }
-            else
-            {
-                svc.RemoveNrDll(installPath);
-                nrOn = false;
-                cog.SetSuccess("Removed nvngx_dlssnr.dll from the game folder.");
-                RequestExtrasRebuild(card);
-            }
-        }
-
-        nrCombo = cog.AddCombo("Deploy NR DLL",
-            "Copies nvngx_dlssnr.dll 310.8.0 into the game folder alongside RTX Encore for Neural Rendering support. " +
-            "If RTX Encore isn't installed yet, the choice is saved and applied when you install it.",
-            new[] { "No", "Yes" }, nrOn ? 1 : 0, i =>
-            {
-                if (suppress) return true;
-                _ = ApplyNrSafeAsync(i == 1);
-                return true;
-            });
-
-        async Task ApplyNrSafeAsync(bool enableNr)
-        {
-            try { await ApplyNrAsync(enableNr); }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[RtxEncoreCog] NR DLL change failed — {ex.Message}");
-                cog.SetError($"Couldn't change the NR DLL: {ex.Message}");
-            }
-        }
-
-        cog.AddNote(nrCachedPath != null
-            ? $"Source: {nrCachedPath}"
-            : "310.8.0 isn't downloaded yet. It downloads automatically when you pick Yes.");
-
-        await cog.ShowAsync();
     }
 
     private async Task<string?> ShowRtxEncoreDllPickerAsync(GameCardViewModel card, string? currentDllName)

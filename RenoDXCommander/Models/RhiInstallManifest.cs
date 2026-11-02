@@ -277,6 +277,22 @@ public class RhiInstallManifest
         }
     }
 
+    /// <summary>The components that own <paramref name="fileName"/> (empty when untracked).</summary>
+    public static IReadOnlyList<string> GetSharedFileOwners(string gameDir, string fileName)
+    {
+        try
+        {
+            var manifest = Read(gameDir);
+            if (manifest != null && manifest.SharedFiles.TryGetValue(fileName, out var owners))
+                return owners.ToList();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[RhiInstallManifest.GetSharedFileOwners] Failed — {ex.Message}");
+        }
+        return Array.Empty<string>();
+    }
+
     /// <summary>
     /// Removes <paramref name="component"/> from the owner list of <paramref name="fileName"/>.
     /// Returns <c>true</c> if the file now has NO remaining owners and is safe to delete/restore.

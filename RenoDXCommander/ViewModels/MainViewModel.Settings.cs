@@ -774,6 +774,65 @@ public partial class MainViewModel
     }
 
     /// <summary>(InstallPath, InstalledAs) for every game card with RTX 40 MFG installed.</summary>
+    /// <summary>MFG Ada Unlock: give games with the mod Intel's XeSS files, take RHI's copies back where it was removed.</summary>
+    private void ReconcileMfgAdaXessFiles()
+    {
+        var games = _allCards.ToList()
+            .Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)) // hidden games are left alone
+            // Before taking files back, check the disk too, in case the card's flag is out of date
+            .Select(c => (c.InstallPath!, c.MfgAdaInstalled
+                || (Rtx40MfgService.HasAdaXessMarker(c.InstallPath!) && MfgAdaAddonPresent(c.InstallPath!))))
+            .ToList();
+        _rtx40MfgService.ReconcileAdaXessFiles(games);
+    }
+
+    /// <summary>
+    /// RTX Encore catch-up: games that already have it get Intel's XeSS files in its runtime folder once,
+    /// and RHI-deployed NR DLLs older than 310.9.16 are moved to it. Hidden games are left alone.
+    /// </summary>
+    private void ReconcileRtxEncoreFiles()
+    {
+        var svc = App.Services.GetRequiredService<RtxEncoreService>();
+        var games = new List<(string InstallPath, string ModDir, bool NrDeployed)>();
+        foreach (var c in _allCards.ToList())
+        {
+            if (c.IsHidden || string.IsNullOrEmpty(c.InstallPath)) continue;
+            var installedAs = GetRtxEncoreInstalledAs(c.GameName, c.Source ?? "");
+            if (string.IsNullOrEmpty(installedAs) || !svc.IsInstalledIn(c.InstallPath, installedAs)) continue;
+            games.Add((c.InstallPath, svc.ModDir(c.InstallPath, installedAs), GetRtxEncoreNrDllDeployed(c.GameName, c.Source ?? "")));
+        }
+        if (games.Count == 0) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var needXess = games.Where(g => Rtx40MfgService.NeedsEncoreXessFiles(g.ModDir)).ToList();
+                if (needXess.Count > 0)
+                {
+                    await _rtx40MfgService.EnsureXessStagingAsync().ConfigureAwait(false);
+                    foreach (var g in needXess)
+                        if (_rtx40MfgService.DeployEncoreXessFiles(g.ModDir))
+                            _crashReporter.Log($"[MainViewModel.ReconcileRtxEncoreFiles] Added XeSS files for RTX Encore in '{g.ModDir}'");
+                }
+
+                var nrGames = games.Where(g => g.NrDeployed).ToList();
+                if (nrGames.Count > 0 && await svc.EnsureNrDllCachedAsync(_dlssStreamlineService).ConfigureAwait(false) != null)
+                    foreach (var g in nrGames) svc.UpgradeNrDllIfOlder(g.InstallPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HttpRequestException)
+            {
+                _crashReporter.Log($"[MainViewModel.ReconcileRtxEncoreFiles] Failed — {ex.Message}");
+            }
+        });
+    }
+
+    private static bool MfgAdaAddonPresent(string installPath)
+    {
+        const string addon = "renodx-mfgunlock.addon64";
+        return File.Exists(Path.Combine(ModInstallService.GetAddonDeployPath(installPath), addon))
+            || File.Exists(Path.Combine(installPath, addon));
+    }
+
     private List<(string InstallPath, string InstalledAs)> GetRtx40MfgInstalls()
     {
         var installs = new List<(string, string)>();

@@ -1471,6 +1471,13 @@
       "url": "https://github.com/Starodubysko/sd-reshade-shaders/archive/refs/heads/main.zip",
       "description": "Colour grading for SDR and HDR: SD Subtractive Saturation (lowers brightness as colours get more saturated, keeping them dense) and SD Color Density (darkens saturated colours without shifting hues or neutral tones).",
       "category": "Extra"
+    },
+    "ZenteonPlus": {
+      "displayName": "Zenteon+ Shaders by Zenteon",
+      "kind": "DirectUrl",
+      "url": "https://www.patreon.com/file?h=145859259&m=580770455",
+      "description": "Zenteon's full shader set (free on Patreon): screen-space reflections, ZenRT path tracing, TurboGI, RadonBloom and XenonBloom, Nebulus, ZXpose exposure, local contrast, motion blur, film grain and more. Includes everything in ZenteonFX, so choose one or the other, not both.",
+      "category": "Extra"
     }
   },
   "addonPacks": {

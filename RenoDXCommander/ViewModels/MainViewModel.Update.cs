@@ -327,6 +327,8 @@ public partial class MainViewModel
                     if (_rtx40MfgService.HasUpdate)
                         await _rtx40MfgService.EnsureStagingAsync();
                     _rtx40MfgService.UpdateInstalledGames(GetRtx40MfgInstalls());
+                    ReconcileMfgAdaXessFiles();
+                    ReconcileRtxEncoreFiles();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic RTX40MFG check failed — {ex.Message}"); }
 
