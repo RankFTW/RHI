@@ -54,6 +54,7 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - Categories: Essential, Recommended, Extra. Source: `GhRelease` or `DirectUrl`
 - Extraction expects `Shaders/` or `Textures/` subdirs. Fallback: root `.fx`/`.fxh` treated as shaders.
 - Direct `.fx`/`.fxh` file support: copied to `Shaders/{packId}/` directly (no archive open)
+- Pack update cleanup: after a complete extraction, `RemoveFilesNoLongerInPack` deletes files in `Shaders\{packId}` / `Textures\{packId}` that the new version didn't write (renamed/removed shaders). Never before extraction, and never with an empty keep-set. Game folders are already cleaned by the mirror, which deploys only recorded files.
 - Deploy-time dependency expansion: `ExpandDependencies` (BFS) transitively resolves `Requires`
 - Three expansion points: (1) UI picker, (2) deploy-time, (3) `ApplyPresetShadersAsync`
 - `Blending.fxh` cross-pack: `CrosireLegacy` requires `CrosireMaster`

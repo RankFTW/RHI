@@ -65,6 +65,8 @@ const
 
 var
   ForegroundProgress: TOutputProgressWizardPage;
+  RuntimeChecked: Boolean;
+  RuntimeNeeded: Boolean;
 
 function FindNextTopLevelWindow(Parent, AfterWindow: HWND; ClassName, WindowName: Longint): HWND;
   external 'FindWindowExW@user32.dll stdcall';
@@ -184,23 +186,47 @@ var
   KeyPath: String;
   ResultCode: Integer;
 begin
-  // Check registry key written by the bootstrapper installer
-  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
-  if RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath) then
+  // Both [Run] entries call this: check once and reuse the answer
+  if RuntimeChecked then
   begin
+    Result := RuntimeNeeded;
+    Exit;
+  end;
+  RuntimeChecked := True;
+  RuntimeNeeded := False;
+
+  // Fast: the 2.5.1 package folder. WindowsApps can't be listed, but an exact path can be checked.
+  if DirExists(ExpandConstant('{commonpf64}\WindowsApps\Microsoft.WindowsAppRuntime.2_2.5.1.0_x64__8wekyb3d8bbwe')) then
+  begin
+    Log('Windows App Runtime 2.5.1 found (package folder)');
     Result := False;
     Exit;
   end;
-  // Fallback: use PowerShell to check if the MSIX package is already installed
-  // (covers cases where 2.5.1 was installed via Store/MSIX rather than the bootstrapper)
-  Result := True;
+
+  // Registry key some bootstrapper versions write
+  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
+  if RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath) then
+  begin
+    Log('Windows App Runtime 2.5 found (registry)');
+    Result := False;
+    Exit;
+  end;
+
+  // Fallback: ask Windows for any 2.5.x package. -AllUsers because setup runs as admin, which can be
+  // a different account from the one that has the runtime; plain query if -AllUsers isn't allowed.
+  RuntimeNeeded := True;
   if ShellExec('', 'powershell.exe',
-      '-NoProfile -NonInteractive -Command "if (Get-AppxPackage -Name Microsoft.WindowsAppRuntime.2 | Where-Object { $_.Version -like ''2.5*'' }) { exit 0 } else { exit 1 }"',
+      '-NoProfile -NonInteractive -Command "$p = try { Get-AppxPackage -AllUsers -Name Microsoft.WindowsAppRuntime.2 -ErrorAction Stop } catch { Get-AppxPackage -Name Microsoft.WindowsAppRuntime.2 }; if ($p | Where-Object { $_.Version -like ''2.5*'' }) { exit 0 } else { exit 1 }"',
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     if ResultCode = 0 then
-      Result := False;
+      RuntimeNeeded := False;
   end;
+  if RuntimeNeeded then
+    Log('Windows App Runtime 2.5 not found, will install')
+  else
+    Log('Windows App Runtime 2.5 found (Get-AppxPackage)');
+  Result := RuntimeNeeded;
 end;
 
 function IsRhiRunning(): Boolean;

@@ -645,8 +645,8 @@ public sealed partial class MainWindow
         if (sender is not FrameworkElement anchor || anchor.Tag is not GameCardViewModel card)
             return;
 
-        ViewModel.SelectedGame = card;
-
+        // Don't change ViewModel.SelectedGame here: every item below acts on `card` directly,
+        // and changing it left the detail panel showing one game while Launch used another.
         var menu = new MenuFlyout
         {
             Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedRight,

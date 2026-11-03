@@ -34,6 +34,9 @@ public interface IShaderPackService
     /// </summary>
     Task EnsurePacksAsync(IEnumerable<string> packIds, IProgress<string>? progress = null);
 
+    /// <summary>Checks only already-downloaded packs for updates (used when "Download all shaders" is off).</summary>
+    Task EnsureDownloadedPacksAsync(IProgress<string>? progress = null);
+
     /// <summary>
     /// Returns true if the given pack's files are already cached locally
     /// (downloaded and extracted to the staging directory).

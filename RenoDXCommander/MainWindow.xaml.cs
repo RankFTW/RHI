@@ -97,18 +97,19 @@ public sealed partial class MainWindow : Window
         App.Services.GetRequiredService<IOptiScalerService>().SeedUserInis(); // seed OptiScaler INIs if missing
         Title = "RHI";
         // Fire-and-forget: check/download shader packs in the background
-        // When CacheAllShaders is off, skip the bulk download — packs will be fetched on demand.
+        // When CacheAllShaders is off, new packs are fetched on demand, but packs already
+        // downloaded are still checked for updates (otherwise an unused one stays stale forever).
         Task shaderTask;
         if (ViewModel.Settings.CacheAllShaders)
         {
             shaderTask = _shaderPackService.EnsureLatestAsync();
-            shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
         }
         else
         {
-            shaderTask = Task.CompletedTask;
-            crashReporter.Log("[MainWindow] CacheAllShaders=false — skipping bulk shader download");
+            crashReporter.Log("[MainWindow] CacheAllShaders=false — skipping bulk shader download, checking downloaded packs only");
+            shaderTask = _shaderPackService.EnsureDownloadedPacksAsync();
         }
+        shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
         ViewModel.SetShaderPackReadyTask(shaderTask);
         // Fire-and-forget: fetch the addon list early so the Addons UI has it.
         // The update check (CheckAndUpdateAllAsync) is NOT run here: the manifest isn't loaded

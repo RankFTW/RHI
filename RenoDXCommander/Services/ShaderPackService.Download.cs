@@ -58,6 +58,24 @@ public partial class ShaderPackService
     }
 
     /// <summary>
+    /// With "Download all shaders" off: checks only the packs already downloaded, so a pack
+    /// the user fetched once (but no installed game uses right now) still gets updates.
+    /// Packs never downloaded stay on demand.
+    /// </summary>
+    public async Task EnsureDownloadedPacksAsync(IProgress<string>? progress = null)
+    {
+        var downloaded = _packs.Where(p => IsPackCached(p.Id)).ToList();
+        CrashReporter.Log($"[ShaderPackService.EnsureDownloadedPacksAsync] Checking {downloaded.Count} downloaded pack(s) for updates");
+        var tasks = downloaded.Select(pack => Task.Run(async () =>
+        {
+            try { await EnsurePackAsync(pack, progress); }
+            catch (Exception ex)
+            { CrashReporter.Log($"[ShaderPackService.EnsureDownloadedPacksAsync] Unexpected error for '{pack.Id}' — {ex.Message}"); }
+        }));
+        await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
     /// Returns true if the given pack's files are already cached locally.
     /// </summary>
     public bool IsPackCached(string packId)
@@ -215,12 +233,14 @@ public partial class ShaderPackService
                 var destPath = Path.Combine(ShadersDir, pack.Id, Path.GetFileName(cachePath));
                 Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
                 File.Copy(cachePath, destPath, overwrite: true);
+                RemoveFilesNoLongerInPack(pack.Id, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Path.GetFullPath(destPath) });
                 await RecordExtractedFilesAsync(pack.Id, cachePath);
                 CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Copied direct shader file");
             }
             else
             {
-            using var archive = ArchiveFactory.Open(cachePath);
+            var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var archive = ArchiveFactory.Open(cachePath))
             foreach (var entry in archive.Entries)
             {
                 if (entry.IsDirectory) continue;
@@ -287,7 +307,12 @@ public partial class ShaderPackService
                 using var entryStream = entry.OpenEntryStream();
                 using var fileStream = File.Create(destPath);
                 await entryStream.CopyToAsync(fileStream);
+                written.Add(Path.GetFullPath(destPath));
             }
+
+            // The whole archive extracted: drop files an older version had that this one doesn't
+            // (renamed or removed shaders would otherwise linger in staging and the shader picker).
+            RemoveFilesNoLongerInPack(pack.Id, written);
 
             // Copy ReShade framework headers to the staging root so all packs can find them
             foreach (var header in ReShadeHeaders)
@@ -460,6 +485,40 @@ public partial class ShaderPackService
             finally { _settingsLock.Release(); }
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.RecordExtractedFilesAsync] Failed for '{packId}' — {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// Deletes files in the pack's own staging folders (Shaders\{packId}, Textures\{packId})
+    /// that the version just extracted didn't write. Call only after a complete extraction.
+    /// Games aren't affected directly: SyncGameFolder already deploys only recorded files.
+    /// </summary>
+    private static void RemoveFilesNoLongerInPack(string packId, HashSet<string> keepFullPaths)
+    {
+        if (keepFullPaths.Count == 0) return; // nothing extracted: never empty a working pack
+        int removed = 0;
+        foreach (var root in new[] { FileHelper.SafeCombine(ShadersDir, packId), FileHelper.SafeCombine(TexturesDir, packId) })
+        {
+            if (root == null || !Directory.Exists(root)) continue;
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).ToList())
+                {
+                    if (keepFullPaths.Contains(Path.GetFullPath(file))) continue;
+                    try { File.Delete(file); removed++; CrashReporter.Log($"[ShaderPackService.RemoveFilesNoLongerInPack] [{packId}] Removed '{Path.GetRelativePath(root, file)}' (no longer in the pack)"); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { CrashReporter.Log($"[ShaderPackService.RemoveFilesNoLongerInPack] [{packId}] Couldn't remove '{file}' — {ex.Message}"); }
+                }
+                foreach (var dir in Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length).ToList())
+                {
+                    try { if (!Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { CrashReporter.Log($"[ShaderPackService.RemoveFilesNoLongerInPack] [{packId}] Couldn't remove empty folder '{dir}' — {ex.Message}"); }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { CrashReporter.Log($"[ShaderPackService.RemoveFilesNoLongerInPack] [{packId}] Scan of '{root}' failed — {ex.Message}"); }
+        }
+        if (removed > 0) CrashReporter.Log($"[ShaderPackService.RemoveFilesNoLongerInPack] [{packId}] {removed} old file(s) removed");
     }
 
     // ── Source resolution ─────────────────────────────────────────────────────────

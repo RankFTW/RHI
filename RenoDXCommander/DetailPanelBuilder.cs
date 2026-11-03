@@ -313,6 +313,7 @@ public partial class DetailPanelBuilder
 
         // Folder management buttons
         _window.DetailFolderBtn.Tag = card;
+        _window.DetailLaunchBtn.Tag = card; // Launch starts the game shown in the panel
 
         // AppData button — visible only for UE games with a resolvable AppData/Documents config folder
         // GameConfigRootPath is pre-computed on a background thread (BuildCards/CacheLoad) so
