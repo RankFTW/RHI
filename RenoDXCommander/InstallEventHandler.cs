@@ -67,7 +67,7 @@ public class InstallEventHandler
                 if (!await ShowLumaRenodxCombinedWarning(sender)) return;
             }
 
-            await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
+            await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card), sender);
         }
         catch (Exception unhandledEx)
         {
@@ -75,15 +75,56 @@ public class InstallEventHandler
         }
     }
 
-    public async Task EnsurePathAndInstall(GameCardViewModel card, Func<Task> installAction)
+    public async Task EnsurePathAndInstall(GameCardViewModel card, Func<Task> installAction, object? sender = null)
     {
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await _pickFolderAsync(null);
-            if (folder == null) return;
-            card.InstallPath = folder;
-        }
+        if (!await EnsureGameFolderAsync(card, sender)) return;
         await installAction();
+    }
+
+    /// <summary>
+    /// Makes sure the game's folder exists before installing. A game found by a store scan
+    /// whose folder has gone was usually updated or moved (Game Pass makes a new folder on
+    /// every update), so offer a Refresh to find it instead of going straight to a folder picker.
+    /// Returns true when the install can go ahead.
+    /// </summary>
+    private async Task<bool> EnsureGameFolderAsync(GameCardViewModel card, object? sender)
+    {
+        if (!string.IsNullOrEmpty(card.InstallPath) && System.IO.Directory.Exists(card.InstallPath))
+            return true;
+
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;
+        if (!card.IsManuallyAdded && !string.IsNullOrEmpty(card.InstallPath) && xamlRoot != null)
+        {
+            CrashReporter.Log($"[InstallEventHandler.EnsureGameFolderAsync] Folder missing for '{card.GameName}' ({card.Source}): '{card.InstallPath}'");
+            var dialog = new ContentDialog
+            {
+                Title = "Game folder not found",
+                Content = $"{card.GameName} is no longer in the folder RHI last saw. This usually means the game was updated or moved "
+                        + "(Game Pass games get a new folder with every update).\n\n"
+                        + "Refresh the game list to find it, then try again.",
+                PrimaryButtonText = "Refresh",
+                SecondaryButtonText = "Choose folder...",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = xamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result == ContentDialogResult.Primary)
+            {
+                CrashReporter.Log($"[InstallEventHandler.EnsureGameFolderAsync] Refreshing to find '{card.GameName}'");
+                await _window.RefreshWithScrollRestore();
+                _window.ShowStatusBarMessage($"Game list refreshed. Try {card.GameName} again.", TimeSpan.FromSeconds(8));
+                return false;
+            }
+            if (result != ContentDialogResult.Secondary) return false;
+        }
+
+        var folder = await _pickFolderAsync(null);
+        if (folder == null) return false;
+        card.InstallPath = folder;
+        ViewModel.SaveLibraryPublic();
+        return true;
     }
 
     public void UninstallButton_Click(object sender, RoutedEventArgs e)
@@ -98,13 +139,7 @@ public class InstallEventHandler
         {
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await _pickFolderAsync(null);
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
+            if (!await EnsureGameFolderAsync(card, sender)) return;
             await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
         }
         catch (Exception unhandledEx)
@@ -130,13 +165,7 @@ public class InstallEventHandler
         {
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await _pickFolderAsync(null);
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
+            if (!await EnsureGameFolderAsync(card, sender)) return;
             await ViewModel.InstallUlAsync(card);
         }
         catch (Exception unhandledEx)
@@ -157,13 +186,7 @@ public class InstallEventHandler
         {
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await _pickFolderAsync(null);
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
+            if (!await EnsureGameFolderAsync(card, sender)) return;
             await ViewModel.InstallDcAsync(card);
         }
         catch (Exception unhandledEx)
@@ -184,13 +207,7 @@ public class InstallEventHandler
         {
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await _pickFolderAsync(null);
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
+            if (!await EnsureGameFolderAsync(card, sender)) return;
 
             // ── First-time OptiScaler warning ──────────────────────────────
             if (!await ViewModel.CheckInstallWarningAsync(card.GameName, "optiscaler")) return;
@@ -417,13 +434,7 @@ public class InstallEventHandler
         {
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await _pickFolderAsync(null);
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
+            if (!await EnsureGameFolderAsync(card, sender)) return;
             await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
         }
         catch (Exception unhandledEx)

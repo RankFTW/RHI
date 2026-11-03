@@ -10,6 +10,13 @@
 
 If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke RHI at [github.com/settings/applications](https://github.com/settings/applications), and use a token instead. Sign-in is less reliable (sessions can expire without RHI noticing) and will likely be removed in a future update.
 
+## v2.9.0 Beta
+
+### Bug Fixes
+
+**Game Pass and moved games**
+- Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.
+
 ## v2.8.9
 
 ### New

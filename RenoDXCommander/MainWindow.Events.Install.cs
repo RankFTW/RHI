@@ -1191,7 +1191,7 @@ public sealed partial class MainWindow
 
     // ── Scroll restore helpers ────────────────────────────────────────────────────
 
-    private async Task RefreshWithScrollRestore()
+    internal async Task RefreshWithScrollRestore()
     {
         var selectedName = (GameList.SelectedItem as GameCardViewModel)?.GameName;
 

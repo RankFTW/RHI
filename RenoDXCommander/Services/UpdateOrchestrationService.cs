@@ -44,7 +44,20 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
     public IEnumerable<GameCardViewModel> UpdateAllEligible(IReadOnlyList<GameCardViewModel> allCards) =>
         allCards.Where(c => !c.IsHidden
                           && !string.IsNullOrEmpty(c.InstallPath)
-                          && Directory.Exists(c.InstallPath));
+                          && FolderExistsOrLog(c));
+
+    // Paths already reported, so a missing folder is logged once per session, not on every pass.
+    private static readonly HashSet<string> _missingFolderLogged = new(StringComparer.OrdinalIgnoreCase);
+
+    private static bool FolderExistsOrLog(GameCardViewModel card)
+    {
+        if (Directory.Exists(card.InstallPath)) return true;
+        bool firstTime;
+        lock (_missingFolderLogged) firstTime = _missingFolderLogged.Add(card.InstallPath);
+        if (firstTime)
+            CrashReporter.Log($"[UpdateOrchestrationService.UpdateAllEligible] Skipping '{card.GameName}' ({card.Source}): game folder not found, game was probably updated or moved (Refresh finds it) — '{card.InstallPath}'");
+        return false;
+    }
 
     public async Task UpdateAllRenoDxAsync(
         IReadOnlyList<GameCardViewModel> allCards,
