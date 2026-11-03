@@ -160960,7 +160960,8 @@
     "Sword of the Sea": {
       "steam_appid": 2453160,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\",
+      "config_path": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\Config\\Windows",
+      "config_path_xbox": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Sword of the Slayer": {
