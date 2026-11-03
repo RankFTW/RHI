@@ -16,6 +16,7 @@ public partial class SettingsHandler
     {
         (MainLayout.Classic, "Classic"),
         (MainLayout.Tabs, "Tabs"),
+        (MainLayout.Spotlight, "Spotlight"),
     };
 
     private void EnsureLayoutSetting()
@@ -41,7 +42,9 @@ public partial class SettingsHandler
             ToolTipService.SetToolTip(combo,
                 "Classic: every section of the game page in one long page; collapse and drag sections to arrange them.\n" +
                 "Tabs: a redesigned window. A larger game header with a Launch button, an Overview tab with a card for each component and a summary of every section, " +
-                "then one tab per section (they follow your section order), plus a simpler top bar and sidebar. Every setting is in both layouts.");
+                "then one tab per section, plus a simpler top bar and sidebar.\n" +
+                "Spotlight: the game's Steam artwork as a large banner, your games as a row of covers, and tiles that open each section in a side panel. " +
+                "Downloads game artwork from Steam while it's in use.\nEvery setting is in every layout.");
             combo.SelectionChanged += (s, e) =>
             {
                 if (combo.SelectedIndex < 0) return;
@@ -63,7 +66,7 @@ public partial class SettingsHandler
             column.Children.Add(row);
             column.Children.Add(new TextBlock
             {
-                Text = "Classic shows every section in one page. Tabs is a redesigned window with an Overview and one tab per section.",
+                Text = "Classic shows every section in one page. Tabs is a redesigned window with an Overview and one tab per section. Spotlight shows the game's artwork, your games as covers, and opens each section in a side panel.",
                 Style = FindStyle("SettingsHelpStyle"),
                 TextWrapping = TextWrapping.Wrap,
             });

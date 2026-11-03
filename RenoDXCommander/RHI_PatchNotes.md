@@ -20,6 +20,14 @@
 - **Top bar and sidebar:** Available Mods and Shaders & Addons along the top, with when RHI last checked for updates, a refresh button, Update All showing how many games have updates (or All up to date), a Help menu and Settings. The Settings button stays lit while Settings is open; click it again, or the RHI logo, to go back to your games. The sidebar has All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
 - The tabs are always in the same order (Overview, Game Overrides, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Management), and RHI remembers which tab you were on.
 
+**Spotlight layout**
+- A third Layout option in Settings › General › Game page, built around the game you've picked.
+- **Hero banner:** the game's Steam artwork across the top (for any store, when the game is also on Steam), with the same name, tags, path, links, Launch button and HDR / Resolution toggles as Tabs.
+- **Cover shelf:** your games as a row of cover tiles instead of the sidebar list, with the search box, the All / Installed / Favourites / Hidden switch and Filters above it. Scroll it with the mouse wheel; right-click a cover for the usual game menu.
+- **What's installed:** a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter showing what's installed, plus Manage components, which opens the component cards.
+- **Tune this game:** a tile for every section with its summary. Click one and that section slides in from the right, laid out as in Tabs; click outside it or ✕ to close.
+- Artwork is downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once.
+
 ### Changes
 
 **Message of the day**

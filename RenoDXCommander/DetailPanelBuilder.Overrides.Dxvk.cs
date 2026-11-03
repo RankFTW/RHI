@@ -179,7 +179,7 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
         mgmtRow.Children.Add(reportBtn);
 
-        if (Layout.Layout == MainLayout.Tabs)
+        if (Layout.IsTabs)
         {
             // Tabs (mockup A): the same four actions as tiles
             var tiles = new Controls.AutoFitGrid { MinColumnWidth = 220 };

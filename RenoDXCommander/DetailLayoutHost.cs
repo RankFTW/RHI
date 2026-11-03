@@ -9,6 +9,8 @@ public enum MainLayout
 {
     Classic,
     Tabs,
+    /// <summary>Mockup D: artwork hero, cover shelf, tiles that open sections in a slide-in panel. Uses the Tabs look and arrangers.</summary>
+    Spotlight,
 }
 
 /// <summary>
@@ -97,7 +99,7 @@ internal sealed partial class DetailLayoutHost
     internal void RegisterHeader(string key, FrameworkElement header)
     {
         _headers[key] = header;
-        header.Visibility = Layout == MainLayout.Tabs ? Visibility.Collapsed : Visibility.Visible;
+        header.Visibility = IsTabs ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // ── Collapse state ────────────────────────────────────────────────────────
@@ -124,8 +126,8 @@ internal sealed partial class DetailLayoutHost
     {
         var container = GetContainer(key);
         if (container == null) return;
-        container.Visibility = Layout == MainLayout.Tabs && !IsSelectedTab(key)
-            ? Visibility.Collapsed : Visibility.Visible;
+        container.Visibility = IsSpotlight ? (IsInPanel(key) ? Visibility.Visible : Visibility.Collapsed)
+            : IsTabs && !IsSelectedTab(key) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private bool IsSelectedTab(string key) => string.Equals(SelectedTab, key, StringComparison.Ordinal);
@@ -154,9 +156,11 @@ internal sealed partial class DetailLayoutHost
     internal void ApplySectionOrder()
     {
         var panel = SectionsPanel;
-        bool tabs = Layout == MainLayout.Tabs;
+        bool tabs = IsTabs;
+        if (!IsSpotlight) ClosePanel(); // the panel only exists in Spotlight
         EnsureTabStrip(tabs);
-        EnsureOverview(tabs);
+        ApplyHeroMode(IsSpotlight);
+        EnsureOverview(tabs && !IsSpotlight);
         ApplyContainerChrome(tabs);
         SetClassicHeaderVisible(!tabs);
         if (tabs) RefreshHeader();
@@ -271,6 +275,7 @@ internal sealed partial class DetailLayoutHost
     /// <summary>Rebuilds the tab buttons in the saved order and shows only the chosen tab.</summary>
     private void ApplyTabSelection()
     {
+        if (IsSpotlight) { ApplySpotlightSelection(); return; }
         if (_tabRow == null) return;
         var selected = SelectedTab;
         _tabRow.Children.Clear();
@@ -327,6 +332,7 @@ internal sealed partial class DetailLayoutHost
     /// <summary>Shows another section. Only visibility changes; nothing is rebuilt.</summary>
     internal void SelectTab(string key)
     {
+        if (IsSpotlight) { OpenPanel(key); return; }
         if (Layout != MainLayout.Tabs || IsSelectedTab(key)) return;
         if (key != OverviewKey && GetContainer(key) == null) return;
         Settings.DetailSelectedTab = key;

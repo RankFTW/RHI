@@ -16,8 +16,20 @@ namespace RenoDXCommander;
 public sealed partial class MainWindow
 {
     private bool _devScreenshotBusy;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _devScreenshotTimer;
 
     private void CheckDevScreenshotRequest()
+    {
+        try { CheckDevScreenshotRequestCore(); }
+        catch (Exception ex)
+        {
+            // Without this an error left the hook "busy" for the rest of the session
+            _devScreenshotBusy = false;
+            _crashReporter.Log($"[MainWindow.DevScreenshot] Request failed — {ex.GetType().Name}: {ex.Message} | {ex.StackTrace}");
+        }
+    }
+
+    private void CheckDevScreenshotRequestCore()
     {
         if (_devScreenshotBusy || !DevUnlockService.IsUnlocked) return;
         var request = Path.Combine(
@@ -40,6 +52,7 @@ public sealed partial class MainWindow
             .FirstOrDefault(l => l.StartsWith(name + "=", StringComparison.OrdinalIgnoreCase))?[(name.Length + 1)..];
 
         _devScreenshotBusy = true;
+        _crashReporter.Log($"[MainWindow.DevScreenshot] Request: {string.Join(" | ", lines.Skip(1))}");
         int waitMs = 1500;
         if (Opt("layout") is { Length: > 0 } layout
             && Enum.TryParse<MainLayout>(layout, true, out var ml)
@@ -63,12 +76,18 @@ public sealed partial class MainWindow
                 waitMs = 5000;
             }
         }
-        if (Opt("tab") is { Length: > 0 } tab) _detailPanelBuilder.Layout.SelectTab(tab);
+        // tab=none closes the Spotlight panel; in Spotlight any other tab opens it
+        if (Opt("tab") is { Length: > 0 } tab)
+        {
+            if (tab.Equals("none", StringComparison.OrdinalIgnoreCase)) _detailPanelBuilder.Layout.ClosePanel();
+            else _detailPanelBuilder.Layout.SelectTab(tab);
+        }
         if (int.TryParse(Opt("wait"), out var w) && w > 0) waitMs = w;
         bool detail = string.Equals(Opt("target"), "detail", StringComparison.OrdinalIgnoreCase);
 
         // Give layout (and any background section build) a moment before rendering
-        var delay = DispatcherQueue.CreateTimer();
+        // Kept in a field: a timer only held by a local can be garbage-collected before it fires
+        var delay = _devScreenshotTimer = DispatcherQueue.CreateTimer();
         delay.Interval = TimeSpan.FromMilliseconds(waitMs);
         delay.IsRepeating = false;
         delay.Tick += async (t, _) =>
@@ -77,6 +96,7 @@ public sealed partial class MainWindow
             {
                 UIElement target = detail ? DetailPanel : (UIElement)Content;
                 var rtb = new RenderTargetBitmap();
+                _crashReporter.Log("[MainWindow.DevScreenshot] Rendering");
                 await rtb.RenderAsync(target);
                 var pixels = (await rtb.GetPixelsAsync()).ToArray();
                 using var stream = new Windows.Storage.Streams.InMemoryRandomAccessStream();

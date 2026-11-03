@@ -16,7 +16,10 @@ namespace RenoDXCommander;
 
 internal sealed partial class DetailLayoutHost
 {
-    internal bool IsTabs => Layout == MainLayout.Tabs;
+    /// <summary>Tabs or Spotlight: both use the mockup look and the Arrange* section layouts.</summary>
+    internal bool IsTabs => Layout is MainLayout.Tabs or MainLayout.Spotlight;
+
+    internal bool IsSpotlight => Layout == MainLayout.Spotlight;
 
     // ── Section frames ────────────────────────────────────────────────────────
 

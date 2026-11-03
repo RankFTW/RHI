@@ -321,6 +321,8 @@ internal sealed partial class DetailLayoutHost
         bool resShown = w.HeaderResButton.Visibility == Visibility.Visible;
         _hRes.Visibility = resShown ? Visibility.Visible : Visibility.Collapsed;
         Grid.SetColumnSpan(_hHdr, resShown ? 1 : 2);
+
+        if (IsSpotlight) RefreshHeroArt();
     }
 
     /// <summary>Hover colours are read when a button loads, so a toggle that changes look is replaced.</summary>

@@ -100,6 +100,9 @@ Rules for the new layouts:
    (d) What's installed + Tune tiles; (e) slide-in panel with the sections.
    Performance: covers decoded at tile size (`DecodePixelWidth`), loaded as they scroll into view, the shelf is never rebuilt
    on game selection (freeze history).
+   *Built 3 Nov 2026 in one go (user's request), waiting for the user's review.* How it's put together: "Spotlight layout" in
+   `.claude/rules/rhi-ui.md`. Artwork: `Services/SteamArtworkService.cs`; covers whose fixed CDN path 404s come from Steam's
+   `IStoreBrowseService/GetItems` (`include_assets`: `library_capsule`, `library_hero`, `header`, all with hashed paths).
 5. **Setting**: Settings › General › Layout: Classic / Tabs / Spotlight. Persist via `SaveNameMappings()` like other settings.
 
 Ship and test each step on its own.

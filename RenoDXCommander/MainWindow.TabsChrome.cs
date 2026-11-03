@@ -51,8 +51,14 @@ public sealed partial class MainWindow
     private DispatcherQueueTimer? _checkedTimer;
     private bool _chromeRefreshQueued;
 
-    /// <summary>Switches the window chrome between Classic and the Tabs mockup.</summary>
+    /// <summary>Switches the window chrome between Classic, Tabs and Spotlight (which builds on Tabs).</summary>
     internal void ApplyTabsChrome()
+    {
+        ApplyTabsChromeCore();
+        ApplySpotlightChrome();
+    }
+
+    private void ApplyTabsChromeCore()
     {
         bool tabs = _detailPanelBuilder?.Layout.IsTabs == true;
         if (tabs == _tabsChromeOn && (_tabsChromeBuilt || !tabs)) return;

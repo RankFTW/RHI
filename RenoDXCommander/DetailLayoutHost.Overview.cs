@@ -23,6 +23,7 @@ internal sealed partial class DetailLayoutHost
     private AutoFitGrid? _cardsPanel;
     private AutoFitGrid? _glancePanel;
     private TextBlock? _noModNote;
+    private StackPanel? _overviewGlance; // hidden when Overview opens in the Spotlight panel
     private readonly List<OverviewCard> _cards = new();
 
     /// <summary>Adds the Overview panel after the tab strip (Tabs) or removes it (other layouts).</summary>
@@ -83,13 +84,15 @@ internal sealed partial class DetailLayoutHost
 
         _overview.Children.Add(components);
         _overview.Children.Add(glance);
+        _overviewGlance = glance;
 
     }
 
     /// <summary>Copies the Components rows into the Overview cards. Cheap; called after every row update.</summary>
     internal void RefreshOverviewCards()
     {
-        if (_overview == null || Layout != MainLayout.Tabs) return;
+        if (IsSpotlight) RefreshSpotStatus();
+        if (_overview == null || !IsTabs) return;
         foreach (var card in _cards) card.Update();
 
         // "No RenoDX mod available" note, copied from the Components section
@@ -105,14 +108,14 @@ internal sealed partial class DetailLayoutHost
     /// <summary>Copies only install progress and messages (they change many times a second).</summary>
     internal void RefreshOverviewProgress()
     {
-        if (_overview == null || Layout != MainLayout.Tabs) return;
+        if (_overview == null || !IsTabs) return;
         foreach (var card in _cards) card.UpdateProgress();
     }
 
     /// <summary>Refreshes cards and tiles. Called when Overview is shown.</summary>
     internal void RefreshOverview()
     {
-        if (_overview == null || Layout != MainLayout.Tabs) return;
+        if (_overview == null || !IsTabs) return;
         RefreshOverviewCards();
         RefreshGlance();
     }
@@ -120,6 +123,7 @@ internal sealed partial class DetailLayoutHost
     /// <summary>A section's collapsed-header summary changed (some are filled in later, in the background).</summary>
     internal void SummaryChanged()
     {
+        if (IsSpotlight) { RefreshTuneTiles(); return; }
         if (_overview?.Visibility == Visibility.Visible) RefreshGlance();
     }
 
@@ -147,7 +151,7 @@ internal sealed partial class DetailLayoutHost
         }
     }
 
-    private Border MakeGlanceTile(string key)
+    internal Border MakeGlanceTile(string key)
     {
         var summary = new TextBlock
         {
