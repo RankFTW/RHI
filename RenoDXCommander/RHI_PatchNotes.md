@@ -201,6 +201,7 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 - Added the Zenteon+ Shaders pack by Zenteon (free on Patreon): screen-space reflections, ZenRT path tracing, TurboGI, two bloom shaders, ZXpose and more. It includes everything in ZenteonFX, so choose one or the other.
 - Added BadassBaboon's updated fork of REST (ReshadeEffectShaderToggler) to the Addon Manager. It adds auto scene colour for DLSS and dynamic resolution games, Vulkan shader hunting, technique routing, HUD suppression and controller shortcuts, and needs ReShade 6.8 or newer. Choose it or the original REST, not both.
 - Fixed the Unreal Engine version not showing for FINAL FANTASY RESONANCE (5.6) and Kaku Ancient Seal (4.27).
+- Installing RenoDX on Cyberpunk 2077 now warns that the GitHub version is out of date for game version 2.5, and points to the pinned messages in the Cyberpunk channel on the RenoDX Discord.
 
 ## v2.8.8
 
