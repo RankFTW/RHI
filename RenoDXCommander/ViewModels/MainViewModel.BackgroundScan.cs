@@ -820,6 +820,9 @@ public partial class MainViewModel
             }
         }
 
+        // Games removed from RHI stay out of the list (kept aside for Restore)
+        cardsToAdd = WithoutRemovedGames(cardsToAdd);
+
         // Remove stale games (not in fresh set AND not manually added)
         var cardsToRemove = _allCards
             .Where(c => !freshKeys.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey()) && !c.IsManuallyAdded)
@@ -858,9 +861,15 @@ public partial class MainViewModel
             // Refresh the selected game's detail panel so merged data (LumaMod, wiki, etc.) is visible
             SelectedGame?.NotifyAll();
 
+            try { CardsMerged?.Invoke(); }
+            catch (Exception ex) { _crashReporter.Log($"[MergeCards] CardsMerged handler failed — {ex.Message}"); }
+
             return true;
         }, _backgroundLifetime.Token);
     }
+
+    /// <summary>Raised on the UI thread after the background scan has merged fresh data into the cards.</summary>
+    public event Action? CardsMerged;
 
     private static string FormatAge(DateTime utc)
     {

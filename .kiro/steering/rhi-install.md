@@ -206,3 +206,9 @@ Any future per-game toggle fields must also be preserved here.
 
 ## Hidden games
 - **Hidden games are left alone**: every automatic update or bulk "apply to all" loop over `_allCards` / `AllCards` must skip `card.IsHidden` (Update All, AutoUpdateService, DLSS/Streamline auto-update, RTX 40 MFG, 20/30 FG, RTX Encore, NR Cost Scaler, ASI Loader, DLSS Enabler, custom ReShade redeploy, startup shader sync, Streamline redeploy, Settings "apply to all" buttons). Detection and update checks (read-only) still include hidden games. Exception: Vulkan per-game override propagation (shared global layer state). Decided Oct 2026; before that only Update All skipped them.
+
+## Removed games
+- Management › **Remove from RHI** (`RemoveManualGame_Click`): a manually added game is deleted as before; a detected game's `"GameName|Store"` key goes into `GameNameService.RemovedGames` (settings.json `RemovedGames`) and the card leaves `_allCards` (`MainViewModel.RemovedGames.cs`). Optional "also uninstall" checkbox when components are installed.
+- Removed games are filtered out wherever the list is built: after `BuildCards` (Init), before the sort in `LoadCacheAndBuildCardsAsync`, and from `cardsToAdd` in the background merge (`WithoutRemovedGames`). Being out of `_allCards`, every bulk/auto loop skips them with no extra checks. Any new path that builds or adds cards must call `WithoutRemovedGames` too.
+- Filtered cards are kept in `_removedCards` so Restore (Settings › Tools & Maintenance › Troubleshooting › Removed games, `SettingsHandler.RemovedGames.cs`) puts them straight back; if a game wasn't seen this session, Restore triggers a refresh.
+- "Reset install folder" is now its own Management button (detected games only, `ResetInstallFolder_Click`).

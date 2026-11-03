@@ -39,8 +39,45 @@ public sealed partial class MainWindow
         internal required Image Image;
         internal required TextBlock Fallback;
         internal required TextBlock Name;
-        internal required Ellipse Dot;
+        internal required Border Badge;
         internal GameCardViewModel? Card;
+        internal System.ComponentModel.PropertyChangedEventHandler? Watch;
+    }
+
+    // An available update: purple "Update" label on the cover and a purple outline (Tabs uses purple for updates too)
+    private const string UpdateOutline = "#8F74E6";
+
+    private string CoverOutline(ShelfTile t) =>
+        t.Card != null && ReferenceEquals(t.Card, ViewModel.SelectedGame) ? TabsTheme.Accent
+        : t.Card?.UpdateBadgeVisibility == Visibility.Visible ? UpdateOutline
+        : TabsTheme.CardBorder;
+
+    /// <summary>Shows the tile's update state; follows the card, so it changes after an update check or an install.</summary>
+    private void ApplyTileState(ShelfTile t)
+    {
+        bool update = t.Card?.UpdateBadgeVisibility == Visibility.Visible;
+        t.Badge.Visibility = update ? Visibility.Visible : Visibility.Collapsed;
+        t.Cover.BorderBrush = TabsTheme.B(CoverOutline(t));
+        ToolTipService.SetToolTip(t.Root, t.Card == null ? null
+            : update ? $"{t.Card.GameName}: update available" : t.Card.GameName);
+    }
+
+    private void WatchCard(ShelfTile t, GameCardViewModel? card)
+    {
+        if (t.Card != null && t.Watch != null) t.Card.PropertyChanged -= t.Watch;
+        t.Card = card;
+        t.Watch = null;
+        if (card == null) return;
+        t.Watch = (s, e) =>
+        {
+            if (e.PropertyName is not (null or "" or nameof(GameCardViewModel.UpdateBadgeVisibility))) return;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try { if (ReferenceEquals(t.Card, card)) ApplyTileState(t); }
+                catch (Exception ex) { CrashReporter.Log($"[MainWindow.Shelf] Update badge refresh failed — {ex.Message}"); }
+            });
+        };
+        card.PropertyChanged += t.Watch;
     }
 
     /// <summary>Switches the window between the Spotlight strip + shelf and the normal sidebar.</summary>
@@ -146,6 +183,8 @@ public sealed partial class MainWindow
         ScrollViewer.SetHorizontalScrollMode(_shelf, ScrollMode.Enabled);
         ScrollViewer.SetHorizontalScrollBarVisibility(_shelf, ScrollBarVisibility.Auto);
         ScrollViewer.SetVerticalScrollMode(_shelf, ScrollMode.Disabled);
+        // Cached cards have no Steam AppID until the background scan fills it in: try covers again then
+        ViewModel.CardsMerged += RetryMissingCovers;
         ScrollViewer.SetVerticalScrollBarVisibility(_shelf, ScrollBarVisibility.Disabled);
         // The tile draws its own selection ring and hover
         var r = _shelf.Resources;
@@ -212,7 +251,7 @@ public sealed partial class MainWindow
     {
         var selected = ViewModel.SelectedGame;
         foreach (var t in _shelfTiles)
-            t.Cover.BorderBrush = TabsTheme.B(t.Card != null && ReferenceEquals(t.Card, selected) ? TabsTheme.Accent : TabsTheme.CardBorder);
+            t.Cover.BorderBrush = TabsTheme.B(CoverOutline(t));
     }
 
     private void Shelf_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -227,19 +266,17 @@ public sealed partial class MainWindow
         args.Handled = true;
         if (args.InRecycleQueue)
         {
-            tile.Card = null;
+            WatchCard(tile, null);
             tile.Image.Source = null;
             return;
         }
         if (args.Item is not GameCardViewModel card) return;
-        tile.Card = card;
+        WatchCard(tile, card);
         root.Tag = card; // right-click menu (GameRow_RightTapped) reads the card from Tag
         tile.Name.Text = card.GameName;
         tile.Fallback.Text = card.GameName;
-        tile.Dot.Visibility = card.UpdateBadgeVisibility;
         tile.Name.Foreground = TabsTheme.B(card.IsHidden ? TabsTheme.TextMuted : TabsTheme.TextPrimary);
-        tile.Cover.BorderBrush = TabsTheme.B(ReferenceEquals(card, ViewModel.SelectedGame) ? TabsTheme.Accent : TabsTheme.CardBorder);
-        ToolTipService.SetToolTip(root, card.GameName);
+        ApplyTileState(tile);
         tile.Image.Source = null;
         LoadCover(tile, card);
     }
@@ -256,17 +293,29 @@ public sealed partial class MainWindow
             Foreground = TabsTheme.B(TabsTheme.TextMuted),
         };
         var image = new Image { Stretch = Stretch.UniformToFill };
-        var dot = new Ellipse
+        var badge = new Border
         {
-            Width = 10, Height = 10, Margin = new Thickness(0, 8, 8, 0),
-            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
-            Fill = TabsTheme.B("#5ECB7D"), Stroke = TabsTheme.B("#0B0F17"), StrokeThickness = 2,
+            Margin = new Thickness(6),
+            Padding = new Thickness(8, 2, 8, 3),
+            CornerRadius = new CornerRadius(6),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Background = TabsTheme.B("#F02A2050"),
+            BorderBrush = TabsTheme.B(UpdateOutline),
+            BorderThickness = new Thickness(1),
+            Visibility = Visibility.Collapsed,
+            Child = new TextBlock
+            {
+                Text = "Update",
+                FontSize = 11,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = TabsTheme.B("#E4D8FF"),
+            },
         };
-        ToolTipService.SetToolTip(dot, "Update available for an installed component.");
         var art = new Grid();
         art.Children.Add(fallback);
         art.Children.Add(image);
-        art.Children.Add(dot);
+        art.Children.Add(badge);
         var cover = new Border
         {
             Height = CoverHeight,
@@ -291,22 +340,46 @@ public sealed partial class MainWindow
         root.Child = stack;
         root.RightTapped += GameRow_RightTapped;
         root.PointerEntered += (s, e) => { if (!ReferenceEquals(root.Tag, ViewModel.SelectedGame)) cover.BorderBrush = TabsTheme.B("#3A4A66"); };
-        root.PointerExited += (s, e) => cover.BorderBrush = TabsTheme.B(ReferenceEquals(root.Tag, ViewModel.SelectedGame) ? TabsTheme.Accent : TabsTheme.CardBorder);
+        var tile = new ShelfTile { Root = root, Cover = cover, Image = image, Fallback = fallback, Name = name, Badge = badge };
+        root.PointerExited += (s, e) => cover.BorderBrush = TabsTheme.B(CoverOutline(tile));
         TabsTheme.UseHandCursor(root);
-        return new ShelfTile { Root = root, Cover = cover, Image = image, Fallback = fallback, Name = name, Dot = dot };
+        return tile;
     }
 
     private int? ShelfAppId(GameCardViewModel card)
     {
         if (_appIdCache.TryGetValue(card.GameName, out var id)) return id;
         id = DetailPanelBuilder.ResolveCommunityAppId(card, ViewModel.Manifest);
-        _appIdCache[card.GameName] = id;
+        // Only a found ID is kept: during startup the scan, manifest and PCGW data may not be ready yet
+        if (id != null) _appIdCache[card.GameName] = id;
         return id;
+    }
+
+    /// <summary>Loads covers for shown tiles that have none yet (called after the background scan merge).</summary>
+    private void RetryMissingCovers()
+    {
+        try
+        {
+            if (_detailPanelBuilder?.Layout.IsSpotlight != true) return;
+            int n = 0;
+            foreach (var t in _shelfTiles)
+                if (t.Card != null && t.Image.Source == null) { LoadCover(t, t.Card); n++; }
+            if (n > 0) CrashReporter.Log($"[MainWindow.Shelf] Retrying covers for {n} tile(s)");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.Shelf] Cover retry failed — {ex.Message}");
+        }
     }
 
     /// <summary>Shows the game's Steam cover: from memory, from disk, or downloaded in the background.</summary>
     private void LoadCover(ShelfTile tile, GameCardViewModel card)
     {
+        if (SteamArtworkService.TryGetCustom(ArtKey(card), SteamArtworkService.Kind.Cover) is { } custom)
+        {
+            tile.Image.Source = CoverImage(custom);
+            return;
+        }
         if (ShelfAppId(card) is not int appId) return;
         if (SteamArtworkService.TryGetCached(appId, SteamArtworkService.Kind.Cover) is { } cached)
         {
@@ -325,6 +398,15 @@ public sealed partial class MainWindow
         });
     }
 
+    internal static string ArtKey(GameCardViewModel card) => Models.GameKey.FromCard(card.GameName, card.Source).ToKey();
+
+    /// <summary>Shows a game's cover again after its custom art changed.</summary>
+    internal void ReloadCover(GameCardViewModel card)
+    {
+        foreach (var t in _shelfTiles)
+            if (ReferenceEquals(t.Card, card)) { t.Image.Source = null; LoadCover(t, card); }
+    }
+
     private BitmapImage CoverImage(string path)
     {
         if (_coverCache.TryGetValue(path, out var img)) return img;
@@ -332,5 +414,76 @@ public sealed partial class MainWindow
         img = new BitmapImage { DecodePixelWidth = (int)(TileWidth * 2), UriSource = new Uri(path) };
         _coverCache[path] = img;
         return img;
+    }
+
+    // ── Custom artwork (game menu › Artwork) ──────────────────────────────────
+
+    /// <summary>"Artwork" submenu for the game menu: set or reset the cover and the banner.</summary>
+    private MenuFlyoutSubItem BuildArtworkMenu(GameCardViewModel card)
+    {
+        var key = ArtKey(card);
+        var sub = new MenuFlyoutSubItem { Text = "Artwork" };
+        void Add(string text, Action action)
+        {
+            var item = new MenuFlyoutItem { Text = text };
+            item.Click += (s, e) => action();
+            sub.Items.Add(item);
+        }
+        Add("Set custom cover...", () => _ = PickCustomArtAsync(card, SteamArtworkService.Kind.Cover));
+        Add("Set custom banner...", () => _ = PickCustomArtAsync(card, SteamArtworkService.Kind.Hero));
+        bool customCover = SteamArtworkService.TryGetCustom(key, SteamArtworkService.Kind.Cover) != null;
+        bool customHero = SteamArtworkService.TryGetCustom(key, SteamArtworkService.Kind.Hero) != null;
+        if (customCover || customHero) sub.Items.Add(new MenuFlyoutSeparator());
+        if (customCover) Add("Use Steam cover", () => ResetCustomArt(card, SteamArtworkService.Kind.Cover));
+        if (customHero) Add("Use Steam banner", () => ResetCustomArt(card, SteamArtworkService.Kind.Hero));
+        return sub;
+    }
+
+    private async Task PickCustomArtAsync(GameCardViewModel card, SteamArtworkService.Kind kind)
+    {
+        try
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var title = kind == SteamArtworkService.Kind.Cover
+                ? $"Cover for {card.GameName} (tall image, about 2:3)"
+                : $"Banner for {card.GameName} (wide image)";
+            var file = await Task.Run(() =>
+            {
+                var ofn = new NativeInterop.OpenFileName();
+                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                ofn.hwndOwner = hwnd;
+                ofn.filter = "Images (*.jpg;*.jpeg;*.png;*.webp;*.bmp)\0*.jpg;*.jpeg;*.png;*.webp;*.bmp\0All Files (*.*)\0*.*\0";
+                ofn.file = new string(new char[260]);
+                ofn.maxFile = ofn.file.Length;
+                ofn.title = title;
+                ofn.flags = 0x00080000 | 0x00001000; // OFN_EXPLORER | OFN_FILEMUSTEXIST
+                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+            });
+            if (string.IsNullOrEmpty(file)) return;
+
+            var saved = await Task.Run(() => SteamArtworkService.SetCustom(ArtKey(card), kind, file));
+            if (saved == null)
+            {
+                ShowStatusBarMessage($"Couldn't save the image for {card.GameName}", TimeSpan.FromSeconds(8));
+                return;
+            }
+            ShowArtChange(card, kind);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.PickCustomArtAsync] {card.GameName}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private void ResetCustomArt(GameCardViewModel card, SteamArtworkService.Kind kind)
+    {
+        SteamArtworkService.ClearCustom(ArtKey(card), kind);
+        ShowArtChange(card, kind);
+    }
+
+    private void ShowArtChange(GameCardViewModel card, SteamArtworkService.Kind kind)
+    {
+        if (kind == SteamArtworkService.Kind.Cover) ReloadCover(card);
+        else if (ReferenceEquals(ViewModel.SelectedGame, card)) _detailPanelBuilder.Layout.ReloadHeroArt();
     }
 }

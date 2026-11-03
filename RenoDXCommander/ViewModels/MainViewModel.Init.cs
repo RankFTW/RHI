@@ -741,6 +741,7 @@ public partial class MainViewModel
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
             progress?.Report($"Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
+            _allCards = WithoutRemovedGames(_allCards);
             PropagateDispatcherToCards();
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
             GraphicsApiDetector.SaveCache();

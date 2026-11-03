@@ -26,6 +26,9 @@ public interface IGameNameService
     /// <summary>Games marked as favourites.</summary>
     HashSet<string> FavouriteGames { get; }
 
+    /// <summary>Games removed from RHI ("GameName|Store"); left out of the game list until restored.</summary>
+    HashSet<string> RemovedGames { get; }
+
     /// <summary>Games with UE extended mode enabled.</summary>
     HashSet<string> UeExtendedGames { get; }
 

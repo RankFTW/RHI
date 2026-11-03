@@ -2757,7 +2757,7 @@
                                                    Text="Use these if something is badly wrong. Each asks first."/>
                                     </StackPanel>
                                     <controls:WrapPanel HorizontalSpacing="8" VerticalSpacing="8">
-                                        <Button x:Name="FullRefreshBtn" Content="Full refresh"
+                                        <Button x:Name="FullRefreshBtn" x:FieldModifier="internal" Content="Full refresh"
                                                 Click="FullRefreshButton_Click"
                                                 Style="{StaticResource SettingsDangerButtonStyle}" Foreground="{StaticResource AccentRedBrush}"
                                                 ToolTipService.ToolTip="Clears all caches and re-scans everything from disk. Use as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.">

@@ -23,6 +23,8 @@ public class GameNameService : IGameNameService
     private HashSet<string> _wikiExclusions = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _hiddenGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _favouriteGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games removed from RHI ("GameName|Store"); restored from Settings › Troubleshooting.</summary>
+    private HashSet<string> _removedGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _ueExtendedGames = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Games where the user has explicitly opted OUT of UE-Extended (wants standard generic UE addon).</summary>
     private HashSet<string> _ueExtendedOptOutGames = new(StringComparer.OrdinalIgnoreCase);
@@ -168,6 +170,7 @@ public class GameNameService : IGameNameService
     public HashSet<string> WikiExclusions => _wikiExclusions;
     public HashSet<string> HiddenGames => _hiddenGames;
     public HashSet<string> FavouriteGames => _favouriteGames;
+    public HashSet<string> RemovedGames => _removedGames;
     public HashSet<string> UeExtendedGames => _ueExtendedGames;
     /// <summary>Games where the user has explicitly opted out of UE-Extended.</summary>
     public HashSet<string> UeExtendedOptOutGames => _ueExtendedOptOutGames;
@@ -356,6 +359,7 @@ public class GameNameService : IGameNameService
         _rsAsiGames             = new(StringComparer.OrdinalIgnoreCase);
         _hiddenGames            ??= new(StringComparer.OrdinalIgnoreCase);
         _favouriteGames         ??= new(StringComparer.OrdinalIgnoreCase);
+        _removedGames           ??= new(StringComparer.OrdinalIgnoreCase);
 
         var s = SettingsViewModel.LoadSettingsFile(out var loadStatus);
         // If the file exists but couldn't be read, our in-memory state is all defaults.
@@ -644,6 +648,10 @@ public class GameNameService : IGameNameService
             Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new()),
             StringComparer.OrdinalIgnoreCase);
 
+        _removedGames = new HashSet<string>(
+            Load<List<string>>("RemovedGames", _removedGames?.ToList() ?? new()),
+            StringComparer.OrdinalIgnoreCase);
+
         _favouriteGames = new HashSet<string>(
             Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new()),
             StringComparer.OrdinalIgnoreCase);
@@ -892,6 +900,7 @@ public class GameNameService : IGameNameService
                 s["CustomReShadeSelection"] = JsonSerializer.Serialize(_customReShadeSelection);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
+                s["RemovedGames"]        = JsonSerializer.Serialize(_removedGames?.ToList() ?? new List<string>());
                 s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
                 s["AutoHdrGames"]        = JsonSerializer.Serialize(_autoHdrGames?.ToList() ?? new List<string>());
                 if (_autoHdrStrengths.Count > 0)
@@ -1048,6 +1057,7 @@ public class GameNameService : IGameNameService
         // Migrate composite-keyed HashSets (independent per store)
         MigrateCompositeHashSet(_hiddenGames, oldName, newName);
         MigrateCompositeHashSet(_favouriteGames, oldName, newName);
+        MigrateCompositeHashSet(_removedGames, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedReShade, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedRenoDx, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedUl, oldName, newName);

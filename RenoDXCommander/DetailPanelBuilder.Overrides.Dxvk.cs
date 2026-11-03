@@ -19,7 +19,7 @@ public partial class DetailPanelBuilder
     private void BuildManagementSection(GameCardViewModel card, string capturedName, OverridesPanelCtx ctx)
     {
         _window.ViewModel.SetLastUiAction($"BuildManagementSection({card.GameName})");
-        // ── Management section (single row: 4 buttons side by side with separators) ──
+        // ── Management section (single row: 5 buttons side by side with separators) ──
         _window.ManagementPanel.Children.Clear();
 
         // Collapsible header
@@ -78,6 +78,8 @@ public partial class DetailPanelBuilder
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var changeFolderBtn = new Button
         {
@@ -101,9 +103,34 @@ public partial class DetailPanelBuilder
         Grid.SetColumn(sep1, 1);
         mgmtRow.Children.Add(sep1);
 
+        var resetFolderBtn = new Button
+        {
+            Content = "Reset install folder",
+            FontSize = 11,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Tag = card,
+            IsEnabled = !card.IsManuallyAdded,
+        };
+        resetFolderBtn.Click += (s, ev) => _window.ResetInstallFolder_Click(s, ev);
+        ToolTipService.SetToolTip(resetFolderBtn, card.IsManuallyAdded
+            ? "You added this game yourself, so there's no detected folder to go back to. Use Change install folder."
+            : "Go back to the install folder RHI detected, if you changed it.");
+        Grid.SetColumn(resetFolderBtn, 2);
+        mgmtRow.Children.Add(resetFolderBtn);
+
+        var sepReset = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
+        Grid.SetColumn(sepReset, 3);
+        mgmtRow.Children.Add(sepReset);
+
         var removeGameBtn = new Button
         {
-            Content = "Reset / Remove game",
+            Content = "Remove from RHI",
             FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -115,12 +142,14 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
-        ToolTipService.SetToolTip(removeGameBtn, "Reset the install folder to auto-detected, or remove a manually added game entirely.");
-        Grid.SetColumn(removeGameBtn, 2);
+        ToolTipService.SetToolTip(removeGameBtn, card.IsManuallyAdded
+            ? "Remove this game from RHI. You added it yourself, so add it again to get it back."
+            : "Remove this game from RHI for good: it won't come back when RHI scans your games (unlike Hide). Undo in Settings › Tools & Maintenance › Removed games.");
+        Grid.SetColumn(removeGameBtn, 4);
         mgmtRow.Children.Add(removeGameBtn);
 
         var sep2 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
-        Grid.SetColumn(sep2, 3);
+        Grid.SetColumn(sep2, 5);
         mgmtRow.Children.Add(sep2);
 
         var mgmtResetOverridesBtn = new Button
@@ -140,12 +169,12 @@ public partial class DetailPanelBuilder
             // Call reset action directly — automation peer invoke fails on Visibility.Collapsed buttons
             ctx.ResetAction?.Invoke();
         };
-        Grid.SetColumn(mgmtResetOverridesBtn, 4);
+        Grid.SetColumn(mgmtResetOverridesBtn, 6);
         ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, launch settings, update inclusion).");
         mgmtRow.Children.Add(mgmtResetOverridesBtn);
 
         var sep3 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
-        Grid.SetColumn(sep3, 5);
+        Grid.SetColumn(sep3, 7);
         mgmtRow.Children.Add(sep3);
 
         var reportBtn = new Button
@@ -175,7 +204,7 @@ public partial class DetailPanelBuilder
             }
         }
         reportBtn.Click += (s, ev) => CopyReport();
-        Grid.SetColumn(reportBtn, 6);
+        Grid.SetColumn(reportBtn, 8);
         ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
         mgmtRow.Children.Add(reportBtn);
 
@@ -189,7 +218,12 @@ public partial class DetailPanelBuilder
                 (s, ev) => ctx.ResetAction?.Invoke(), TabsTooltip(mgmtResetOverridesBtn)));
             tiles.Children.Add(TabsTheme.MakeTile("Copy Report", "Copy this game’s setup to share for support", false,
                 (s, ev) => CopyReport(), TabsTooltip(reportBtn)));
-            tiles.Children.Add(TabsTheme.MakeTile("Reset / Remove game", "Detect the install folder again, or remove a game you added yourself", true,
+            if (!card.IsManuallyAdded)
+                tiles.Children.Add(TabsTheme.MakeTile("Reset install folder", "Go back to the folder RHI detected", false,
+                    (s, ev) => _window.ResetInstallFolder_Click(resetFolderBtn, ev), TabsTooltip(resetFolderBtn)));
+            tiles.Children.Add(TabsTheme.MakeTile("Remove from RHI", card.IsManuallyAdded
+                    ? "Remove this game you added yourself"
+                    : "Take this game out of RHI for good; undo in Settings", true,
                 (s, ev) => _window.RemoveManualGame_Click(removeGameBtn, ev), TabsTooltip(removeGameBtn)));
             mgmtBody.Children.Add(tiles);
             return;

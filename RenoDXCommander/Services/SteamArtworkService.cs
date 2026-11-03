@@ -32,6 +32,71 @@ internal static class SteamArtworkService
 
     private static string MissPath(int appId, Kind kind) => LocalPath(appId, kind) + ".miss";
 
+    // ── Custom artwork (chosen by the user, per game and store) ──────────────
+    // Saved as artwork\custom\{key}\{hero|cover}-{ticks}.{ext}: a new name per change, so images
+    // already decoded for the old file aren't reused. Custom art wins over Steam art.
+
+    private static string CustomDir(string gameKey)
+    {
+        var safe = new string(gameKey.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
+        if (safe.Length > 60) safe = safe[..60];
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(
+            System.Text.Encoding.UTF8.GetBytes(gameKey.ToLowerInvariant())))[..8];
+        return Path.Combine(Root, "custom", $"{safe}_{hash}");
+    }
+
+    private static string CustomPrefix(Kind kind) => kind == Kind.Hero ? "hero-" : "cover-";
+
+    /// <summary>The user's own image for this game, or null.</summary>
+    internal static string? TryGetCustom(string gameKey, Kind kind)
+    {
+        try
+        {
+            var dir = CustomDir(gameKey);
+            if (!Directory.Exists(dir)) return null;
+            return Directory.EnumerateFiles(dir, CustomPrefix(kind) + "*")
+                .OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
+        }
+        catch (IOException ex) { CrashReporter.Log($"[SteamArtworkService.TryGetCustom] {ex.Message}"); }
+        catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[SteamArtworkService.TryGetCustom] {ex.Message}"); }
+        return null;
+    }
+
+    /// <summary>Copies the chosen image in as this game's custom art. Returns the new path, or null on failure.</summary>
+    internal static string? SetCustom(string gameKey, Kind kind, string sourceFile)
+    {
+        try
+        {
+            var dir = CustomDir(gameKey);
+            Directory.CreateDirectory(dir);
+            var dest = Path.Combine(dir, $"{CustomPrefix(kind)}{DateTime.UtcNow.Ticks}{Path.GetExtension(sourceFile).ToLowerInvariant()}");
+            File.Copy(sourceFile, dest, overwrite: true);
+            File.SetLastWriteTimeUtc(dest, DateTime.UtcNow);
+            DeleteCustom(gameKey, kind, keep: dest);
+            CrashReporter.Log($"[SteamArtworkService.SetCustom] {gameKey} {kind} = {sourceFile}");
+            return dest;
+        }
+        catch (IOException ex) { CrashReporter.Log($"[SteamArtworkService.SetCustom] {gameKey}: {ex.Message}"); }
+        catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[SteamArtworkService.SetCustom] {gameKey}: {ex.Message}"); }
+        return null;
+    }
+
+    /// <summary>Removes the game's custom art, so Steam art (or the plain tile) shows again.</summary>
+    internal static void ClearCustom(string gameKey, Kind kind) => DeleteCustom(gameKey, kind, keep: null);
+
+    private static void DeleteCustom(string gameKey, Kind kind, string? keep)
+    {
+        var dir = CustomDir(gameKey);
+        if (!Directory.Exists(dir)) return;
+        foreach (var f in Directory.EnumerateFiles(dir, CustomPrefix(kind) + "*").ToList())
+        {
+            if (keep != null && string.Equals(f, keep, StringComparison.OrdinalIgnoreCase)) continue;
+            try { File.Delete(f); }
+            catch (IOException ex) { CrashReporter.Log($"[SteamArtworkService.DeleteCustom] {f}: {ex.Message}"); }
+            catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[SteamArtworkService.DeleteCustom] {f}: {ex.Message}"); }
+        }
+    }
+
     /// <summary>The cached file, or null when it isn't downloaded yet. Cheap (file checks only).</summary>
     internal static string? TryGetCached(int appId, Kind kind)
     {

@@ -1069,6 +1069,25 @@ public sealed partial class MainWindow
         }
     }
 
+    /// <summary>Management › Reset install folder: back to the auto-detected folder (detected games only).</summary>
+    internal void ResetInstallFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var card = GetCardFromSender(sender);
+            if (card == null || card.IsManuallyAdded) return;
+            ViewModel.ResetFolderOverride(card);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.ResetInstallFolder_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Management › Remove from RHI. A game you added yourself is deleted from RHI (add it again to undo);
+    /// a detected game goes on the Removed games list in Settings › Tools &amp; Maintenance, where it can be restored.
+    /// </summary>
     internal async void RemoveManualGame_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1076,8 +1095,10 @@ public sealed partial class MainWindow
             var card = GetCardFromSender(sender);
             if (card == null) return;
 
-            if (card.IsManuallyAdded)
             {
+                string undoNote = card.IsManuallyAdded
+                    ? "You added this game yourself. To get it back, add it again."
+                    : "It won't come back when RHI scans your games. To undo, use Settings › Tools & Maintenance › Removed games.";
                 // Build a list of installed components to show in the dialog
                 var installed = new List<string>();
                 if (card.RsRecord != null || card.RsStatus == Models.GameStatus.Installed) installed.Add("ReShade");
@@ -1105,7 +1126,14 @@ public sealed partial class MainWindow
                     });
                     panel.Children.Add(new TextBlock
                     {
-                        Text = $"The following components are installed: {componentList}.",
+                        Text = undoNote,
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        FontSize = 12,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    });
+                    panel.Children.Add(new TextBlock
+                    {
+                        Text = $"Installed: {componentList}. If you don't uninstall them, they stay in the game folder and RHI stops updating them.",
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                         FontSize = 12,
                         Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -1140,7 +1168,7 @@ public sealed partial class MainWindow
                         Title = "Remove Game",
                         Content = new TextBlock
                         {
-                            Text = $"Remove {card.GameName} from RHI?",
+                            Text = $"Remove {card.GameName} from RHI?\n\n{undoNote}",
                             FontSize = 12,
                             TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                         },
@@ -1175,12 +1203,10 @@ public sealed partial class MainWindow
                     }
                 }
 
-                ViewModel.RemoveManualGameCommand.Execute(card);
-            }
-            else
-            {
-                // Auto-detected game — reset folder to original detected path
-                ViewModel.ResetFolderOverride(card);
+                if (card.IsManuallyAdded)
+                    ViewModel.RemoveManualGameCommand.Execute(card);
+                else
+                    ViewModel.RemoveGameFromRhi(card);
             }
         }
         catch (Exception ex)

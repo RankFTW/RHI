@@ -113,6 +113,13 @@ internal sealed partial class DetailLayoutHost
             Background = TabsTheme.B("#10161F"),
             Child = layers,
         };
+        // Right-click: the game menu (with Artwork › Set custom banner)
+        _hero.RightTapped += (s, e) =>
+        {
+            if (_window.ViewModel.SelectedGame is not { } game) return;
+            _hero.Tag = game;
+            _window.CardMoreMenu_Click(_hero, e);
+        };
 
         // What's installed: one tile per component, then "Manage components"
         _statusGrid = new AutoFitGrid { MinColumnWidth = 200, ColumnSpacing = 10, RowSpacing = 10 };
@@ -139,7 +146,8 @@ internal sealed partial class DetailLayoutHost
         ToolTipService.SetToolTip(manage, "Install, update and configure this game's components");
         _statusGrid.Children.Add(manage);
 
-        _tuneGrid = new AutoFitGrid { MinColumnWidth = 180, ColumnSpacing = 10, RowSpacing = 10 };
+        // Six tiles: three per row (two when narrow), so each summary has room
+        _tuneGrid = new AutoFitGrid { MinColumnWidth = 260, MaxColumns = 3, ColumnSpacing = 10, RowSpacing = 10 };
 
         _spotBody = new StackPanel { Spacing = 18 };
         var status = new StackPanel { Spacing = 10 };
@@ -208,6 +216,11 @@ internal sealed partial class DetailLayoutHost
         _heroImage.Source = null;
         if (card == null) return;
 
+        if (SteamArtworkService.TryGetCustom(MainWindow.ArtKey(card), SteamArtworkService.Kind.Hero) is { } custom)
+        {
+            SetHero(custom);
+            return;
+        }
         var appId = DetailPanelBuilder.ResolveCommunityAppId(card, _window.ViewModel.Manifest);
         if (appId is not int id) return;
         if (SteamArtworkService.TryGetCached(id, SteamArtworkService.Kind.Hero) is { } cached)
@@ -225,6 +238,13 @@ internal sealed partial class DetailLayoutHost
                 if (string.Equals(_heroGame, name, StringComparison.OrdinalIgnoreCase)) SetHero(path);
             });
         });
+    }
+
+    /// <summary>Loads the selected game's banner again (after its custom art changed).</summary>
+    internal void ReloadHeroArt()
+    {
+        _heroGame = null;
+        RefreshHeroArt();
     }
 
     private void SetHero(string path)

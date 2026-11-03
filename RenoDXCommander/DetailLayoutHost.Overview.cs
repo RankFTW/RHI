@@ -210,7 +210,10 @@ internal sealed partial class DetailLayoutHost
                 {
                     if (inline is Run r)
                     {
-                        var copy = new Run { Text = r.Text };
+                        // Keep each item ("RR 310.9.16 · F · 75%") on one line: only the separators
+                        // between items ("  ·  ") may break; spaces inside an item become non-breaking
+                        bool separator = r.Text.Trim() == "·";
+                        var copy = new Run { Text = separator ? r.Text : r.Text.Replace(' ', '\u00A0') };
                         // Coloured values go green like the mockup; plain labels stay secondary
                         if (r.Foreground is SolidColorBrush fg && TabsTheme.ToneOf(fg) != TabsTheme.Tone.Grey
                             && !string.IsNullOrWhiteSpace(r.Text) && r.Text.Trim() != "·")

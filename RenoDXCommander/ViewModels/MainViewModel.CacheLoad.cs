@@ -1108,6 +1108,9 @@ public partial class MainViewModel
         // Reconcile default naming for games without overrides
         ReconcileDefaultNaming();
 
+        // Games removed from RHI stay out of the list
+        _allCards = WithoutRemovedGames(_allCards);
+
         // Sort cards by game name
         _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
 

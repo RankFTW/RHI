@@ -192,6 +192,31 @@ public partial class App : Application
             try { File.Delete(minimizedSignalPath); } catch (Exception ex) { CrashReporter.Log($"[App.OnLaunched] Failed to delete start-minimized signal file — {ex.Message}"); }
         }
 
+        // A game to launch handed over by the non-elevated instance (Admin Mode relaunch below):
+        // schtasks /Run can't pass arguments, so a desktop shortcut's --launch arrives this way
+        var pendingLaunchPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "rhi_pending_launch");
+        if (File.Exists(pendingLaunchPath))
+        {
+            try
+            {
+                var lines = File.ReadAllLines(pendingLaunchPath);
+                File.Delete(pendingLaunchPath);
+                // Only a fresh hand-off counts, so a leftover file can't launch a game later
+                if (launchGameArg == null && lines.Length >= 2
+                    && DateTime.TryParse(lines[0], null, System.Globalization.DateTimeStyles.RoundtripKind, out var written)
+                    && DateTime.UtcNow - written.ToUniversalTime() < TimeSpan.FromMinutes(2)
+                    && !string.IsNullOrWhiteSpace(lines[1]))
+                {
+                    launchGameArg = lines[1].Trim();
+                    CrashReporter.Log($"[App.OnLaunched] Launch request handed over from the non-elevated instance: '{launchGameArg}'");
+                }
+            }
+            catch (IOException ex) { CrashReporter.Log($"[App.OnLaunched] Couldn't read the pending launch file — {ex.Message}"); }
+            catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[App.OnLaunched] Couldn't read the pending launch file — {ex.Message}"); }
+        }
+
         CrashReporter.Log($"[App.OnLaunched] Args: [{string.Join(", ", cmdArgs)}], startMinimized={startMinimized}");
         CrashReporter.Log($"[App.OnLaunched] Windows App SDK build target: 2.5.1 | Runtime: {GetWindowsAppRuntimeVersion()}");
         CrashReporter.Log($"[App.OnLaunched] OS: {System.Environment.OSVersion} | Build: {GetWindowsBuildNumber()}");
@@ -251,6 +276,14 @@ public partial class App : Application
                     var signalDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
                     Directory.CreateDirectory(signalDir);
                     File.WriteAllText(Path.Combine(signalDir, "rhi_start_minimized"), "");
+                }
+                // Same for a desktop shortcut / jump list launch: hand the game over to the elevated instance
+                if (launchGameArg != null)
+                {
+                    var signalDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
+                    Directory.CreateDirectory(signalDir);
+                    File.WriteAllLines(Path.Combine(signalDir, "rhi_pending_launch"),
+                        new[] { DateTime.UtcNow.ToString("O"), launchGameArg });
                 }
 
                 var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Run /TN \"RHI Admin Mode\"")

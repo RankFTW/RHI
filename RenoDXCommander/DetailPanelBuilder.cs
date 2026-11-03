@@ -207,8 +207,12 @@ public partial class DetailPanelBuilder
             _window.DetailAuthorBadgePanel.Visibility = Visibility.Collapsed;
         }
 
-        // Install path + installed file
-        _window.DetailInstallPath.Text = card.InstallPath;
+        // Install path + installed file. Steam reports some libraries with a lowercase drive letter
+        // ("c:\steam\..."); show it capitalised like every other path (display only).
+        var shownPath = card.InstallPath ?? "";
+        if (shownPath.Length >= 2 && shownPath[1] == ':' && char.IsLower(shownPath[0]))
+            shownPath = char.ToUpperInvariant(shownPath[0]) + shownPath[1..];
+        _window.DetailInstallPath.Text = shownPath;
 
         // Determine label: RenoDX addon filename + Luma mod name when both are present
         string? fileLabel = null;

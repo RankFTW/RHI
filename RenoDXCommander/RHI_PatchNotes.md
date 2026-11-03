@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.0 Beta
+## v2.9.0 Beta 2
 
 ### New
 
@@ -23,10 +23,16 @@
 **Spotlight layout**
 - A third Layout option in Settings › General › Game page, built around the game you've picked.
 - **Hero banner:** the game's Steam artwork across the top (for any store, when the game is also on Steam), with the same name, tags, path, links, Launch button and HDR / Resolution toggles as Tabs.
-- **Cover shelf:** your games as a row of cover tiles instead of the sidebar list, with the search box, the All / Installed / Favourites / Hidden switch and Filters above it. Scroll it with the mouse wheel; right-click a cover for the usual game menu.
+- **Cover shelf:** your games as a row of cover tiles instead of the sidebar list, with the search box, the All / Installed / Favourites / Hidden switch and Filters above it. Scroll it with the mouse wheel; right-click a cover for the usual game menu. A game with an update shows a purple Update label and outline on its cover.
 - **What's installed:** a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter showing what's installed, plus Manage components, which opens the component cards.
 - **Tune this game:** a tile for every section with its summary. Click one and that section slides in from the right, laid out as in Tabs; click outside it or ✕ to close.
 - Artwork is downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once.
+- **Your own artwork:** right-click a cover or the banner and choose Artwork › Set custom cover or Set custom banner to use any image. Use Steam cover / Use Steam banner puts Steam's back. Handy for games that aren't on Steam.
+
+**Remove a game from RHI**
+- Management has a new Remove from RHI button. Unlike Hide, the game is gone from every list, including Hidden, and doesn't come back when RHI scans your games. You can uninstall its components at the same time.
+- Changed your mind? Settings › Tools & Maintenance › Troubleshooting › Removed games lists every game you've removed, with Restore to put it back.
+- Reset install folder is now its own button next to it.
 
 ### Changes
 
@@ -40,6 +46,10 @@
 
 **Admin Mode**
 - Fixed the hand cursor over links and badges switching back to the normal pointer after a moment when Drop Helper is on.
+- Fixed desktop shortcuts and jump list entries only opening RHI, without starting the game (or switching HDR on), when RHI wasn't already running.
+
+**Game page**
+- Fixed some Steam games showing their install path with a lowercase drive letter (c:\steam\...).
 
 **Game Pass and moved games**
 - Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.

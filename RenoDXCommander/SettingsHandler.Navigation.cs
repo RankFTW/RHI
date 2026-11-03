@@ -293,6 +293,7 @@ public partial class SettingsHandler
         EnsureSettingsPageHooks();
         EnsureNvAppLimitsPanel();
         EnsureLayoutSetting();
+        EnsureRemovedGamesButton();
         EnsureSettingsNavigation();
         StartUpdateCountdown();
         if (wasAlreadyOpen || _settingsScroll == null) return; // keep the current position

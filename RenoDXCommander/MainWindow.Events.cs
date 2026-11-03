@@ -679,6 +679,10 @@ public sealed partial class MainWindow
         hideItem.Click += (s, ev) => ViewModel.ToggleHideGameCommand.Execute(card);
         menu.Items.Add(hideItem);
 
+        // ── Artwork (Spotlight: custom cover and banner) ──
+        if (_detailPanelBuilder.Layout.IsSpotlight)
+            menu.Items.Add(BuildArtworkMenu(card));
+
         menu.Items.Add(new MenuFlyoutSeparator());
 
         // ── Discussion / Instructions (conditional) ──
