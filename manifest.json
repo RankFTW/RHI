@@ -1418,6 +1418,16 @@
         "name": "C",
         "value": 3
       }
+    ],
+    "nr": [
+      {
+        "name": "A",
+        "value": 1
+      },
+      {
+        "name": "B",
+        "value": 2
+      }
     ]
   },
   "_comment_dof_fix": "=== DOF FIX ===\ndofFixForceGames enables DOF Fix for games where UE engine detection fails (64-bit requirement still applies).\ndofFixSkipGames suppresses DOF Fix eligibility for games where it\u0027s known to cause problems.",
