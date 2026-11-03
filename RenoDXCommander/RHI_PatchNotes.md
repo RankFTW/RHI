@@ -1,14 +1,7 @@
-⚠ **GitHub token: please replace yours, or add one if you haven't.**
+**Recommended: add a GitHub token.** Without one, RHI is limited to 60 GitHub requests an hour, so installs and update checks can fail. A token raises that to 5,000.
 
-- **Security:** before v2.8.8, RHI also sent your GitHub token with downloads from other sites (such as ReShade, Nexus Mods and PCGamingWiki), not just GitHub. This was fixed in v2.8.8 and we have no sign it was misused, but to be on the safe side please replace it.
-- **Why have one:** almost everything RHI downloads comes from GitHub. Without a token RHI is limited to **60 GitHub requests per hour**, which runs out quickly; then installs fail, update checks are skipped and components show as unavailable. A token raises the limit to **5,000 per hour**.
-
-**How (about a minute):**
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens). If you already made one for RHI, delete it.
-2. Choose **Generate new token (classic)**, give it any name and expiry, and leave every scope unticked. It doesn't need any permissions.
-3. In RHI open **Settings → Accounts & Data → GitHub token**, paste it into the Token box and click **Save**.
-
-If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke RHI at [github.com/settings/applications](https://github.com/settings/applications), and use a token instead. Sign-in is less reliable (sessions can expire without RHI noticing) and will likely be removed in a future update.
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
+2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
 ## v2.9.0 Beta
 
@@ -24,13 +17,16 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
   - Neural Rendering has a card for each method, with the setup underneath.
   - Extras is grouped into Loaders and upscalers, MFG unlocks and API upgrades, with a description for each component. When something can't be installed, the row says why (for example, DLSS Enabler is already provided by OptiScaler).
   - Management is four large buttons.
-- **Top bar and sidebar:** Library, Available Mods and Shaders & Addons along the top, with when RHI last checked for updates, a refresh button, Update All showing how many games have updates (or All up to date), a Help menu and Settings. The sidebar has All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
+- **Top bar and sidebar:** Available Mods and Shaders & Addons along the top, with when RHI last checked for updates, a refresh button, Update All showing how many games have updates (or All up to date), a Help menu and Settings. The Settings button stays lit while Settings is open; click it again, or the RHI logo, to go back to your games. The sidebar has All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
 - The tabs are always in the same order (Overview, Game Overrides, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Management), and RHI remembers which tab you were on.
 
 ### Changes
 
 **Message of the day**
 - Links in the message can now be clicked.
+
+**GitHub**
+- The Sign in with GitHub option has been removed. A token (Settings → Accounts & Data → GitHub token) is the way to raise the GitHub limit. If you're already signed in, it keeps working until you sign out.
 
 ### Bug Fixes
 

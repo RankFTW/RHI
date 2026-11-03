@@ -66,7 +66,7 @@ public sealed partial class MainWindow
                         // Show one-line notice if the GitHub token was found to be expired/revoked at startup
                         if (App._gitHubTokenExpiredOnStartup)
                         {
-                            ShowStatusBarMessage("⚠ GitHub session expired — go to Settings → Accounts & Data and re-connect to restore the download rate limit",
+                            ShowStatusBarMessage("⚠ GitHub sign-in expired — add a token in Settings → Accounts & Data to restore the download rate limit",
                                 TimeSpan.FromSeconds(15));
                         }
                         // On Refresh (silent=true), the ListView still has its old item selected

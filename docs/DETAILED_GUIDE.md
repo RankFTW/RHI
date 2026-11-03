@@ -67,7 +67,7 @@ Most of what RHI downloads comes from GitHub. Without a token, GitHub allows 60 
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and create a **classic** token. Don't tick any boxes; it needs no permissions.
 2. In RHI, open **Settings → Accounts & Data → GitHub token**, paste the token (it starts with `ghp_` or `github_pat_`) and click **Save**.
 
-RHI checks the token, stores it in `%LOCALAPPDATA%\RHI\github_api.txt` and uses it straight away, including after restarts. **Remove** deletes it. The token is only ever sent to `api.github.com`. There is also a **Sign in with GitHub instead** option, but a token is more reliable, and a saved token takes priority over the sign-in.
+RHI checks the token, stores it in `%LOCALAPPDATA%\RHI\github_api.txt` and uses it straight away, including after restarts. **Remove** deletes it. The token is only ever sent to `api.github.com`.
 
 ### Quick Start
 
@@ -880,7 +880,7 @@ Updates and how RHI behaves on your PC.
 
 ### Accounts & Data
 
-- **GitHub token**: paste a Personal Access Token into **Token** and click **Save** (**Create a token** opens the GitHub page), or use **Sign in with GitHub instead**. **Remove** deletes the saved token. See [Add a GitHub token](#add-a-github-token-recommended).
+- **GitHub token**: paste a Personal Access Token into **Token** and click **Save** (**Create a token** opens the GitHub page). **Remove** deletes the saved token. See [Add a GitHub token](#add-a-github-token-recommended).
 - **Mod data source**: **Source** is **RHI Database** (default) or **RenoDX Wiki**. Changing it refreshes immediately.
 
 ### ReShade & RenoDX

@@ -25,7 +25,7 @@ public sealed partial class MainWindow
     private Border? _xamlTopBar;
     private UIElement? _xamlTopBarContent;
     private Grid? _tabsTopBar;
-    private Border? _navLibrary;
+    private Button? _settingsGear;
     private Border? _navModsNew;
     private TextBlock? _checkedText;
     private Grid? _updateAllHost;
@@ -190,10 +190,14 @@ public sealed partial class MainWindow
         names.Children.Add(new TextBlock { Text = "RHI", FontSize = 16, FontWeight = Microsoft.UI.Text.FontWeights.Bold, CharacterSpacing = 20, Foreground = TabsTheme.B(TabsTheme.TextPrimary) });
         names.Children.Add(new TextBlock { Text = "Simplified PC Gaming", FontSize = 11, Foreground = TabsTheme.B(TabsTheme.TextMuted) });
         brand.Children.Add(names);
+        // The brand takes you back to your games (from Settings)
+        brand.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        brand.Tapped += (s, e) => ViewModel.NavigateToGameView();
+        TabsTheme.UseHandCursor(brand);
 
-        // Nav: Library / Available Mods (New) / Shaders & Addons
+        // Nav: Available Mods (New) / Shaders & Addons. Both open over the game page, so there is
+        // no Library tab: the brand and the Settings gear lead back to the games.
         var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-        _navLibrary = MakeNavItem("Library", null, (s, e) => ViewModel.NavigateToGameView());
         _navModsNew = new Border
         {
             Padding = new Thickness(7, 1, 7, 1), CornerRadius = new CornerRadius(6),
@@ -219,7 +223,6 @@ public sealed partial class MainWindow
             menu.Items.Add(b);
             menu.ShowAt(shaders, new FlyoutShowOptions { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft });
         };
-        nav.Children.Add(_navLibrary);
         nav.Children.Add(mods);
         nav.Children.Add(shaders);
 
@@ -239,8 +242,14 @@ public sealed partial class MainWindow
         help.Click += (s, e) => ShowHelpMenu(help);
 
         var settings = TabsTheme.MakeIconButton(TabsTheme.GlyphSettings, TabsTheme.IconButton, 16);
-        settings.Click += (s, e) => SettingsButton_Click(SettingsBtn, e);
+        // Opens Settings; on Settings it goes back to the games
+        settings.Click += (s, e) =>
+        {
+            if (ViewModel.CurrentPage == AppPage.Settings) ViewModel.NavigateToGameView();
+            else SettingsButton_Click(SettingsBtn, e);
+        };
         ToolTipService.SetToolTip(settings, "Settings");
+        _settingsGear = settings;
 
         var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         right.Children.Add(_checkedText);
@@ -452,7 +461,15 @@ public sealed partial class MainWindow
         if (!_tabsChromeBuilt) return;
         try
         {
-            if (_navLibrary != null) SetNavSelected(_navLibrary, ViewModel.CurrentPage == AppPage.GameView);
+            if (_settingsGear != null)
+            {
+                // Lit while Settings is open (set directly: hover colours are fixed at template load)
+                bool onSettings = ViewModel.CurrentPage == AppPage.Settings;
+                _settingsGear.Background  = TabsTheme.B(onSettings ? "#22304A" : TabsTheme.IconButton.Bg);
+                _settingsGear.BorderBrush = TabsTheme.B(onSettings ? TabsTheme.Accent : TabsTheme.IconButton.Border);
+                _settingsGear.Foreground  = TabsTheme.B(onSettings ? TabsTheme.TextPrimary : TabsTheme.IconButton.Fg);
+                ToolTipService.SetToolTip(_settingsGear, onSettings ? "Back to your games" : "Settings");
+            }
             if (_navModsNew != null) _navModsNew.Visibility = NewModsBtn.Visibility;
 
             if (_checkedText != null)

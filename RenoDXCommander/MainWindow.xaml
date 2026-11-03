@@ -1464,22 +1464,6 @@
                                                        Foreground="{StaticResource TextTertiaryBrush}"
                                                        Text="Not connected (60 req/hr)"/>
 
-                                            <!-- Device code panel — shown during the sign-in flow -->
-                                            <StackPanel x:Name="GitHubDeviceCodePanel" x:FieldModifier="internal"
-                                                        Spacing="6" Visibility="Collapsed">
-                                                <TextBlock Style="{StaticResource SettingsNoteStyle}"
-                                                           Text="Open the link below and enter this code:"/>
-                                                <TextBlock x:Name="GitHubUserCodeText" x:FieldModifier="internal"
-                                                           FontSize="20" FontWeight="Bold"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                                           Text="XXXX-XXXX"
-                                                           CharacterSpacing="200"/>
-                                                <HyperlinkButton x:Name="GitHubVerificationLink" x:FieldModifier="internal"
-                                                                 Content="github.com/login/device"
-                                                                 NavigateUri="https://github.com/login/device"
-                                                                 FontSize="11" Padding="0"/>
-                                            </StackPanel>
-
                                             <!-- Personal Access Token -->
                                             <Grid ColumnSpacing="10">
                                                 <Grid.ColumnDefinitions>
@@ -1516,11 +1500,6 @@
                                                                  BorderBrush="{StaticResource BorderStrongBrush}"
                                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                                  ToolTipService.ToolTip="Opens github.com/settings/tokens. No boxes to tick: generate it and paste it above."/>
-                                                <Button x:Name="GitHubConnectBtn" x:FieldModifier="internal"
-                                                        Content="Sign in with GitHub instead"
-                                                        Click="GitHubConnectBtn_Click"
-                                                        Style="{StaticResource SettingsButtonStyle}" Foreground="{StaticResource SettingsLabelBrush}"
-                                                        ToolTipService.ToolTip="Sign in with your GitHub account in the browser instead of pasting a token."/>
                                                 <Button x:Name="GitHubPatClearBtn" x:FieldModifier="internal"
                                                         Content="Remove"
                                                         Click="GitHubPatClearBtn_Click"

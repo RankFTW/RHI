@@ -79,11 +79,27 @@ Rules for the new layouts:
    - Header: title + favourite star, quiet tags (store, engine, API, bitness, mod author), path with Open folder / Config folder,
      links row (Nexus, PCGW, UW fix), large Launch split button (dropdown: exe, arguments, desktop shortcut),
      HDR / RES as labelled toggles ("HDR on launch", "Resolution switch").
-3. **Top bar** (if decision 1 = everywhere): Library / Available Mods (New tag) / Shaders & Addons as navigation; Refresh as an icon next to
+3. **Top bar** (if decision 1 = everywhere): Available Mods (New tag) / Shaders & Addons as navigation (no Library tab: both open over the game page, so it stayed lit behind them; removed 3 Nov at the user's request. The brand and the Settings gear, lit while Settings is open, lead back to the games); Refresh as an icon next to
    "Checked Xm ago"; Update All as the one prominent button ("All up to date" when nothing to do, purple with a count otherwise);
    Quick Start, Links, Help, Donate, Patch Notes, MOTD in one Help menu; Settings as an icon.
    Sidebar: All / Installed / Favourites / Hidden as one segmented control, engine/API/store chips behind a Filters button.
-4. **Spotlight (D).** Needs game artwork (below). Optional cover-tile row; "Tune this game" tiles open the same section panels.
+4. **Spotlight (D).** Needs game artwork (below). Mockup: `docs/mockups/layouts-2.9.0/Spotlight.dc.html`.
+   Decisions (3 Nov 2026):
+   - **Shelf = every game** as cover tiles (replaces the sidebar list), with the All / Installed / Favourites / Hidden switch
+     and the Filters chips; the search box filters it too.
+   - **Top bar = the Tabs top bar** (decision 1), not the mockup's pill bar.
+   - **Tune tiles open a slide-in panel** from the right, over the page (close to return). The panel holds the section
+     arranged as in Tabs (same `Arrange*` code, same shared builders).
+   - **Hero holds everything the Tabs header has**: name, favourite star, Hide, tags, path + Open folder / Config folder,
+     links, Launch split button (renamed Play in the mockup), HDR on launch, Resolution switch. Steam hero artwork behind it
+     with a dark fade for legibility; plain dark banner for games not on Steam.
+   - **What's installed**: status tiles (dot + name + version) copied from the hidden Components rows like the Overview cards;
+     "Manage components" opens the Overview cards in the slide-in panel.
+   - **Tune this game**: the At a glance tiles (live summaries), one per section.
+   Build steps (user tests each): (a) artwork service; (b) Layout option + hero; (c) shelf replacing the sidebar;
+   (d) What's installed + Tune tiles; (e) slide-in panel with the sections.
+   Performance: covers decoded at tile size (`DecodePixelWidth`), loaded as they scroll into view, the shelf is never rebuilt
+   on game selection (freeze history).
 5. **Setting**: Settings › General › Layout: Classic / Tabs / Spotlight. Persist via `SaveNameMappings()` like other settings.
 
 Ship and test each step on its own.
