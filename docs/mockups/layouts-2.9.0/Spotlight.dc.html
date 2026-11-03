@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RHI: game spotlight</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#8DB8FF;text-decoration:none}a:hover{color:#B7D2FF;text-decoration:underline}
+button,select,input{font-family:inherit}
+.rhi-btn:hover{background:#1E2738}
+.rhi-tile:hover{border-color:#3A4A66}
+</style>
+</helmet>
+<div style="min-height: 1000px; display: flex; flex-direction: column; background: #0B0F17; color: #E6EAF2; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 10px 24px; border-bottom: 1px solid #1F2737; background: #0E131D">
+  <div style="display: flex; align-items: center; gap: 10px">
+    <div aria-hidden="true" style="width: 28px; height: 28px; border-radius: 7px; background: #16203A; border: 1px solid #2B3A63; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z"></path></svg>
+    </div>
+    <span style="font-weight: 700; font-size: 15px">RHI</span>
+  </div>
+  <label for="sp-search" style="flex: 1 1 280px; max-width: 420px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #263042; background: #121824; color: #8D97AA">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+    <input id="sp-search" type="text" placeholder="Find a game" style="flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: #E6EAF2; font-size: 13px">
+  </label>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto">
+    <button class="rhi-btn" style="height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; cursor: pointer">Available Mods</button>
+    <button class="rhi-btn" style="height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; cursor: pointer">Shaders</button>
+    <button disabled="disabled" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #263042; background: #121824; color: #8D97AA; font-weight: 600">All up to date</button>
+    <button class="rhi-btn" aria-label="Settings" style="width: 36px; height: 36px; border-radius: 999px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>
+    </button>
+  </div>
+</header>
+
+<section aria-label="Favourites" style="padding: 16px 24px 0; display: flex; flex-direction: column; gap: 10px">
+  <div style="display: flex; align-items: center; gap: 10px">
+    <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #8D97AA; text-transform: uppercase; letter-spacing: 0.08em">Favourites</h2>
+    <span style="font-size: 12px; color: #8D97AA">11 games</span>
+  </div>
+  <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px">
+    <sc-for list="{{shelf}}" as="t" hint-placeholder-count="11">
+      <button class="rhi-tile" onClick="{{t.pick}}" aria-current="{{t.current}}" style="{{t.style}}">
+        <span aria-hidden="true" style="flex: 1 1 auto; width: 100%; border-radius: 6px; background: #161D2B; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #8D97AA">[cover art]</span>
+        <span style="font-size: 12px; font-weight: 600; text-align: left; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.name}}</span>
+      </button>
+    </sc-for>
+  </div>
+</section>
+
+<main style="flex: 1 1 auto; padding: 16px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+  <section aria-label="{{g.name}}" style="position: relative; min-height: 300px; border-radius: 16px; border: 1px dashed #2E3A50; background: #10161F; display: flex; flex-direction: column; justify-content: flex-end; padding: 28px; box-sizing: border-box">
+    <span aria-hidden="true" style="position: absolute; top: 14px; right: 18px; font-size: 12px; color: #8D97AA">[Steam hero artwork for {{g.name}}]</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+      <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1 1 380px">
+        <h1 style="margin: 0; font-size: 44px; line-height: 1.05; font-weight: 800">{{g.name}}</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span style="padding: 4px 12px; border-radius: 999px; background: #0B0F17; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">{{g.store}}</span>
+          <span style="padding: 4px 12px; border-radius: 999px; background: #0B0F17; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">{{g.engine}}</span>
+          <span style="padding: 4px 12px; border-radius: 999px; background: #0B0F17; border: 1px solid #2A3D63; font-size: 12px; color: #A9C6FF">HDR ready</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+        <button onClick="{{toggleHdr}}" aria-pressed="{{hdrStr}}" style="{{hdrStyle}}">HDR on launch</button>
+        <button style="height: 56px; padding: 0 40px; border-radius: 999px; border: 1px solid #2F7A4A; background: #1D5C36; color: #EFFFF4; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 12px; cursor: pointer">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg>Play</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="sp-status" style="display: flex; flex-direction: column; gap: 10px">
+    <h2 id="sp-status" style="margin: 0; font-size: 13px; font-weight: 600; color: #8D97AA; text-transform: uppercase; letter-spacing: 0.08em">What's installed</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737">
+        <span aria-hidden="true" style="{{g.rsDot}}"></span>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">ReShade</span><span style="font-size: 12px; color: #AEB7C7">{{g.rs}}</span></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737">
+        <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #5ECB7D"></span>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">RenoDX HDR</span><span style="font-size: 12px; color: #AEB7C7">{{g.rdx}}</span></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737">
+        <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #3A4458"></span>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">Frame limiter</span><span style="font-size: 12px; color: #AEB7C7">Choose ReLimiter or Display Commander</span></div>
+      </div>
+      <button class="rhi-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #141F33; border: 1px solid #2A3D63; color: #A9C6FF; font-weight: 600; cursor: pointer">Manage components</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="sp-tune" style="display: flex; flex-direction: column; gap: 10px">
+    <h2 id="sp-tune" style="margin: 0; font-size: 13px; font-weight: 600; color: #8D97AA; text-transform: uppercase; letter-spacing: 0.08em">Tune this game</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px">
+      <sc-for list="{{tune}}" as="u" hint-placeholder-count="6">
+        <button class="rhi-tile" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737; color: #E6EAF2; text-align: left; font-size: 14px; cursor: pointer">
+          <span style="font-weight: 600">{{u.name}}</span>
+          <span style="font-size: 12px; color: #AEB7C7">{{u.desc}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6FA8FF","options":["#6FA8FF","#B898E8","#5ECB7D","#F0C35A"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 0, hdr: true }; }
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent ?? '#6FA8FF';
+    const data = [
+      ['AI Limit', 'Steam', 'Unity', '6.8.0', '26.1014.1445'],
+      ['CONTROL Resonant', 'Steam', 'Other engine', '6.8.0', '26.1028.2134'],
+      ['Esoteric Ebb', 'Steam', 'Unity', '6.8.0', '26.1014.1445'],
+      ['Forsaken Realms: Vahrin’s Call', 'Steam', 'Unreal Engine', '6.8.0', '26.1101.2131'],
+      ['Gears of War: E-Day', 'Xbox', 'Unreal Engine', '6.8.0', '26.1101.2131'],
+      ['Phantom Blade Zero', 'Steam', 'Unreal Engine', '6.8.0 Nightly', '26.1101.2131'],
+      ['SILENT HILL: Townfall', 'Steam', 'Unreal Engine', '6.8.0 Nightly', '26.1101.2131'],
+      ['The Blood of Dawnwalker', 'Steam', 'Unreal Engine', '6.8.0 Nightly', '26.1101.2131'],
+      ['The Witcher 3: Wild Hunt — Remastered', 'Steam', 'Other engine', '6.8.0', '26.1027.1524'],
+      ['Valor Mortis', 'Xbox', 'Unreal Engine', '6.8.0', '26.1101.2131'],
+      ['Wayfinder', 'Steam', 'Unreal Engine', '6.8.0', '26.1101.2131']
+    ];
+    const shelf = data.map(([name], i) => ({
+      name, current: i === s.sel ? 'true' : 'false',
+      pick: () => this.setState({ sel: i }),
+      style: 'flex: 0 0 132px; height: 120px; padding: 8px; border-radius: 10px; background: #121824; color: #E6EAF2; display: flex; flex-direction: column; gap: 8px; cursor: pointer; ' +
+        (i === s.sel ? 'border: 2px solid ' + accent + ';' : 'border: 2px solid #1F2737;')
+    }));
+    const d = data[s.sel] || data[0];
+    const nightly = d[3].includes('Nightly');
+    return {
+      accent, shelf,
+      g: {
+        name: d[0], store: d[1], engine: d[2], rs: d[3], rdx: d[4],
+        rsDot: 'width: 10px; height: 10px; border-radius: 50%; background: ' + (nightly ? '#F0C35A' : '#5ECB7D') + ';'
+      },
+      hdrStr: s.hdr ? 'true' : 'false',
+      hdrStyle: 'height: 44px; padding: 0 18px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; ' +
+        (s.hdr ? 'border: 1px solid #4A3A7A; background: #221A40; color: #D9C8FF;' : 'border: 1px solid #263042; background: #141A26; color: #AEB7C7;'),
+      toggleHdr: () => this.setState({ hdr: !s.hdr }),
+      tune: [
+        { name: 'DLSS / Streamline', desc: 'Versions, preset and render scale' },
+        { name: 'Driver Settings', desc: 'VSync, latency, G-Sync, ReBAR' },
+        { name: 'Neural Rendering', desc: 'Set up DLSS 5 tools' },
+        { name: 'Game Overrides', desc: 'Channel, DLL names, launch options' },
+        { name: 'Extras', desc: 'ASI Loader, OptiScaler, MFG unlocks' },
+        { name: 'Management', desc: 'Folder, reset, copy report' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

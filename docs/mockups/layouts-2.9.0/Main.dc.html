@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RHI main page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#8DB8FF;text-decoration:none}a:hover{color:#B7D2FF;text-decoration:underline}
+button,select,input{font-family:inherit}
+.rhi-btn:hover{background:#1E2738}
+.rhi-row:hover{background:#151C29}
+.rhi-tab:hover{color:#E6EAF2}
+.rhi-menu-item:hover{background:#1E2738}
+select{appearance:auto}
+</style>
+</helmet>
+<div style="min-height: 1000px; display: flex; flex-direction: column; background: #0B0F17; color: #E6EAF2; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 20px; border-bottom: 1px solid #1F2737; background: #0E131D; position: relative; z-index: 5">
+  <div style="display: flex; align-items: center; gap: 10px; min-width: 220px">
+    <div aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: #16203A; border: 1px solid #2B3A63; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z"></path></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; line-height: 1.15">
+      <span style="font-weight: 700; font-size: 16px; letter-spacing: 0.02em">RHI</span>
+      <span style="font-size: 11px; color: #8D97AA">Simplified PC Gaming</span>
+    </div>
+  </div>
+  <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 360px">
+    <a href="#library" style="padding: 8px 14px; border-radius: 8px; background: #18202E; color: #E6EAF2; font-weight: 600; text-decoration: none">Library</a>
+    <a href="#mods" class="rhi-btn" style="padding: 8px 14px; border-radius: 8px; color: #AEB7C7; display: flex; align-items: center; gap: 8px; text-decoration: none">Available Mods <span style="font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #1C3A2A; color: #7FE0A0">New</span></a>
+    <a href="#shaders" class="rhi-btn" style="padding: 8px 14px; border-radius: 8px; color: #AEB7C7; text-decoration: none">Shaders &amp; Addons</a>
+  </nav>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+    <span style="font-size: 12px; color: #8D97AA">Checked 52m ago</span>
+    <button class="rhi-btn" aria-label="Check for updates" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
+    </button>
+    <sc-if value="{{updates}}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{updateAll}}" style="height: 38px; padding: 0 16px; border-radius: 8px; border: 1px solid #4A3A7A; background: #2A2050; color: #D9C8FF; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer">Update All <span style="font-size: 12px; padding: 1px 8px; border-radius: 999px; background: #4A3A7A; color: #F1E9FF">1</span></button>
+    </sc-if>
+    <sc-if value="{{noUpdates}}" hint-placeholder-val="{{ true }}">
+      <button disabled="disabled" style="height: 38px; padding: 0 16px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #8D97AA; font-weight: 600; display: flex; align-items: center; gap: 8px">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5ECB7D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>All up to date</button>
+    </sc-if>
+    <div style="position: relative">
+      <button class="rhi-btn" onClick="{{toggleHelp}}" aria-expanded="{{helpOpenStr}}" style="height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; gap: 6px; cursor: pointer">Help
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+      <sc-if value="{{helpOpen}}" hint-placeholder-val="{{ false }}">
+        <div role="menu" style="position: absolute; right: 0; top: 44px; width: 220px; padding: 6px; border-radius: 10px; background: #161D2B; border: 1px solid #2A3446; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column">
+          <sc-for list="{{helpItems}}" as="h" hint-placeholder-count="6">
+            <button role="menuitem" class="rhi-menu-item" onClick="{{toggleHelp}}" style="text-align: left; height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #E6EAF2; font-size: 13px; cursor: pointer">{{h}}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <button class="rhi-btn" aria-label="Settings" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>
+    </button>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; flex: 1 1 auto; align-items: stretch">
+
+<aside aria-label="Game library" style="flex: 1 1 280px; max-width: 320px; min-width: 260px; border-right: 1px solid #1F2737; background: #0E131D; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+  <div style="display: flex; gap: 8px">
+    <label for="rhi-search" style="flex: 1 1 auto; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #8D97AA">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="rhi-search" type="text" placeholder="Search games" style="flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: #E6EAF2; font-size: 14px">
+    </label>
+    <button aria-label="Add a game" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #24563A; background: #13261C; color: #7FE0A0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+  </div>
+  <div role="group" aria-label="Show" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 9px; background: #121824; border: 1px solid #1F2737">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="4">
+      <button onClick="{{v.pick}}" aria-pressed="{{v.pressed}}" style="{{v.style}}">{{v.label}}</button>
+    </sc-for>
+  </div>
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+    <button class="rhi-btn" onClick="{{toggleFilters}}" aria-expanded="{{filtersOpenStr}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer">
+      <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filters{{filterCountLabel}}</button>
+    <span style="font-size: 12px; color: #8D97AA">11 shown · 94 ReShade · 1 hidden</span>
+  </div>
+  <sc-if value="{{filtersOpen}}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; border-radius: 10px; background: #121824; border: 1px solid #1F2737">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="12">
+        <button onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="{{c.style}}">{{c.label}}</button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+    <sc-for list="{{games}}" as="g" hint-placeholder-count="11">
+      <li>
+        <button class="rhi-row" onClick="{{g.pick}}" aria-current="{{g.current}}" style="{{g.rowStyle}}">
+          <span aria-hidden="true" style="{{g.storeStyle}}">{{g.store}}</span>
+          <span style="flex: 1 1 auto; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.name}}</span>
+          <sc-if value="{{g.update}}" hint-placeholder-val="{{ false }}">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #B898E8" aria-label="Update available"></span>
+          </sc-if>
+        </button>
+      </li>
+    </sc-for>
+  </ul>
+</aside>
+
+<main id="library" style="flex: 999 1 560px; min-width: 0; padding: 24px 32px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+
+  <section aria-label="{{gameName}}" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: space-between">
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1 1 420px">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+        <h1 style="margin: 0; font-size: 32px; line-height: 1.1; font-weight: 700">{{gameName}}</h1>
+        <button onClick="{{toggleFav}}" aria-label="Favourite" aria-pressed="{{favStr}}" style="{{favStyle}}">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="{{favFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"></path></svg>
+        </button>
+        <button class="rhi-btn" style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #AEB7C7; font-size: 12px; cursor: pointer">Hide</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <span style="padding: 3px 10px; border-radius: 999px; background: #151C29; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">{{storeName}}</span>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #151C29; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">Unity</span>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #151C29; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">DX11</span>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #151C29; border: 1px solid #263042; font-size: 12px; color: #C9D1DE">64-bit</span>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #141F33; border: 1px solid #2A3D63; font-size: 12px; color: #A9C6FF">RenoDX by Voosh</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #8D97AA">
+        <span style="font-family: 'Cascadia Mono', Consolas, monospace; overflow-wrap: anywhere">D:\SteamLibrary\steamapps\common\AI Limit</span>
+        <a href="#browse" style="display: flex; align-items: center; gap: 4px">
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7h6l2 2h10v10H3z"></path></svg>Open folder</a>
+        <a href="#config" style="display: flex; align-items: center; gap: 4px">
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7h6l2 2h10v10H3z"></path></svg>Config folder</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px">
+        <a href="#nexus">Nexus Mods</a>
+        <a href="#pcgw">PCGamingWiki</a>
+        <a href="#uw">Ultrawide fix</a>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; align-items: stretch; min-width: 260px; position: relative">
+      <div style="display: flex">
+        <button onClick="{{launch}}" style="flex: 1 1 auto; height: 48px; padding: 0 28px; border-radius: 10px 0 0 10px; border: 1px solid #2F7A4A; background: #1D5C36; color: #EFFFF4; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg>{{launchLabel}}</button>
+        <button onClick="{{toggleLaunchMenu}}" aria-label="Launch options" aria-expanded="{{launchMenuStr}}" style="width: 44px; height: 48px; border-radius: 0 10px 10px 0; border: 1px solid #2F7A4A; border-left: 1px solid #2A6B42; background: #1A5231; color: #CFF5DC; display: flex; align-items: center; justify-content: center; cursor: pointer">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+      </div>
+      <sc-if value="{{launchMenuOpen}}" hint-placeholder-val="{{ false }}">
+        <div role="menu" style="position: absolute; right: 0; top: 54px; width: 260px; padding: 6px; border-radius: 10px; background: #161D2B; border: 1px solid #2A3446; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 4">
+          <button role="menuitem" class="rhi-menu-item" onClick="{{toggleLaunchMenu}}" style="text-align: left; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: #E6EAF2; font-size: 13px; cursor: pointer">Executable: AI-LIMIT.exe</button>
+          <button role="menuitem" class="rhi-menu-item" onClick="{{toggleLaunchMenu}}" style="text-align: left; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: #E6EAF2; font-size: 13px; cursor: pointer">Launch arguments…</button>
+          <button role="menuitem" class="rhi-menu-item" onClick="{{toggleLaunchMenu}}" style="text-align: left; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: #E6EAF2; font-size: 13px; cursor: pointer">Create desktop shortcut</button>
+        </div>
+      </sc-if>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <button onClick="{{toggleHdr}}" aria-pressed="{{hdrStr}}" style="{{hdrStyle}}">HDR on launch</button>
+        <button onClick="{{toggleRes}}" aria-pressed="{{resStr}}" style="{{resStyle}}">Resolution switch</button>
+      </div>
+    </div>
+  </section>
+
+  <nav aria-label="Game sections" style="display: flex; flex-wrap: wrap; gap: 4px 24px; border-bottom: 1px solid #1F2737">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="7">
+      <button class="rhi-tab" onClick="{{t.pick}}" aria-current="{{t.current}}" style="{{t.style}}">{{t.label}}</button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{tabOverview}}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; flex-direction: column; gap: 20px">
+  <section aria-labelledby="rhi-components" style="display: flex; flex-direction: column; gap: 12px">
+    <h2 id="rhi-components" style="margin: 0; font-size: 13px; font-weight: 600; color: #8D97AA; text-transform: uppercase; letter-spacing: 0.08em">Components</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+
+      <article style="{{rsCardStyle}}">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 12px; color: #8D97AA">Injector</span>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600">ReShade</h3>
+          </div>
+          <sc-if value="{{noUpdates}}" hint-placeholder-val="{{ true }}">
+            <span style="padding: 3px 10px; border-radius: 999px; background: #13261C; border: 1px solid #24563A; color: #7FE0A0; font-size: 12px; font-weight: 600">6.8.0</span>
+          </sc-if>
+          <sc-if value="{{updates}}" hint-placeholder-val="{{ false }}">
+            <span style="padding: 3px 10px; border-radius: 999px; background: #2A2050; border: 1px solid #4A3A7A; color: #D9C8FF; font-size: 12px; font-weight: 600">Update available</span>
+          </sc-if>
+        </div>
+        <div style="font-size: 13px; color: #AEB7C7; line-height: 1.5">Stable channel · global shaders and addons</div>
+        <div style="display: flex; gap: 8px; margin-top: auto">
+          <sc-if value="{{noUpdates}}" hint-placeholder-val="{{ true }}">
+            <button class="rhi-btn" style="flex: 1 1 auto; height: 38px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-weight: 600; cursor: pointer">Reinstall</button>
+          </sc-if>
+          <sc-if value="{{updates}}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{updateAll}}" style="flex: 1 1 auto; height: 38px; border-radius: 8px; border: 1px solid #4A3A7A; background: #2A2050; color: #D9C8FF; font-weight: 600; cursor: pointer">Update</button>
+          </sc-if>
+          <button class="rhi-btn" aria-label="ReShade info" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button>
+          <button class="rhi-btn" aria-label="ReShade settings" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></button>
+          <button aria-label="Uninstall ReShade" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #4A2630; background: #1F1217; color: #FF9AA8; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+      </article>
+
+      <article style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 172px">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 12px; color: #8D97AA">HDR mod</span>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600">RenoDX</h3>
+          </div>
+          <span style="padding: 3px 10px; border-radius: 999px; background: #13261C; border: 1px solid #24563A; color: #7FE0A0; font-size: 12px; font-weight: 600">26.1014.1445</span>
+        </div>
+        <div style="font-size: 13px; color: #AEB7C7; line-height: 1.5; overflow-wrap: anywhere">renodx-unityengine.addon64</div>
+        <div style="display: flex; gap: 8px; margin-top: auto">
+          <button class="rhi-btn" style="flex: 1 1 auto; height: 38px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-weight: 600; cursor: pointer">Reinstall</button>
+          <button class="rhi-btn" aria-label="RenoDX info" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button>
+          <button class="rhi-btn" aria-label="RenoDX settings" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></button>
+          <button aria-label="Uninstall RenoDX" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #4A2630; background: #1F1217; color: #FF9AA8; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+      </article>
+
+      <article style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 172px">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 12px; color: #8D97AA">Frame limiter · choose one</span>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600">{{limiterName}}</h3>
+          </div>
+          <span style="{{limiterPillStyle}}">{{limiterStatus}}</span>
+        </div>
+        <div role="group" aria-label="Frame limiter" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 9px; background: #0E131D; border: 1px solid #1F2737">
+          <sc-for list="{{limiters}}" as="l" hint-placeholder-count="2">
+            <button onClick="{{l.pick}}" aria-pressed="{{l.pressed}}" style="{{l.style}}">{{l.label}}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: auto">
+          <button class="rhi-btn" style="flex: 1 1 auto; height: 38px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-weight: 600; cursor: pointer">{{limiterAction}}</button>
+          <button class="rhi-btn" aria-label="Frame limiter info" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button>
+          <button class="rhi-btn" aria-label="Frame limiter settings" style="width: 38px; height: 38px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="rhi-glance" style="display: flex; flex-direction: column; gap: 12px">
+    <h2 id="rhi-glance" style="margin: 0; font-size: 13px; font-weight: 600; color: #8D97AA; text-transform: uppercase; letter-spacing: 0.08em">At a glance</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+      <button class="rhi-row" onClick="{{goDlss}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737; color: #E6EAF2; text-align: left; font-size: 14px; cursor: pointer">
+        <span style="font-weight: 600">DLSS / Streamline</span>
+        <span style="font-size: 13px; color: #AEB7C7">SR <span style="color: #7FE0A0">310.9.16</span> · Preset <span style="color: #7FE0A0">M</span> · <span style="color: #7FE0A0">75%</span></span>
+      </button>
+      <button class="rhi-row" onClick="{{goDriver}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737; color: #E6EAF2; text-align: left; font-size: 14px; cursor: pointer">
+        <span style="font-weight: 600">Driver Settings</span>
+        <span style="font-size: 13px; color: #AEB7C7">Driver <span style="color: #7FE0A0">617.42</span> · VSync <span style="color: #7FE0A0">Force Off</span> · FPS limit <span style="color: #7FE0A0">Off</span></span>
+      </button>
+      <button class="rhi-row" onClick="{{goOverrides}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737; color: #E6EAF2; text-align: left; font-size: 14px; cursor: pointer">
+        <span style="font-weight: 600">Game Overrides</span>
+        <span style="font-size: 13px; color: #AEB7C7">Launch AI-LIMIT.exe · Shaders Global · Addons Global</span>
+      </button>
+      <button class="rhi-row" onClick="{{goNr}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #121824; border: 1px solid #1F2737; color: #E6EAF2; text-align: left; font-size: 14px; cursor: pointer">
+        <span style="font-weight: 600">Neural Rendering</span>
+        <span style="font-size: 13px; color: #AEB7C7">Not set up</span>
+      </button>
+    </div>
+  </section>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{tabOverrides}}" hint-placeholder-val="{{ false }}">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px">
+    <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Names and matching</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Game name
+          <input type="text" value="AI Limit" style="height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Wiki mod name
+          <input type="text" placeholder="Exact wiki name" style="height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"></label>
+        <button class="rhi-btn" style="height: 34px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 12px; cursor: pointer">Reset name</button>
+        <select aria-label="Wiki matching" style="height: 34px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Use wiki</option><option>Exclude from wiki</option></select>
+      </div>
+    </section>
+    <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">ReShade</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Bitness
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Auto</option><option>32-bit</option><option>64-bit</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Graphics API
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Auto</option><option>DX11</option><option>DX12</option><option>Vulkan</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Channel
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Stable</option><option>Nightly</option><option>Custom</option><option>No Addons</option><option>Legacy…</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Shaders
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Global</option><option>Custom</option><option>Select</option><option>Off</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Addons
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Global</option><option>Select</option><option>Off</option></select></label>
+        <button class="rhi-btn" style="align-self: end; height: 36px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 12px; cursor: pointer">Select preset</button>
+      </div>
+    </section>
+    <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">DLL names</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">ReShade
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Default</option><option>dxgi.dll</option><option>d3d11.dll</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Display Commander
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Default</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">OptiScaler
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Default</option></select></label>
+      </div>
+      <button class="rhi-btn" style="height: 34px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 12px; cursor: pointer">Reset DLL names</button>
+    </section>
+    <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Updates and launch</h2>
+      <button class="rhi-btn" style="height: 36px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 13px; font-weight: 600; cursor: pointer">Update inclusion…</button>
+      <span style="font-size: 12px; color: #AEB7C7">RS <span style="color: #7FE0A0">On</span> · RDX <span style="color: #7FE0A0">On</span> · RL <span style="color: #7FE0A0">On</span> · DC <span style="color: #7FE0A0">On</span> · OS <span style="color: #7FE0A0">On</span></span>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Executable
+          <input type="text" placeholder="Auto-detect (or paste path)" style="height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Launch arguments
+          <input type="text" placeholder="None" style="height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"></label>
+      </div>
+      <span style="font-size: 12px; color: #8D97AA">Detected: AI-LIMIT.exe</span>
+    </section>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{tabDlss}}" hint-placeholder-val="{{ false }}">
+  <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">DLSS / Streamline</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button class="rhi-btn" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 12px; font-weight: 600; cursor: pointer">Quick Apply defaults</button>
+        <button class="rhi-btn" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 12px; cursor: pointer">Restore originals</button>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px">
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Super Resolution
+        <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>310.9.16</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Preset
+        <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>M</option><option>L</option><option>K</option><option>Default</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">Render scale
+        <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>75%</option><option>DLAA</option><option>67%</option><option>58%</option><option>50%</option><option>33%</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">NVIDIA Override
+        <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>Off</option><option>On</option></select></label>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{tabNr}}" hint-placeholder-val="{{ false }}">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+    <sc-for list="{{nrMethods}}" as="m" hint-placeholder-count="4">
+      <article style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600">{{m.name}}</h3>
+        <p style="margin: 0; font-size: 13px; color: #AEB7C7; line-height: 1.5">{{m.desc}}</p>
+        <button class="rhi-btn" style="margin-top: auto; height: 36px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-weight: 600; cursor: pointer">Install</button>
+      </article>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{tabDriver}}" hint-placeholder-val="{{ false }}">
+  <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Driver Settings</h2>
+      <span style="font-size: 12px; color: #AEB7C7">Driver <span style="color: #7FE0A0">617.42</span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px">
+      <sc-for list="{{driverRows}}" as="d" hint-placeholder-count="8">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">{{d.label}}
+          <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>{{d.value}}</option><option>Global</option></select></label>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{tabExtras}}" hint-placeholder-val="{{ false }}">
+  <section style="background: #121824; border: 1px solid #1F2737; border-radius: 12px; padding: 6px 16px; display: flex; flex-direction: column">
+    <sc-for list="{{extras}}" as="x" hint-placeholder-count="8">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1A2130">
+        <span style="flex: 1 1 200px; font-weight: 600">{{x.name}}</span>
+        <span style="flex: 2 1 240px; font-size: 13px; color: #AEB7C7">{{x.desc}}</span>
+        <button class="rhi-btn" style="height: 34px; padding: 0 16px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 12px; font-weight: 600; cursor: pointer">Install</button>
+      </div>
+    </sc-for>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{tabManage}}" hint-placeholder-val="{{ false }}">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+    <sc-for list="{{manage}}" as="k" hint-placeholder-count="5">
+      <button class="rhi-row" style="{{k.style}}">
+        <span style="font-weight: 600">{{k.name}}</span>
+        <span style="font-size: 12px; color: #AEB7C7">{{k.desc}}</span>
+      </button>
+    </sc-for>
+  </div>
+  </sc-if>
+
+</main>
+</div>
+
+<footer style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 8px 20px; border-top: 1px solid #1F2737; background: #0E131D; font-size: 12px; color: #8D97AA">
+  <span style="display: flex; align-items: center; gap: 6px; color: #E8C26A">
+    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18v.5"></path></svg>{{statusText}}</span>
+  <span style="display: flex; gap: 16px"><span>v2.8.8</span><a href="#notes">Patch notes</a><a href="#motd">Message of the day</a></span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6FA8FF","options":["#6FA8FF","#B898E8","#5ECB7D","#F0C35A"]},"showUpdates":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'overview', view: 'Favourites', sel: 0, fav: true, hdr: true, res: false,
+      limiter: 'ReLimiter', helpOpen: false, filtersOpen: false, launchMenu: false,
+      chips: {}, updated: false, launched: false
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent ?? '#6FA8FF';
+    const updates = (this.props.showUpdates ?? true) && !s.updated;
+    const set = (patch) => () => this.setState(patch);
+
+    const names = [
+      ['AI Limit', 'S'], ['CONTROL Resonant', 'S'], ['Esoteric Ebb', 'S'],
+      ['Forsaken Realms: Vahrin\u2019s Call', 'S'], ['Gears of War: E-Day', 'X'],
+      ['Phantom Blade Zero', 'S'], ['SILENT HILL: Townfall', 'S'],
+      ['The Blood of Dawnwalker', 'S'], ['The Witcher 3: Wild Hunt \u2014 Remastered', 'S'],
+      ['Valor Mortis', 'X'], ['Wayfinder', 'S']
+    ];
+    const rowBase = 'width: 100%; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border: 0; border-radius: 8px; font-size: 14px; cursor: pointer;';
+    const games = names.map(([name, store], i) => ({
+      name, store,
+      update: updates && i === 0,
+      current: i === s.sel ? 'true' : 'false',
+      pick: () => this.setState({ sel: i, launchMenu: false, launched: false }),
+      rowStyle: i === s.sel
+        ? rowBase + ' background: #1A2336; color: #F2F5FA; font-weight: 600; box-shadow: inset 0 0 0 1px ' + accent + '66;'
+        : rowBase + ' background: transparent; color: #C9D1DE;',
+      storeStyle: 'width: 20px; height: 20px; flex: 0 0 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; ' +
+        (store === 'X' ? 'background: #15301C; color: #7FE0A0;' : 'background: #1B2433; color: #AEC3E0;')
+    }));
+    const selGame = names[s.sel] || names[0];
+
+    const segOn = 'height: 30px; border: 0; border-radius: 6px; background: #22304A; color: #E6EAF2; font-size: 12px; font-weight: 600; cursor: pointer;';
+    const segOff = 'height: 30px; border: 0; border-radius: 6px; background: transparent; color: #AEB7C7; font-size: 12px; cursor: pointer;';
+    const views = ['All', 'Installed', 'Favourites', 'Hidden'].map((label) => ({
+      label, pressed: s.view === label ? 'true' : 'false',
+      style: s.view === label ? segOn : segOff,
+      pick: set({ view: label })
+    }));
+
+    const chipNames = ['Unreal', 'Unity', 'Other', 'RenoDX', 'Luma', 'Vulkan', 'DX9', 'DX11', 'RE Engine', 'Ultra+', 'Xbox', 'DLSS'];
+    const chips = chipNames.map((label) => {
+      const on = !!s.chips[label];
+      return {
+        label, pressed: on ? 'true' : 'false',
+        style: 'height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; cursor: pointer; ' +
+          (on ? 'border: 1px solid ' + accent + '; background: #1A2640; color: #E6EAF2; font-weight: 600;' : 'border: 1px solid #263042; background: #141A26; color: #AEB7C7;'),
+        pick: () => this.setState({ chips: Object.assign({}, s.chips, { [label]: !on }) })
+      };
+    });
+    const activeChips = chipNames.filter((c) => s.chips[c]).length;
+
+    const tabDefs = [['overview', 'Overview'], ['overrides', 'Game Overrides'], ['dlss', 'DLSS / Streamline'], ['nr', 'Neural Rendering'], ['driver', 'Driver Settings'], ['extras', 'Extras'], ['manage', 'Management']];
+    const tabs = tabDefs.map(([id, label]) => ({
+      label, current: s.tab === id ? 'page' : 'false',
+      pick: set({ tab: id }),
+      style: 'padding: 10px 0; margin-bottom: -1px; border: 0; background: transparent; font-size: 14px; cursor: pointer; ' +
+        (s.tab === id ? 'border-bottom: 2px solid ' + accent + '; color: #E6EAF2; font-weight: 600;' : 'border-bottom: 2px solid transparent; color: #AEB7C7;')
+    }));
+
+    const toggleOn = 'height: 36px; border-radius: 8px; border: 1px solid #4A3A7A; background: #221A40; color: #D9C8FF; font-size: 12px; font-weight: 600; cursor: pointer;';
+    const toggleOff = 'height: 36px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #AEB7C7; font-size: 12px; cursor: pointer;';
+
+    const limiters = ['ReLimiter', 'Display Commander'].map((label) => ({
+      label, pressed: s.limiter === label ? 'true' : 'false',
+      style: s.limiter === label ? segOn : segOff,
+      pick: set({ limiter: label })
+    }));
+    const rlActive = s.limiter === 'ReLimiter';
+
+    const greenPill = 'padding: 3px 10px; border-radius: 999px; background: #13261C; border: 1px solid #24563A; color: #7FE0A0; font-size: 12px; font-weight: 600;';
+    const greyPill = 'padding: 3px 10px; border-radius: 999px; background: #151C29; border: 1px solid #263042; color: #AEB7C7; font-size: 12px; font-weight: 600;';
+
+    const manageDefs = [
+      ['Change install folder', 'Point RHI at a different folder for this game', false],
+      ['Reset Overrides', 'Put every per-game setting back to global', false],
+      ['Copy Report', 'Copy this game\u2019s setup to share for support', false],
+      ['Reset game', 'Forget this game\u2019s state and detect it again', true],
+      ['Remove game', 'Remove this game from RHI', true]
+    ];
+    const manage = manageDefs.map(([name, desc, danger]) => ({
+      name, desc,
+      style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #121824; text-align: left; font-size: 14px; cursor: pointer; ' +
+        (danger ? 'border: 1px solid #4A2630; color: #FF9AA8;' : 'border: 1px solid #1F2737; color: #E6EAF2;')
+    }));
+
+    return {
+      accent, games, views, chips, tabs, limiters, manage,
+      updates, noUpdates: !updates,
+      updateAll: set({ updated: true }),
+      gameName: selGame[0], storeName: selGame[1] === 'X' ? 'Xbox' : 'Steam',
+      helpOpen: s.helpOpen, helpOpenStr: s.helpOpen ? 'true' : 'false',
+      toggleHelp: set({ helpOpen: !s.helpOpen }),
+      helpItems: ['Quick Start', 'Help and FAQ', 'Links', 'Patch notes', 'Message of the day', 'Donate'],
+      filtersOpen: s.filtersOpen, filtersOpenStr: s.filtersOpen ? 'true' : 'false',
+      toggleFilters: set({ filtersOpen: !s.filtersOpen }),
+      filterCountLabel: activeChips ? ' (' + activeChips + ')' : '',
+      favStr: s.fav ? 'true' : 'false', favFill: s.fav ? 'currentColor' : 'none',
+      favStyle: 'width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; ' +
+        (s.fav ? 'border: 1px solid #4F4123; background: #221C10; color: #F0C35A;' : 'border: 1px solid #263042; background: #141A26; color: #8D97AA;'),
+      toggleFav: set({ fav: !s.fav }),
+      hdrStr: s.hdr ? 'true' : 'false', hdrStyle: s.hdr ? toggleOn : toggleOff, toggleHdr: set({ hdr: !s.hdr }),
+      resStr: s.res ? 'true' : 'false', resStyle: s.res ? toggleOn : toggleOff, toggleRes: set({ res: !s.res }),
+      launch: set({ launched: true, launchMenu: false }),
+      launchLabel: s.launched ? 'Running' : 'Launch',
+      launchMenuOpen: s.launchMenu, launchMenuStr: s.launchMenu ? 'true' : 'false',
+      toggleLaunchMenu: set({ launchMenu: !s.launchMenu }),
+      limiterName: s.limiter,
+      limiterStatus: rlActive ? '3.3.5' : 'Not installed',
+      limiterPillStyle: rlActive ? greenPill : greyPill,
+      limiterAction: rlActive ? 'Reinstall' : 'Install',
+      rsCardStyle: 'background: #121824; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 172px; border: 1px solid ' + (updates ? '#4A3A7A' : '#1F2737') + ';',
+      tabOverview: s.tab === 'overview', tabOverrides: s.tab === 'overrides', tabDlss: s.tab === 'dlss',
+      tabNr: s.tab === 'nr', tabDriver: s.tab === 'driver', tabExtras: s.tab === 'extras', tabManage: s.tab === 'manage',
+      goDlss: set({ tab: 'dlss' }), goDriver: set({ tab: 'driver' }), goOverrides: set({ tab: 'overrides' }), goNr: set({ tab: 'nr' }),
+      nrMethods: [
+        { name: 'ShortFuse DLSS Tool', desc: 'For most games with native DLSS (DX9, DX11, DX12, Vulkan).' },
+        { name: 'DLSS5 Tool', desc: 'For DX12 games with native DLSS.' },
+        { name: 'DLSS5 Tool + DX11 Bridge', desc: 'For DX11 and Vulkan games with native DLSS.' },
+        { name: 'DLSS5 Feeder', desc: 'For games without DLSS, including OpenGL, DX9 and 32-bit games.' }
+      ],
+      driverRows: [
+        { label: 'VSync', value: 'Force Off' }, { label: 'FPS limit', value: 'Off' },
+        { label: 'Tear Control', value: 'Global' }, { label: 'Low Latency', value: 'Global' },
+        { label: 'Smooth Motion', value: 'Global' }, { label: 'Power Mode', value: 'Global' },
+        { label: 'G-Sync', value: 'Global' }, { label: 'ReBAR', value: 'Global' }
+      ],
+      extras: [
+        { name: 'Ultimate ASI Loader', desc: 'Loads .asi plugins' },
+        { name: 'OptiScaler', desc: 'Upscaler and frame generation swapping' },
+        { name: 'Universal MFG Unlocker', desc: 'Multi frame generation on older cards' },
+        { name: 'MFG Ada Unlock', desc: 'Multi frame generation for RTX 40 Series' },
+        { name: '20/30 FG Unlock', desc: 'Frame generation for RTX 20 and 30 Series' },
+        { name: 'RTX Encore', desc: 'Frame generation and upscaling overrides' },
+        { name: 'DXVK', desc: 'DX8 to DX11 through Vulkan, with Lilium HDR' },
+        { name: 'dgVoodoo2', desc: 'Wrapper for older DirectX games' }
+      ],
+      statusText: s.launched ? selGame[0] + ' is running' : 'Single-player only: ReShade, OptiScaler and DLSS changes can trigger anti-cheat'
+    };
+  }
+}
+</script>
+</body>
+</html>

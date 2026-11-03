@@ -85,6 +85,9 @@ Items that improve maintainability, performance, or reliability. No user-facing 
 
 User-requested features and enhancements. Not committed — just captured.
 
+### Selectable layouts (planned for v2.9.0)
+Classic / Tabs / Spotlight main-page layouts, switchable in Settings, with Steam artwork for Spotlight. Full plan: [layouts-plan-2.9.0.md](layouts-plan-2.9.0.md).
+
 ### Steam Full Library Integration
 Show the user's complete Steam catalog (owned, family shared, not just installed) to browse compatibility before downloading.
 

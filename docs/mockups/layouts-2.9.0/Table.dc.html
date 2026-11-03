@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RHI: library table</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#8DB8FF;text-decoration:none}a:hover{color:#B7D2FF;text-decoration:underline}
+button,select,input{font-family:inherit}
+.rhi-btn:hover{background:#1E2738}
+.rhi-tr:hover{background:#131A27}
+</style>
+</helmet>
+<div style="min-height: 1000px; display: flex; flex-direction: column; background: #0B0F17; color: #E6EAF2; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 10px 20px; border-bottom: 1px solid #1F2737; background: #0E131D">
+  <div style="display: flex; align-items: center; gap: 10px">
+    <div aria-hidden="true" style="width: 28px; height: 28px; border-radius: 7px; background: #16203A; border: 1px solid #2B3A63; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z"></path></svg>
+    </div>
+    <span style="font-weight: 700; font-size: 15px">RHI</span>
+  </div>
+  <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+    <a href="#library" style="padding: 7px 12px; border-radius: 8px; background: #18202E; color: #E6EAF2; font-weight: 600; text-decoration: none">Library</a>
+    <a href="#mods" style="padding: 7px 12px; border-radius: 8px; color: #AEB7C7; text-decoration: none">Available Mods</a>
+    <a href="#shaders" style="padding: 7px 12px; border-radius: 8px; color: #AEB7C7; text-decoration: none">Shaders &amp; Addons</a>
+  </nav>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center">
+    <span style="font-size: 12px; color: #8D97AA">Checked 52m ago</span>
+    <button disabled="disabled" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #8D97AA; font-weight: 600">All up to date</button>
+    <button class="rhi-btn" aria-label="Settings" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>
+    </button>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+
+<main style="flex: 999 1 640px; min-width: 0; padding: 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 700; margin-right: 8px">Favourites</h1>
+    <label for="tbl-search" style="flex: 1 1 240px; max-width: 360px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #8D97AA">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="tbl-search" type="text" placeholder="Filter games" style="flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: #E6EAF2; font-size: 13px">
+    </label>
+    <select aria-label="Show" style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #E6EAF2; font-size: 13px"><option>Favourites</option><option>All games</option><option>Installed</option><option>Hidden</option></select>
+    <select aria-label="Engine" style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #E6EAF2; font-size: 13px"><option>Any engine</option><option>Unreal</option><option>Unity</option><option>Other</option></select>
+    <span style="font-size: 12px; color: #8D97AA; margin-left: auto">11 shown · 94 ReShade · 1 hidden</span>
+  </div>
+
+  <sc-if value="{{anyChecked}}" hint-placeholder-val="{{ false }}">
+    <div role="toolbar" aria-label="Selected games" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: #172034; border: 1px solid {{accent}}66">
+      <span style="font-weight: 600; margin-right: 8px">{{checkedLabel}}</span>
+      <button class="rhi-btn" style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 13px; font-weight: 600; cursor: pointer">Reinstall ReShade</button>
+      <button class="rhi-btn" style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-size: 13px; font-weight: 600; cursor: pointer">Apply DLSS defaults</button>
+      <button class="rhi-btn" style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 13px; cursor: pointer">Update inclusion…</button>
+      <button class="rhi-btn" style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; font-size: 13px; cursor: pointer">Hide</button>
+      <button onClick="{{clearChecked}}" style="height: 32px; padding: 0 10px; border: 0; background: transparent; color: #8DB8FF; font-size: 13px; cursor: pointer; margin-left: auto">Clear</button>
+    </div>
+  </sc-if>
+
+  <div style="overflow-x: auto; border: 1px solid #1F2737; border-radius: 12px; background: #0F141F">
+    <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px">
+      <thead>
+        <tr style="text-align: left; color: #8D97AA; font-size: 12px">
+          <th scope="col" style="width: 40px; padding: 10px 12px; border-bottom: 1px solid #1F2737; font-weight: 600"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Select</span></th>
+          <th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #1F2737; font-weight: 600">Game</th>
+          <th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #1F2737; font-weight: 600">Store</th>
+          <th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #1F2737; font-weight: 600">Engine</th>
+          <th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #1F2737; font-weight: 600">ReShade</th>
+          <th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #1F2737; font-weight: 600">RenoDX</th>
+          <th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #1F2737; font-weight: 600; text-align: right">Play</th>
+        </tr>
+      </thead>
+      <tbody>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="11">
+          <tr class="rhi-tr" style="{{r.trStyle}}">
+            <td style="padding: 0 12px; border-bottom: 1px solid #171E2B"><input type="checkbox" aria-label="Select {{r.name}}" checked="{{r.checked}}" onChange="{{r.toggle}}" style="width: 16px; height: 16px; accent-color: {{accent}}"></td>
+            <td style="padding: 0 8px; border-bottom: 1px solid #171E2B"><button onClick="{{r.pick}}" style="border: 0; background: transparent; color: #E6EAF2; font-size: 13px; font-weight: 600; padding: 12px 0; text-align: left; cursor: pointer">{{r.name}}</button></td>
+            <td style="padding: 0 8px; border-bottom: 1px solid #171E2B; color: #AEB7C7">{{r.store}}</td>
+            <td style="padding: 0 8px; border-bottom: 1px solid #171E2B; color: #AEB7C7">{{r.engine}}</td>
+            <td style="padding: 0 8px; border-bottom: 1px solid #171E2B"><span style="{{r.rsStyle}}">{{r.rs}}</span></td>
+            <td style="padding: 0 8px; border-bottom: 1px solid #171E2B"><span style="padding: 2px 8px; border-radius: 999px; background: #13261C; border: 1px solid #24563A; color: #7FE0A0; font-size: 12px; font-weight: 600">{{r.rdx}}</span></td>
+            <td style="padding: 0 12px; border-bottom: 1px solid #171E2B; text-align: right"><button aria-label="Launch {{r.name}}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #2F7A4A; background: #1D5C36; color: #EFFFF4; display: inline-flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg></button></td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<aside aria-label="{{sel.name}} details" style="flex: 1 1 340px; max-width: 400px; min-width: 300px; border-left: 1px solid #1F2737; background: #0E131D; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 700; line-height: 1.2">{{sel.name}}</h2>
+    <span style="font-size: 12px; color: #8D97AA">{{sel.store}} · {{sel.engine}}</span>
+  </div>
+  <button style="height: 44px; border-radius: 10px; border: 1px solid #2F7A4A; background: #1D5C36; color: #EFFFF4; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg>Launch</button>
+  <div style="display: flex; flex-direction: column; border: 1px solid #1F2737; border-radius: 12px; background: #121824">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #1A2130">
+      <span style="font-weight: 600">ReShade</span><span style="{{sel.rsStyle}}">{{sel.rs}}</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px">
+      <span style="font-weight: 600">RenoDX</span><span style="padding: 2px 8px; border-radius: 999px; background: #13261C; border: 1px solid #24563A; color: #7FE0A0; font-size: 12px; font-weight: 600">{{sel.rdx}}</span>
+    </div>
+  </div>
+  <sc-if value="{{sel.nightly}}" hint-placeholder-val="{{ false }}">
+    <p style="margin: 0; padding: 10px 12px; border-radius: 10px; background: #1F1A0E; border: 1px solid #4F4123; color: #F0D48A; font-size: 13px; line-height: 1.5">This game has a nightly ReShade build installed.</p>
+  </sc-if>
+  <a href="Main.dc.html" style="display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 8px; border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF; font-weight: 600; text-decoration: none">Open full game page</a>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6FA8FF","options":["#6FA8FF","#B898E8","#5ECB7D","#F0C35A"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 0, checked: {} }; }
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent ?? '#6FA8FF';
+    const data = [
+      ['AI Limit', 'Steam', 'Unity', '6.8.0', '26.1014.1445'],
+      ['CONTROL Resonant', 'Steam', 'Other', '6.8.0', '26.1028.2134'],
+      ['Esoteric Ebb', 'Steam', 'Unity', '6.8.0', '26.1014.1445'],
+      ['Forsaken Realms: Vahrin’s Call', 'Steam', 'Unreal', '6.8.0', '26.1101.2131'],
+      ['Gears of War: E-Day', 'Xbox', 'Unreal', '6.8.0', '26.1101.2131'],
+      ['Phantom Blade Zero', 'Steam', 'Unreal', '6.8.0 Nightly', '26.1101.2131'],
+      ['SILENT HILL: Townfall', 'Steam', 'Unreal', '6.8.0 Nightly', '26.1101.2131'],
+      ['The Blood of Dawnwalker', 'Steam', 'Unreal', '6.8.0 Nightly', '26.1101.2131'],
+      ['The Witcher 3: Wild Hunt — Remastered', 'Steam', 'Other', '6.8.0', '26.1027.1524'],
+      ['Valor Mortis', 'Xbox', 'Unreal', '6.8.0', '26.1101.2131'],
+      ['Wayfinder', 'Steam', 'Unreal', '6.8.0', '26.1101.2131']
+    ];
+    const pill = 'padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; ';
+    const rsStyleFor = (rs) => rs.includes('Nightly')
+      ? pill + 'background: #1F1A0E; border: 1px solid #4F4123; color: #F0D48A;'
+      : pill + 'background: #13261C; border: 1px solid #24563A; color: #7FE0A0;';
+    const rows = data.map(([name, store, engine, rs, rdx], i) => {
+      const checked = !!s.checked[i];
+      return {
+        name, store, engine, rs, rdx, checked,
+        rsStyle: rsStyleFor(rs),
+        pick: () => this.setState({ sel: i }),
+        toggle: () => this.setState({ checked: Object.assign({}, s.checked, { [i]: !checked }) }),
+        trStyle: i === s.sel ? 'background: #172034;' : (checked ? 'background: #121A2A;' : '')
+      };
+    });
+    const n = Object.keys(s.checked).filter((k) => s.checked[k]).length;
+    const d = data[s.sel] || data[0];
+    return {
+      accent, rows,
+      anyChecked: n > 0,
+      checkedLabel: n + (n === 1 ? ' game selected' : ' games selected'),
+      clearChecked: () => this.setState({ checked: {} }),
+      sel: { name: d[0], store: d[1], engine: d[2], rs: d[3], rdx: d[4], rsStyle: rsStyleFor(d[3]), nightly: d[3].includes('Nightly') }
+    };
+  }
+}
+</script>
+</body>
+</html>

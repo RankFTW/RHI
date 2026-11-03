@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RHI: section rail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#8DB8FF;text-decoration:none}a:hover{color:#B7D2FF;text-decoration:underline}
+button,select,input{font-family:inherit}
+.rhi-btn:hover{background:#1E2738}
+.rhi-row:hover{background:#151C29}
+</style>
+</helmet>
+<div style="min-height: 1000px; display: flex; flex-direction: column; background: #0B0F17; color: #E6EAF2; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 10px 20px; border-bottom: 1px solid #1F2737; background: #0E131D">
+  <div style="display: flex; align-items: center; gap: 10px">
+    <div aria-hidden="true" style="width: 28px; height: 28px; border-radius: 7px; background: #16203A; border: 1px solid #2B3A63; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z"></path></svg>
+    </div>
+    <span style="font-weight: 700; font-size: 15px">RHI</span>
+  </div>
+  <label for="rail-search" style="flex: 1 1 320px; max-width: 520px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #121824; color: #8D97AA">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+    <input id="rail-search" type="text" placeholder="Search games, settings and mods" style="flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: #E6EAF2; font-size: 13px">
+    <span style="font-size: 11px; color: #8D97AA; border: 1px solid #2A3446; border-radius: 4px; padding: 1px 5px">Ctrl K</span>
+  </label>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto">
+    <button class="rhi-btn" style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; cursor: pointer">Available Mods</button>
+    <button class="rhi-btn" style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; cursor: pointer">Shaders &amp; Addons</button>
+    <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #4A3A7A; background: #2A2050; color: #D9C8FF; font-weight: 600; cursor: pointer">Update All · 1</button>
+    <button class="rhi-btn" aria-label="Settings" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>
+    </button>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+
+<aside aria-label="Game library" style="flex: 1 1 240px; max-width: 260px; min-width: 220px; border-right: 1px solid #1F2737; background: #0E131D; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px">
+  <div style="display: flex; gap: 6px; flex-wrap: wrap">
+    <span style="padding: 3px 10px; border-radius: 999px; background: #22304A; color: #E6EAF2; font-size: 12px; font-weight: 600">Favourites</span>
+    <span style="padding: 3px 10px; border-radius: 999px; border: 1px solid #263042; color: #AEB7C7; font-size: 12px">Installed</span>
+    <span style="padding: 3px 10px; border-radius: 999px; border: 1px solid #263042; color: #AEB7C7; font-size: 12px">All</span>
+  </div>
+  <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px">
+    <sc-for list="{{games}}" as="g" hint-placeholder-count="11">
+      <li><button class="rhi-row" onClick="{{g.pick}}" aria-current="{{g.current}}" style="{{g.style}}">{{g.name}}</button></li>
+    </sc-for>
+  </ul>
+</aside>
+
+<nav aria-label="Sections for {{gameName}}" style="flex: 1 1 260px; max-width: 290px; min-width: 240px; border-right: 1px solid #1F2737; padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+  <div style="padding: 0 10px 14px; display: flex; flex-direction: column; gap: 4px">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 700; line-height: 1.2">{{gameName}}</h1>
+    <span style="font-size: 12px; color: #8D97AA">Steam · Unity · DX11 · 64-bit</span>
+    <button style="margin-top: 10px; height: 40px; border-radius: 9px; border: 1px solid #2F7A4A; background: #1D5C36; color: #EFFFF4; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg>Launch</button>
+  </div>
+  <sc-for list="{{sections}}" as="s" hint-placeholder-count="7">
+    <button onClick="{{s.pick}}" aria-current="{{s.current}}" style="{{s.style}}">
+      <span style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 14px">{{s.label}}
+        <sc-if value="{{s.flag}}" hint-placeholder-val="{{ false }}"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B898E8" aria-label="Update available"></span></sc-if>
+      </span>
+      <span style="font-size: 12px; color: #9AA4B5; line-height: 1.4">{{s.summary}}</span>
+    </button>
+  </sc-for>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; padding: 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 700">{{sectionTitle}}</h2>
+    <span style="font-size: 12px; color: #8D97AA; font-family: 'Cascadia Mono', Consolas, monospace">D:\SteamLibrary\steamapps\common\AI Limit</span>
+  </div>
+
+  <sc-if value="{{isComponents}}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; flex-direction: column; border: 1px solid #1F2737; border-radius: 12px; background: #121824">
+    <sc-for list="{{components}}" as="c" hint-placeholder-count="4">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #1A2130">
+        <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-weight: 600">{{c.name}}</span>
+          <span style="font-size: 12px; color: #8D97AA">{{c.kind}}</span>
+        </div>
+        <span style="{{c.pillStyle}}">{{c.status}}</span>
+        <div style="display: flex; gap: 6px">
+          <button style="{{c.btnStyle}}">{{c.action}}</button>
+          <button class="rhi-btn" aria-label="{{c.name}} settings" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></button>
+          <button class="rhi-btn" aria-label="{{c.name}} info" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid #263042; background: #141A26; color: #C9D1DE; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{isOther}}" hint-placeholder-val="{{ false }}">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; padding: 16px; border: 1px solid #1F2737; border-radius: 12px; background: #121824">
+    <sc-for list="{{fields}}" as="f" hint-placeholder-count="6">
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #AEB7C7">{{f.label}}
+        <select style="height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid #263042; background: #0E131D; color: #E6EAF2; font-size: 13px"><option>{{f.value}}</option></select></label>
+    </sc-for>
+  </div>
+  </sc-if>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6FA8FF","options":["#6FA8FF","#B898E8","#5ECB7D","#F0C35A"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 0, sec: 'components' }; }
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent ?? '#6FA8FF';
+    const names = ['AI Limit', 'CONTROL Resonant', 'Esoteric Ebb', 'Forsaken Realms: Vahrin\u2019s Call', 'Gears of War: E-Day', 'Phantom Blade Zero', 'SILENT HILL: Townfall', 'The Blood of Dawnwalker', 'The Witcher 3: Wild Hunt \u2014 Remastered', 'Valor Mortis', 'Wayfinder'];
+    const rowBase = 'width: 100%; text-align: left; height: 34px; padding: 0 10px; border: 0; border-radius: 7px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;';
+    const games = names.map((name, i) => ({
+      name, current: i === s.sel ? 'true' : 'false',
+      pick: () => this.setState({ sel: i }),
+      style: rowBase + (i === s.sel ? ' background: #1A2336; color: #F2F5FA; font-weight: 600;' : ' background: transparent; color: #C9D1DE;')
+    }));
+    const defs = [
+      ['components', 'Components', 'ReShade 6.8.0 · RenoDX · ReLimiter 3.3.5', true],
+      ['overrides', 'Game Overrides', 'Stable · Shaders Global · AI-LIMIT.exe', false],
+      ['dlss', 'DLSS / Streamline', 'SR 310.9.16 · M · 75%', false],
+      ['nr', 'Neural Rendering', 'Not set up', false],
+      ['driver', 'Driver Settings', 'Driver 617.42 · VSync Force Off · FPS limit Off', false],
+      ['extras', 'Extras', 'ASI Loader, OptiScaler, MFG unlocks, DXVK', false],
+      ['manage', 'Management', 'Install folder, reset, report', false]
+    ];
+    const sections = defs.map(([id, label, summary, flag]) => ({
+      label, summary, flag,
+      current: s.sec === id ? 'page' : 'false',
+      pick: () => this.setState({ sec: id }),
+      style: 'display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: 9px; text-align: left; color: #E6EAF2; cursor: pointer; ' +
+        (s.sec === id ? 'border: 1px solid ' + accent + '88; background: #172034;' : 'border: 1px solid transparent; background: transparent;')
+    }));
+    const pill = (c) => 'padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; ' + c;
+    const green = pill('background: #13261C; border: 1px solid #24563A; color: #7FE0A0;');
+    const purple = pill('background: #2A2050; border: 1px solid #4A3A7A; color: #D9C8FF;');
+    const grey = pill('background: #151C29; border: 1px solid #263042; color: #AEB7C7;');
+    const btn = (c) => 'height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; ' + c;
+    const components = [
+      { name: 'ReShade', kind: 'Injector · Stable', status: 'Update available', pillStyle: purple, action: 'Update', btnStyle: btn('border: 1px solid #4A3A7A; background: #2A2050; color: #D9C8FF;') },
+      { name: 'RenoDX', kind: 'HDR mod · by Voosh', status: '26.1014.1445', pillStyle: green, action: 'Reinstall', btnStyle: btn('border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF;') },
+      { name: 'ReLimiter', kind: 'Frame limiter', status: '3.3.5', pillStyle: green, action: 'Reinstall', btnStyle: btn('border: 1px solid #2A3D63; background: #141F33; color: #A9C6FF;') },
+      { name: 'Display Commander', kind: 'Frame limiter · alternative', status: 'Not installed', pillStyle: grey, action: 'Install', btnStyle: btn('border: 1px solid #263042; background: #141A26; color: #C9D1DE;') }
+    ];
+    const fieldSets = {
+      overrides: [['ReShade channel', 'Stable'], ['Bitness', 'Auto'], ['Graphics API', 'Auto'], ['Shaders', 'Global'], ['Addons', 'Global'], ['Wiki matching', 'Use wiki']],
+      dlss: [['Super Resolution', '310.9.16'], ['Preset', 'M'], ['Render scale', '75%'], ['NVIDIA Override', 'Off']],
+      nr: [['Method', 'Not set up']],
+      driver: [['VSync', 'Force Off'], ['FPS limit', 'Off'], ['Low Latency', 'Global'], ['Smooth Motion', 'Global'], ['G-Sync', 'Global'], ['ReBAR', 'Global']],
+      extras: [['Ultimate ASI Loader', 'Not installed'], ['OptiScaler', 'Not installed'], ['DXVK', 'Not installed'], ['dgVoodoo2', 'Not installed']],
+      manage: [['Install folder', 'D:\\SteamLibrary\\steamapps\\common\\AI Limit']]
+    };
+    const cur = defs.find((d) => d[0] === s.sec) || defs[0];
+    return {
+      accent, games, sections, components,
+      gameName: names[s.sel],
+      sectionTitle: cur[1],
+      isComponents: s.sec === 'components', isOther: s.sec !== 'components',
+      fields: (fieldSets[s.sec] || []).map(([label, value]) => ({ label, value }))
+    };
+  }
+}
+</script>
+</body>
+</html>
