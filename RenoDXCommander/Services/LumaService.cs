@@ -1175,6 +1175,8 @@ public class LumaService : ILumaService
     /// Fetches the latest Luma-Framework release tag from GitHub and extracts the
     /// build number (e.g. "latest-428" → 428). Returns 0 on failure.
     /// </summary>
+    public int LastKnownBuildNumber { get; private set; }
+
     public async Task<int> GetLatestBuildNumberAsync()
     {
         try
@@ -1190,7 +1192,10 @@ public class LumaService : ILumaService
             // Tag format: "latest-428"
             var dashIdx = tagName.LastIndexOf('-');
             if (dashIdx >= 0 && int.TryParse(tagName[(dashIdx + 1)..], out var buildNumber))
+            {
+                LastKnownBuildNumber = buildNumber;
                 return buildNumber;
+            }
             CrashReporter.Log($"[LumaService.GetLatestBuildNumberAsync] Could not parse build number from tag '{tagName}'");
             return 0;
         }

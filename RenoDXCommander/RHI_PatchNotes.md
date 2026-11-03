@@ -12,7 +12,30 @@ If you use **Sign in with GitHub**, click **Sign out** in the same place, revoke
 
 ## v2.9.0 Beta
 
+### New
+
+**Tabs layout**
+- Settings › General › Game page has a new Layout option. Tabs is a redesigned RHI window that shows the game page one tab at a time instead of one long page. Classic, the layout you know, stays the default, and every setting is available in both.
+- **Game header:** the game's name in large type with a Favourite star and Hide, tags for the store, engine, graphics API, 32/64-bit and mod author, the install path with Open folder and Config folder, and links to Nexus Mods, PCGamingWiki and ultrawide fixes. A large Launch button has a menu for the executable, launch arguments and a desktop shortcut, and HDR on launch and Resolution switch are labelled toggles.
+- **Overview tab:** a card for each component (ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter) with its version, a short description, the main button and Info, ⚙ and remove. ReLimiter and Display Commander share one card with a switch between them. Below, an At a glance tile for every other section shows its summary; click one to open that tab.
+- **Section tabs:**
+  - Game Overrides is grouped into four cards: Names and matching, ReShade, DLL names, and Updates and launch.
+  - DLSS / Streamline shows every setting as a labelled dropdown in one card. Driver Settings keeps Classic's groups (VSync and latency, ReBAR, Smooth Motion, and Power, G-Sync and FPS).
+  - Neural Rendering has a card for each method, with the setup underneath.
+  - Extras is grouped into Loaders and upscalers, MFG unlocks and API upgrades, with a description for each component. When something can't be installed, the row says why (for example, DLSS Enabler is already provided by OptiScaler).
+  - Management is four large buttons.
+- **Top bar and sidebar:** Library, Available Mods and Shaders & Addons along the top, with when RHI last checked for updates, a refresh button, Update All showing how many games have updates (or All up to date), a Help menu and Settings. The sidebar has All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
+- The tabs are always in the same order (Overview, Game Overrides, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Management), and RHI remembers which tab you were on.
+
+### Changes
+
+**Message of the day**
+- Links in the message can now be clicked.
+
 ### Bug Fixes
+
+**Admin Mode**
+- Fixed the hand cursor over links and badges switching back to the normal pointer after a moment when Drop Helper is on.
 
 **Game Pass and moved games**
 - Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.

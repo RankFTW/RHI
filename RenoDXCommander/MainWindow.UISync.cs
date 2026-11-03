@@ -155,6 +155,13 @@ public sealed partial class MainWindow
         AboutPanel.Visibility    = ViewModel.CurrentPage == AppPage.About    ? Visibility.Visible : Visibility.Collapsed;
         FaqPanel.Visibility      = ViewModel.CurrentPage == AppPage.Faq      ? Visibility.Visible : Visibility.Collapsed;
 
+        // A layout change made on the Settings page rebuilds the game page now it's visible again
+        if (_layoutRebuildPending && ViewModel.CurrentPage == AppPage.GameView)
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                if (_layoutRebuildPending && ViewModel.CurrentPage == AppPage.GameView) RebuildForLayout();
+            });
+
         // Auto-select first game if nothing is selected
         if (GameList.SelectedItem == null && ViewModel.DisplayedGames.Count > 0)
         {
@@ -179,6 +186,7 @@ public sealed partial class MainWindow
             b.Background  = new SolidColorBrush(isActive ? active   : inactive);
             b.Foreground  = new SolidColorBrush(isActive ? activeFg : inactiveFg);
         }
+        if (_tabsChromeOn) RefreshTabsChromeSoon(); // Tabs: segmented filter + Filters count
     }
 
     private void TryRestoreSelection()
@@ -243,6 +251,53 @@ public sealed partial class MainWindow
         ViewModel.SetLastUiAction($"BuildOverridesPanel({card.GameName})");
         _lastBuiltCard = card;
         _detailPanelBuilder.BuildOverridesPanel(card);
+    }
+
+    /// <summary>
+    /// Re-lays out the game page after Settings › General › Layout changes. Rebuilds the shown
+    /// game once, because sections are built expanded or collapsed for the layout they're in.
+    /// </summary>
+    internal void ApplyMainLayout()
+    {
+        CrashReporter.Log($"[MainWindow.ApplyMainLayout] Layout = {ViewModel.Settings.MainLayout}");
+        UpdateDetailPanelWidth();
+        ApplyTabsChrome();
+
+        // The Layout setting is changed on the Settings page, where DLSS, Driver Settings and
+        // Neural Rendering skip their background build (freeze guard). Rebuilding now would leave
+        // them empty, so rebuild once the game page is showing again.
+        if (ViewModel.CurrentPage != AppPage.GameView)
+        {
+            _layoutRebuildPending = true;
+            return;
+        }
+        RebuildForLayout();
+    }
+
+    private bool _layoutRebuildPending;
+
+    private void RebuildForLayout()
+    {
+        _layoutRebuildPending = false;
+        if (ViewModel.SelectedGame is { } card && DetailPanel.Visibility == Visibility.Visible)
+        {
+            PopulateDetailPanel(card);
+            BuildOverridesPanel(card);
+
+            // Classic's Extras rows size their columns from the container's width, which is still
+            // the wide Tabs width at this point. Rebuild them once the narrower layout has happened.
+            if (!_detailPanelBuilder.Layout.IsTabs)
+            {
+                void OnResized(object s, SizeChangedEventArgs e)
+                {
+                    ExtrasContainer.SizeChanged -= OnResized;
+                    if (ReferenceEquals(ViewModel.SelectedGame, card))
+                        _detailPanelBuilder.RequestExtrasRebuild(card);
+                }
+                ExtrasContainer.SizeChanged += OnResized;
+            }
+        }
+        _detailPanelBuilder.ApplySectionOrder();
     }
 
     /// <summary>Allows DetailPanelBuilder to trigger a pending reselect after overrides save.</summary>

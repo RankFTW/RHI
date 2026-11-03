@@ -1647,8 +1647,12 @@ public partial class MainViewModel
         });
     }
 
-    public bool AnyUpdateAvailable =>
-        _allCards.Any(c =>
+    public bool AnyUpdateAvailable => _allCards.Any(IsUpdateAllCandidate);
+
+    /// <summary>How many games Update All would update (the Tabs layout's Update All badge).</summary>
+    public int UpdateAllGameCount => _allCards.Count(IsUpdateAllCandidate);
+
+    private static bool IsUpdateAllCandidate(GameCardViewModel c) =>
             !c.IsHidden
             && !string.IsNullOrEmpty(c.InstallPath)
             && Directory.Exists(c.InstallPath)
@@ -1660,7 +1664,7 @@ public partial class MainViewModel
                 (c.DxvkStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDxvk) ||
                 (c.RefStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRef) ||
                 (c.LumaStatus == GameStatus.UpdateAvailable) ||
-                (c.DofFixStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDofFix)));
+                (c.DofFixStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDofFix));
 
     // Button colours — purple when updates available, dim when idle
     public string UpdateAllBtnBackground => AnyUpdateAvailable ? "#201838" : "#1E242C";

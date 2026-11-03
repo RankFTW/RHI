@@ -75,8 +75,7 @@ public partial class DetailPanelBuilder
         _window.NvidiaProfileDriverPanel.Children.Clear();
 
         const string driverSectionKey = "NvidiaProfileDriver";
-        var driverSettings  = _window.ViewModel.Settings;
-        bool driverCollapsed = driverSettings.CollapsedDetailSections.Contains(driverSectionKey);
+        bool driverCollapsed = Layout.IsCollapsed(driverSectionKey);
 
         // Driver version goes in the collapsed summary, not the title, so the
         // title matches the other sections.
@@ -106,6 +105,7 @@ public partial class DetailPanelBuilder
         driverHeaderRow.Children.Add(driverArrow);
         driverHeaderRow.Children.Add(driverTitle);
         _window.NvidiaProfileDriverPanel.Children.Add(driverHeaderRow);
+        Layout.RegisterHeader(driverSectionKey, driverHeaderRow);
 
         var driverBody = new StackPanel { Spacing = 6, Visibility = driverCollapsed ? Visibility.Collapsed : Visibility.Visible };
         _window.NvidiaProfileDriverPanel.Children.Add(driverBody);
@@ -128,9 +128,7 @@ public partial class DetailPanelBuilder
                 foreach (var child in _driverHeaderRow.Children)
                     if (child is TextBlock { Tag: DriverSummaryTag } tb)
                         tb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
-            if (nowCollapsed) driverSettings.CollapsedDetailSections.Add(driverSectionKey);
-            else              driverSettings.CollapsedDetailSections.Remove(driverSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(driverSectionKey, nowCollapsed);
         };
 
         _driverHeaderRow = driverHeaderRow;
@@ -276,6 +274,7 @@ public partial class DetailPanelBuilder
                         summaryTb.Tag = DriverSummaryTag;
                         summaryTb.Visibility = driverBody.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
                         _driverHeaderRow.Children.Add(summaryTb);
+                        Layout.SummaryChanged(); // Tabs: refresh the Overview tile
                     }
                 }
             });
@@ -1009,12 +1008,19 @@ public partial class DetailPanelBuilder
                     // Guard: user navigated away between the outer callback and this deferred grid addition.
                     if (_window.ViewModel.SelectedGame != card) return;
                     _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingGrid({capturedName})");
-                    targetPanel.Children.Add(nvidiaGrid);
-                    _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingNotice({capturedName})");
-
-                    // Footer (admin notice + Restore Defaults) appended after the grid so it stays at the bottom
+                    // Footer (admin notice + Restore Defaults) goes after the grid so it stays at the bottom
                     footerGrid.Children.Add(MakeDriverFooterText(isElevatedCapture, new Thickness(0)));
-                    targetPanel.Children.Add(footerGrid);
+                    if (Layout.IsTabs)
+                    {
+                        // Tabs (mockup A): the same controls as one card, arranged before it's shown
+                        targetPanel.Children.Add(Layout.ArrangeDriver(nvidiaGrid, footerGrid, _dlssPresetService.DriverVersionString));
+                    }
+                    else
+                    {
+                        targetPanel.Children.Add(nvidiaGrid);
+                        _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddingNotice({capturedName})");
+                        targetPanel.Children.Add(footerGrid);
+                    }
                     _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Done({capturedName})");
                 });
             CrashReporter.Log($"[BuildDriverProfileSectionWithData] TryEnqueue(Low) for grid add returned {enqueued?.ToString() ?? "null (no dispatcher)"} for '{capturedName}'");

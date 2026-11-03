@@ -130,14 +130,20 @@ class DropOverlayForm : Form
         int x = r.Left + 12, y = r.Top + 38;
         if (Left != x || Top != y) Location = new Point(x, y);
 
-        // Only bring to front when RHI is the foreground window
+        // Bring to front only when RHI has just become the foreground window. Re-raising on every
+        // tick made Windows re-check the cursor over RHI twice a second, which dropped RHI's hand
+        // cursor back to the arrow while hovering links.
         var fg = GetForegroundWindow();
-        if (fg == _parentHwnd || fg == this.Handle)
+        bool rhiInFront = fg == _parentHwnd || fg == this.Handle;
+        if (rhiInFront && !_rhiWasInFront)
         {
             SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             SetWindowPos(this.Handle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
+        _rhiWasInFront = rhiInFront;
     }
+
+    private bool _rhiWasInFront;
 
     private void OnDragEnter(object? sender, DragEventArgs e)
     {

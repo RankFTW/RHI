@@ -312,18 +312,32 @@ public partial class DialogService
 
     private async Task ShowMotdContentAsync(string motd)
     {
+        // Markdown, so [text](url) and bare URLs are clickable. A single line break stays a line
+        // break (Markdown would join the lines), so plain-text messages look as they always did.
+        var text = string.Join("\n", motd.Replace("\r", "").Split('\n')
+            .Select(l => l.Length == 0 ? l : l.TrimEnd() + "  "));
+        var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
+        {
+            Text = text,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 13,
+            UseEmphasisExtras = true,
+            UseListExtras = true,
+            UseAutoLinks = true,
+        };
+        var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
+        markdownContainer.Children.Add(markdown);
+
         var dlg = new ContentDialog
         {
             Title = "📢 Message from RHI",
             Content = new ScrollViewer
             {
-                Content = new TextBlock
-                {
-                    Text = motd,
-                    TextWrapping = TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true,
-                },
+                Content = markdownContainer,
                 MaxHeight = 400,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Padding = new Thickness(0, 0, 16, 0),
             },
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,

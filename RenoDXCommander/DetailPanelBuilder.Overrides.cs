@@ -69,8 +69,7 @@ public partial class DetailPanelBuilder
 
         // ── Collapsible header ────────────────────────────────────────────────
         const string overridesSectionKey = "GameOverrides";
-        var ovSettings  = _window.ViewModel.Settings;
-        bool ovCollapsed = ovSettings.CollapsedDetailSections.Contains(overridesSectionKey);
+        bool ovCollapsed = Layout.IsCollapsed(overridesSectionKey);
 
         var ovArrow = new TextBlock
         {
@@ -93,6 +92,7 @@ public partial class DetailPanelBuilder
         _window.OverridesHeaderRow.Children.Add(MakeDragHandle(_window.OverridesContainer));
         _window.OverridesHeaderRow.Children.Add(ovArrow);
         _window.OverridesHeaderRow.Children.Add(ovTitle);
+        Layout.RegisterHeader(overridesSectionKey, _window.OverridesHeaderRow);
         _window.OverridesPanel.Visibility = ovCollapsed ? Visibility.Collapsed : Visibility.Visible;
 
         // ── Collapsed summary ─────────────────────────────────────────────────
@@ -144,9 +144,7 @@ public partial class DetailPanelBuilder
                     && _window.OverridesHeaderRow.Children[3] is TextBlock ovSum)
                     ovSum.Visibility = Visibility.Collapsed;
             }
-            if (nowCollapsed) ovSettings.CollapsedDetailSections.Add(overridesSectionKey);
-            else              ovSettings.CollapsedDetailSections.Remove(overridesSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(overridesSectionKey, nowCollapsed);
         };
 
         _window.OverridesHeaderRow.PointerEntered += _ovHeaderEnteredHandler;
@@ -1250,6 +1248,8 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildOverridesPanel] RsChannel done: '{card.GameName}'");
         BuildShadersAddonsSection(ctx);
         CrashReporter.Log($"[BuildOverridesPanel] ShadersAddons done: '{card.GameName}'");
+        // Tabs (mockup A): the same controls as grouped cards, arranged before they're shown
+        if (Layout.IsTabs) Layout.ArrangeOverrides(_window.OverridesPanel);
 
         // Sync mutable state back from context
         capturedName = ctx.CapturedName;

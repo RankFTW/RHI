@@ -934,10 +934,20 @@ public sealed partial class MainWindow
     // ── Detail panel handlers ─────────────────────────────────────────────────────
 
     private void DetailScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+        => UpdateDetailPanelWidth(e.NewSize.Width);
+
+    /// <summary>
+    /// Classic: an 850 px column (24 px padding). Tabs (mockup A): the content fills the area with
+    /// 32 px side padding, capped so very wide windows stay readable.
+    /// </summary>
+    internal void UpdateDetailPanelWidth(double viewerWidth = -1)
     {
-        const double maxWidth = 850;
-        const double padding = 48; // 24 left + 24 right
-        var available = e.NewSize.Width - padding;
+        if (viewerWidth < 0) viewerWidth = DetailScrollViewer.ActualWidth;
+        bool tabs = _detailPanelBuilder?.Layout.IsTabs == true;
+        double maxWidth = tabs ? 1600 : 850;
+        DetailPanel.Padding = tabs ? new Thickness(32, 24, 32, 32) : new Thickness(24, 18, 24, 24);
+        DetailPanel.Spacing = tabs ? 20 : 16;
+        var available = viewerWidth - (tabs ? 0 : 48);
         DetailPanel.Width = available > maxWidth ? maxWidth : (available > 0 ? available : double.NaN);
     }
 

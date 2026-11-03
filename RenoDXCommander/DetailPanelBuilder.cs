@@ -57,6 +57,7 @@ public partial class DetailPanelBuilder
     {
         _window = window;
         _dispatcherQueue = window.DispatcherQueue;
+        Layout = new DetailLayoutHost(window);
         _gameNameService = gameNameService;
         _peHeaderService = peHeaderService;
         _dlssPresetService = dlssPresetService;
@@ -395,8 +396,7 @@ public partial class DetailPanelBuilder
         // ── Wire Components section collapse + drag handle ────────────────────
         {
             const string sectionKey = "Components";
-            var settings    = _window.ViewModel.Settings;
-            bool collapsed  = settings.CollapsedDetailSections.Contains(sectionKey);
+            bool collapsed  = Layout.IsCollapsed(sectionKey);
 
             _window.DetailComponentsArrow.Text = collapsed ? "▶" : "▼";
             _window.DetailComponentsBody.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -411,6 +411,8 @@ public partial class DetailPanelBuilder
             _window.DetailComponentsHeader.PointerEntered += ComponentsHeader_PointerEntered;
             _window.DetailComponentsHeader.PointerExited  -= ComponentsHeader_PointerExited;
             _window.DetailComponentsHeader.PointerExited  += ComponentsHeader_PointerExited;
+            if (_window.DetailComponentsHeader.Parent is FrameworkElement componentsHeaderGrid)
+                Layout.RegisterHeader(sectionKey, componentsHeaderGrid);
 
             // Replace drag handle as first child.
             // The XAML starts with [0]=Arrow, [1]=Title.
@@ -446,6 +448,7 @@ public partial class DetailPanelBuilder
 
         // Populate component rows
         UpdateDetailComponentRows(card);
+        Layout.RefreshHeader(); // Tabs: mockup header copies the header filled above
         __sw.Stop();
         if (__sw.ElapsedMilliseconds > 30)
             CrashReporter.Log($"[PopulateDetailPanel] SLOW: '{card.GameName}' took {__sw.ElapsedMilliseconds}ms");
@@ -543,54 +546,11 @@ public partial class DetailPanelBuilder
 
     // ── Section order / drag-reorder ─────────────────────────────────────────
 
-    /// <summary>Maps section key → its container Border in DetailPanel.</summary>
-    private Border GetSectionContainer(string key) => key switch
-    {
-        "Components"         => _window.DetailComponentSection,
-        "GameOverrides"      => _window.OverridesContainer,
-        "NeuralRendering"    => _window.NeuralRenderingContainer,
-        "NvidiaProfileDlss"  => _window.NvidiaProfileDlssContainer,
-        "NvidiaProfileDriver"=> _window.NvidiaProfileDriverContainer,
-        "Management"         => _window.ManagementContainer,
-        "Extras"             => _window.ExtrasContainer,
-        _                    => throw new ArgumentException($"Unknown section key: {key}"),
-    };
+    /// <summary>Decides where the sections go, their order and collapse state.</summary>
+    internal DetailLayoutHost Layout { get; }
 
-    /// <summary>
-    /// Reorders the 5 section Borders within DetailPanel.Children to match
-    /// SettingsViewModel.DetailSectionOrder. Call after all sections are populated+visible.
-    /// The 2 header Grids at [0] and [1] are left in place.
-    /// </summary>
-    internal void ApplySectionOrder()
-    {
-        var order = _window.ViewModel.Settings.DetailSectionOrder;
-        var panel = _window.DetailPanel;
-
-        var desired = order
-            .Select(key => { try { return GetSectionContainer(key); } catch { return null; } })
-            .Where(b => b != null).Cast<Border>().ToList();
-
-        // Snapshot visibility
-        var visibilities = new Dictionary<UIElement, Visibility>();
-        for (int i = 2; i < panel.Children.Count; i++)
-            if (panel.Children[i] is UIElement el) visibilities[el] = el.Visibility;
-
-        int insertAt = 2;
-        foreach (var border in desired)
-        {
-            var currentIndex = panel.Children.IndexOf(border);
-            if (currentIndex < 0) continue;
-            if (currentIndex == insertAt) { insertAt++; continue; }
-            panel.Children.RemoveAt(currentIndex);
-            panel.Children.Insert(insertAt, border);
-            insertAt++;
-        }
-
-        // Restore visibility
-        for (int i = 2; i < panel.Children.Count; i++)
-            if (panel.Children[i] is UIElement el && visibilities.TryGetValue(el, out var vis))
-                el.Visibility = vis;
-    }
+    /// <summary>Puts the sections in the saved order. Call after all sections are populated+visible.</summary>
+    internal void ApplySectionOrder() => Layout.ApplySectionOrder();
 
     // Drag state
     private Border?  _dragBorder;
@@ -795,27 +755,7 @@ public partial class DetailPanelBuilder
     private void DetailPanel_PointerCaptureLost(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         => DragEnd(save: true);
 
-    private void SaveSectionOrder()
-    {
-        var panel    = _window.DetailPanel;
-        var keyOrder = new List<string>();
-        for (int i = 2; i < panel.Children.Count; i++)
-        {
-            var border = panel.Children[i] as Border;
-            if      (border == _window.DetailComponentSection)     keyOrder.Add("Components");
-            else if (border == _window.OverridesContainer)          keyOrder.Add("GameOverrides");
-            else if (border == _window.NeuralRenderingContainer)    keyOrder.Add("NeuralRendering");
-            else if (border == _window.NvidiaProfileDlssContainer)   keyOrder.Add("NvidiaProfileDlss");
-            else if (border == _window.NvidiaProfileDriverContainer) keyOrder.Add("NvidiaProfileDriver");
-            else if (border == _window.ManagementContainer)         keyOrder.Add("Management");
-            else if (border == _window.ExtrasContainer)             keyOrder.Add("Extras");
-        }
-        if (keyOrder.Count > 0)
-        {
-            _window.ViewModel.Settings.DetailSectionOrder = keyOrder;
-            _window.ViewModel.SaveSettingsPublic();
-        }
-    }
+    private void SaveSectionOrder() => Layout.SaveSectionOrder();
 
     // ── Components section header event handlers (wired per-card in PopulateDetailPanel) ──
 
@@ -826,13 +766,10 @@ public partial class DetailPanelBuilder
     private void ComponentsHeader_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         const string sectionKey = "Components";
-        var settings   = _window.ViewModel.Settings;
         bool collapsed = _window.DetailComponentsBody.Visibility == Visibility.Visible;
         _window.DetailComponentsBody.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
         _window.DetailComponentsArrow.Text      = collapsed ? "▶" : "▼";
 
-        if (collapsed) settings.CollapsedDetailSections.Add(sectionKey);
-        else           settings.CollapsedDetailSections.Remove(sectionKey);
 
         // Rebuild summary on collapse, hide on expand
         if (collapsed)
@@ -852,7 +789,7 @@ public partial class DetailPanelBuilder
                 _componentsSummary.Visibility = Visibility.Collapsed;
         }
 
-        _window.ViewModel.SaveSettingsPublic();
+        Layout.SetCollapsed(sectionKey, collapsed);
     }
 
     private void ComponentsHeader_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

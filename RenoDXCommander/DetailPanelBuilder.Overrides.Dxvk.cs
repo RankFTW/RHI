@@ -24,8 +24,7 @@ public partial class DetailPanelBuilder
 
         // Collapsible header
         const string mgmtSectionKey = "Management";
-        var mgmtSettings   = _window.ViewModel.Settings;
-        bool mgmtCollapsed = mgmtSettings.CollapsedDetailSections.Contains(mgmtSectionKey);
+        bool mgmtCollapsed = Layout.IsCollapsed(mgmtSectionKey);
 
         var mgmtArrow = new TextBlock
         {
@@ -50,6 +49,7 @@ public partial class DetailPanelBuilder
         mgmtHeaderRow.Children.Add(mgmtArrow);
         mgmtHeaderRow.Children.Add(mgmtTitle);
         _window.ManagementPanel.Children.Add(mgmtHeaderRow);
+        Layout.RegisterHeader(mgmtSectionKey, mgmtHeaderRow);
 
         // Body wrapper
         var mgmtBody = new StackPanel { Spacing = 6, Visibility = mgmtCollapsed ? Visibility.Collapsed : Visibility.Visible };
@@ -67,9 +67,7 @@ public partial class DetailPanelBuilder
             bool nowCollapsed = mgmtBody.Visibility == Visibility.Visible;
             mgmtBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             mgmtArrow.Text = nowCollapsed ? "▶" : "▼";
-            if (nowCollapsed) mgmtSettings.CollapsedDetailSections.Add(mgmtSectionKey);
-            else              mgmtSettings.CollapsedDetailSections.Remove(mgmtSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(mgmtSectionKey, nowCollapsed);
         };
 
         var mgmtRow = new Grid { ColumnSpacing = 0 };
@@ -162,17 +160,43 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        reportBtn.Click += async (s, ev) =>
+        async void CopyReport()
         {
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard != null)
-                await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
-        };
+            try
+            {
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null)
+                    await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
+            }
+            catch (Exception ex)
+            {
+                Services.CrashReporter.Log($"[BuildManagementSection] Copy Report failed — {ex.Message}");
+            }
+        }
+        reportBtn.Click += (s, ev) => CopyReport();
         Grid.SetColumn(reportBtn, 6);
         ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
         mgmtRow.Children.Add(reportBtn);
 
+        if (Layout.Layout == MainLayout.Tabs)
+        {
+            // Tabs (mockup A): the same four actions as tiles
+            var tiles = new Controls.AutoFitGrid { MinColumnWidth = 220 };
+            tiles.Children.Add(TabsTheme.MakeTile("Change install folder", "Point RHI at a different folder for this game", false,
+                (s, ev) => _window.BrowseFolder_Click(changeFolderBtn, ev), TabsTooltip(changeFolderBtn)));
+            tiles.Children.Add(TabsTheme.MakeTile("Reset Overrides", "Put every per-game setting back to global", false,
+                (s, ev) => ctx.ResetAction?.Invoke(), TabsTooltip(mgmtResetOverridesBtn)));
+            tiles.Children.Add(TabsTheme.MakeTile("Copy Report", "Copy this game’s setup to share for support", false,
+                (s, ev) => CopyReport(), TabsTooltip(reportBtn)));
+            tiles.Children.Add(TabsTheme.MakeTile("Reset / Remove game", "Detect the install folder again, or remove a game you added yourself", true,
+                (s, ev) => _window.RemoveManualGame_Click(removeGameBtn, ev), TabsTooltip(removeGameBtn)));
+            mgmtBody.Children.Add(tiles);
+            return;
+        }
+
         mgmtBody.Children.Add(mgmtRow);
     }
+
+    private static string? TabsTooltip(DependencyObject d) => ToolTipService.GetToolTip(d) as string;
 }

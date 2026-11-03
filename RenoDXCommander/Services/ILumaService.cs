@@ -60,6 +60,9 @@ public interface ILumaService
     /// </summary>
     Task<int> GetLatestBuildNumberAsync();
 
+    /// <summary>The build number the last successful <see cref="GetLatestBuildNumberAsync"/> found (0 = not known yet).</summary>
+    int LastKnownBuildNumber { get; }
+
     /// <summary>
     /// Checks whether a newer Luma-Framework release is available compared to
     /// the build number stored in the installed record.

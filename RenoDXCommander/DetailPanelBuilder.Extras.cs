@@ -23,12 +23,11 @@ public partial class DetailPanelBuilder
         _window.ViewModel.SetLastUiAction($"BuildExtrasSection({card.GameName})");
         var __exSw = System.Diagnostics.Stopwatch.StartNew();
         _window.ExtrasPanel.Children.Clear();
-        _window.ExtrasContainer.Visibility = Visibility.Visible;
+        Layout.ShowSection("Extras");
 
         // ── Collapsible header ────────────────────────────────────────────────
         const string extrasSectionKey = "Extras";
-        var exSettings   = _window.ViewModel.Settings;
-        bool exCollapsed = exSettings.CollapsedDetailSections.Contains(extrasSectionKey);
+        bool exCollapsed = Layout.IsCollapsed(extrasSectionKey);
 
         var exArrow = new TextBlock
         {
@@ -53,6 +52,7 @@ public partial class DetailPanelBuilder
         exHeaderRow.Children.Add(exArrow);
         exHeaderRow.Children.Add(exTitle);
         _window.ExtrasPanel.Children.Add(exHeaderRow);
+        Layout.RegisterHeader(extrasSectionKey, exHeaderRow);
 
         var exBody = new StackPanel { Spacing = 10, Visibility = exCollapsed ? Visibility.Collapsed : Visibility.Visible };
         _window.ExtrasPanel.Children.Add(exBody);
@@ -95,9 +95,7 @@ public partial class DetailPanelBuilder
             exArrow.Text = nowCollapsed ? "▶" : "▼";
             if (exSummary != null)
                 exSummary.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
-            if (nowCollapsed) exSettings.CollapsedDetailSections.Add(extrasSectionKey);
-            else              exSettings.CollapsedDetailSections.Remove(extrasSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(extrasSectionKey, nowCollapsed);
         };
 
         // ── Ultimate ASI Loader row ───────────────────────────────────────────
@@ -158,6 +156,9 @@ public partial class DetailPanelBuilder
             BuildDgVoodooRow(card, exBody);
             CrashReporter.Log($"[BuildExtrasSection] DgVoodooRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
         }
+
+        // Tabs (mockup A): the same rows as one list card
+        if (Layout.IsTabs) Layout.ArrangeExtras(exBody);
 
         UpdateOsFeedback(card);
         __exSw.Stop();

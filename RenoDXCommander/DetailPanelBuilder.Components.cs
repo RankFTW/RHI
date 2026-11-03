@@ -550,6 +550,7 @@ public partial class DetailPanelBuilder
         _window.DetailNoModMsg.Visibility = card.NoModVisibility;
 
         UpdateDetailProgressRows(card);
+        Layout.RefreshOverviewCards(); // Tabs: Overview cards copy these rows
     }
 
     public void UpdateDetailProgressRows(GameCardViewModel card)
@@ -594,6 +595,7 @@ public partial class DetailPanelBuilder
         _window.DetailLumaMessage.Visibility = card.LumaMessageVisibility;
         _window.DetailLumaMessage.Text = card.LumaActionMessage;
         _window.DetailLumaMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.LumaActionMessage));
+        Layout.RefreshOverviewProgress();
     }
 
     public void DetailCard_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -616,6 +618,8 @@ public partial class DetailPanelBuilder
             if (_currentDetailCard == null) return;
             UpdateDetailComponentRows(_currentDetailCard);
             OnExtrasCardPropertyChanged(_currentDetailCard, e.PropertyName);
+            if (e.PropertyName is "IsRunning" or "IsFavourite" or "IsHidden" or "Is32Bit" or "GraphicsApiLabel")
+                _dispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, Layout.RefreshHeader);
 
             // Refresh 32-bit / 64-bit badge when bitness changes
             if (e.PropertyName is "Is32Bit" or "Is32BitBadgeVisibility")

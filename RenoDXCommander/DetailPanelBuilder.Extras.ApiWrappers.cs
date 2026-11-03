@@ -43,8 +43,8 @@ public partial class DetailPanelBuilder
             Opacity = isDisabled ? 0.35 : 1.0,
             Tag = card,
         };
-        if (card.DxvkToggleTooltip != null)
-            ToolTipService.SetToolTip(label, card.DxvkToggleTooltip);
+        ToolTipService.SetToolTip(label, card.DxvkToggleTooltip
+            ?? "DXVK — translates DX8, DX9, DX10 and DX11 calls to Vulkan, enabling scRGB HDR with Lilium HDR shaders.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 

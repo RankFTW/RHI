@@ -20,8 +20,7 @@ public partial class DetailPanelBuilder
 
         // ── Collapsible header ────────────────────────────────────────────────
         const string nvSectionKey = "NvidiaProfileDlss";
-        var nvSettings   = _window.ViewModel.Settings;
-        bool nvCollapsed = nvSettings.CollapsedDetailSections.Contains(nvSectionKey);
+        bool nvCollapsed = Layout.IsCollapsed(nvSectionKey);
 
         var driverVer = _dlssPresetService.DriverVersionString;
         var headerText = "DLSS / Streamline";
@@ -49,6 +48,7 @@ public partial class DetailPanelBuilder
         nvHeaderRow.Children.Add(nvArrow);
         nvHeaderRow.Children.Add(nvTitle);
         _window.NvidiaProfileDlssPanel.Children.Add(nvHeaderRow);
+        Layout.RegisterHeader(nvSectionKey, nvHeaderRow);
 
         var nvBody = new StackPanel { Spacing = 6, Visibility = nvCollapsed ? Visibility.Collapsed : Visibility.Visible };
         _window.NvidiaProfileDlssPanel.Children.Add(nvBody);
@@ -70,9 +70,7 @@ public partial class DetailPanelBuilder
             if (_nvHeaderRow != null && _nvHeaderRow.Children.Count > 3
                 && _nvHeaderRow.Children[3] is TextBlock nvSummaryTb)
                 nvSummaryTb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
-            if (nowCollapsed) nvSettings.CollapsedDetailSections.Add(nvSectionKey);
-            else              nvSettings.CollapsedDetailSections.Remove(nvSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(nvSectionKey, nowCollapsed);
         };
 
         // Store header row so BuildNvidiaProfileBody can append/update the summary
@@ -172,6 +170,8 @@ public partial class DetailPanelBuilder
                 var dlssAvailW = dlssContainer.ActualWidth > 0 ? dlssContainer.ActualWidth : _window.NvidiaProfileDlssPanel.ActualWidth;
                 BuildNvidiaProfileBody(capturedCard, capturedName, tempBody, dlssData,
                     hasDlss, hasDlssd, hasDlssg, hasStreamline, hasDlssnr, dlssAvailW);
+                // Tabs (mockup A): the same controls as one card, arranged before it's shown
+                if (Layout.IsTabs) Layout.ArrangeDlss(tempBody);
                 dlssContainer.Children.Clear();
                 dlssContainer.Children.Add(tempBody);
                 sw.Stop();
@@ -970,10 +970,10 @@ public partial class DetailPanelBuilder
             var nvSummaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(nvSummaryEntries, nvSummaryTip);
             if (nvSummaryTb != null)
             {
-                var nvCollapsed = _window.ViewModel.Settings.CollapsedDetailSections
-                    .Contains("NvidiaProfileDlss");
+                var nvCollapsed = Layout.IsCollapsed("NvidiaProfileDlss");
                 nvSummaryTb.Visibility = nvCollapsed ? Visibility.Visible : Visibility.Collapsed;
                 _nvHeaderRow.Children.Add(nvSummaryTb);
+                Layout.SummaryChanged(); // Tabs: refresh the Overview tile
             }
         }
     }

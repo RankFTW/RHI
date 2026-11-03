@@ -80,8 +80,7 @@ public partial class DetailPanelBuilder
 
         // ── Header ────────────────────────────────────────────────────────────
         const string nrSectionKey = "NeuralRendering";
-        var nrSettings   = _window.ViewModel.Settings;
-        bool nrCollapsed = nrSettings.CollapsedDetailSections.Contains(nrSectionKey);
+        bool nrCollapsed = Layout.IsCollapsed(nrSectionKey);
 
         var nrArrow = new TextBlock
         {
@@ -106,6 +105,7 @@ public partial class DetailPanelBuilder
         nrHeaderRow.Children.Add(nrArrow);
         nrHeaderRow.Children.Add(nrTitle);
         _window.NeuralRenderingPanel.Children.Add(nrHeaderRow);
+        Layout.RegisterHeader(nrSectionKey, nrHeaderRow);
 
         // Body wrapper — all section content goes into this
         var nrBody = new StackPanel { Spacing = 6, Visibility = nrCollapsed ? Visibility.Collapsed : Visibility.Visible };
@@ -154,9 +154,7 @@ public partial class DetailPanelBuilder
             nrArrow.Text = nowCollapsed ? "▶" : "▼";
             if (nrSummary != null)
                 nrSummary.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
-            if (nowCollapsed) nrSettings.CollapsedDetailSections.Add(nrSectionKey);
-            else              nrSettings.CollapsedDetailSections.Remove(nrSectionKey);
-            _window.ViewModel.SaveSettingsPublic();
+            Layout.SetCollapsed(nrSectionKey, nowCollapsed);
         };
 
         // ── Row 1: Method combo + Addon Version combo + NR DLL version combo ──
@@ -1678,6 +1676,8 @@ public partial class DetailPanelBuilder
         linksRow.Children.Add(MakeLink("ShortFuse →",   "https://discord.com/channels/1408098019194310818/1543975158937821315"));
         linksRow.Children.Add(MakeLink("Feeder →",      "https://github.com/jlrouzies-fr/DLSS5-Feeder"));
         nrBody.Children.Add(linksRow);
+        // Tabs (mockup A): method cards + a Setup card, from the same controls
+        if (Layout.IsTabs) Layout.ArrangeNeuralRendering(nrBody);
         _window.ViewModel.SetLastUiAction($"NeuralRenderingSectionWithData:Done({card.GameName})");
     }
 }

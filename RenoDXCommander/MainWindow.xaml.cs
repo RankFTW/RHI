@@ -324,9 +324,14 @@ public sealed partial class MainWindow : Window
                 _shutdownSignalTimer?.Stop();
                 _crashReporter.Log("[MainWindow] Shutdown signal received from installer — exiting");
                 RequestExit();
+                return;
             }
+            CheckDevScreenshotRequest();
         };
         _shutdownSignalTimer.Start();
+
+        // Tabs layout: mockup top bar, sidebar and footer (no-op in Classic)
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ApplyTabsChrome);
 
         // If started with --minimized, initialize tray and stay hidden
         if (App._startMinimized)

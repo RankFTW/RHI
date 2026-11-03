@@ -51,6 +51,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
     /// <summary>Key of the Settings page section last used (jump list / scroll position), e.g. "General", "Dlss".</summary>
     [ObservableProperty] private string _settingsLastSection = "General";
+    /// <summary>Game page layout: "Classic" or "Tabs" (DetailLayoutHost / MainLayout).</summary>
+    [ObservableProperty] private string _mainLayout = "Classic";
+    /// <summary>Key of the tab last shown in the Tabs layout: "Overview" or a section key.</summary>
+    [ObservableProperty] private string _detailSelectedTab = "Overview";
     [ObservableProperty] private string _dxvkVariant = "LiliumHdr";
     [ObservableProperty] private string _reShadeChannel = "Stable";
     [ObservableProperty] private int _peakNits;
@@ -316,6 +320,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("CacheAllShaders", out var casVal)) CacheAllShaders = casVal != "false"; // default true
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
         if (s.TryGetValue("SettingsLastSection", out var slsVal) && !string.IsNullOrWhiteSpace(slsVal)) SettingsLastSection = slsVal;
+        if (s.TryGetValue("MainLayout", out var mlVal) && !string.IsNullOrWhiteSpace(mlVal)) MainLayout = mlVal;
+        if (s.TryGetValue("DetailSelectedTab", out var dstVal) && !string.IsNullOrWhiteSpace(dstVal)) DetailSelectedTab = dstVal;
         if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "LiliumHdr";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
         if (s.TryGetValue("PeakNits", out var pnVal) && int.TryParse(pnVal, out var pnInt)) PeakNits = pnInt;
@@ -494,6 +500,8 @@ public partial class SettingsViewModel : ObservableObject
         s["CacheAllShaders"] = CacheAllShaders ? "true" : "false";
         s["LastUpdateCheckUtc"] = LastUpdateCheckUtc;
         s["SettingsLastSection"] = SettingsLastSection;
+        s["MainLayout"] = MainLayout;
+        s["DetailSelectedTab"] = DetailSelectedTab;
         s["DxvkVariant"] = DxvkVariant;
         s["ReShadeChannel"] = ReShadeChannel;
         if (PeakNits > 0) s["PeakNits"] = PeakNits.ToString();
