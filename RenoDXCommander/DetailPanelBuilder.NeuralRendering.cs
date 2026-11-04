@@ -139,6 +139,7 @@ public partial class DetailPanelBuilder
                 var nrContainerWidth = _window.NeuralRenderingContainer.ActualWidth;
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
                     nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent, nrContainerWidth);
+                Layout.SummaryChanged(); // Tabs / Spotlight: refresh the section's tile
                 __sw.Stop();
                 if (__sw.ElapsedMilliseconds > 30)
                     CrashReporter.Log($"[BuildNeuralRenderingSectionWithData] SLOW: '{card.GameName}' took {__sw.ElapsedMilliseconds}ms on UI thread");

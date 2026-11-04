@@ -727,6 +727,10 @@ public sealed partial class MainWindow : Window
         else
         {
             ViewModel.SelectedGame = null;
+            // The panels are cleared below, so the page is no longer built for any game. Without this,
+            // re-selecting the same game (a filter change clears and restores the selection) hit the
+            // "same card already built" skip and left the page blank.
+            _lastBuiltCard = null;
             DetailPanel.Visibility = Visibility.Collapsed;
             OverridesPanel.Children.Clear();
             OverridesContainer.Visibility = Visibility.Collapsed;

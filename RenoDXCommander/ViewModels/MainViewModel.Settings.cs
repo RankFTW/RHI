@@ -787,37 +787,42 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// RTX Encore catch-up: games that already have it get Intel's XeSS files in its runtime folder once,
-    /// and RHI-deployed NR DLLs older than 310.9.16 are moved to it. Hidden games are left alone.
+    /// RTX Encore catch-up for games that already have it: Intel's XeSS SDK files are set up (or brought up to
+    /// what RHI now does: libxess.dll, the licence, the game's own copies replaced in place) and refreshed when a
+    /// game update put old copies back; RHI-deployed NR DLLs older than 310.9.16 are moved to it, and moved beside
+    /// the mod for .asi installs. Hidden games are left alone.
     /// </summary>
     private void ReconcileRtxEncoreFiles()
     {
         var svc = App.Services.GetRequiredService<RtxEncoreService>();
-        var games = new List<(string InstallPath, string ModDir, bool NrDeployed)>();
+        var games = new List<(string InstallPath, string InstalledAs, string ModDir, bool NrDeployed)>();
         foreach (var c in _allCards.ToList())
         {
             if (c.IsHidden || string.IsNullOrEmpty(c.InstallPath)) continue;
             var installedAs = GetRtxEncoreInstalledAs(c.GameName, c.Source ?? "");
             if (string.IsNullOrEmpty(installedAs) || !svc.IsInstalledIn(c.InstallPath, installedAs)) continue;
-            games.Add((c.InstallPath, svc.ModDir(c.InstallPath, installedAs), GetRtxEncoreNrDllDeployed(c.GameName, c.Source ?? "")));
+            games.Add((c.InstallPath, installedAs, svc.ModDir(c.InstallPath, installedAs), GetRtxEncoreNrDllDeployed(c.GameName, c.Source ?? "")));
         }
         if (games.Count == 0) return;
         _ = Task.Run(async () =>
         {
             try
             {
-                var needXess = games.Where(g => Rtx40MfgService.NeedsEncoreXessFiles(g.ModDir)).ToList();
-                if (needXess.Count > 0)
+                var needXess = games.Where(g => Rtx40MfgService.NeedsEncoreIntelFiles(g.InstallPath, g.ModDir)).ToList();
+                if (needXess.Count > 0 && await _rtx40MfgService.EnsureEncoreIntelStagingAsync().ConfigureAwait(false))
                 {
-                    await _rtx40MfgService.EnsureXessStagingAsync().ConfigureAwait(false);
                     foreach (var g in needXess)
-                        if (_rtx40MfgService.DeployEncoreXessFiles(g.ModDir))
-                            _crashReporter.Log($"[MainViewModel.ReconcileRtxEncoreFiles] Added XeSS files for RTX Encore in '{g.ModDir}'");
+                        if (_rtx40MfgService.DeployEncoreIntelFiles(g.InstallPath, g.ModDir))
+                            _crashReporter.Log($"[MainViewModel.ReconcileRtxEncoreFiles] Set up Intel XeSS files for RTX Encore in '{g.InstallPath}'");
                 }
 
                 var nrGames = games.Where(g => g.NrDeployed).ToList();
                 if (nrGames.Count > 0 && await svc.EnsureNrDllCachedAsync(_dlssStreamlineService).ConfigureAwait(false) != null)
-                    foreach (var g in nrGames) svc.UpgradeNrDllIfOlder(g.InstallPath);
+                    foreach (var g in nrGames)
+                    {
+                        svc.MoveNrDllBesideMod(g.InstallPath, g.InstalledAs);
+                        svc.UpgradeNrDllIfOlder(g.InstallPath, g.InstalledAs);
+                    }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HttpRequestException)
             {

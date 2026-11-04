@@ -42,7 +42,18 @@
 **GitHub**
 - The Sign in with GitHub option has been removed. A token (Settings → Accounts & Data → GitHub token) is the way to raise the GitHub limit. If you're already signed in, it keeps working until you sign out.
 
+**RTX Encore**
+- Intel's XeSS files are now installed the way RTX Encore Hub installs them. If the game already has its own copies (Unreal games often keep them under Engine\Plugins), RHI replaces them where they are with the version RTX Encore needs, and puts the game's copies back when you remove RTX Encore. Files the game doesn't have, and Intel's licence, go in RTX Encore's own folder. Games that already have RTX Encore are updated on the next launch.
+- The ⚙ tooltips have been brought up to date with RTX Encore 1.6.0, and XeSS on Tensor Cores is greyed out unless Upscaler is XeSS.
+
 ### Bug Fixes
+
+**RTX Encore**
+- Fixed the XeSS upscaler not working: RHI didn't install Intel's libxess.dll, which it needs.
+- Fixed games breaking when RTX Encore was installed as binkw64.dll or bink2w64.dll. The game's own Bink file is now kept beside it as binkw64Hooked.dll (or bink2w64Hooked.dll), as RTX Encore requires.
+- Fixed the rtx-encore.asi option installing the wrong file. It now uses the separate ASI build in RTX Encore's release.
+- Fixed Neural Rendering not finding its DLL when RTX Encore was installed as rtx-encore.asi. The DLL now goes in the plugins folder beside it; existing installs are moved on the next launch.
+- Fixed the FAQ still calling RTX Encore a beta.
 
 **Admin Mode**
 - Fixed the hand cursor over links and badges switching back to the normal pointer after a moment when Drop Helper is on.

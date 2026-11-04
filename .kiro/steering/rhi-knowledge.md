@@ -161,7 +161,7 @@ When adding a new downloadable component variant:
 **Fixes shipped in v2.8.6 Beta 4:**
 - `BuildNeuralRenderingSection` outer `TryEnqueue(Low)` was missing `SelectedGame != card` and `scanToken.IsCancellationRequested` guards. Rapid A→B→A navigation queued two callbacks; both fired and cascaded into a WinUI layout hang. Fixed.
 - `BuildDriverProfileSectionWithData` inner `TryEnqueue(Low)` (grid add) now also checks `SelectedGame != card`.
-- Same-game-reselect skip: `_lastBuiltCard` in `MainWindow.xaml.cs` prevents redundant full panel rebuilds when the same card object is reselected.
+- Same-game-reselect skip: `_lastBuiltCard` in `MainWindow.xaml.cs` prevents redundant full panel rebuilds when the same card object is reselected. Clear it whenever the panels are emptied (`GameList_SelectionChanged` with no selection): a filter change clears and then restores the same selection, and a stale `_lastBuiltCard` skipped the rebuild and left the page blank (Spotlight, 2.9.0 Beta 2).
 - Three Settings-page `SelectionChanged` handlers (GlobalVSync, ReBarEnable, ReBarSize) were queuing `BuildOverridesPanel` during init, conflicting with NVAPI reads. Fixed.
 - Several dialog handlers (`RtxHdrConfigButton_Click`, `DxvkCogButton_Click`, `MfgDialog.ShowConfigDialogAsync`, `RdxCogButton_Click`) were calling `GetRtxHdr*`/`GetVulkanPresent*`/`GetMfg*` getters directly on the UI thread. Each getter calls `_sessionLock.Wait(5000)` — if NVAPI hangs (e.g. after GPU sleep/wake), the UI blocks for up to 25s. All moved to `await Task.Run(...)` before dialog content is built.
 - `RefreshDlssVersions` was called on the UI thread after `async` version-swap continuations in `DetailPanelBuilder.Overrides.NvidiaProfile.cs`. Moved to `await Task.Run(...)`.

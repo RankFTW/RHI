@@ -963,7 +963,12 @@ public partial class DetailPanelBuilder
         double btnInstallW = containerWidth > NrSectionPadding
             ? Math.Max(120, containerWidth - NrSectionPadding - 2 - 36 - 36 - 8 - 8) // border(2) + cog(36) + X(36) + 2 gaps(8)
             : 400.0;
-        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(btnInstallW) });
+        // Tabs / Spotlight: stretch instead. The width above is the page's, and Spotlight shows this
+        // section in its narrower slide-in panel, where a fixed width runs off the right edge.
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition
+        {
+            Width = Layout.IsTabs ? new GridLength(1, GridUnitType.Star) : new GridLength(btnInstallW),
+        });
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // cog
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // ✕ remove
 

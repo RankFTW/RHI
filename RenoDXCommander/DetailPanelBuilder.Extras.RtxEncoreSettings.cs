@@ -78,7 +78,8 @@ public partial class DetailPanelBuilder
 
         var engineCell = Choice("Engine",
             "Game keeps the game's own frame generation. XeFG replaces the game's DLSS frame generation with Intel XeSS frame generation. " +
-            "DLSS-FG replaces a game's own Intel frame generation with DLSS frame generation. None of them adds frame generation to a game that has none. Restart the game to apply.",
+            "DLSS-FG replaces a game's own Intel frame generation with DLSS frame generation; it uses Fixed mode (Game decides runs it at 2x, Dynamic isn't available). " +
+            "None of them adds frame generation to a game that has none. Don't combine XeFG with Neural Rendering or Smooth Motion. Restart the game to apply.",
             "renderingEngines", "frameGenerationEngine",
             new[] { "Game", "DLSS-FG", "XeFG" }, new[] { "game", "dlss-fg", "xefg" }, "game",
             i => SetXefgEnabled(i == 2));
@@ -100,14 +101,14 @@ public partial class DetailPanelBuilder
         multiplierCombo.IsEnabled = canEdit && ((ComboBox)modeCell.Control).SelectedIndex == 1;
         var presetCell = Choice("DLSS FG preset",
             "Game: no override. A and B use normal frame generation; C uses the faster Lite mode (with some image-quality trade-offs) and needs DLSS FG 310.9.16. " +
-            "B needs the game's HUD-less inputs. Restart the game to apply.",
+            "Lite doesn't use Frame protection, Protection tuning or the HUD/UI options. B needs the game's HUD-less inputs. Restart the game to apply.",
             "dlssPresets", "dlssFgPreset",
             new[] { "Game", "A", "B", "C" }, new[] { "game", "a", "b", "c" }, "game");
         var flipCell = Choice("Flip metering bypass",
             "Streamline paces the generated frames itself instead of NVIDIA's flip metering. Try it when 3x or 4x looks choppy while 2x is smooth. Restart the game to apply.",
             "frameGeneration", "flipMeteringBypass", RtxOffOn, RtxOffOnValues, "false");
         var fpsCell = Number("Frame limit (FPS)",
-            "1 to 1000 FPS, or 0 for no RTX Encore limit. Applied through Reflex, or through XeLL with XeFG (needs a restart then). Generated frames may count toward the limit. Press Enter or click away to save.",
+            "1 to 1000 FPS, or 0 for no RTX Encore limit. Applied through Reflex, or through XeLL with XeFG (needs a restart then). Paused in Dynamic mode. Generated frames may count toward the limit. Press Enter or click away to save.",
             "nativeMenuFeatures", "reflexFrameLimit", 0, 1000, 0);
         var targetCell = Number("Dynamic target FPS",
             "Used in Dynamic mode: the frame rate frame generation adapts toward. 0 follows the refresh rate of the monitor showing the game. Press Enter or click away to save.",
@@ -123,8 +124,8 @@ public partial class DetailPanelBuilder
         // ── XeFG ────────────────────────────────────────────────────────────────
         cog.AddSection("XeFG engine");
         var tensorCell = Choice("NVIDIA Tensor Cores (experimental)",
-            "Runs XeFG on NVIDIA Tensor Cores. RTX 30, 40 and 50 on NVIDIA driver 621.01 or the 621.12 hotfix; only the RTX 4090 has been tested in games. " +
-            "If it can't be used, standard XeFG runs instead.",
+            "Runs XeFG on NVIDIA Tensor Cores. DirectX 12, RTX 30, 40 and 50 on NVIDIA driver 621.01 or the 621.12 hotfix; only the RTX 4090 has been tested in games. " +
+            "If it can't be used, standard XeFG runs instead; if it fails while running, restart the game.",
             "xefg", "xefgTensorCores", RtxOffOn, RtxOffOnValues, "false");
         var pacingCell = Choice("Variable pacing above 2x",
             "Paces XeFG above 2x using the game's real frame timing. Off can make multipliers above 2x unavailable. Restart the game to apply.",
@@ -147,13 +148,13 @@ public partial class DetailPanelBuilder
                 "Keeps generated frames clean from 3x to 6x. Leave on. Restart the game to apply.",
                 "imageQuality", "highMultiplierQuality", RtxOffOn, RtxOffOnValues, "true"),
             Choice("Frame protection",
-                "Protects generated frames against tearing on thin geometry (fences, wires, foliage) and ghosting in moving shadows. No effect with the Lite preset. Restart the game to apply.",
+                "Protects generated frames against tearing on thin geometry (fences, wires, foliage) and ghosting in moving shadows. No effect with the Lite preset (C). Restart the game to apply.",
                 "imageQuality", "frameProtection", RtxOffOn, RtxOffOnValues, "true"),
             Choice("Fast frame generation",
                 "Lowers the GPU cost of each generated frame, with the same image. Restart the game to apply.",
                 "imageQuality", "fastFrameGeneration", RtxOffOn, RtxOffOnValues, "true"),
             Choice("Protection tuning",
-                "Refined (default) or Classic. Restart the game to apply.",
+                "Refined (default) or Classic. No effect with the Lite preset (C). Restart the game to apply.",
                 "imageQuality", "protectionTuning", new[] { "Refined", "Classic" }, new[] { "refined", "classic" }, "refined"));
 
         // ── HUD and UI ──────────────────────────────────────────────────────────
@@ -182,19 +183,23 @@ public partial class DetailPanelBuilder
             new[] { "game", "dlaa", "quality", "balanced", "performance", "ultra-performance", "custom" }, "game",
             i => ((Control)customScaleCell.Control).IsEnabled = canEdit && i == 6);
         ((Control)customScaleCell.Control).IsEnabled = canEdit && ((ComboBox)renderScaleCell.Control).SelectedIndex == 6;
+        var xessTensorCell = Choice("XeSS on Tensor Cores (experimental)",
+            "Runs XeSS Super Resolution on NVIDIA Tensor Cores (RTX 30, 40 and 50, DirectX 12, driver 621.01 or 621.12; tested on the RTX 4090). " +
+            "Only applies when Upscaler is XeSS. If it can't be used, standard XeSS runs instead; if it fails while running, restart the game. Applies live.",
+            "xess", "xessTensorCores", RtxOffOn, RtxOffOnValues, "false");
+        var upscalerCell = Choice("Upscaler",
+            "Game keeps the game's DLSS Super Resolution. XeSS replaces compatible DLSS Super Resolution with Intel XeSS. " +
+            "Applies live in DirectX; Vulkan needs XeSS set before the game starts.",
+            "renderingEngines", "reconstructionEngine", new[] { "Game", "XeSS" }, new[] { "game", "xess" }, "game",
+            i => ((Control)xessTensorCell.Control).IsEnabled = canEdit && i == 1);
+        ((Control)xessTensorCell.Control).IsEnabled = canEdit && ((ComboBox)upscalerCell.Control).SelectedIndex == 1;
         cog.AddCompactGrid(
-            Choice("Upscaler",
-                "Game keeps the game's DLSS Super Resolution. XeSS replaces compatible DLSS Super Resolution with Intel XeSS. " +
-                "Applies live in DirectX; Vulkan needs XeSS set before the game starts.",
-                "renderingEngines", "reconstructionEngine", new[] { "Game", "XeSS" }, new[] { "game", "xess" }, "game"),
-            Choice("XeSS on Tensor Cores (experimental)",
-                "Runs XeSS Super Resolution on NVIDIA Tensor Cores (RTX 30, 40 and 50, DirectX 12, driver 621.01 or 621.12; tested on the RTX 4090). " +
-                "If it can't be used, standard XeSS runs instead. Applies live.",
-                "xess", "xessTensorCores", RtxOffOn, RtxOffOnValues, "false"),
+            upscalerCell,
+            xessTensorCell,
             renderScaleCell,
             customScaleCell,
             Choice("Fast Super Resolution",
-                "RTX 30 only, DirectX 12: faster DLSS Super Resolution for presets L and M. The image is very close to NVIDIA's but not identical. Restart the game to apply.",
+                "RTX 30 only, DirectX 12, DLSS 310.9.x: faster DLSS Super Resolution for presets L and M. No effect with Ray Reconstruction or DLAA. The image is very close to NVIDIA's but not identical. Restart the game to apply.",
                 "dlssSuperResolution", "fastSuperResolution", RtxOffOn, RtxOffOnValues, "false"),
             Choice("DLSS SR preset",
                 "Game: no override. Applies to all quality modes; which presets work depends on the game's DLSS DLL. A to F are legacy. Applies live.",
@@ -202,7 +207,7 @@ public partial class DetailPanelBuilder
                 new[] { "Game", "Default", "A", "B", "C", "D", "E", "F", "J", "K", "L", "M" },
                 new[] { "game", "default", "a", "b", "c", "d", "e", "f", "j", "k", "l", "m" }, "game"),
             Choice("DLSS RR preset",
-                "Ray Reconstruction preset. Game: no override. A to C are legacy; D, E and F need nvngx_dlssd 310.9.1 or newer. Doesn't turn RR on. Applies live.",
+                "Ray Reconstruction preset. Game: no override. A to C are legacy; F needs nvngx_dlssd 310.9.1 or newer. Doesn't turn RR on. Applies live.",
                 "dlssPresets", "dlssRrPreset",
                 new[] { "Game", "Default", "A", "B", "C", "D", "E", "F" },
                 new[] { "game", "default", "a", "b", "c", "d", "e", "f" }, "game"),
@@ -224,8 +229,8 @@ public partial class DetailPanelBuilder
         var apiDisplays = new[] { "DirectX 12", "DirectX 11", "Vulkan" };
         var apiValues   = new[] { "d3d12", "d3d11", "vulkan" };
         var smCell = Choice("Smooth Motion",
-            "NVIDIA's driver frame interpolation, also for games without frame generation. RTX 30 (DirectX 11, 12, Vulkan) and experimental RTX 20 (DirectX 12, driver 621.01); " +
-            "RTX 40 and 50 get it from NVIDIA. Needs one of the drivers RTX Encore lists. Restart the game to apply.",
+            "NVIDIA's driver frame interpolation, also for games without frame generation. RTX 40 and 50: turns on NVIDIA's own Smooth Motion. RTX 30: DirectX 11, 12 and Vulkan. " +
+            "RTX 20 (experimental): DirectX 12, driver 621.01. Needs one of the drivers RTX Encore lists. Restart the game to apply.",
             "smoothMotion", "smoothMotionEnabled", RtxOffOn, RtxOffOnValues, "false",
             i =>
             {
@@ -252,7 +257,7 @@ public partial class DetailPanelBuilder
                 "RTX 20 and 30: Exact gives the same output as NVIDIA; Fast is quicker with small image differences. No effect on RTX 40 and 50. Restart the game to apply.",
                 "neuralRendering/optimizations", "nrPrecision", new[] { "Exact", "Fast" }, new[] { "exact", "fast" }, "exact"),
             Choice("NR fast processing",
-                "Faster Neural Rendering processing with exactly the same output. Restart the game to apply.",
+                "RTX 20 and 30: faster Neural Rendering processing with exactly the same output. Restart the game to apply.",
                 "neuralRendering/optimizations", "nrFastProcessing", RtxOffOn, RtxOffOnValues, "true"));
 
         // ── Compatibility ───────────────────────────────────────────────────────
@@ -277,10 +282,12 @@ public partial class DetailPanelBuilder
         // ── Intel XeSS files ────────────────────────────────────────────────────
         if (modDir != null)
         {
-            if (Rtx40MfgService.HasEncoreXessFiles(modDir))
-                cog.AddNote($"Intel XeSS files for the XeFG engine are installed in {Rtx40MfgService.EncoreRuntimeRelDir}.");
+            var (intelComplete, inGameFolders) = Rtx40MfgService.GetEncoreIntelState(modDir);
+            if (intelComplete)
+                cog.AddNote("Intel XeSS SDK files for the XeSS upscaler and XeFG engine are installed" +
+                    (inGameFolders > 0 ? $" ({inGameFolders} of them replace the game's own copies, which are restored when you remove RTX Encore)." : "."));
             else
-                cog.AddWarning("Intel XeSS files for the XeFG engine (libxess_fg.dll and libxell.dll) aren't installed. Reinstall RTX Encore to add them.");
+                cog.AddWarning("Intel XeSS SDK files for the XeSS upscaler and XeFG engine (libxess.dll, libxess_fg.dll, libxell.dll) aren't all installed. Reinstall RTX Encore to add them.");
         }
 
         openCfgBtn = cog.MakeOpenFileButton("Open rtx-encore.jsonc", cfgPath);
@@ -376,16 +383,17 @@ public partial class DetailPanelBuilder
                         cog.SetError($"Couldn't download nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer}. Nothing was deployed.");
                         return;
                     }
-                    if (await Task.Run(() => svc.DeployNrDll(installPath)))
+                    var installedAs = _window.ViewModel.GetRtxEncoreInstalledAs(gameName, store);
+                    if (await Task.Run(() => svc.DeployNrDll(installPath, installedAs)))
                     {
                         nrOn = true;
-                        cog.SetSuccess($"Deployed nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer} to the game folder.");
+                        cog.SetSuccess($"Deployed nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer} beside RTX Encore.");
                     }
                     else
                     {
                         _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
                         Revert();
-                        cog.SetError("Couldn't copy nvngx_dlssnr.dll into the game folder.");
+                        cog.SetError("Couldn't copy nvngx_dlssnr.dll beside RTX Encore.");
                     }
                     RequestExtrasRebuild(card);
                 }
@@ -396,16 +404,16 @@ public partial class DetailPanelBuilder
             }
             else
             {
-                svc.RemoveNrDll(installPath);
+                svc.RemoveNrDll(installPath, _window.ViewModel.GetRtxEncoreInstalledAs(gameName, store));
                 nrOn = false;
-                cog.SetSuccess("Removed nvngx_dlssnr.dll from the game folder.");
+                cog.SetSuccess("Removed nvngx_dlssnr.dll.");
                 RequestExtrasRebuild(card);
             }
         }
 
         nrCombo = cog.AddCombo("Deploy NR DLL",
-            $"Copies NVIDIA's Neural Rendering DLL (nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer}) into the game folder for RTX Encore's Neural Rendering. " +
-            "Turn Neural Rendering on in RTX Encore's in-game menu. If RTX Encore isn't installed yet, the choice is saved and applied when you install it.",
+            $"Copies NVIDIA's Neural Rendering DLL (nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer}) beside RTX Encore (in plugins\\ for the .asi) for its Neural Rendering. " +
+            "Then turn Neural Rendering on below or in RTX Encore's in-game menu. If RTX Encore isn't installed yet, the choice is saved and applied when you install it.",
             new[] { "No", "Yes" }, nrOn ? 1 : 0, i =>
             {
                 if (suppress) return true;

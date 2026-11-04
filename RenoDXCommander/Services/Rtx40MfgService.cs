@@ -13,7 +13,7 @@ namespace RenoDXCommander.Services;
 /// Deploys a single DLL renamed to a user-chosen proxy DLL name (e.g. version.dll, dinput8.dll).
 /// Releases ship it as MFGUnlocker.dll (v1.5+) or RTXMFG.dll (older); it is always staged as RTXMFG.dll.
 /// </summary>
-public class Rtx40MfgService
+public partial class Rtx40MfgService
 {
     private const string GitHubApiUrl = "https://api.github.com/repos/dashdogy/MFG-Unlocker/releases/latest";
 
@@ -410,52 +410,6 @@ public class Rtx40MfgService
         using (var fb = File.OpenRead(b)) hb = sha.ComputeHash(fb);
         return ha.AsSpan().SequenceEqual(hb);
     }
-
-    // ── XeSS runtime for RTX Encore ─────────────────────────────────────────────
-    // RTX Encore's XeFG engine needs the same two files. Its Hub installs them in a private
-    // rtx-encore-runtimes\intel folder beside the mod, which the mod checks first; RHI uses that folder
-    // too, so the game's own Intel files are never touched. A marker lists what RHI copied.
-
-    /// <summary>Folder (beside the RTX Encore DLL) for its Intel runtimes.</summary>
-    public const string EncoreRuntimeRelDir = @"rtx-encore-runtimes\intel";
-
-    public bool DeployEncoreXessFiles(string modDir)
-    {
-        if (string.IsNullOrEmpty(modDir)) return false;
-        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
-        return DeployXessFilesTo(dir, Path.Combine(dir, XessMarkerFile));
-    }
-
-    /// <summary>Removes RHI's copies (and the folders, when nothing else is left in them).</summary>
-    public void RemoveEncoreXessFiles(string modDir)
-    {
-        if (string.IsNullOrEmpty(modDir)) return;
-        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
-        RemoveXessFilesFrom(dir, Path.Combine(dir, XessMarkerFile), onlyIfUnchanged: false, deleteEmptyDir: true);
-        try
-        {
-            var parent = Path.GetDirectoryName(dir);
-            if (parent != null && Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any())
-                Directory.Delete(parent);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _crashReporter.Log($"[Rtx40MfgService.RemoveEncoreXessFiles] Couldn't remove the empty runtimes folder — {ex.Message}");
-        }
-    }
-
-    /// <summary>True before RHI has set the folder up, when the files aren't there yet. Never re-creates files removed later.</summary>
-    public static bool NeedsEncoreXessFiles(string modDir)
-    {
-        if (string.IsNullOrEmpty(modDir)) return false;
-        var dir = Path.Combine(modDir, EncoreRuntimeRelDir);
-        if (File.Exists(Path.Combine(dir, XessMarkerFile))) return false;
-        return !XessFiles.All(f => File.Exists(Path.Combine(dir, f)));
-    }
-
-    /// <summary>True when both Intel files are in RTX Encore's runtime folder.</summary>
-    public static bool HasEncoreXessFiles(string modDir)
-        => !string.IsNullOrEmpty(modDir) && XessFiles.All(f => File.Exists(Path.Combine(modDir, EncoreRuntimeRelDir, f)));
 
     // ── XeSS runtime for MFG Ada Unlock ─────────────────────────────────────────
     // MFG Ada Unlock (a ReShade addon) needs the same two Intel files for its XeMFG mode, directly in

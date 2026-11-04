@@ -13,7 +13,9 @@ namespace RenoDXCommander.Services;
 /// Manages the RTX Encore mod — staging, install, uninstall, update detection,
 /// and optional nvngx_dlssnr.dll 310.9.16 deployment.
 ///
-/// RTX Encore is a single DLL deployed to the game folder under a user-chosen proxy name.
+/// RTX Encore is a single DLL deployed to the game folder under a user-chosen proxy name, or the
+/// release's separate rtx-encore.asi build in plugins\. Bink names keep the game's file as &lt;name&gt;Hooked.dll.
+/// Intel XeSS runtimes: Rtx40MfgService.EncoreIntel.cs.
 /// GitHub: SilyNoMeta/rtx-encore — picks the first .zip asset in the latest release
 /// (asset filename varies per release, e.g. RTX-Encore-v1.0.0-beta.2.zip).
 ///
@@ -30,6 +32,10 @@ public class RtxEncoreService
     private const string GitHubApiUrl   = "https://api.github.com/repos/SilyNoMeta/rtx-encore/releases?per_page=10";
     public  const string RepoUrl        = "https://github.com/SilyNoMeta/rtx-encore";
     public  const string StagedDllName  = "rtx-encore.dll";
+    /// <summary>The release's separate ASI build (alternative-proxies\rtx-encore.asi), used for the plugins\ install.</summary>
+    public  const string StagedAsiName  = "rtx-encore.asi";
+    /// <summary>Written instead of the .asi when a release has no ASI build, so staging isn't retried every launch.</summary>
+    private const string NoAsiMarker    = "rtx-encore.asi.none";
     public  const string NrDllName      = "nvngx_dlssnr.dll";
     public  const string NrRequiredVer  = "310.9.16";
     /// <summary>The dlss_manifest.json "dlssnr" entry for <see cref="NrRequiredVer"/>.</summary>
@@ -71,6 +77,8 @@ public class RtxEncoreService
     // ── Properties ────────────────────────────────────────────────────────────
 
     public bool    IsStagingReady => File.Exists(Path.Combine(_stagingDir, StagedDllName));
+    /// <summary>Staging also holds the ASI build (or the release has none). False for staging done before RHI kept it.</summary>
+    private bool   IsAsiStaged    => File.Exists(Path.Combine(_stagingDir, StagedAsiName)) || File.Exists(Path.Combine(_stagingDir, NoAsiMarker));
     public string? StagedVersion  => File.Exists(_versionFile) ? File.ReadAllText(_versionFile).Trim() : null;
     public bool    HasUpdate      { get; private set; }
     public string? LatestVersion  { get; private set; }
@@ -109,6 +117,17 @@ public class RtxEncoreService
     public string ModDir(string installPath, string installedAs)
         => Path.GetDirectoryName(ResolveInstalledPath(installPath, installedAs)) ?? installPath;
 
+    /// <summary>
+    /// nvngx_dlssnr.dll relative to the game folder. RTX Encore checks for it beside its own file,
+    /// so it's "plugins\nvngx_dlssnr.dll" for the .asi install. Also the shared-file key in rhi_install.txt.
+    /// </summary>
+    public string NrRelPath(string installPath, string? installedAs)
+    {
+        if (string.IsNullOrEmpty(installedAs)) return NrDllName;
+        var rel = Path.GetRelativePath(installPath, ModDir(installPath, installedAs));
+        return rel == "." ? NrDllName : Path.Combine(rel, NrDllName);
+    }
+
     /// <summary>Path of rtx-encore.jsonc for this install.</summary>
     public string ConfigPath(string installPath, string installedAs)
         => Path.Combine(ModDir(installPath, installedAs), RtxEncoreConfig.FileName);
@@ -121,17 +140,34 @@ public class RtxEncoreService
     /// Moves an RHI deployment of an older NR DLL (310.8.x, from earlier RHI versions) to 310.9.16.
     /// Only when RTX Encore is the file's only owner, so a version chosen elsewhere is never replaced.
     /// </summary>
-    public bool UpgradeNrDllIfOlder(string installPath)
+    public bool UpgradeNrDllIfOlder(string installPath, string installedAs)
     {
-        var dest = Path.Combine(installPath, NrDllName);
+        var rel = NrRelPath(installPath, installedAs);
+        var dest = Path.Combine(installPath, rel);
         if (!File.Exists(dest) || GetNrDllCachedPath() == null) return false;
-        var owners = RhiInstallManifest.GetSharedFileOwners(installPath, NrDllName);
+        var owners = RhiInstallManifest.GetSharedFileOwners(installPath, rel);
         if (owners.Count != 1 || !owners[0].Equals(NrOwnerName, StringComparison.OrdinalIgnoreCase)) return false;
         var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(dest);
         var ver = $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}";
         if (ver == NrRequiredVer || !ver.StartsWith("310.8.", StringComparison.Ordinal)) return false;
         _crashReporter.Log($"[RtxEncoreService.UpgradeNrDllIfOlder] '{installPath}': {ver} → {NrRequiredVer}");
-        return DeployNrDll(installPath);
+        return DeployNrDll(installPath, installedAs);
+    }
+
+    /// <summary>
+    /// .asi installs from older RHI versions have the NR DLL in the game folder, where RTX Encore (in plugins\)
+    /// doesn't look. Moves RHI's copy beside the mod. Returns true when it moved.
+    /// </summary>
+    public bool MoveNrDllBesideMod(string installPath, string installedAs)
+    {
+        var rel = NrRelPath(installPath, installedAs);
+        if (rel.Equals(NrDllName, StringComparison.OrdinalIgnoreCase)) return false; // already beside the mod
+        var rootOwners = RhiInstallManifest.GetSharedFileOwners(installPath, NrDllName);
+        if (!rootOwners.Contains(NrOwnerName, StringComparer.OrdinalIgnoreCase)) return false;
+        if (!DeployNrDll(installPath, installedAs)) return false;
+        RemoveNrDllAt(installPath, NrDllName);
+        _crashReporter.Log($"[RtxEncoreService.MoveNrDllBesideMod] '{installPath}': NR DLL moved to '{rel}'");
+        return true;
     }
 
     /// <summary>
@@ -161,10 +197,10 @@ public class RtxEncoreService
     }
 
     /// <summary>
-    /// Deploys nvngx_dlssnr.dll 310.9.16 to the game folder using the sentinel pattern
-    /// and registers RtxEncore as a SharedFile owner in rhi_install.txt.
+    /// Deploys nvngx_dlssnr.dll 310.9.16 beside RTX Encore (see <see cref="NrRelPath"/>) using the sentinel
+    /// pattern and registers RtxEncore as a SharedFile owner in rhi_install.txt.
     /// </summary>
-    public bool DeployNrDll(string installPath)
+    public bool DeployNrDll(string installPath, string? installedAs)
     {
         var src = GetNrDllCachedPath();
         if (src == null)
@@ -172,16 +208,18 @@ public class RtxEncoreService
             _crashReporter.Log($"[RtxEncoreService.DeployNrDll] nvngx_dlssnr.dll {NrRequiredVer} not staged — cannot deploy");
             return false;
         }
-        var dest = Path.Combine(installPath, NrDllName);
+        var rel = NrRelPath(installPath, installedAs);
+        var dest = Path.Combine(installPath, rel);
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             AuxInstallService.SentinelBackup(dest);
             File.Copy(src, dest, overwrite: true);
-            RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
-            _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Deployed {NrDllName} {NrRequiredVer} to '{installPath}'");
+            RhiInstallManifest.AddSharedFileOwner(installPath, rel, NrOwnerName);
+            _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Deployed {NrDllName} {NrRequiredVer} to '{dest}'");
             return true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Failed — {ex.Message}");
             return false;
@@ -189,21 +227,24 @@ public class RtxEncoreService
     }
 
     /// <summary>
-    /// Removes nvngx_dlssnr.dll from the game folder only when no other component still owns it.
+    /// Removes RTX Encore's nvngx_dlssnr.dll only when no other component still owns it.
     /// Uses sentinel restore pattern.
     /// </summary>
-    public void RemoveNrDll(string installPath)
+    public void RemoveNrDll(string installPath, string? installedAs)
+        => RemoveNrDllAt(installPath, NrRelPath(installPath, installedAs));
+
+    private void RemoveNrDllAt(string installPath, string rel)
     {
-        bool safeToDelete = RhiInstallManifest.RemoveSharedFileOwner(installPath, NrDllName, NrOwnerName);
+        bool safeToDelete = RhiInstallManifest.RemoveSharedFileOwner(installPath, rel, NrOwnerName);
         if (!safeToDelete) return;
 
-        var dest = Path.Combine(installPath, NrDllName);
+        var dest = Path.Combine(installPath, rel);
         try
         {
             AuxInstallService.SentinelRestore(dest);
-            _crashReporter.Log($"[RtxEncoreService.RemoveNrDll] Removed/restored {NrDllName} from '{installPath}'");
+            _crashReporter.Log($"[RtxEncoreService.RemoveNrDll] Removed/restored '{rel}' from '{installPath}'");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _crashReporter.Log($"[RtxEncoreService.RemoveNrDll] Failed — {ex.Message}");
         }
@@ -224,7 +265,7 @@ public class RtxEncoreService
 
     public async Task EnsureStagingAsync(IProgress<(string message, double percent)>? progress = null)
     {
-        if (IsStagingReady && !HasUpdate)
+        if (IsStagingReady && IsAsiStaged && !HasUpdate)
         {
             _crashReporter.Log("[RtxEncoreService.EnsureStaging] Already up to date");
             return;
@@ -267,9 +308,28 @@ public class RtxEncoreService
                     return;
                 }
 
-                using var src = entry.Open();
-                using var dst = File.Create(destDll);
-                await src.CopyToAsync(dst).ConfigureAwait(false);
+                using (var src = entry.Open())
+                using (var dst = File.Create(destDll))
+                    await src.CopyToAsync(dst).ConfigureAwait(false);
+
+                // The separate ASI build, for the plugins\ install (the docs say to use it rather than renaming the DLL)
+                var asiEntry = zip.Entries.FirstOrDefault(e =>
+                    string.Equals(e.Name, StagedAsiName, StringComparison.OrdinalIgnoreCase));
+                var destAsi = Path.Combine(_stagingDir, StagedAsiName);
+                var noAsi = Path.Combine(_stagingDir, NoAsiMarker);
+                if (asiEntry != null)
+                {
+                    using (var src = asiEntry.Open())
+                    using (var dst = File.Create(destAsi))
+                        await src.CopyToAsync(dst).ConfigureAwait(false);
+                    if (File.Exists(noAsi)) File.Delete(noAsi);
+                }
+                else
+                {
+                    if (File.Exists(destAsi)) File.Delete(destAsi); // an older release's build
+                    File.WriteAllText(noAsi, version);
+                    _crashReporter.Log($"[RtxEncoreService.EnsureStaging] No '{StagedAsiName}' in the zip — the .asi install uses the renamed DLL");
+                }
             }
             File.Delete(tempZip);
 
@@ -308,22 +368,27 @@ public class RtxEncoreService
             return false;
         }
 
-        // Remove old install if name changed
+        // Remove old install if name changed. The NR DLL lives beside the mod, so it goes too when the
+        // mod moves between the game folder and plugins\ (the caller redeploys it beside the new file).
         if (!string.IsNullOrEmpty(existingInstalledAs)
             && !existingInstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase))
         {
-            Uninstall(installPath, existingInstalledAs, removeNrDll: false);
+            bool nrMoves = !NrRelPath(installPath, existingInstalledAs).Equals(
+                IsAsi(dllName) ? Path.Combine("plugins", NrDllName) : NrDllName, StringComparison.OrdinalIgnoreCase);
+            Uninstall(installPath, existingInstalledAs, removeNrDll: nrMoves);
         }
 
         var src  = Path.Combine(_stagingDir, StagedDllName);
         string dest;
 
-        if (dllName.EndsWith(".asi", StringComparison.OrdinalIgnoreCase))
+        if (IsAsi(dllName))
         {
-            // ASI plugin: deploy to plugins\ subfolder (create if needed)
+            // ASI plugin: deploy to plugins\ subfolder (create if needed), using the release's own ASI build
             var pluginsDir = Path.Combine(installPath, "plugins");
             Directory.CreateDirectory(pluginsDir);
             dest = Path.Combine(pluginsDir, dllName);
+            var stagedAsi = Path.Combine(_stagingDir, StagedAsiName);
+            if (File.Exists(stagedAsi)) src = stagedAsi;
         }
         else
         {
@@ -332,7 +397,8 @@ public class RtxEncoreService
 
         try
         {
-            AuxInstallService.SentinelBackup(dest);
+            if (IsBinkName(dllName)) KeepGameBinkAsHooked(dest);
+            else AuxInstallService.SentinelBackup(dest);
             File.Copy(src, dest, overwrite: true);
             RhiInstallManifest.SetComponent(installPath, ComponentName, new[] { dest });
             _crashReporter.Log($"[RtxEncoreService.InstallAsync] Installed as '{dllName}' in '{installPath}' (v{StagedVersion})");
@@ -358,18 +424,34 @@ public class RtxEncoreService
         if (!string.IsNullOrEmpty(installedAs))
         {
             var filePath = ResolveInstalledPath(installPath, installedAs);
+            // Before the mod's file is gone: the NR DLL's location depends on it
+            if (removeNrDll) RemoveNrDll(installPath, installedAs);
             try
             {
-                AuxInstallService.SentinelRestore(filePath);
+                var hooked = HookedPath(filePath);
+                if (IsBinkName(installedAs) && File.Exists(hooked))
+                {
+                    // Put the game's own Bink DLL back under its real name
+                    if (File.Exists(filePath)) File.Delete(filePath);
+                    File.Move(hooked, filePath);
+                    var sentinel = filePath + ".original";
+                    if (File.Exists(sentinel) && new FileInfo(sentinel).Length == 0) File.Delete(sentinel);
+                }
+                else
+                {
+                    AuxInstallService.SentinelRestore(filePath);
+                }
                 _crashReporter.Log($"[RtxEncoreService.Uninstall] Removed '{installedAs}' from '{installPath}'");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 _crashReporter.Log($"[RtxEncoreService.Uninstall] Restore failed — {ex.Message}");
             }
         }
-
-        if (removeNrDll) RemoveNrDll(installPath);
+        else if (removeNrDll)
+        {
+            RemoveNrDll(installPath, null);
+        }
 
         RhiInstallManifest.RemoveComponent(installPath, ComponentName);
     }
@@ -389,6 +471,46 @@ public class RtxEncoreService
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
+
+    private static bool IsAsi(string name) => name.EndsWith(".asi", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Bink proxy names: RTX Encore forwards to the game's own Bink DLL, renamed &lt;name&gt;Hooked.dll beside it.</summary>
+    private static bool IsBinkName(string name)
+        => name.Equals("binkw64.dll", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("bink2w64.dll", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>binkw64.dll → binkw64Hooked.dll in the same folder.</summary>
+    private static string HookedPath(string dest)
+        => Path.Combine(Path.GetDirectoryName(dest) ?? "", Path.GetFileNameWithoutExtension(dest) + "Hooked.dll");
+
+    /// <summary>
+    /// Before RTX Encore is copied as a Bink name: the game's own file becomes &lt;name&gt;Hooked.dll, as the mod's
+    /// install guide requires. A real .original from older RHI versions is the game's file and moves there too.
+    /// With no game file, a 0-byte .original marks the name as RHI's, so a reinstall doesn't mistake the mod for it.
+    /// </summary>
+    private void KeepGameBinkAsHooked(string dest)
+    {
+        var hooked = HookedPath(dest);
+        var original = dest + ".original";
+        if (File.Exists(hooked)) return; // already set up: dest is RTX Encore
+        if (File.Exists(original))
+        {
+            if (new FileInfo(original).Length == 0) return; // RHI's own name (the game has no Bink DLL)
+            File.Move(original, hooked);
+            _crashReporter.Log($"[RtxEncoreService.KeepGameBinkAsHooked] Moved the game's '{Path.GetFileName(dest)}' from .original to '{Path.GetFileName(hooked)}'");
+            return;
+        }
+        if (File.Exists(dest))
+        {
+            File.Move(dest, hooked);
+            _crashReporter.Log($"[RtxEncoreService.KeepGameBinkAsHooked] Kept the game's '{Path.GetFileName(dest)}' as '{Path.GetFileName(hooked)}'");
+        }
+        else
+        {
+            File.WriteAllBytes(original, Array.Empty<byte>());
+            _crashReporter.Log($"[RtxEncoreService.KeepGameBinkAsHooked] No game '{Path.GetFileName(dest)}' — wrote a sentinel");
+        }
+    }
 
     private async Task<(string? version, string? downloadUrl)> FetchLatestReleaseInfoAsync(
         bool forceRefresh = false)

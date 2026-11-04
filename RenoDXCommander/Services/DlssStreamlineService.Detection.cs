@@ -184,7 +184,7 @@ public partial class DlssStreamlineService
     /// - WindowsApps: goes up to the package root
     /// - Unreal Engine / CryEngine / other: if path is inside a Bin\ subfolder, goes up to the game root
     /// </summary>
-    private static string ResolveSearchRoot(string installPath)
+    internal static string ResolveSearchRoot(string installPath)
     {
         // Check if this is a WindowsApps path — go up to the package root
         if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)

@@ -161,6 +161,9 @@ public partial class DetailPanelBuilder
         if (Layout.IsTabs) Layout.ArrangeExtras(exBody);
 
         UpdateOsFeedback(card);
+        // Tabs / Spotlight: refresh the tiles. Extras is built last in BuildOverridesPanel, so this
+        // also covers the Game Overrides and Management summaries after a full rebuild.
+        Layout.SummaryChanged();
         __exSw.Stop();
         CrashReporter.Log($"[BuildExtrasSection] Total: {__exSw.ElapsedMilliseconds}ms '{card.GameName}'");
     }
@@ -351,7 +354,13 @@ public partial class DetailPanelBuilder
             Opacity = osGreyed ? 0.35 : 1.0,
             IsHitTestVisible = !osGreyed,
         };
-        installBtn.Content = WithInfoArrow(card.OsActionLabel, HasRealInfoContent(card, AddonType.OptiScaler), card.OsStatus == GameStatus.UpdateAvailable, installBtn);
+        // Tabs / Spotlight: plain "Install" / "Update" / "Reinstall" like the other rows there
+        // (the button is narrower, and the row's label already says OptiScaler)
+        var osLabel = Layout.IsTabs
+            ? card.OsActionLabel.Replace(" OptiScaler", "").TrimStart('↺', '⬆', '⬇', ' ')
+            : card.OsActionLabel;
+        // No "◄ see Info" marker in Tabs / Spotlight: it crowds the narrower button, and the Info button is beside it
+        installBtn.Content = WithInfoArrow(osLabel, !Layout.IsTabs && HasRealInfoContent(card, AddonType.OptiScaler), card.OsStatus == GameStatus.UpdateAvailable, installBtn);
         installBtn.Click += (s, e) => _window.InstallOsButton_Click(s, e);
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
