@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55951,
-  "generated": "2026-11-02T20:06:56Z",
+  "game_count": 55971,
+  "generated": "2026-11-04T08:49:55Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -8016,6 +8016,7 @@
       "config_path": "<path-to-game>\\AmIdol.ini",
       "engine": "RenderWare"
     },
+    "American Idol (2003)": {},
     "American McGee's Alice": {
       "opengl": true,
       "config_path": "<path-to-game>\\base\\config.cfg",
@@ -9291,6 +9292,12 @@
     "Anomalies": {
       "steam_appid": 546780,
       "engine": "Gamestudio"
+    },
+    "Anomalith": {
+      "steam_appid": 4017880,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\FURYU Corporation\\Anomalith\\<user-id>\\",
+      "engine": "Unity"
     },
     "Anomaly 1729": {
       "steam_appid": 424320
@@ -13987,6 +13994,9 @@
     "Awakened": {
       "steam_appid": 493770,
       "config_path": "HKEY_CURRENT_USER\\Software\\GenuineFlipFlopsGames(www.Genuineflip-flops.com)\\Awakened"
+    },
+    "Awakening": {
+      "engine": "Source"
     },
     "Awakening of Celestial": {
       "steam_appid": 812590
@@ -19016,6 +19026,9 @@
       "steam_appid": 674390
     },
     "Bill & Ted's Excellent Adventure": {},
+    "Bill & Ted's Excellent Adventure Arcade": {
+      "steam_appid": 5359820
+    },
     "Bill Nye the Science Guy: Stop the Rock!": {},
     "Billiard: VR": {
       "steam_appid": 566290
@@ -30962,7 +30975,7 @@
     "Cineris Somnia": {
       "steam_appid": 752470,
       "dx9": true,
-      "config_path": "%APPDATA%\\LocalLow\\Nayuta Studio\\Cineris Somnia",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Nayuta Studio\\Cineris Somnia",
       "engine": "Unity"
     },
     "CINEVEO - VR Cinema": {
@@ -40818,7 +40831,7 @@
     "Daymare: 1998": {
       "steam_appid": 842100,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Daymare_MASTER\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Daymare_MASTER\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Days Gone": {
@@ -71481,6 +71494,9 @@
     "Grey Hack": {
       "steam_appid": 605230
     },
+    "Grey Heritage: Noble Duty": {
+      "steam_appid": 2424300
+    },
     "Grey Phobia": {
       "steam_appid": 465050,
       "dx9": true,
@@ -75205,6 +75221,11 @@
     "Heartbreak High: A Break-Up Simulator": {
       "steam_appid": 836350
     },
+    "Heartfall — A Tale in Three Lives": {
+      "steam_appid": 5257930,
+      "vulkan": true,
+      "engine": "Godot"
+    },
     "Hearthlands": {
       "steam_appid": 336300,
       "opengl": true,
@@ -76923,6 +76944,7 @@
     "Hero Village Simulator": {
       "steam_appid": 793180
     },
+    "Hero X": {},
     "Hero Zero": {
       "steam_appid": 482920
     },
@@ -83051,6 +83073,9 @@
     "Indian Summer": {
       "steam_appid": 900380,
       "engine": "Unity"
+    },
+    "Indian Truck Simulator": {
+      "steam_appid": 5346150
     },
     "Indiana Boy Steam Edition": {
       "steam_appid": 990950
@@ -98649,7 +98674,7 @@
     "Maelstrom": {
       "steam_appid": 764050,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\MaelstromV2\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%\\MaelstromV2\\Saved\\SaveGames\\Settings.sav, %LOCALAPPDATA%\\MaelstromV2\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "Maelstrom: The Battle for Earth Begins": {
@@ -115759,7 +115784,7 @@
     "Off The Grid": {
       "steam_appid": 3659280,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\G01\\Saved\\Config\\WindowsClient\\",
+      "config_path": "%LOCALAPPDATA%\\G01\\Saved\\Config\\WindowsClient\\GameUserSettings.ini",
       "engine": "Unreal Engine 5"
     },
     "Off the Record: Liberty Stone": {
@@ -121231,6 +121256,7 @@
     },
     "Peace, Death!": {
       "steam_appid": 588690,
+      "config_path": "%LOCALAPPDATA%\\PeaceDeath\\*.ini",
       "engine": "GameMaker"
     },
     "Peaceful Days": {
@@ -124723,6 +124749,7 @@
     },
     "Pocket Mirror ~ GoldenerTraum": {
       "steam_appid": 1899060,
+      "config_path": "<path-to-game>\\save\\",
       "engine": "RPG Maker"
     },
     "Pocket Rally": {},
@@ -124897,6 +124924,11 @@
     },
     "Pokris": {
       "steam_appid": 1036780
+    },
+    "PokéPark Wii: Pikachu's Adventure": {
+      "vulkan": true,
+      "opengl": true,
+      "config_path": "<path-to-game>\\settings.ini"
     },
     "PokéROM": {
       "engine": "Director"
@@ -125740,6 +125772,12 @@
     },
     "Potata": {
       "steam_appid": 1044020
+    },
+    "Potato Please": {
+      "steam_appid": 5266240,
+      "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\GoldenHorn\\PotatoPlease",
+      "engine": "Unity"
     },
     "Potato Thriller Steamed Potato Edition": {
       "steam_appid": 486650
@@ -127239,6 +127277,10 @@
     },
     "Project AETHER: First Contact": {
       "steam_appid": 940140
+    },
+    "Project Afterfall": {
+      "steam_appid": 3360890,
+      "engine": "Unity"
     },
     "Project Aftermath": {
       "steam_appid": 21400
@@ -131239,7 +131281,7 @@
     },
     "Raptor: Call of the Shadows 2010 Edition": {
       "steam_appid": 336060,
-      "config_path": "<path-to-game>\\saveoptions.dat, %USERPROFILE%\\options.dat"
+      "config_path": "<path-to-game>\\saveoptions.dat, %APPDATA%\\Raptor2015\\options.dat, %USERPROFILE%\\options.dat"
     },
     "Raptor: Cretaceous Island": {
       "steam_appid": 929230
@@ -142720,6 +142762,8 @@
     },
     "Selkie's Salvage&Co.": {
       "steam_appid": 4984870,
+      "dx12": true,
+      "opengl": true,
       "config_path": "%APPDATA%\\Selkies Salvage\\playerconfig.tres",
       "engine": "Godot"
     },
@@ -162770,6 +162814,9 @@
       "steam_appid": 329680
     },
     "Task Force Delta ÔÇæ Afghanistan": {},
+    "Task Force Delta ‑ Afghanistan": {
+      "steam_appid": 1700370
+    },
     "Task is to Survive": {
       "steam_appid": 735410
     },
@@ -165957,6 +166004,10 @@
       "config_path": "%LOCALAPPDATA%\\the_citadel\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
+    "The Citadel Project": {
+      "steam_appid": 4795460,
+      "engine": "Unreal Engine 5"
+    },
     "The City of Lost Children": {},
     "The Clans - Saga of the Twins": {
       "steam_appid": 342090,
@@ -169136,6 +169187,9 @@
     "The Jackbox Party Pack 11": {
       "steam_appid": 3364070
     },
+    "The Jackbox Party Pack 12": {
+      "steam_appid": 4199960
+    },
     "The Jackbox Party Pack 2": {
       "steam_appid": 397460,
       "dx11": true,
@@ -169177,6 +169231,9 @@
     },
     "The Jackbox Party Starter": {
       "steam_appid": 1755580
+    },
+    "The Jackbox Survey Scramble": {
+      "steam_appid": 2948640
     },
     "The Janitor": {
       "steam_appid": 502880
@@ -173225,6 +173282,10 @@
       "config_path": "%LOCALAPPDATA%\\TSCGame\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
+    "The Sisters 2: Road to Fame": {
+      "steam_appid": 2434050,
+      "engine": "Unity"
+    },
     "The Sisters: Party of the Year": {
       "steam_appid": 1502540,
       "dx11": true,
@@ -175912,6 +175973,7 @@
     "Through the Dust": {
       "steam_appid": 1155680
     },
+    "Through the Looking Glass": {},
     "Through the Mirror": {
       "steam_appid": 548720
     },
@@ -181057,6 +181119,12 @@
     },
     "Trivia King": {
       "steam_appid": 875780
+    },
+    "Trivia Murder Party 3": {
+      "steam_appid": 3048060,
+      "dx11": true,
+      "config_path": "%LOCALAPPDATA%\\TMP3\\Saved\\Config\\",
+      "engine": "Unreal Engine 5"
     },
     "Trivia Night": {
       "steam_appid": 628570
@@ -190803,6 +190871,9 @@
     "Wendy's Mart 3D": {
       "steam_appid": 789700
     },
+    "WendyQuest: Legend of the Four Corner Stones": {
+      "steam_appid": 3339970
+    },
     "Wenjia": {
       "steam_appid": 933450
     },
@@ -195711,7 +195782,7 @@
     "You Are Empty": {
       "steam_appid": 4760480,
       "opengl": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\YaE, %USERPROFILE%\\Documents\\My Games\\YaE_Absolute\\config_*",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\YaE, %APPDATA%\\YaE_Absolute\\config_*, %USERPROFILE%\\Documents\\My Games\\YaE_Absolute\\config_*",
       "engine": "DS2 Engine"
     },
     "You Are God": {
@@ -197199,6 +197270,9 @@
     },
     "Zombie Killin'": {
       "steam_appid": 582350
+    },
+    "Zombie Killing Simulator": {
+      "steam_appid": 872350
     },
     "Zombie Killtime": {
       "steam_appid": 380700
