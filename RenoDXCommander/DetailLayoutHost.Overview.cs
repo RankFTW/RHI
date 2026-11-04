@@ -120,6 +120,13 @@ internal sealed partial class DetailLayoutHost
         RefreshGlance();
     }
 
+    /// <summary>
+    /// Raised before section summaries are shown again after the user may have changed settings
+    /// (Tabs: back to Overview; Spotlight: the side panel closes). The builder rebuilds summaries
+    /// that aren't kept up to date as settings change (Game Overrides).
+    /// </summary>
+    internal event Action? SummariesStale;
+
     /// <summary>A section's collapsed-header summary changed (some are filled in later, in the background).</summary>
     internal void SummaryChanged()
     {

@@ -192,24 +192,50 @@ public partial class MainViewModel
 
     // ── OptiScaler Variant Override ───────────────────────────────────────────
 
-    /// <summary>Returns the OptiScaler variant for a game. "Stable", "Nightly", or "DlssNr". Defaults to "Stable".</summary>
+    /// <summary>
+    /// Returns the OptiScaler variant for a game: "Stable", "Nightly", "DlssNr" or "F5". A game
+    /// without its own choice uses the Settings default (<see cref="SettingsViewModel.OsDefaultVariant"/>).
+    /// </summary>
     public string GetOsVariant(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
         if (_gameNameService.OsVariantOverrides.TryGetValue(key, out var v)) return v;
         // name-only fallback for legacy
         if (_gameNameService.OsVariantOverrides.TryGetValue(gameName, out var v2)) return v2;
-        return "Stable";
+        return string.IsNullOrEmpty(Settings.OsDefaultVariant) ? "Stable" : Settings.OsDefaultVariant;
     }
 
-    /// <summary>Sets the OptiScaler variant for a game. Null or "Stable" removes the override.</summary>
+    /// <summary>Sets the OptiScaler variant for a game ("Stable" is kept as an explicit choice). Null removes it, so the game follows the Settings default.</summary>
     public void SetOsVariant(string gameName, string? value, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
-        if (value == null || value == "Stable")
+        if (value == null)
             _gameNameService.OsVariantOverrides.Remove(key);
         else
             _gameNameService.OsVariantOverrides[key] = value;
+        SaveNameMappings();
+    }
+
+    /// <summary>
+    /// Changes the default OptiScaler version for new installs. Games that already have OptiScaler
+    /// keep the version they have: theirs is saved as their own choice first, so the new default
+    /// only applies to games without OptiScaler.
+    /// </summary>
+    public void SetOsDefaultVariant(string value)
+    {
+        if (value is not ("Stable" or "Nightly" or "DlssNr" or "F5") || value == Settings.OsDefaultVariant) return;
+        int pinned = 0;
+        foreach (var card in _allCards.ToList())
+        {
+            if (!card.IsOsInstalled) continue;
+            var key = GameKey.From(card.GameName, card.Source ?? "").ToKey();
+            if (_gameNameService.OsVariantOverrides.ContainsKey(key) || _gameNameService.OsVariantOverrides.ContainsKey(card.GameName)) continue;
+            _gameNameService.OsVariantOverrides[key] = GetOsVariant(card.GameName, card.Source ?? "");
+            pinned++;
+        }
+        CrashReporter.Log($"[MainViewModel.SetOsDefaultVariant] {Settings.OsDefaultVariant} -> {value}; kept the current version for {pinned} installed game(s)");
+        Settings.OsDefaultVariant = value;
+        SaveSettingsPublic();
         SaveNameMappings();
     }
 

@@ -354,7 +354,7 @@ public sealed partial class MainWindow
             {
                 var selected = variantCombo.SelectedItem as string ?? "Stable";
                 // Map display name to internal value
-                var internalValue = selected switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", "Stable" => null, _ => selected };
+                var internalValue = selected switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", _ => selected };
                 ViewModel.SetOsVariant(card.GameName, internalValue, store);
                 if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
                 {

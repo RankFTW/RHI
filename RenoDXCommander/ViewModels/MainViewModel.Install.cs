@@ -408,6 +408,9 @@ public partial class MainViewModel
         _filterViewModel.UpdateCounts();
     }
 
+    /// <summary>Raised on the UI thread after a manually added game's card is in the list.</summary>
+    public event Action<GameCardViewModel>? ManualGameAdded;
+
     [RelayCommand]
     public void AddManualGame(DetectedGame game)
     {
@@ -800,6 +803,7 @@ public partial class MainViewModel
         _filterViewModel.SetAllCards(_allCards);
         _filterViewModel.ApplyFilter();
         _filterViewModel.UpdateCounts();
+        ManualGameAdded?.Invoke(card); // the window opens the new game's page
 
         // Background scan for components not detected synchronously (DC, OptiScaler, DXVK, DLSS/Streamline)
         _ = Task.Run(() => ScanManualGameComponentsAsync(card));

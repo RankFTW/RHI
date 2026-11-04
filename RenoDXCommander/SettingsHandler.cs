@@ -109,6 +109,11 @@ public partial class SettingsHandler
             if (gpuCombo.SelectedIndex < 0)
                 gpuCombo.SelectedIndex = 0; // Default to NVIDIA
 
+            // Default OptiScaler version (row added from C#)
+            EnsureOsDefaultVariantRow();
+            // Interface size (row added from C#)
+            EnsureUiScaleRow();
+
             // Initialize DLSS inputs combo and visibility
             _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 1 : 0; // 0=Off, 1=On
             bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);

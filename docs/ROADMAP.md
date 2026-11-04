@@ -15,6 +15,10 @@ Ideas, technical debt, and planned improvements. Categorised for easy reference.
 - **NVAPI abstraction** — DlssPresetService split into 6 partials (max 36KB). ProfileMatching, DriverSettings, ReBar, Export, Reset separated.
 - **Reduce ViewModel surface** — All consumers use direct injection. 14 forwarding properties deleted. Only 3 remain (ShaderPack, AddonPack, GameName).
 
+### Features
+- **Custom ReShade auto-redeploy** — `CustomReShadeHashService` hashes the DLLs in the Custom folder (`custom_reshade_hashes.json`) and redeploys changed ones to every game on the Custom channel (Vulkan via the elevated global layer copy). Runs on launch, Refresh and the 4-hour background check.
+- **Selectable layouts (v2.9.0)** — Classic / Classic+ / Tabs / Spotlight, switched from the top bar. Spotlight uses Steam artwork, with custom artwork per game. Plan and decisions: [layouts-plan-2.9.0.md](layouts-plan-2.9.0.md).
+
 ---
 
 ## 🔧 Engineering Debt
@@ -75,18 +79,15 @@ Items that improve maintainability, performance, or reliability. No user-facing 
 - **Rejected:** one file per game (hundreds of files; edits happen by topic), and having the app fetch the parts itself (more API calls, older versions still need `manifest.json`).
 
 ### Test Infrastructure
-- Baseline verification (37 tests passing): `dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64`
+- Run: `dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64` (about 99 tests, xUnit + FsCheck)
 - Add integration tests: install/uninstall roundtrip, manifest parse → card assertions, settings save/load
-- CI pipeline: `dotnet build && dotnet test` on push
+- CI: only the manifest check runs on push (`.github/workflows/manifest-check.yml`). Add `dotnet build && dotnet test` on push
 
 ---
 
 ## 🚀 Feature Ideas
 
 User-requested features and enhancements. Not committed — just captured.
-
-### Selectable layouts (planned for v2.9.0)
-Classic / Tabs / Spotlight main-page layouts, switchable in Settings, with Steam artwork for Spotlight. Full plan: [layouts-plan-2.9.0.md](layouts-plan-2.9.0.md).
 
 ### Steam Full Library Integration
 Show the user's complete Steam catalog (owned, family shared, not just installed) to browse compatibility before downloading.
@@ -99,6 +100,32 @@ Show the user's complete Steam catalog (owned, family shared, not just installed
 - "Install" links to `steam://install/{appId}`
 
 **Source:** Discord user request. Similar to SteamDB/SteamDD.
+
+### Steam Achievements in Spotlight
+Show the selected Steam game's achievements on the Spotlight page: progress, recent unlocks, and the full list in the side panel. No API key, sign-in or public profile needed, because the data comes from Steam's local cache.
+
+**Data sources (verified on a real install):**
+- Achievement list: `<SteamPath>\appcache\stats\UserGameStatsSchema_<appid>.bin`. Binary KeyValues: `stats` → `<block>` → `bits` → `<bit>` → `name`, `display` → `name`/`desc` (per language), `hidden`, `icon`, `icon_gray`.
+- Unlock state: `<SteamPath>\appcache\stats\UserGameStats_<accountid>_<appid>.bin`. `cache` → `<block>` → `data` (unlocked bitfield) + `AchievementTimes` → `<bit>`: unix time.
+- Account id = SteamID64 − 76561197960265728, SteamID64 from `<SteamPath>\config\loginusers.vdf` (`MostRecent` user). SteamPath from `HKCU\Software\Valve\Steam\SteamPath`.
+- Binary KeyValues types: 0 subtree, 1 string, 2/4/6 int32, 3 float, 7 uint64, 8/11 end.
+- Icons: `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`.
+- Optional rarity: `ISteamUserStats/GetGlobalAchievementPercentagesForApp` (no key), cached for a day.
+
+**What needs building:**
+- `SteamAchievementService`: KeyValues binary reader, account lookup, maps block + bit to unlocked/time, picks the Steam display language with English fallback, caches results and re-reads only when a file changes.
+- Icons downloaded in the background into the artwork cache (`artwork\{appid}\ach\`), only while Spotlight is on, like covers.
+- Spotlight: an Achievements tile under "Tune this game" ("31 / 78 · 40%", progress bar, last few unlocked icons); clicking it opens the side panel with the full list (unlocked newest first, then locked greyed out; hidden locked ones masked as "Hidden achievement").
+- Refresh when the game exits (running-game tracking) and on selection.
+- AppID via `DetailPanelBuilder.ResolveCommunityAppId`; Steam games only.
+
+**Limitations:** only covers games run on this PC (or whose achievements were opened in Steam); undocumented format (hide the tile if a file doesn't parse); updates only when Steam writes the cache.
+
+**Rejected:** Steam Web API `GetPlayerAchievements` (needs a per-user key and a public game-details profile); scraping community XML (fragile); Steamworks SDK (not viable).
+
+**Open questions:** Spotlight only, or also an At a glance tile in Tabs? Include rarity? Mask hidden achievements until unlocked?
+
+**Size:** medium, about 600–800 lines, no new libraries.
 
 ### Store-Qualified installPathOverrides
 Games on both Steam and Xbox with different subfolder structures (`Win64` vs `WinGDK`).
@@ -113,31 +140,20 @@ Games on both Steam and Xbox with different subfolder structures (`Win64` vs `Wi
 - Currently the UI silently fails on older drivers
 - Show "Requires driver X.XX+" tooltip when disabled
 
-### Custom ReShade Auto-Redeploy
-When a user updates a custom ReShade DLL in the Custom folder, automatically redeploy it to all games using that DLL.
-
-- Hash each `.dll` in Custom folder, store hashes in `custom_reshade_hashes.json` alongside the DLLs (in the Custom folder itself)
-- On Refresh + 4-hour background cycle: re-hash and compare
-- If hash changed → redeploy to all games with "Custom" RS channel that use that specific DLL
-- Vulkan games: update the global layer in `%ProgramData%\ReShade\` (requires admin)
-- Update stored hashes after successful redeploy
-
-**Source:** Discord user request.
-
 ---
 
 ## 🐛 Known Issues / To Fix
 
 Confirmed bugs or UX problems with a known root cause.
 
-### UI freeze on `BuildDriverProfileSectionWithData:AddToTree` (NVIDIA panel layout)
-**Symptom:** App freezes for 30 seconds to 3+ minutes when selecting a game that has DLSS SR+RR+FG+Streamline installed (e.g. Control, Resident Evil 4, God of War Ragnarök). Heartbeat logs show `*** UI FROZEN ***` with last action `BuildDriverProfileSectionWithData:AddToTree(GameName)`. Can happen during initial card selection, after background scan completes, or after Check for Updates.
+### UI freeze after selecting games with a full DLSS profile
+**Symptom:** The UI stops responding after selecting a game with DLSS SR+RR+FG+Streamline installed (e.g. Control, Ninja Gaiden 2 Black). The last logged action is usually `BuildDriverProfileSectionWithData:AddToTree(GameName)`.
 
-**Root cause:** `BuildDriverProfileSectionWithData` builds a WinUI `Grid` with ~20 rows and star-column (`GridLength.Star`) layout. `driverContainer.Children.Add(tempDriver)` triggers a full WinUI layout pass on the UI thread. On some machines/setups WinUI's star-column measurement is catastrophically slow for large grids. Pre-measuring (`Measure()` before `Children.Add`) did not help.
+**What's known:** Freeze captures show the UI thread idle (CPU 0) with the message pump alive, while queued dispatcher work never runs. It is not a slow layout pass, so the earlier idea of replacing the Driver Settings grid's star columns is not the fix. Root cause still unknown.
 
-**Partial mitigations in place (v2.8.0):** Skip `AddToTree` when Settings panel is open or any dialog is showing. This prevents the freeze after Check for Updates and during app update download, but does NOT fix the freeze when the user simply clicks on an affected game.
+**In place:** guards against stale or doubled panel builds, NVAPI reads moved off the UI thread, a 5-second lock timeout, freeze detection with diagnostics (native stack, ClrMD, dump with `unlock.txt`), and automatic restart that reselects the game.
 
-**Real fix needed:** Replace the star-column `Grid` in `BuildDriverProfileSectionWithData` with fixed-pixel column widths, or split it into multiple smaller grids, or build the rows as `StackPanel` + `HorizontalAlignment` instead of a single monolithic grid. This eliminates the expensive star-column layout pass entirely.
+**Next steps and full history:** "UI Freeze Investigation" in [rhi-knowledge.md](../.kiro/steering/rhi-knowledge.md).
 
 ---
 

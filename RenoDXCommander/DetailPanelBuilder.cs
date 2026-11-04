@@ -58,6 +58,7 @@ public partial class DetailPanelBuilder
         _window = window;
         _dispatcherQueue = window.DispatcherQueue;
         Layout = new DetailLayoutHost(window);
+        Layout.SummariesStale += RefreshGameOverridesSummary;
         _gameNameService = gameNameService;
         _peHeaderService = peHeaderService;
         _dlssPresetService = dlssPresetService;
@@ -906,6 +907,31 @@ public partial class DetailPanelBuilder
             entries.Add(("Luma", "On"));
 
         return MakeSectionSummaryInlines(entries, "Installed components and versions.");
+    }
+
+    /// <summary>
+    /// Rebuilds the Game Overrides header summary for the selected game (it's otherwise only
+    /// rebuilt with the panel or when the Classic section is collapsed).
+    /// </summary>
+    private void RefreshGameOverridesSummary()
+    {
+        try
+        {
+            if (_window.ViewModel.SelectedGame is not { } card) return;
+            var row = _window.OverridesHeaderRow;
+            // index 3 onwards = summary (after drag handle + arrow + title)
+            while (row.Children.Count > 3) row.Children.RemoveAt(3);
+            if (BuildGameOverridesSummary(card) is { } summary)
+            {
+                summary.Visibility = _window.OverridesPanel.Visibility == Visibility.Collapsed
+                    ? Visibility.Visible : Visibility.Collapsed;
+                row.Children.Add(summary);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DetailPanelBuilder.RefreshGameOverridesSummary] {ex.Message}");
+        }
     }
 
     /// <summary>

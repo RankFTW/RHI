@@ -499,6 +499,8 @@ public static class ShaderPopupHelper
                         Margin            = new Thickness(4, 0, 0, 0),
                         Visibility        = Visibility.Visible,
                         VerticalAlignment = VerticalAlignment.Center,
+                        Background        = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                        BorderThickness   = new Thickness(0),
                     };
                     ToolTipService.SetToolTip(expandBtn, "Show or hide the shader files in this pack.");
                     expandButtons[id] = expandBtn;

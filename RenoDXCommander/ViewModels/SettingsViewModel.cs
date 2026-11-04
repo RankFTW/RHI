@@ -28,6 +28,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private int _ulTargetFps; // 0 = off/disabled
     [ObservableProperty] private string _osHotkey = "Insert";
     [ObservableProperty] private string _osGpuType = "NVIDIA";
+    /// <summary>OptiScaler version for games that don't have one chosen: "Stable", "Nightly", "DlssNr" or "F5".</summary>
+    [ObservableProperty] private string _osDefaultVariant = "Stable";
+    /// <summary>RHI's own interface size in percent (on top of Windows scaling). 100 = normal.</summary>
+    [ObservableProperty] private int _uiScale = 100;
     [ObservableProperty] private bool _osDlssInputs = true;
     [ObservableProperty] private bool _osFirstTimeWarningDismissed;
     [ObservableProperty] private bool _ueExtendedWarningDismissed;
@@ -259,6 +263,10 @@ public partial class SettingsViewModel : ObservableObject
 
         if (s.TryGetValue("OsGpuType", out var ogtVal))
             OsGpuType = ogtVal ?? "NVIDIA";
+        if (s.TryGetValue("OsDefaultVariant", out var odvVal) && odvVal is "Stable" or "Nightly" or "DlssNr" or "F5")
+            OsDefaultVariant = odvVal;
+        if (s.TryGetValue("UiScale", out var uisVal) && int.TryParse(uisVal, out var uis))
+            UiScale = Math.Clamp(uis, 50, 200);
 
         if (s.TryGetValue("OsDlssInputs", out var odiVal))
             OsDlssInputs = odiVal == "true";
@@ -479,6 +487,8 @@ public partial class SettingsViewModel : ObservableObject
         else s.Remove("UlTargetFps"); // 0 = off — remove stale value
         s["OsHotkey"] = OsHotkey;
         s["OsGpuType"] = OsGpuType;
+        s["OsDefaultVariant"] = OsDefaultVariant;
+        s["UiScale"] = UiScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
         s["OsDlssInputs"] = OsDlssInputs ? "true" : "false";
         s["OsFirstTimeWarningDismissed"] = OsFirstTimeWarningDismissed ? "true" : "false";
         s["UeExtendedWarningDismissed"] = UeExtendedWarningDismissed ? "true" : "false";

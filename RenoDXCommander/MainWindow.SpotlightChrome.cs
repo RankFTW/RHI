@@ -203,11 +203,38 @@ public sealed partial class MainWindow
             UpdateShelfHighlight();
         };
         _shelf.DoubleTapped += GameList_DoubleTapped;
-        _shelf.Loaded += (s, e) => HookShelfWheel();
+        _shelf.Loaded += (s, e) => { HookShelfWheel(); UpdateShelfCentering(); };
+        _shelf.SizeChanged += (s, e) => UpdateShelfCentering();
+        ViewModel.DisplayedGames.CollectionChanged += (s, e) => UpdateShelfCentering();
         GameList.SelectionChanged += (s, e) => { if (_spotlightOn) SyncShelfFromList(); };
 
         Grid.SetRow(_shelf, 3);
         parent.Children.Add(_shelf);
+    }
+
+    /// <summary>
+    /// With the Favourites filter on, centres the covers when they all fit on screen (extra side
+    /// padding); otherwise they start at the left as usual.
+    /// </summary>
+    private void UpdateShelfCentering()
+    {
+        if (_shelf == null) return;
+        try
+        {
+            double side = 20;
+            double width = _shelf.ActualWidth;
+            if (width > 0 && ViewModel.ActiveFilters.Contains("Favourites"))
+            {
+                double items = ViewModel.DisplayedGames.Count * (TileWidth + 8); // tile + item margin 4,0,4,0
+                if (items > 0 && items + 40 <= width) side = Math.Floor((width - items) / 2);
+            }
+            if (Math.Abs(_shelf.Padding.Left - side) > 0.5)
+                _shelf.Padding = new Thickness(side, 4, side, 10);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.UpdateShelfCentering] {ex.Message}");
+        }
     }
 
     /// <summary>The mouse wheel scrolls the shelf sideways (it has no vertical scrolling).</summary>

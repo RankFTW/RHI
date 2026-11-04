@@ -295,7 +295,7 @@ internal sealed partial class DetailLayoutHost
         if (_overview != null)
         {
             _overview.Visibility = selected == OverviewKey ? Visibility.Visible : Visibility.Collapsed;
-            if (selected == OverviewKey) RefreshOverview();
+            if (selected == OverviewKey) { SummariesStale?.Invoke(); RefreshOverview(); }
         }
     }
 

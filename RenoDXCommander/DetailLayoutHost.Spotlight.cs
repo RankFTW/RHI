@@ -383,6 +383,9 @@ internal sealed partial class DetailLayoutHost
             container.Visibility = Visibility.Collapsed;
             SectionsPanel.Children.Add(container); // ApplySectionOrder puts it back in order
         }
+        // Settings changed in the panel: bring the Tune tiles up to date
+        SummariesStale?.Invoke();
+        RefreshTuneTiles();
     }
 
     private void SetOverviewHeadingVisible(bool visible)

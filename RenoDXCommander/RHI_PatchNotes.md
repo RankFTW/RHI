@@ -45,12 +45,25 @@
 - Tooltips everywhere use the same dark navy look.
 - Patch notes, Message from RHI, Support the Mod Authors and Multi Frame Generation are restyled to match; mod authors are shown as cards, two across.
 - Every other pop-up (Update Inclusion, ReShade presets, confirmations and the rest) uses the same dark navy look.
+- Patch notes list every version down the left; click one to read its notes. A search box finds a word across every version and shows each matching line.
 
 **Component settings (⚙)**
 - Restyled to match the new layouts: settings are grouped into cards, in the same dark navy colours.
 
 **DLSS / Streamline**
 - Removed the Deploy DLL button under Neural Rendering. The Neural Rendering section installs the DLL when you pick a method; the version dropdown still changes the DLL a game already has.
+
+**Driver Settings**
+- The Driver Settings summary (the collapsed header, and the Driver Settings tile in Tabs and Spotlight) now shows G-Sync Off when G-Sync is disabled for the game. It updates as soon as you change it.
+
+**OptiScaler**
+- New Default version setting (Settings → Components → OptiScaler): Stable, Nightly, DLSS NR or F5 DLSSNR. It's used when OptiScaler is installed in a game you haven't picked a version for in its ⚙. Games that already have OptiScaler keep the version they have.
+
+**Interface size**
+- New Interface size setting (Settings → General → Windows), from 50% to 150%. It makes RHI's window smaller or larger without changing Windows' scaling, for TVs and high-DPI screens set to 200% or more. Pop-ups, dropdown lists and tooltips keep the Windows size.
+
+**Adding games**
+- A game you add yourself (Add Game, or dropping its exe on RHI) now opens straight away, so you don't have to find it in the list. If your search or filter would hide it, they're cleared.
 
 **Message of the day**
 - Links in the message can now be clicked.

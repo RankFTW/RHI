@@ -407,73 +407,44 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Reads the bundled RHI_PatchNotes.md and extracts the last N version sections.
-    /// Each section starts with "## vX.Y.Z".
+    /// Every version section of the bundled RHI_PatchNotes.md, newest first: the heading text
+    /// ("v2.9.0 Beta 3") and the section's Markdown, plus the text above the first version
+    /// (the GitHub token tip). Empty list if the file is missing or unreadable.
     /// </summary>
-    public static string GetRecentPatchNotes(int count = 3)
+    public static (string Preamble, List<(string Version, string Body)> Sections) GetPatchNoteSections()
     {
+        var sections = new List<(string, string)>();
         try
         {
             var path = AppPaths.InExeDir("RHI_PatchNotes.md");
-            if (!File.Exists(path)) return "Patch notes file not found.";
+            if (!File.Exists(path)) return ("", sections);
 
-            var lines = File.ReadAllLines(path);
-            var sections = new List<string>();
-            var currentSection = new List<string>();
-            bool inSection = false;
             var preamble = new List<string>();
-
-            foreach (var line in lines)
+            string? version = null;
+            var current = new List<string>();
+            void Flush()
+            {
+                if (version != null) sections.Add((version, string.Join("\n", current).Trim()));
+                current.Clear();
+            }
+            foreach (var line in File.ReadAllLines(path))
             {
                 if (line.StartsWith("## v"))
                 {
-                    if (inSection && currentSection.Count > 0)
-                    {
-                        sections.Add(string.Join("\n", currentSection));
-                        if (sections.Count >= count) break;
-                        currentSection.Clear();
-                    }
-                    inSection = true;
-                    currentSection.Add(line);
+                    Flush();
+                    version = line[3..].Trim();
+                    current.Add(line);
                 }
-                else if (inSection)
-                {
-                    // Stop at the "---" separator between versions (but don't include it)
-                    if (line.Trim() == "---")
-                    {
-                        sections.Add(string.Join("\n", currentSection));
-                        if (sections.Count >= count) break;
-                        currentSection.Clear();
-                        inSection = false;
-                    }
-                    else
-                    {
-                        currentSection.Add(line);
-                    }
-                }
-                else
-                {
-                    preamble.Add(line);
-                }
+                else if (version == null) preamble.Add(line);
+                else if (line.Trim() != "---") current.Add(line);
             }
-
-            // Capture final section if still in progress
-            if (inSection && currentSection.Count > 0 && sections.Count < count)
-                sections.Add(string.Join("\n", currentSection));
-
-            var body = sections.Count > 0
-                ? string.Join("\n\n---\n\n", sections)
-                : "No patch notes available.";
-
-            // Prepend preamble (e.g. the GitHub API warning banner) if present
-            var preambleText = string.Join("\n", preamble).Trim();
-            return string.IsNullOrEmpty(preambleText)
-                ? body
-                : preambleText + "\n\n---\n\n" + body;
+            Flush();
+            return (string.Join("\n", preamble).Trim(), sections);
         }
         catch (Exception ex)
         {
-            return $"Error reading patch notes: {ex.Message}";
+            CrashReporter.Log($"[MainViewModel.GetPatchNoteSections] {ex.Message}");
+            return ("", sections);
         }
     }
 }

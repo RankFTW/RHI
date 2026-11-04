@@ -242,43 +242,71 @@ public partial class DetailPanelBuilder
                     CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW AddToTree: '{gameName}' took {sw2.ElapsedMilliseconds}ms on UI thread");
 
                 // Update collapsed summary — appended at index 3 of driverHeaderRow
-                if (_driverHeaderRow != null && data != null)
+                if (data != null)
                 {
-                    for (int i = _driverHeaderRow.Children.Count - 1; i >= 3; i--)
-                        if (_driverHeaderRow.Children[i] is TextBlock { Tag: DriverSummaryTag })
-                            _driverHeaderRow.Children.RemoveAt(i);
-
-                    var vsyncName = DlssPresetService.VSyncModeOptions
-                        .FirstOrDefault(o => o.Value == data.VSyncMode).Name ?? "Default";
-                    var smoothName = data.SmoothMotionEnable != 0 ? "On" : null;
-                    // ReBarEnableMode: 0=Off, 1=Auto (default), 2=On
-                    var rebarName = data.ReBarEnableMode == 2 ? "On"
-                                  : data.ReBarEnableMode == 0 ? "Off"
-                                  : null; // Auto = default, omit from summary
-
-                    var summaryEntries = new System.Collections.Generic.List<(string, string?)>();
-                    if (!string.IsNullOrEmpty(driverVer))
-                        summaryEntries.Add(("Driver", driverVer));
-                    summaryEntries.Add(("VSync", vsyncName));
-                    if (smoothName != null)
-                        summaryEntries.Add(("Smooth", smoothName));
-                    if (rebarName != null)
-                        summaryEntries.Add(("ReBAR", rebarName));
-                    if (data.PerGameFpsLimit is uint capFps)
-                        summaryEntries.Add(("FPS Limit", capFps == 0 ? "Off" : $"{capFps}"));
-                    var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries,
-                        "NVIDIA driver version and this game's driver profile settings.\n"
-                        + "VSync is always shown. Smooth (Smooth Motion), ReBAR and FPS Limit appear only when they differ from the default.");
-                    if (summaryTb != null)
-                    {
-                        summaryTb.Tag = DriverSummaryTag;
-                        summaryTb.Visibility = driverBody.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
-                        _driverHeaderRow.Children.Add(summaryTb);
-                        Layout.SummaryChanged(); // Tabs: refresh the Overview tile
-                    }
+                    _driverSummaryData = data;
+                    _driverSummaryVer = driverVer;
+                    _driverSummaryBody = driverBody;
+                    UpdateDriverSummary();
                 }
             });
         });
+    }
+
+    // Last values shown in the Driver Settings summary, so a change made in the panel can update it
+    private DriverProfileData? _driverSummaryData;
+    private string? _driverSummaryVer;
+    private StackPanel? _driverSummaryBody;
+
+    /// <summary>
+    /// (Re)builds the Driver Settings header summary from <see cref="_driverSummaryData"/>. The same
+    /// summary feeds Classic's collapsed header, Tabs' At a glance and Spotlight's Tune tile.
+    /// </summary>
+    private void UpdateDriverSummary()
+    {
+        var data = _driverSummaryData;
+        if (_driverHeaderRow == null || data == null) return;
+        try
+        {
+            for (int i = _driverHeaderRow.Children.Count - 1; i >= 3; i--)
+                if (_driverHeaderRow.Children[i] is TextBlock { Tag: DriverSummaryTag })
+                    _driverHeaderRow.Children.RemoveAt(i);
+
+            var vsyncName = DlssPresetService.VSyncModeOptions
+                .FirstOrDefault(o => o.Value == data.VSyncMode).Name ?? "Default";
+            var smoothName = data.SmoothMotionEnable != 0 ? "On" : null;
+            // ReBarEnableMode: 0=Off, 1=Auto (default), 2=On
+            var rebarName = data.ReBarEnableMode == 2 ? "On"
+                          : data.ReBarEnableMode == 0 ? "Off"
+                          : null; // Auto = default, omit from summary
+
+            var summaryEntries = new System.Collections.Generic.List<(string, string?)>();
+            if (!string.IsNullOrEmpty(_driverSummaryVer))
+                summaryEntries.Add(("Driver", _driverSummaryVer));
+            summaryEntries.Add(("VSync", vsyncName));
+            if (smoothName != null)
+                summaryEntries.Add(("Smooth", smoothName));
+            if (rebarName != null)
+                summaryEntries.Add(("ReBAR", rebarName));
+            if (!data.PerGameGSyncEnabled)
+                summaryEntries.Add(("G-Sync", "Off"));
+            if (data.PerGameFpsLimit is uint capFps)
+                summaryEntries.Add(("FPS Limit", capFps == 0 ? "Off" : $"{capFps}"));
+            var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries,
+                "NVIDIA driver version and this game's driver profile settings.\n"
+                + "VSync is always shown. Smooth (Smooth Motion), ReBAR, G-Sync and FPS Limit appear only when they differ from the default.");
+            if (summaryTb != null)
+            {
+                summaryTb.Tag = DriverSummaryTag;
+                summaryTb.Visibility = _driverSummaryBody?.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
+                _driverHeaderRow.Children.Add(summaryTb);
+                Layout.SummaryChanged(); // Tabs / Spotlight: refresh the tile
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DetailPanelBuilder.UpdateDriverSummary] {ex.Message}");
+        }
     }
 
     private void BuildDriverProfileSectionWithData(GameCardViewModel card, string capturedName,
@@ -680,6 +708,11 @@ public partial class DetailPanelBuilder
                     if (gsyncInit) return;
                     bool enabled = gsyncCombo.SelectedIndex == 0;
                     _ = Task.Run(() => nvidiaPresetService.SetPerGameGSyncEnabled(capturedName, installPathSafe, enabled));
+                    if (_driverSummaryData != null)
+                    {
+                        _driverSummaryData = _driverSummaryData with { PerGameGSyncEnabled = enabled };
+                        UpdateDriverSummary();
+                    }
                 };
                 powerCol.Children.Add(gsyncCombo);
                 gsyncInit = false;

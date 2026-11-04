@@ -319,7 +319,7 @@ public sealed partial class MainWindow
         // OsVariant — change if preset has one
         if (p.OsVariant != null)
         {
-            var internalVariant = p.OsVariant switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", "Stable" => null, _ => p.OsVariant };
+            var internalVariant = p.OsVariant switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", _ => p.OsVariant };
             ViewModel.SetOsVariant(card.GameName, internalVariant, store);
         }
 

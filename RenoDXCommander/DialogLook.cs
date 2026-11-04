@@ -54,7 +54,7 @@ internal static class DialogLook
             case ComboBox cb: StyleInput(cb); return; // never walk into dropdown items
             case TextBox tb: StyleInput(tb); return;
             case PasswordBox pb: StyleInput(pb); return;
-            case Button btn: TabsTheme.RestyleButton(btn); return;
+            case Button btn: StyleButton(btn); return;
             case TextBlock tx: TabsTheme.RestyleText(tx); return;
             case ToggleSwitch or Slider or ProgressBar or ProgressRing: return;
         }
@@ -64,6 +64,38 @@ internal static class DialogLook
         else if (root is Border { Child: { } bc }) Restyle(bc);
         else if (root is ScrollViewer { Content: DependencyObject sc }) Restyle(sc);
         else if (root is ContentControl { Content: DependencyObject cc }) Restyle(cc);
+    }
+
+    /// <summary>
+    /// Colours and corners only: buttons keep the size, padding and font the dialog gave them
+    /// (TabsTheme.RestyleButton's fixed 34 px height made small buttons chunky). Flat buttons
+    /// (transparent, no border) stay flat and only get the text and hover colours.
+    /// </summary>
+    private static void StyleButton(Button btn)
+    {
+        var tone = TabsTheme.ToneOf(btn.Foreground);
+        var look = tone == TabsTheme.Tone.Grey ? TabsTheme.IconButton : TabsTheme.ButtonFor(tone);
+        bool flat = btn.BorderThickness == new Thickness(0)
+            && btn.Background is SolidColorBrush { Color.A: 0 };
+        var r = btn.Resources;
+        btn.Foreground = TabsTheme.B(look.Fg);
+        if (btn.Content is TextBlock ct) ct.Foreground = TabsTheme.B(look.Fg);
+        TabsTheme.SetResource(r, "ButtonForegroundPointerOver", TabsTheme.B(look.Fg));
+        TabsTheme.SetResource(r, "ButtonForegroundPressed", TabsTheme.B(look.Fg));
+        TabsTheme.SetResource(r, "ButtonForegroundDisabled", TabsTheme.B(TabsTheme.TextMuted));
+        TabsTheme.SetResource(r, "ButtonBackgroundPointerOver", TabsTheme.B(look.HoverBg));
+        TabsTheme.SetResource(r, "ButtonBackgroundPressed", TabsTheme.B(flat ? look.HoverBg : look.Bg));
+        if (flat) return;
+
+        btn.CornerRadius = new CornerRadius(6);
+        btn.BorderThickness = new Thickness(1);
+        btn.Background = TabsTheme.B(look.Bg);
+        btn.BorderBrush = TabsTheme.B(look.Border);
+        if (look.Bold) btn.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+        TabsTheme.SetResource(r, "ButtonBorderBrushPointerOver", TabsTheme.B(look.Border));
+        TabsTheme.SetResource(r, "ButtonBorderBrushPressed", TabsTheme.B(look.Border));
+        TabsTheme.SetResource(r, "ButtonBackgroundDisabled", TabsTheme.B(look.Bg));
+        TabsTheme.SetResource(r, "ButtonBorderBrushDisabled", TabsTheme.B(look.Border));
     }
 
     /// <summary>Colours and corners only: dialogs size their inputs themselves.</summary>

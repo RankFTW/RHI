@@ -1130,6 +1130,40 @@ public sealed partial class MainWindow
 
     // ── Manual add game ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Opens a game's page right after it was added by hand (Add Game button, exe drag-and-drop),
+    /// so it doesn't have to be found in a long list. Clears the search / filter first if they
+    /// hide it. Runs after the list has updated.
+    /// </summary>
+    private void OpenAddedGame(GameCardViewModel card)
+    {
+        DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            try
+            {
+                if (IsShuttingDown) return;
+                if (!ViewModel.DisplayedGames.Contains(card))
+                {
+                    if (SearchBox.Text.Length > 0) SearchBox.Text = ""; // also ends a custom filter
+                    ViewModel.SetFilterCommand.Execute("Detected");
+                    RefreshFilterButtonStyles();
+                }
+                if (!ViewModel.DisplayedGames.Contains(card))
+                {
+                    _crashReporter.Log($"[MainWindow.OpenAddedGame] '{card.GameName}' isn't in the list; not selected");
+                    return;
+                }
+                GameList.SelectedItem = card;
+                GameList.ScrollIntoView(card);
+                _crashReporter.Log($"[MainWindow.OpenAddedGame] Opened '{card.GameName}'");
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainWindow.OpenAddedGame] {ex.Message}");
+            }
+        });
+    }
+
     private async void AddGameButton_Click(object sender, RoutedEventArgs e)
     {
         try

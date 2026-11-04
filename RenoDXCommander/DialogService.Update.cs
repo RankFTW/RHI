@@ -231,14 +231,13 @@ public partial class DialogService
 
     public async Task ShowPatchNotesDialogAsync()
     {
-        var notes = MainViewModel.GetRecentPatchNotes(3);
+        var (preamble, sections) = MainViewModel.GetPatchNoteSections();
+        const double bodyHeight = 480;
 
-        var headingBrush = Brush(ResourceKeys.TextPrimaryBrush);
         var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
         {
-            Text = notes,
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
             FontSize = 12,
             UseEmphasisExtras = true,
             UseListExtras = true,
@@ -246,16 +245,12 @@ public partial class DialogService
         };
 
         // Wrap in a Grid with explicit dark theme to force heading colors
-        var markdownContainer = new Grid
-        {
-            RequestedTheme = ElementTheme.Dark,
-        };
+        var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
         markdownContainer.Children.Add(markdown);
 
-        markdown.Foreground = TabsTheme.B(TabsTheme.TextSecondary);
         var scrollViewer = new ScrollViewer
         {
-            MaxHeight = 520,
+            Height = bodyHeight,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = markdownContainer,
             Padding = new Thickness(0, 0, 16, 0),
@@ -264,17 +259,192 @@ public partial class DialogService
         card.Padding = new Thickness(20, 16, 4, 16);
         card.Width = 680;
 
-        var v = _updateService.CurrentVersion;
+        // Version list down the left: click one to show its notes. One version at a time keeps
+        // the Markdown small (the file has dozens of versions). The search box above narrows the
+        // list to versions that mention the text and shows every matching line on the right.
+        var navList = new StackPanel { Spacing = 2 };
+        var navItems = new List<(Border Item, TextBlock Label, TextBlock Count)>();
+        int selected = -1;
+
+        void Highlight(int index)
+        {
+            selected = index;
+            for (int i = 0; i < navItems.Count; i++)
+            {
+                bool on = i == index;
+                navItems[i].Item.Background = on ? TabsTheme.B("#1A2336") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                navItems[i].Item.BorderBrush = on ? TabsTheme.B("#2A3D63") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                navItems[i].Label.Foreground = TabsTheme.B(on ? "#A9C6FF" : TabsTheme.TextSecondary);
+                navItems[i].Label.FontWeight = on ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal;
+            }
+        }
+
+        void ShowVersion(int index)
+        {
+            if (index < 0 || index >= sections.Count) return;
+            Highlight(index);
+            var body = sections[index].Body;
+            // The GitHub token tip stays above the newest version only
+            markdown.Text = index == 0 && preamble.Length > 0 ? preamble + "\n\n---\n\n" + body : body;
+            scrollViewer.ChangeView(null, 0, null, true);
+        }
+
+        // Lines of a version that contain the search text, with the ### heading they sit under
+        static List<string> MatchingLines(string body, string query)
+        {
+            var result = new List<string>();
+            string? heading = null;
+            bool headingShown = false;
+            foreach (var raw in body.Split('\n'))
+            {
+                var line = raw.TrimEnd('\r');
+                var trimmed = line.TrimStart();
+                if (trimmed.StartsWith("## ")) continue;
+                if (trimmed.StartsWith("### ")) { heading = trimmed[4..].Trim(); headingShown = false; continue; }
+                if (trimmed.Length == 0 || !trimmed.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
+                if (heading != null && !headingShown) { result.Add($"**{heading}**"); headingShown = true; }
+                result.Add("- " + trimmed.TrimStart('-', '*', ' '));
+            }
+            return result;
+        }
+
+        void ApplySearch(string query)
+        {
+            query = query.Trim();
+            if (query.Length == 0)
+            {
+                foreach (var n in navItems) { n.Item.Visibility = Visibility.Visible; n.Count.Text = ""; }
+                ShowVersion(selected >= 0 ? selected : 0);
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            int versionsHit = 0, linesHit = 0;
+            for (int i = 0; i < sections.Count; i++)
+            {
+                var lines = MatchingLines(sections[i].Body, query);
+                navItems[i].Item.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                int hits = lines.Count(l => l.StartsWith("- "));
+                navItems[i].Count.Text = hits > 0 ? hits.ToString() : "";
+                if (lines.Count == 0) continue;
+                versionsHit++;
+                linesHit += hits;
+                if (linesHit <= 400) // keep the results page a sensible size
+                {
+                    sb.Append("## ").Append(sections[i].Version).Append("\n\n");
+                    foreach (var l in lines) sb.Append(l).Append("\n\n");
+                }
+            }
+            Highlight(-1);
+            markdown.Text = versionsHit == 0
+                ? $"Nothing in the patch notes mentions \"{query}\"."
+                : $"**{linesHit}** matching line{(linesHit == 1 ? "" : "s")} in **{versionsHit}** version{(versionsHit == 1 ? "" : "s")}. Click a version on the left to read all of it.\n\n" + sb;
+            scrollViewer.ChangeView(null, 0, null, true);
+        }
+
+        for (int i = 0; i < sections.Count; i++)
+        {
+            var label = new TextBlock
+            {
+                Text = sections[i].Version,
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var count = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = TabsTheme.B(TabsTheme.TextMuted),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var row = new Grid { ColumnSpacing = 6 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(label);
+            Grid.SetColumn(count, 1);
+            row.Children.Add(count);
+            var item = new Border
+            {
+                Height = 32,
+                Padding = new Thickness(12, 0, 8, 0),
+                CornerRadius = new CornerRadius(8),
+                BorderThickness = new Thickness(1),
+                Child = row,
+            };
+            int idx = i;
+            TabsTheme.UseHandCursor(item);
+            item.PointerEntered += (s, e) => { if (idx != selected) item.Background = TabsTheme.B(TabsTheme.RowHover); };
+            item.PointerExited += (s, e) => { if (idx != selected) item.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); };
+            item.Tapped += (s, e) => { if (idx != selected) ShowVersion(idx); };
+            navItems.Add((item, label, count));
+            navList.Children.Add(item);
+        }
+
+        var navHeading = TabsTheme.SectionHeading("Versions");
+        navHeading.FontSize = 11;
+        navHeading.Margin = new Thickness(12, 2, 0, 8);
+        var navPanel = new Grid { Width = 150, Height = bodyHeight + 34 };
+        navPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        navPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        navPanel.Children.Add(navHeading);
+        var navScroll = new ScrollViewer
+        {
+            Content = navList,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 10, 0),
+        };
+        Grid.SetRow(navScroll, 1);
+        navPanel.Children.Add(navScroll);
+
+        // Search box over both columns: 250 ms after typing stops, Esc clears
+        var search = new TextBox { PlaceholderText = "Search patch notes (e.g. OptiScaler, crash, Vulkan)" };
+        TabsTheme.StyleInput(search);
+        var searchTimer = search.DispatcherQueue.CreateTimer();
+        searchTimer.Interval = TimeSpan.FromMilliseconds(250);
+        searchTimer.IsRepeating = false;
+        searchTimer.Tick += (t, o) => ApplySearch(search.Text);
+        search.TextChanged += (s, e) => { searchTimer.Stop(); searchTimer.Start(); };
+        search.KeyDown += (s, e) =>
+        {
+            if (e.Key == Windows.System.VirtualKey.Escape && search.Text.Length > 0)
+            {
+                search.Text = "";
+                e.Handled = true; // clear the search, don't close the dialog
+            }
+            else if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                searchTimer.Stop();
+                ApplySearch(search.Text);
+                e.Handled = true;
+            }
+        };
+
+        var layout = new Grid { ColumnSpacing = 14, RowSpacing = 12 };
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.Children.Add(search);
+        Grid.SetColumnSpan(search, 2);
+        Grid.SetRow(navPanel, 1);
+        layout.Children.Add(navPanel);
+        Grid.SetRow(card, 1);
+        Grid.SetColumn(card, 1);
+        layout.Children.Add(card);
+
+        if (sections.Count > 0) ShowVersion(0);
+        else markdown.Text = "No patch notes available.";
+
         var dlg = new ContentDialog
         {
             Title              = CogDialog.MakeDialogTitle("What's New",
-                                     $"Patch notes for RHI {v.Major}.{v.Minor}.{v.Build} and the versions before it"),
-            Content            = card,
+                                     "Patch notes for every RHI version. Pick one on the left, or search them all."),
+            Content            = sections.Count > 1 ? layout : card,
             CloseButtonText    = "Close",
             XamlRoot           = _window.Content.XamlRoot,
             RequestedTheme     = ElementTheme.Dark,
         };
-        CogDialog.ApplyDialogLook(dlg, 780);
+        CogDialog.ApplyDialogLook(dlg, 920);
 
         await DialogService.ShowSafeAsync(dlg);
     }
