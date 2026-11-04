@@ -144,6 +144,7 @@ Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of bloc
 - Sidebar shows green background (#1A3A20) when running
 
 ## ContentDialog Pitfalls
+- **Every dialog gets the navy look automatically**: `DialogService.ShowSafeAsync` / `ShowProgressAsync` call `DialogLook.Apply` (`DialogLook.cs`): `CogDialog.ApplyDialogLook` frame + button styles + blue ticks, a string `Title` becomes `CogDialog.MakeDialogTitle`, content gets colour-only restyling (inputs keep their sizes). Dialogs that call `ApplyDialogLook` themselves are skipped (`RhiDialogLook` resource marker). Don't hand-style new dialogs' colours; don't add icons to titles.
 - Default max width ~548px clips wide content. Fix: `dialog.Resources["ContentDialogMaxWidth"] = 900.0;`
 - Disabled controls don't show tooltips — place tooltip on visible sibling instead.
 - `XamlRoot` can be null during cache phase. Resolve at click time via `(sender as FrameworkElement)?.XamlRoot`.

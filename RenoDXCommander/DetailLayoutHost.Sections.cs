@@ -536,8 +536,14 @@ internal sealed partial class DetailLayoutHost
                 string label = f.Label == null || (first && GenericLabels.Contains(f.Label))
                     ? (first ? "Version" : "")
                     : f.Label;
+                // An unlabelled button keeps a blank label row, so it lines up with the dropdowns
+                // beside it (Multi Frame Gen next to Render Scale)
                 var field = MakeField(label, f);
-                if (label.Length == 0 && field.Children.Count > 1) field.Children.RemoveAt(0); // no blank label row in a column
+                if (label.Length == 0)
+                {
+                    if (f.Control is Button self) self.Height = 36;
+                    foreach (var b in Descendants<Button>(f.Control)) b.Height = 36;
+                }
                 col.Children.Add(field);
                 first = false;
             }

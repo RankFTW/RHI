@@ -252,23 +252,29 @@ public partial class DialogService
         };
         markdownContainer.Children.Add(markdown);
 
+        markdown.Foreground = TabsTheme.B(TabsTheme.TextSecondary);
         var scrollViewer = new ScrollViewer
         {
-            MaxHeight = 500,
+            MaxHeight = 520,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = markdownContainer,
             Padding = new Thickness(0, 0, 16, 0),
         };
+        var card = TabsTheme.MakeCard(scrollViewer, 0);
+        card.Padding = new Thickness(20, 16, 4, 16);
+        card.Width = 680;
 
+        var v = _updateService.CurrentVersion;
         var dlg = new ContentDialog
         {
-            Title              = "📋 Patch Notes — What's New",
-            Content            = scrollViewer,
+            Title              = CogDialog.MakeDialogTitle("What's New",
+                                     $"Patch notes for RHI {v.Major}.{v.Minor}.{v.Build} and the versions before it"),
+            Content            = card,
             CloseButtonText    = "Close",
             XamlRoot           = _window.Content.XamlRoot,
-            Background         = Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme     = ElementTheme.Dark,
         };
+        CogDialog.ApplyDialogLook(dlg, 780);
 
         await DialogService.ShowSafeAsync(dlg);
     }
@@ -326,23 +332,43 @@ public partial class DialogService
             UseListExtras = true,
             UseAutoLinks = true,
         };
+        markdown.Foreground = TabsTheme.B(TabsTheme.TextControl);
         var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
         markdownContainer.Children.Add(markdown);
 
+        // The message in a card with a blue accent bar down its left edge
+        var bar = new Border
+        {
+            Width = 3,
+            CornerRadius = new CornerRadius(2),
+            Background = TabsTheme.B(TabsTheme.Accent),
+        };
+        var scroll = new ScrollViewer
+        {
+            Content = markdownContainer,
+            MaxHeight = 400,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 12, 0),
+        };
+        var inner = new Grid { ColumnSpacing = 14 };
+        inner.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        inner.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        inner.Children.Add(bar);
+        Grid.SetColumn(scroll, 1);
+        inner.Children.Add(scroll);
+        var card = TabsTheme.MakeCard(inner, 0);
+        card.Padding = new Thickness(16, 16, 4, 16);
+        card.Width = 520;
+
         var dlg = new ContentDialog
         {
-            Title = "📢 Message from RHI",
-            Content = new ScrollViewer
-            {
-                Content = markdownContainer,
-                MaxHeight = 400,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Padding = new Thickness(0, 0, 16, 0),
-            },
+            Title = CogDialog.MakeDialogTitle("Message from RHI", "News and notices from RankFTW"),
+            Content = card,
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        CogDialog.ApplyDialogLook(dlg, 620);
         await DialogService.ShowSafeAsync(dlg);
     }
 }

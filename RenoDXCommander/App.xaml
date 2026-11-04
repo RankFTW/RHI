@@ -23,6 +23,19 @@
             <Color x:Key="TitleBarButtonPressedForeground">#FFE8ECF2</Color>
             <Color x:Key="TitleBarButtonInactiveBackground">#FF0F1318</Color>
             <Color x:Key="TitleBarButtonInactiveForeground">#FF404858</Color>
+
+            <!-- Tooltips: same navy look as RHI's own in-window tooltips (TabsTheme.SetHandTip) -->
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FF161D2B"/>
+            <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#FF2A3446"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FFE6EAF2"/>
+            <Thickness x:Key="ToolTipBorderThemeThickness">1</Thickness>
+            <Style TargetType="ToolTip" BasedOn="{StaticResource DefaultToolTipStyle}">
+                <Setter Property="Background" Value="#FF161D2B"/>
+                <Setter Property="BorderBrush" Value="#FF2A3446"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Foreground" Value="#FFE6EAF2"/>
+                <Setter Property="CornerRadius" Value="6"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

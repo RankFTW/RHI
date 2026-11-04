@@ -45,7 +45,7 @@ public static class MfgDialog
                        "These settings will have no effect on 40 Series or older hardware.",
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
+                Foreground = TabsTheme.B(TabsTheme.AmberPill.Fg),
             });
 
             var dontShowCheck = new CheckBox
@@ -56,16 +56,19 @@ public static class MfgDialog
             };
             warningPanel.Children.Add(dontShowCheck);
 
+            warningPanel.Width = 420;
+            TabsTheme.Restyle(warningPanel);
             var warningDialog = new ContentDialog
             {
-                Title = "⚠ Hardware Requirement",
-                Content = warningPanel,
+                Title = CogDialog.MakeDialogTitle("Hardware Requirement"),
+                Content = TabsTheme.MakeCard(warningPanel),
                 PrimaryButtonText = "OK",
                 CloseButtonText = "Cancel",
                 XamlRoot = xamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
 
+            CogDialog.ApplyDialogLook(warningDialog, 560);
             var warningResult = await DialogService.ShowSafeAsync(warningDialog);
             if (warningResult != ContentDialogResult.Primary)
                 return;
@@ -103,9 +106,8 @@ public static class MfgDialog
         panel.Children.Add(new TextBlock
         {
             Text = "FG Mode",
-            FontSize = 11,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            FontSize = 12,
+            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
         });
 
         var modeItems = new[] { "Default", "Fixed", "Dynamic" };
@@ -131,9 +133,8 @@ public static class MfgDialog
         panel.Children.Add(new TextBlock
         {
             Text = "Frame Count",
-            FontSize = 11,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            FontSize = 12,
+            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
             Margin = new Thickness(0, 8, 0, 0),
         });
 
@@ -151,9 +152,8 @@ public static class MfgDialog
         panel.Children.Add(new TextBlock
         {
             Text = "Target Frame Rate",
-            FontSize = 11,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            FontSize = 12,
+            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
             Margin = new Thickness(0, 8, 0, 0),
         });
 
@@ -480,14 +480,20 @@ public static class MfgDialog
         };
 
         // ── Show dialog ──
+        panel.Width = 380;
+        TabsTheme.Restyle(panel);
+        customFpsBox.Width = 120; // Restyle stretches inputs; this one sits in a row beside its Set button
+        customFpsBtn.Width = double.NaN;
         var dialog = new ContentDialog
         {
-            Title = "Multi Frame Generation",
-            Content = panel,
+            Title = CogDialog.MakeDialogTitle("Multi Frame Generation",
+                "NVIDIA driver profile settings for this game. RTX 50 Series."),
+            Content = TabsTheme.MakeCard(panel),
             CloseButtonText = "Close",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        CogDialog.ApplyDialogLook(dialog, 520);
 
         await DialogService.ShowSafeAsync(dialog);
     }

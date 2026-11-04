@@ -248,17 +248,46 @@ internal sealed partial class DetailLayoutHost
         var items = body.Children.ToList();
         body.Children.Clear();
         var leading = new StackPanel { Spacing = 10 };
-        var cards = new AutoFitGrid { MinColumnWidth = 460, MaxColumns = 2, ColumnSpacing = 14, RowSpacing = 14 };
+        // Two columns that stack on their own (a short card isn't pushed down by a tall one beside it);
+        // one column when there isn't room for two.
+        var leftCol = new StackPanel { Spacing = 14 };
+        var rightCol = new StackPanel { Spacing = 14 };
+        var cards = new Grid { ColumnSpacing = 14, RowSpacing = 14 };
+        cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        cards.Children.Add(leftCol);
+        cards.Children.Add(rightCol);
         var trailing = new StackPanel { Spacing = 10 };
         bool seenCard = false;
+        int cardCount = 0;
         foreach (var item in items)
         {
-            if (item is Border) { seenCard = true; ((FrameworkElement)item).VerticalAlignment = VerticalAlignment.Top; cards.Children.Add(item); }
+            if (item is Border)
+            {
+                seenCard = true;
+                (cardCount++ % 2 == 0 ? leftCol : rightCol).Children.Add(item);
+            }
             else if (!seenCard) leading.Children.Add(item);
             else trailing.Children.Add(item); // text after the cards (notes, the status line)
         }
+        bool? twoCols = null;
+        void Fit(double width)
+        {
+            bool two = cardCount > 1 && width >= 2 * 460 + 14;
+            if (twoCols == two) return;
+            twoCols = two;
+            cards.ColumnDefinitions[1].Width = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            cards.ColumnSpacing = two ? 14 : 0;
+            cards.RowSpacing = two || rightCol.Children.Count == 0 ? 0 : 14;
+            Grid.SetColumn(rightCol, two ? 1 : 0);
+            Grid.SetRow(rightCol, two ? 0 : 1);
+        }
+        Fit(double.MaxValue);
+        cards.SizeChanged += (s, e) => Fit(e.NewSize.Width);
         if (leading.Children.Count > 0) content.Children.Add(leading);
-        if (cards.Children.Count > 0) content.Children.Add(cards);
+        if (cardCount > 0) content.Children.Add(cards);
         if (trailing.Children.Count > 0) content.Children.Add(trailing);
         if (cog.TakeFooter() is { } footer) content.Children.Add(footer);
         if (cog.PrimaryText != null) content.Children.Add(MakeApplyBar(cog));

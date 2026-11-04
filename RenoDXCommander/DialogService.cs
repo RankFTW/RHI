@@ -67,6 +67,7 @@ public partial class DialogService
     {
         try
         {
+            DialogLook.Apply(dialog);
             Task<ContentDialogResult>? result = null;
             await using var session = await _dialogs.OpenAsync(
                 () => result = dialog.ShowAsync().AsTask(), dialog.Hide, TimeSpan.FromSeconds(10));
@@ -89,6 +90,7 @@ public partial class DialogService
     {
         try
         {
+            DialogLook.Apply(dialog);
             return await _dialogs.OpenAsync(() => dialog.ShowAsync().AsTask(), dialog.Hide,
                 TimeSpan.FromSeconds(timeoutSeconds));
         }

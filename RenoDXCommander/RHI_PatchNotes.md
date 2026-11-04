@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.0 Beta 2
+## v2.9.0 Beta 3
 
 ### New
 
@@ -42,6 +42,9 @@
 - A new top bar, the same in all three layouts (the usual RHI window is now called Classic+): Available Mods and Shaders & Addons, when RHI last checked for updates, refresh, Update All with how many games have updates (or All up to date), the layout switch, a Help menu (Quick Start, Guide, Discord, links, patch notes, Donate, Ko-fi and more) and Settings.
 - The Settings button stays lit while Settings is open; click it again, or the RHI logo, to go back to your games.
 - The game list in Classic+ uses the same dark navy colours.
+- Tooltips everywhere use the same dark navy look.
+- Patch notes, Message from RHI, Support the Mod Authors and Multi Frame Generation are restyled to match; mod authors are shown as cards, two across.
+- Every other pop-up (Update Inclusion, ReShade presets, confirmations and the rest) uses the same dark navy look.
 
 **Component settings (⚙)**
 - Restyled to match the new layouts: settings are grouped into cards, in the same dark navy colours.

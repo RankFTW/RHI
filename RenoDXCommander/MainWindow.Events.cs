@@ -300,112 +300,133 @@ public sealed partial class MainWindow
             }
 
             // ── Build the dialog content ──────────────────────────────────────────
-            var panel = new StackPanel { Spacing = 0 };
+            var panel = new StackPanel { Spacing = 14, Width = 680 };
 
-            var intro = new TextBlock
+            // Early-access notice: amber callout
+            var warnText = new TextBlock
             {
-                Text = "These are the people who make the mods RHI manages. If you enjoy their work, consider supporting them.",
                 FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 8),
+                Foreground = TabsTheme.B("#E8D3A0"),
             };
-            panel.Children.Add(intro);
-
-            var warning = new TextBlock
+            warnText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = "⚠ Important: To receive early access to RenoDX mods, you MUST link your Discord account to Ko-fi BEFORE donating. Donations made without linking first cannot be retroactively credited.",
-                FontSize = 12,
-                Foreground = UIFactory.GetBrush("#F0A500"),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 14),
-            };
-            panel.Children.Add(warning);
+                Text = "Early access to RenoDX mods: ",
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = TabsTheme.B(TabsTheme.AmberPill.Fg),
+            });
+            warnText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text = "link your Discord account to Ko-fi before donating. Donations made without linking first can't be credited afterwards.",
+            });
+            panel.Children.Add(new Border
+            {
+                Background = TabsTheme.B(TabsTheme.AmberPill.Bg),
+                BorderBrush = TabsTheme.B(TabsTheme.AmberPill.Border),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14, 10, 14, 10),
+                Child = warnText,
+            });
 
-            var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-            var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-            var cursorProp  = DetailPanelBuilder.CursorProp;
+            // One small card per author, two across
+            var grid = new Controls.AutoFitGrid { MinColumnWidth = 300, MaxColumns = 2, ColumnSpacing = 10, RowSpacing = 10 };
+            string[] avatarTints = { "#6FA8FF", "#7FE0A0", "#D9C8FF", "#F0C35A", "#FF9AA8", "#7FD6E0" };
+            int index = 0;
 
             foreach (var name in entries)
             {
                 if (!donationUrls.TryGetValue(name, out var url)) continue;
                 roles.TryGetValue(name, out var role);
+                var tint = avatarTints[index++ % avatarTints.Length];
 
-                // Row: [Name (fixed)] [Role (fills middle)] [Ko-fi (right)]
-                var row = new Grid { Margin = new Thickness(0, 2, 0, 2), ColumnSpacing = 12 };
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+                // [Avatar] [Name / role] [Ko-fi]
+                var row = new Grid { ColumnSpacing = 12 };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-                var nameBlock = new TextBlock
+                var avatar = new Border
+                {
+                    Width = 34, Height = 34,
+                    CornerRadius = new CornerRadius(17),
+                    Background = TabsTheme.B("#151C29"),
+                    BorderBrush = TabsTheme.B(tint),
+                    BorderThickness = new Thickness(1),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = name.Length > 0 ? char.ToUpperInvariant(name[0]).ToString() : "?",
+                        FontSize = 14,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = TabsTheme.B(tint),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    },
+                };
+                row.Children.Add(avatar);
+
+                var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
+                text.Children.Add(new TextBlock
                 {
                     Text = name,
                     FontSize = 13,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                Grid.SetColumn(nameBlock, 0);
-                row.Children.Add(nameBlock);
-
-                var roleBlock = new TextBlock
-                {
-                    Text = role ?? "",
-                    FontSize = 12,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = TabsTheme.B(TabsTheme.TextPrimary),
                     TextTrimming = TextTrimming.CharacterEllipsis,
-                };
-                Grid.SetColumn(roleBlock, 1);
-                row.Children.Add(roleBlock);
+                });
+                if (!string.IsNullOrEmpty(role))
+                {
+                    var roleBlock = new TextBlock
+                    {
+                        Text = role,
+                        FontSize = 11,
+                        Foreground = TabsTheme.B(TabsTheme.TextMuted),
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                    };
+                    ToolTipService.SetToolTip(roleBlock, role);
+                    text.Children.Add(roleBlock);
+                }
+                Grid.SetColumn(text, 1);
+                row.Children.Add(text);
 
-                // Ko-fi button
                 var kofiBtn = new Button
                 {
                     Content = "Ko-fi",
-                    FontSize = 11,
-                    Padding = new Thickness(10, 4, 10, 4),
-                    CornerRadius = new CornerRadius(6),
-                    Background = UIFactory.GetBrush("#FF5E5B"),
-                    Foreground = UIFactory.GetBrush("#FFFFFF"),
-                    BorderThickness = new Thickness(0),
                     VerticalAlignment = VerticalAlignment.Center,
                 };
+                TabsTheme.Apply(kofiBtn, new TabsTheme.Look("#2A1418", "#5A2A30", "#FF8A88", "#351A1F", true), height: 32, fontSize: 12);
+                kofiBtn.Padding = new Thickness(12, 0, 12, 0);
                 var capturedUrl = url;
                 kofiBtn.Click += (s, ev) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(capturedUrl));
                 ToolTipService.SetToolTip(kofiBtn, capturedUrl);
                 Grid.SetColumn(kofiBtn, 2);
                 row.Children.Add(kofiBtn);
 
-                panel.Children.Add(row);
-
-                // Subtle separator between rows
-                if (name != entries.Last())
-                    panel.Children.Add(new Border
-                    {
-                        Height = 1,
-                        Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-                        Margin = new Thickness(0, 2, 0, 2),
-                        Opacity = 0.4,
-                    });
+                var card = TabsTheme.MakeCard(row, 0);
+                card.Padding = new Thickness(12, 10, 10, 10);
+                grid.Children.Add(card);
             }
+            panel.Children.Add(grid);
 
             var scroll = new ScrollViewer
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Content = panel,
-                Padding = new Thickness(0, 0, 12, 0),
+                MaxHeight = 540,
+                Padding = new Thickness(0, 0, 16, 0),
             };
 
             var dialog = new ContentDialog
             {
-                Title = "❤ Support the Mod Authors",
+                Title = CogDialog.MakeDialogTitle("Support the Mod Authors",
+                    "The people who make the mods RHI manages. If you enjoy their work, consider supporting them."),
                 Content = scroll,
                 CloseButtonText = "Close",
                 XamlRoot = Content.XamlRoot,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
                 RequestedTheme = ElementTheme.Dark,
             };
+            CogDialog.ApplyDialogLook(dialog, 780);
 
             await DialogService.ShowSafeAsync(dialog);
         }

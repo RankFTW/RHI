@@ -549,11 +549,37 @@ internal sealed class CogDialog
         return dlg;
     }
 
+    /// <summary>
+    /// A dialog heading in the new look: the title (20 semibold) and an optional one-line subtitle.
+    /// Used by the dialogs that aren't cogs (patch notes, messages, donate).
+    /// </summary>
+    internal static UIElement MakeDialogTitle(string title, string? subtitle = null)
+    {
+        var text = new StackPanel { Spacing = 2 };
+        text.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 20,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = TabsTheme.B(TabsTheme.TextPrimary),
+        });
+        if (!string.IsNullOrEmpty(subtitle))
+            text.Children.Add(new TextBlock
+            {
+                Text = subtitle,
+                FontSize = 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.Normal,
+                Foreground = TabsTheme.B(TabsTheme.TextMuted),
+                TextWrapping = TextWrapping.Wrap,
+            });
+        return text;
+    }
+
     /// <summary>Tabs colours for the dialog frame: navy body, darker button bar, softer backdrop.</summary>
-    private static void ApplyDialogLook(ContentDialog dlg)
+    internal static void ApplyDialogLook(ContentDialog dlg, double maxWidth = DialogMaxWidth)
     {
         var r = dlg.Resources;
-        TabsTheme.SetResource(r, "ContentDialogMaxWidth", DialogMaxWidth);
+        TabsTheme.SetResource(r, "ContentDialogMaxWidth", maxWidth);
         dlg.Background = TabsTheme.B(TabsTheme.PanelBg);
         dlg.BorderBrush = TabsTheme.B("#263042");
         dlg.Foreground = TabsTheme.B(TabsTheme.TextPrimary);
@@ -564,9 +590,26 @@ internal sealed class CogDialog
         TabsTheme.SetResource(r, "ContentDialogSeparatorBorderBrush", TabsTheme.B(TabsTheme.CardBorder));
         TabsTheme.SetResource(r, "ContentDialogForeground", TabsTheme.B(TabsTheme.TextPrimary));
         TabsTheme.SetResource(r, "OverlayCornerRadius", new CornerRadius(16));
-        // The dialog's own buttons (Close, Apply): Tabs grey and blue
+        // The dialog's own buttons: Close / secondary grey, primary blue
         dlg.CloseButtonStyle = DialogButtonStyle(TabsTheme.IconButton);
+        dlg.SecondaryButtonStyle = DialogButtonStyle(TabsTheme.IconButton);
         dlg.PrimaryButtonStyle = DialogButtonStyle(TabsTheme.BlueButton);
+        // Ticks and radio dots in the accent blue instead of the system accent
+        var tick = TabsTheme.B("#3E6DC4");
+        foreach (var key in new[]
+        {
+            "CheckBoxCheckBackgroundFillChecked", "CheckBoxCheckBackgroundFillCheckedPointerOver",
+            "CheckBoxCheckBackgroundFillCheckedPressed", "CheckBoxCheckBackgroundStrokeChecked",
+            "CheckBoxCheckBackgroundStrokeCheckedPointerOver", "CheckBoxCheckBackgroundStrokeCheckedPressed",
+            "RadioButtonOuterEllipseCheckedFill", "RadioButtonOuterEllipseCheckedFillPointerOver",
+            "RadioButtonOuterEllipseCheckedFillPressed", "RadioButtonOuterEllipseCheckedStroke",
+            "RadioButtonOuterEllipseCheckedStrokePointerOver", "RadioButtonOuterEllipseCheckedStrokePressed",
+        })
+            TabsTheme.SetResource(r, key, tick);
+        TabsTheme.SetResource(r, "CheckBoxCheckGlyphForegroundChecked", TabsTheme.B("#FFFFFF"));
+        TabsTheme.SetResource(r, "CheckBoxCheckGlyphForegroundCheckedPointerOver", TabsTheme.B("#FFFFFF"));
+        TabsTheme.SetResource(r, "CheckBoxCheckGlyphForegroundCheckedPressed", TabsTheme.B("#FFFFFF"));
+        TabsTheme.SetResource(r, DialogLook.MarkerKey, true);
         TabsTheme.SetResource(r, "ButtonBackgroundPointerOver", TabsTheme.B(TabsTheme.IconButton.HoverBg));
         TabsTheme.SetResource(r, "ButtonBackgroundPressed", TabsTheme.B(TabsTheme.IconButton.Bg));
         TabsTheme.SetResource(r, "ButtonBorderBrushPointerOver", TabsTheme.B(TabsTheme.IconButton.Border));

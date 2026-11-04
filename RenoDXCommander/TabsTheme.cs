@@ -499,7 +499,7 @@ internal static class TabsTheme
 
     private static bool IsAppSurface(Windows.UI.Color c) => AppSurfaces.Value.Any(s => s == c);
 
-    private static void RestyleButton(Button btn)
+    internal static void RestyleButton(Button btn)
     {
         var tone = ToneOf(btn.Foreground);
         var look = tone == Tone.Grey ? IconButton : ButtonFor(tone);
@@ -511,7 +511,7 @@ internal static class TabsTheme
         btn.Padding = small ? new Thickness(0) : new Thickness(14, 0, 14, 0);
     }
 
-    private static void RestyleText(TextBlock text)
+    internal static void RestyleText(TextBlock text)
     {
         if (text.Foreground is not SolidColorBrush fg) return;
         var (p, s, t) = AppText.Value;
