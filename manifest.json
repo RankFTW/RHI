@@ -628,10 +628,12 @@
     "The Witcher 3: Wild Hunt - Complete Edition": "DX12"
   },
   "dlssPathOverrides": {
-    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64"
+    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64",
+    "Mafia: The Old Country": "MafiaTheOldCountry\\Plugins\\ThirdParty\\Nvidia-DLSS\\4.5-8.5.0\\DLSS\\Binaries\\ThirdParty\\Win64"
   },
   "streamlinePathOverrides": {
-    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\StreamlineCore\\Binaries\\ThirdParty\\Win64"
+    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\StreamlineCore\\Binaries\\ThirdParty\\Win64",
+    "Mafia: The Old Country": "MafiaTheOldCountry\\Plugins\\ThirdParty\\Nvidia-DLSS\\4.5-8.5.0\\StreamlineCore\\Binaries\\ThirdParty\\Win64"
   },
   "thirtyTwoBitGames": [
     "Assassin\u0027s Creed",
