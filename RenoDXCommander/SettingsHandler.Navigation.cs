@@ -1,4 +1,4 @@
-﻿// SettingsHandler.Navigation.cs -- Settings page left column: "Find a setting" search box, section
+// SettingsHandler.Navigation.cs -- Settings page left column: "Find a setting" search box, section
 // jump list that highlights the section in view, last-section memory and the narrow-window layout.
 // Everything here is built in C# (XAML constraint: no new x:Name / controls in MainWindow.xaml).
 
@@ -292,7 +292,6 @@ public partial class SettingsHandler
     {
         EnsureSettingsPageHooks();
         EnsureNvAppLimitsPanel();
-        EnsureLayoutSetting();
         EnsureRemovedGamesButton();
         EnsureSettingsNavigation();
         StartUpdateCountdown();

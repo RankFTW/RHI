@@ -2,8 +2,7 @@
 // footer. Built in C# beside the XAML ones (XAML constraint); the XAML controls stay in the window,
 // hidden or restyled, and every new control calls the existing handlers. Classic is untouched:
 // switching back hides the Tabs chrome and restores the original looks.
-// For now only the Tabs layout uses this top bar; the plan is to offer it in every layout once
-// it has been tried (docs/layouts-plan-2.9.0.md, decision 1).
+// The top bar is used in every layout (Classic too); the sidebar and footer restyle only in Tabs / Spotlight.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,6 +28,7 @@ public sealed partial class MainWindow
     private Border? _navModsNew;
     private TextBlock? _checkedText;
     private Grid? _updateAllHost;
+    private Border? _layoutSwitchHost;
     private (Brush? Bg, Thickness Pad, Brush? Border)? _topBarClassic;
 
     // Sidebar
@@ -60,23 +60,23 @@ public sealed partial class MainWindow
 
     private void ApplyTabsChromeCore()
     {
+        // The top bar is the same in every layout; the sidebar and footer restyle only in Tabs / Spotlight
         bool tabs = _detailPanelBuilder?.Layout.IsTabs == true;
-        if (tabs == _tabsChromeOn && (_tabsChromeBuilt || !tabs)) return;
+        if (_tabsChromeBuilt && tabs == _tabsChromeOn) return;
         try
         {
-            if (tabs && !_tabsChromeBuilt) BuildTabsChrome();
-            if (!_tabsChromeBuilt) return;
-            _tabsChromeOn = tabs;
-            ShowTabsTopBar(tabs);
-            ShowTabsSidebar(tabs);
-            ShowTabsFooter(tabs);
-            if (tabs)
+            if (!_tabsChromeBuilt)
             {
-                RefreshTabsChrome();
+                BuildTabsChrome();
+                if (!_tabsChromeBuilt) return;
+                ShowTabsTopBar(true);
                 _checkedTimer ??= CreateCheckedTimer();
                 _checkedTimer.Start();
             }
-            else _checkedTimer?.Stop();
+            _tabsChromeOn = tabs;
+            ShowTabsSidebar(tabs);
+            ShowTabsFooter(tabs);
+            RefreshTabsChrome();
         }
         catch (Exception ex)
         {
@@ -88,7 +88,7 @@ public sealed partial class MainWindow
     {
         var t = DispatcherQueue.CreateTimer();
         t.Interval = TimeSpan.FromSeconds(30);
-        t.Tick += (_, _) => { if (_tabsChromeOn) RefreshTabsChrome(); };
+        t.Tick += (_, _) => { if (_tabsChromeBuilt) RefreshTabsChrome(); };
         return t;
     }
 
@@ -165,7 +165,6 @@ public sealed partial class MainWindow
         // Only the properties the chrome shows (the update count checks game folders, so not on every change)
         ViewModel.PropertyChanged += (s, e) =>
         {
-            if (!_tabsChromeOn) return;
             if (e.PropertyName is null or nameof(ViewModel.AnyUpdateAvailable) or nameof(ViewModel.CurrentPage)
                 or nameof(ViewModel.FilterMode) or nameof(ViewModel.NewWikiModsButtonVisibility))
             {
@@ -247,6 +246,10 @@ public sealed partial class MainWindow
         TabsTheme.Apply(help, TabsTheme.IconButton, height: 38, fontSize: 14);
         help.Click += (s, e) => ShowHelpMenu(help);
 
+        // Layout switch: Classic+ / Tabs / Spotlight without going into Settings (filled in RefreshTabsChrome)
+        _layoutSwitchHost = new Border { Width = 250, VerticalAlignment = VerticalAlignment.Center };
+        ToolTipService.SetToolTip(_layoutSwitchHost, string.Join("\n", TopBarLayouts.Select(x => $"{x.Label}: {x.Tip}")));
+
         var settings = TabsTheme.MakeIconButton(TabsTheme.GlyphSettings, TabsTheme.IconButton, 16);
         // Opens Settings; on Settings it goes back to the games
         settings.Click += (s, e) =>
@@ -261,6 +264,7 @@ public sealed partial class MainWindow
         right.Children.Add(_checkedText);
         right.Children.Add(refresh);
         right.Children.Add(_updateAllHost);
+        right.Children.Add(_layoutSwitchHost);
         right.Children.Add(help);
         right.Children.Add(settings);
 
@@ -306,6 +310,37 @@ public sealed partial class MainWindow
             tb.Foreground = TabsTheme.B(selected ? TabsTheme.TextPrimary : TabsTheme.TextSecondary);
             tb.FontWeight = selected ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal;
         }
+    }
+
+    private static readonly (MainLayout Layout, string Label, string Tip)[] TopBarLayouts =
+    {
+        (MainLayout.Classic,   "Classic+",  "Every section of the game page in one long page"),
+        (MainLayout.Tabs,      "Tabs",      "An Overview, then one tab per section"),
+        (MainLayout.Spotlight, "Spotlight", "Game artwork, your games as covers, sections in a side panel"),
+    };
+
+    private MainLayout CurrentMainLayout =>
+        Enum.TryParse<MainLayout>(ViewModel.Settings.MainLayout, true, out var l) ? l : MainLayout.Classic;
+
+    private void RefreshLayoutSwitch()
+    {
+        if (_layoutSwitchHost == null) return;
+        int sel = Math.Max(0, Array.FindIndex(TopBarLayouts, x => x.Layout == CurrentMainLayout));
+        if (_layoutSwitchHost.Tag is int shown && shown == sel) return;
+        _layoutSwitchHost.Tag = sel;
+        _layoutSwitchHost.Child = TabsTheme.MakeSegmented(TopBarLayouts.Select(x => x.Label).ToList(), sel,
+            i => SetMainLayout(TopBarLayouts[i].Layout), track: TabsTheme.Card);
+    }
+
+    /// <summary>Saves and applies a layout (the top bar switch).</summary>
+    internal void SetMainLayout(MainLayout layout)
+    {
+        var chosen = layout.ToString();
+        if (string.Equals(ViewModel.Settings.MainLayout, chosen, StringComparison.Ordinal)) return;
+        ViewModel.Settings.MainLayout = chosen;
+        ViewModel.SaveSettingsPublic();
+        ApplyMainLayout();
+        RefreshTabsChrome();
     }
 
     private void ShowHelpMenu(FrameworkElement anchor)
@@ -374,12 +409,23 @@ public sealed partial class MainWindow
         if (_filtersBtn != null) _filtersBtn.Visibility = tabs ? Visibility.Visible : Visibility.Collapsed;
         if (!tabs)
         {
+            // Classic+: keeps its own layout (chips always shown, its paddings), only the colours follow Tabs
             _chipsRow.Visibility = Visibility.Visible;
             foreach (var (el, c) in _sidebarClassic)
                 if (el is Border b) { b.Background = c.Bg; b.BorderBrush = c.Border; b.Padding = c.Pad; b.BorderThickness = c.Thick; }
-            return;
         }
+        ApplySidebarColours();
+        if (!tabs) return;
 
+        _searchRow.Padding = new Thickness(16, 16, 16, 6);
+        _chipsRow.BorderThickness = new Thickness(0);
+        _chipsRow.Padding = new Thickness(16, 6, 16, 6);
+        _countsRow.Padding = new Thickness(16, 6, 16, 8);
+    }
+
+    /// <summary>The game list's Tabs colours, used in every layout.</summary>
+    private void ApplySidebarColours()
+    {
         if (_sidebar != null)
         {
             _sidebar.Background = TabsTheme.B(TabsTheme.PanelBg);
@@ -394,12 +440,12 @@ public sealed partial class MainWindow
         TabsTheme.SetResource(r, "ListViewItemBackgroundPointerOver", TabsTheme.B(TabsTheme.RowHover));
         TabsTheme.SetResource(r, "ListViewItemSelectionIndicatorBrush", TabsTheme.B(TabsTheme.Accent));
 
-        _searchRow.Background = TabsTheme.B(TabsTheme.PanelBg);
-        _searchRow.Padding = new Thickness(16, 16, 16, 6);
-        _chipsRow.Background = TabsTheme.B(TabsTheme.PanelBg);
-        _chipsRow.BorderThickness = new Thickness(0);
-        _chipsRow.Padding = new Thickness(16, 6, 16, 6);
-        _countsRow.Padding = new Thickness(16, 6, 16, 8);
+        foreach (var row in new[] { _searchRow, _chipsRow, _countsRow })
+        {
+            if (row == null) continue;
+            row.Background = TabsTheme.B(TabsTheme.PanelBg);
+            if (row.BorderThickness != default) row.BorderBrush = TabsTheme.B(TabsTheme.CardBorder);
+        }
     }
 
     private void RefreshSidebar()
@@ -455,7 +501,7 @@ public sealed partial class MainWindow
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
             _chromeRefreshQueued = false;
-            if (_tabsChromeOn) RefreshTabsChrome();
+            if (_tabsChromeBuilt) RefreshTabsChrome();
         });
     }
 
@@ -477,6 +523,7 @@ public sealed partial class MainWindow
                 ToolTipService.SetToolTip(_settingsGear, onSettings ? "Back to your games" : "Settings");
             }
             if (_navModsNew != null) _navModsNew.Visibility = NewModsBtn.Visibility;
+            RefreshLayoutSwitch();
 
             if (_checkedText != null)
                 _checkedText.Text = DateTime.TryParse(ViewModel.Settings.LastUpdateCheckUtc, null,
@@ -496,7 +543,7 @@ public sealed partial class MainWindow
                 _updateAllHost.Children.Add(MakeUpdateAllButton(count));
                 _lastUpdateCount = count; // only once it's shown, so a failure retries next time
             }
-            RefreshSidebar();
+            if (_tabsChromeOn) RefreshSidebar();
         }
         catch (Exception ex)
         {

@@ -471,8 +471,9 @@ internal sealed partial class DetailLayoutHost
 
     /// <summary>
     /// Tabs DLSS / Streamline (mockup A): one card, "DLSS / Streamline" with the Streamline column's
-    /// action buttons (apply defaults, restore) on the right, every setting as a field in an
-    /// auto-fit grid (200 px columns). Anything else the builder added (notes) follows the grid.
+    /// action buttons (apply defaults, restore) on the right, then Classic's columns (one per
+    /// component, settings stacked) four across, Streamline below. Anything else the builder added
+    /// (notes) follows the grid.
     /// </summary>
     internal void ArrangeDlss(StackPanel body)
     {
@@ -495,16 +496,6 @@ internal sealed partial class DetailLayoutHost
             return;
         }
 
-        static string Short(string g) => g switch
-        {
-            "DLSS Super Resolution" => "SR",
-            "Ray Reconstruction"    => "RR",
-            "Frame Generation"      => "FG",
-            "Neural Rendering"      => "NR",
-            "Streamline"            => "SL",
-            _                       => g,
-        };
-
         var read = ReadColumns(columns)
             .Select(f => f with { Group = f.Group == "DLSS Super Resolution" ? "Super Resolution" : f.Group })
             .ToList();
@@ -526,19 +517,31 @@ internal sealed partial class DetailLayoutHost
             else fieldItems.Add(f);
         }
 
-        var fields = NameFields(fieldItems, g => Short(g == "Super Resolution" ? "DLSS Super Resolution" : g));
-        // One row per component, three slots each: SR / RR (version, preset, render scale),
-        // FG (version, preset, Multi Frame Gen), NR (version, preset, Deploy DLL), then Streamline.
-        // Short rows are padded with empty slots so the columns line up.
+        // Like Classic+: one column per component (SR, RR, FG, NR) with a heading and its settings
+        // stacked underneath, four across; Streamline wraps to the row below, one column wide.
         string[] order = { "Super Resolution", "Ray Reconstruction", "Frame Generation", "Neural Rendering", "Streamline" };
-        const int Slots = 3;
-        var grid = new AutoFitGrid { MinColumnWidth = 180, MaxColumns = Slots, ColumnSpacing = 10, RowSpacing = 10 };
-        foreach (var group in fields.GroupBy(x => x.Field.Group)
+        var grid = new AutoFitGrid { MinColumnWidth = 200, MaxColumns = 4, ColumnSpacing = 24, RowSpacing = 20 };
+        foreach (var group in fieldItems.GroupBy(f => f.Group)
                      .OrderBy(g => Array.IndexOf(order, g.Key) is var i && i >= 0 ? i : order.Length))
         {
-            int n = 0;
-            foreach (var (label, f) in group) { grid.Children.Add(MakeField(label, f)); n++; }
-            for (; n % Slots != 0; n++) grid.Children.Add(new Border());
+            var col = new StackPanel { Spacing = 10 };
+            var head = TabsTheme.SectionHeading(group.Key);
+            head.FontSize = 12;
+            col.Children.Add(head);
+            bool first = true;
+            foreach (var f in group)
+            {
+                // The heading names the component, so the first (version) dropdown is just "Version";
+                // an unlabelled button under the others (Multi Frame Gen, Deploy DLL) stays unlabelled
+                string label = f.Label == null || (first && GenericLabels.Contains(f.Label))
+                    ? (first ? "Version" : "")
+                    : f.Label;
+                var field = MakeField(label, f);
+                if (label.Length == 0 && field.Children.Count > 1) field.Children.RemoveAt(0); // no blank label row in a column
+                col.Children.Add(field);
+                first = false;
+            }
+            grid.Children.Add(col);
         }
 
         var content = new StackPanel { Spacing = 14 };

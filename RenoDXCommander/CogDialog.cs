@@ -1,7 +1,9 @@
 // CogDialog.cs — Shared layout for every component ⚙ settings dialog.
 // One look for all cogs: "<Component> Settings" title, fixed width, scrolling body,
 // a fixed label column with the control beside it and a short explanation under it,
-// section headers, button rows and a status line inside the dialog.
+// section cards, button rows and a status line inside the dialog.
+// Styled like the Tabs layout (TabsTheme): each AddSection starts a card, settings added before
+// the first section share an untitled card, intro / warning text sits between the cards.
 // Settings apply as soon as they change; the dialog only has a Close button
 // (slider dialogs can opt into Apply / Cancel via UseApplyButton).
 
@@ -45,8 +47,36 @@ internal sealed class CogDialog
     private string? _primaryText;
     private string _closeText = "Close";
 
-    /// <summary>The scrolling body. Prefer the Add* helpers; add directly only for one-off content.</summary>
-    public StackPanel Body { get; }
+    // The scrolling body: cards and loose text, top to bottom
+    private readonly StackPanel _root;
+    // The open section's card (AddSection), or the untitled card for settings before the first section
+    private StackPanel? _section;
+    private StackPanel? _loose;
+    private readonly HashSet<StackPanel> _cardPanels = new();
+    private readonly HashSet<UIElement> _headings = new();
+
+    /// <summary>
+    /// Where content goes now: the open section's card (or the dialog body before any section).
+    /// Prefer the Add* helpers; add directly only for one-off content.
+    /// </summary>
+    public StackPanel Body => _section ?? _root;
+
+    /// <summary>Everything added so far, top to bottom, with the cards opened up (section headings left out).</summary>
+    public IEnumerable<FrameworkElement> Items
+    {
+        get
+        {
+            foreach (var child in _root.Children.OfType<FrameworkElement>())
+            {
+                if (child is Border { Child: StackPanel p } && _cardPanels.Contains(p))
+                {
+                    foreach (var item in p.Children.OfType<FrameworkElement>())
+                        if (!_headings.Contains(item)) yield return item;
+                }
+                else yield return child;
+            }
+        }
+    }
 
     /// <summary>The dialog, available after <see cref="Build"/> or <see cref="ShowAsync"/>.</summary>
     public ContentDialog? Dialog { get; private set; }
@@ -56,7 +86,7 @@ internal sealed class CogDialog
     {
         _title = componentName.EndsWith(" Settings", StringComparison.Ordinal) ? componentName : componentName + " Settings";
         _xamlRoot = xamlRoot;
-        Body = new StackPanel { Spacing = 10, Width = BodyWidth };
+        _root = new StackPanel { Spacing = 14, Width = BodyWidth };
         _status = new TextBlock
         {
             FontSize = 12,
@@ -100,25 +130,32 @@ internal sealed class CogDialog
         return tb;
     }
 
-    /// <summary>Section header, with a divider above it unless it's the first thing in the dialog.</summary>
+    /// <summary>Starts a section: a card with a small uppercase heading. Everything added after it goes in the card.</summary>
     public TextBlock AddSection(string header)
     {
-        if (_hasContent)
-            Body.Children.Add(new Border
-            {
-                Height = 1,
-                Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-                Margin = new Thickness(0, 6, 0, 0),
-            });
-        var tb = new TextBlock
+        _loose = null;
+        _section = NewCard(header, out var heading);
+        _hasContent = true;
+        return heading!;
+    }
+
+    private StackPanel NewCard(string? header, out TextBlock? heading)
+    {
+        var panel = new StackPanel { Spacing = 10 };
+        heading = null;
+        if (header != null)
         {
-            Text = header,
-            FontSize = 13,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        };
-        Add(tb);
-        return tb;
+            heading = TabsTheme.SectionHeading(header);
+            heading.FontSize = 11;
+            heading.Margin = new Thickness(0, 0, 0, 2);
+            panel.Children.Add(heading);
+            _headings.Add(heading);
+        }
+        var card = TabsTheme.MakeCard(panel);
+        card.Padding = new Thickness(18, 16, 18, 16);
+        _root.Children.Add(card);
+        _cardPanels.Add(panel);
+        return panel;
     }
 
     // ── Setting rows ─────────────────────────────────────────────────────────────
@@ -436,22 +473,50 @@ internal sealed class CogDialog
         _closeText = cancelText;
     }
 
+    private bool _prepared;
+    private ScrollViewer? _dialogScroll;
+    private FrameworkElement? _footer;
+    private bool _footerStyled;
+
+    /// <summary>
+    /// Finishes the body once: the empty note if nothing was added, the status line, and the Tabs
+    /// look for everything the caller built (inputs, buttons by tone, text colours). Runs before the
+    /// content is shown, because button hover colours are read when their template loads.
+    /// </summary>
+    private void PrepareBody()
+    {
+        if (_prepared) return;
+        _prepared = true;
+        if (!_hasContent) AddEmpty();
+        _root.Children.Add(_status);
+        TabsTheme.Restyle(_root);
+    }
+
+    private void PrepareFooter(FrameworkElement? footer)
+    {
+        if (footer == null || _footerStyled) return;
+        _footerStyled = true;
+        TabsTheme.Restyle(footer);
+    }
+
     /// <summary>Creates the ContentDialog. <paramref name="footer"/> (optional) stays pinned below the scrolling body.</summary>
     public ContentDialog Build(FrameworkElement? footer = null)
     {
-        if (!_hasContent) AddEmpty();
-        Body.Children.Add(_status);
+        PrepareBody();
+        _footer = footer ?? _footer;
+        footer = _footer;
 
-        FrameworkElement content = new ScrollViewer
+        FrameworkElement content = _dialogScroll = new ScrollViewer
         {
-            Content = Body,
+            Content = _root,
             MaxHeight = BodyMaxHeight,
             Padding = new Thickness(0, 0, 16, 0),
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
         if (footer != null)
         {
-            var root = new Grid { RowSpacing = 10 };
+            PrepareFooter(footer);
+            var root = new Grid { RowSpacing = 12 };
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             footer.Width = BodyWidth;
@@ -464,7 +529,13 @@ internal sealed class CogDialog
 
         var dlg = new ContentDialog
         {
-            Title = _title,
+            Title = new TextBlock
+            {
+                Text = _title,
+                FontSize = 20,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = TabsTheme.B(TabsTheme.TextPrimary),
+            },
             Content = content,
             CloseButtonText = _closeText,
             // No default button for Close: Enter in a text box (hotkeys, FPS, nits) must not close the dialog
@@ -473,17 +544,109 @@ internal sealed class CogDialog
             RequestedTheme = ElementTheme.Dark,
         };
         if (_primaryText != null) dlg.PrimaryButtonText = _primaryText;
-        dlg.Resources["ContentDialogMaxWidth"] = DialogMaxWidth;
+        ApplyDialogLook(dlg);
         Dialog = dlg;
         return dlg;
     }
 
-    /// <summary>Builds (if needed) and shows the dialog through <see cref="DialogService.ShowSafeAsync"/>.</summary>
-    public Task<ContentDialogResult> ShowAsync(FrameworkElement? footer = null)
-        => DialogService.ShowSafeAsync(Dialog ?? Build(footer));
+    /// <summary>Tabs colours for the dialog frame: navy body, darker button bar, softer backdrop.</summary>
+    private static void ApplyDialogLook(ContentDialog dlg)
+    {
+        var r = dlg.Resources;
+        TabsTheme.SetResource(r, "ContentDialogMaxWidth", DialogMaxWidth);
+        dlg.Background = TabsTheme.B(TabsTheme.PanelBg);
+        dlg.BorderBrush = TabsTheme.B("#263042");
+        dlg.Foreground = TabsTheme.B(TabsTheme.TextPrimary);
+        dlg.CornerRadius = new CornerRadius(16);
+        TabsTheme.SetResource(r, "ContentDialogBackground", TabsTheme.B("#0C1119"));    // button bar
+        TabsTheme.SetResource(r, "ContentDialogTopOverlay", TabsTheme.B(TabsTheme.PanelBg));
+        TabsTheme.SetResource(r, "ContentDialogBorderBrush", TabsTheme.B("#263042"));
+        TabsTheme.SetResource(r, "ContentDialogSeparatorBorderBrush", TabsTheme.B(TabsTheme.CardBorder));
+        TabsTheme.SetResource(r, "ContentDialogForeground", TabsTheme.B(TabsTheme.TextPrimary));
+        TabsTheme.SetResource(r, "OverlayCornerRadius", new CornerRadius(16));
+        // The dialog's own buttons (Close, Apply): Tabs grey and blue
+        dlg.CloseButtonStyle = DialogButtonStyle(TabsTheme.IconButton);
+        dlg.PrimaryButtonStyle = DialogButtonStyle(TabsTheme.BlueButton);
+        TabsTheme.SetResource(r, "ButtonBackgroundPointerOver", TabsTheme.B(TabsTheme.IconButton.HoverBg));
+        TabsTheme.SetResource(r, "ButtonBackgroundPressed", TabsTheme.B(TabsTheme.IconButton.Bg));
+        TabsTheme.SetResource(r, "ButtonBorderBrushPointerOver", TabsTheme.B(TabsTheme.IconButton.Border));
+        TabsTheme.SetResource(r, "ButtonForegroundPointerOver", TabsTheme.B(TabsTheme.TextPrimary));
+        TabsTheme.SetResource(r, "ButtonForegroundPressed", TabsTheme.B(TabsTheme.TextPrimary));
+    }
 
-    /// <summary>Hides the dialog if it's open (e.g. before reopening it with fresh content).</summary>
-    public void Hide() => Dialog?.Hide();
+    private static Style DialogButtonStyle(TabsTheme.Look look)
+    {
+        var s = new Style(typeof(Button));
+        if (Application.Current.Resources.TryGetValue("DefaultButtonStyle", out var b) && b is Style basedOn)
+            s.BasedOn = basedOn;
+        s.Setters.Add(new Setter(Control.BackgroundProperty, TabsTheme.B(look.Bg)));
+        s.Setters.Add(new Setter(Control.BorderBrushProperty, TabsTheme.B(look.Border)));
+        s.Setters.Add(new Setter(Control.ForegroundProperty, TabsTheme.B(look.Fg)));
+        s.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+        s.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+        s.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 36.0));
+        s.Setters.Add(new Setter(Control.FontWeightProperty, look.Bold ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal));
+        return s;
+    }
+
+    /// <summary>
+    /// Shows the settings: in Spotlight's side panel or in place under the row in Tabs when the
+    /// layout can host them (<see cref="EmbeddedShow"/>), otherwise as a dialog through
+    /// <see cref="DialogService.ShowSafeAsync"/>. Completes when they're closed; Primary means Apply.
+    /// </summary>
+    public Task<ContentDialogResult> ShowAsync(FrameworkElement? footer = null)
+    {
+        _footer = footer ?? _footer;
+        if (EmbeddedShow?.Invoke(this) is { } embedded) return embedded;
+        return DialogService.ShowSafeAsync(Dialog ?? Build(_footer));
+    }
+
+    /// <summary>Closes the settings if they're open (e.g. before reopening them with fresh content).</summary>
+    public void Hide()
+    {
+        if (_closeEmbedded is { } close) { close(); return; }
+        Dialog?.Hide();
+    }
+
+    // ── Embedded hosts (Spotlight side panel, Tabs in place) ─────────────────────
+
+    /// <summary>
+    /// Set by the game page layout (DetailLayoutHost): shows a cog's content in the layout and returns
+    /// a task that completes when it closes, or null to use the dialog.
+    /// </summary>
+    internal static Func<CogDialog, Task<ContentDialogResult>?>? EmbeddedShow;
+
+    private Action? _closeEmbedded;
+
+    /// <summary>"&lt;Component&gt; Settings".</summary>
+    internal string Title => _title;
+    /// <summary>Apply button text when <see cref="UseApplyButton"/> was called, else null.</summary>
+    internal string? PrimaryText => _primaryText;
+    internal string CloseText => _closeText;
+
+    /// <summary>The finished body for a host to place (no scroll viewer; fills the host's width).</summary>
+    internal StackPanel TakeBody()
+    {
+        PrepareBody();
+        if (_dialogScroll != null && ReferenceEquals(_dialogScroll.Content, _root)) _dialogScroll.Content = null;
+        _root.Width = double.NaN;
+        _root.HorizontalAlignment = HorizontalAlignment.Stretch;
+        return _root;
+    }
+
+    /// <summary>The caller's pinned footer (OptiScaler's buttons), if any, ready for a host to place.</summary>
+    internal FrameworkElement? TakeFooter()
+    {
+        if (_footer == null) return null;
+        PrepareFooter(_footer);
+        TabsTheme.Detach(_footer);
+        _footer.Width = double.NaN;
+        _footer.HorizontalAlignment = HorizontalAlignment.Stretch;
+        return _footer;
+    }
+
+    /// <summary>Called by the host that shows this cog, so <see cref="Hide"/> closes it there (null when it closes).</summary>
+    internal void AttachEmbedded(Action? close) => _closeEmbedded = close;
 
     // ── Cog button ───────────────────────────────────────────────────────────────
 
@@ -517,8 +680,18 @@ internal sealed class CogDialog
 
     private void Add(UIElement e)
     {
-        Body.Children.Add(e);
         _hasContent = true;
+        if (_section != null) { _section.Children.Add(e); return; }
+        // Before the first section: text (intro, warnings, notes) between cards,
+        // settings in one untitled card until the next text
+        if (e is TextBlock)
+        {
+            _loose = null;
+            _root.Children.Add(e);
+            return;
+        }
+        _loose ??= NewCard(null, out _);
+        _loose.Children.Add(e);
     }
 
     private static TextBlock Text(string text, double size, string brushKey) => new()

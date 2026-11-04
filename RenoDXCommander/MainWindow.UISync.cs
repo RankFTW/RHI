@@ -254,7 +254,7 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// Re-lays out the game page after Settings › General › Layout changes. Rebuilds the shown
+    /// Re-lays out the game page after the layout changes (top bar switch). Rebuilds the shown
     /// game once, because sections are built expanded or collapsed for the layout they're in.
     /// </summary>
     internal void ApplyMainLayout()
@@ -263,7 +263,7 @@ public sealed partial class MainWindow
         UpdateDetailPanelWidth();
         ApplyTabsChrome();
 
-        // The Layout setting is changed on the Settings page, where DLSS, Driver Settings and
+        // The top bar switch can be used from Settings (or About / FAQ), where DLSS, Driver Settings and
         // Neural Rendering skip their background build (freeze guard). Rebuilding now would leave
         // them empty, so rebuild once the game page is showing again.
         if (ViewModel.CurrentPage != AppPage.GameView)

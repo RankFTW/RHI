@@ -460,7 +460,7 @@ public sealed partial class MainWindow
                     fe.IsHitTestVisible = false;
                     fe.Opacity = CogDialog.DisabledOpacity;
                 }
-                foreach (var child in cog.Body.Children.OfType<FrameworkElement>())
+                foreach (var child in cog.Items.ToList())
                 {
                     if (ctx.Ungated.Contains(child)) continue;
                     // Settings grids mix usable and unusable cells: dim cell by cell

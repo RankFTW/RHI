@@ -58,7 +58,7 @@ public sealed partial class MainWindow
             && Enum.TryParse<MainLayout>(layout, true, out var ml)
             && !string.Equals(ViewModel.Settings.MainLayout, ml.ToString(), StringComparison.Ordinal))
         {
-            // Same path as Settings › General › Game page › Layout
+            // Same path as the top bar layout switch
             ViewModel.Settings.MainLayout = ml.ToString();
             ViewModel.SaveSettingsPublic();
             ApplyMainLayout();

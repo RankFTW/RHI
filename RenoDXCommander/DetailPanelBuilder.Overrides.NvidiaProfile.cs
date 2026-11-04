@@ -1,4 +1,4 @@
-﻿// DetailPanelBuilder.Overrides.NvidiaProfile.cs — DLSS / Streamline section (independent panel).
+// DetailPanelBuilder.Overrides.NvidiaProfile.cs — DLSS / Streamline section (independent panel).
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -383,9 +383,6 @@ public partial class DetailPanelBuilder
                     nrInstalledVersion = (hasDlssnr && card.DlssnrIsCustom) ? "Custom" : card.DlssnrInstalledVersion;
                 }
 
-                // Track the version currently selected in the NR combo so Deploy DLL can use it
-                string nrSelectedVersion = nrInstalledVersion ?? "";
-
                 bool nrDriverOverride = dlssData?.NrDriverOverride == true;
                 var nrCol = BuildDlssColumn("Neural Rendering", hasDlssnr, dlssService.DlssnrVersions,
                     nrInstalledVersion, DlssPresetService.NrPresets,
@@ -393,8 +390,7 @@ public partial class DetailPanelBuilder
                     async (version) =>
                     {
                         var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                        nrSelectedVersion = version;
-                        if (tc?.DlssDetection?.DlssnrPath == null) return; // no existing file — only track selection, Deploy handles it
+                        if (tc?.DlssDetection?.DlssnrPath == null) return; // no NR DLL in the game: the Neural Rendering section deploys it
                         if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
                         {
                             dlssService.Restore(tc.DlssDetection.DlssnrPath);
@@ -425,216 +421,6 @@ public partial class DetailPanelBuilder
                     originalVersion: card.DlssDetection?.OriginalDlssnrVersion,
                     driverOverrideActive: nrDriverOverride);
 
-                // Spacer before deploy row — matches the spacing FG uses before Multi Frame Gen
-                // Always add a preset placeholder so Deploy DLL aligns with Multi Frame Gen.
-                // When NR is not installed the placeholder is invisible but still takes space.
-                if (!hasDlssnr)
-                {
-                    var presetPlaceholderLabel = new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0), Opacity = 0 };
-                    var presetPlaceholderCombo = new ComboBox { ItemsSource = new[] { "Default" }, SelectedIndex = 0, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false, Opacity = 0, MaxDropDownHeight = 300 };
-                    nrCol.Children.Add(presetPlaceholderLabel);
-                    nrCol.Children.Add(presetPlaceholderCombo);
-                }
-                nrCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
-                var deployRow = new Grid { ColumnSpacing = 6 };
-                deployRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                deployRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var deployNrBtn = new Button
-                {
-                    Content = "Deploy DLL",
-                    FontSize = 11,
-                    Height = 32,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-                    Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-                    BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(8),
-                };
-                ToolTipService.SetToolTip(deployNrBtn, "Download and copy nvngx_dlssnr.dll to the game folder. Supports RTX 40 and 50 Series GPUs. Neural Rendering methods also deploy it automatically.");
-
-                var deleteNrBtn = new Button
-                {
-                    Width = 36,
-                    Height = 32,
-                    Padding = new Thickness(0),
-                    Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
-                    Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
-                    BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(8),
-                    IsEnabled = hasDlssnr,
-                    Opacity = hasDlssnr ? 1.0 : 0.0,
-                    IsHitTestVisible = hasDlssnr,
-                    Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
-                };
-                ToolTipService.SetToolTip(deleteNrBtn, "Delete nvngx_dlssnr.dll from the game folder.");
-
-                deployNrBtn.Click += async (s, ev) =>
-                {
-                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                    if (tc == null || string.IsNullOrEmpty(tc.InstallPath)) return;
-
-                    deployNrBtn.IsEnabled = false;
-                    deployNrBtn.Content = "Downloading...";
-
-                    try
-                    {
-                        var destPath = tc.DlssDetection?.DlssnrPath ?? Path.Combine(tc.InstallPath, "nvngx_dlssnr.dll");
-                        var isCustom = nrSelectedVersion == "Custom";
-                        var isDefault = nrSelectedVersion.StartsWith("Default", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(nrSelectedVersion);
-
-                        if (isCustom)
-                        {
-                            // Deploy from Custom\DLSS\nvngx_dlssnr.dll
-                            if (tc.DlssDetection?.DlssnrPath != null)
-                            {
-                                await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssnrPath);
-                                // Write custom marker so version shows as "Custom"
-                                try { File.WriteAllText(tc.DlssDetection.DlssnrPath + ".rhi_custom", ""); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildNvidiaProfileBody] Failed to write .rhi_custom marker — {ex.Message}"); }
-                            }
-                            else
-                            {
-                                // Fresh install — deploy custom file to game root
-                                var customSrc = Path.Combine(
-                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                    "RHI", "Custom", "DLSS", "nvngx_dlssnr.dll");
-                                if (!File.Exists(customSrc))
-                                {
-                                    _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not in Custom/DLSS"; deployNrBtn.IsEnabled = true; });
-                                    return;
-                                }
-                                File.Copy(customSrc, destPath, overwrite: true);
-                                try { File.WriteAllText(destPath + ".rhi_custom", ""); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildNvidiaProfileBody] Failed to write .rhi_custom marker — {ex.Message}"); }
-                                CrashReporter.Log($"[NrDeployBtn] Deployed custom nvngx_dlssnr.dll to '{tc.InstallPath}'");
-                            }
-                        }
-                        else
-                        {
-                            // Deploy a specific managed version (or newest if nothing selected)
-                            string? cachedPath;
-                            var versionToDeploy = isDefault ? null : nrSelectedVersion;
-                            if (string.IsNullOrEmpty(versionToDeploy))
-                            {
-                                cachedPath = await dlssService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                await dlssService.SwapDlssnrAsync(destPath, versionToDeploy).ConfigureAwait(false);
-                                // Clean custom marker if present
-                                try { File.Delete(destPath + ".rhi_custom"); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildNvidiaProfileBody] Failed to delete .rhi_custom marker — {ex.Message}"); }
-                                cachedPath = destPath; // SwapDlssnrAsync already wrote to destPath
-                            }
-
-                            if (!isDefault && !string.IsNullOrEmpty(versionToDeploy))
-                            {
-                                // SwapDlssnrAsync handled it — fall through to detection
-                            }
-                            else if (cachedPath == null)
-                            {
-                                _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not available"; deployNrBtn.IsEnabled = true; });
-                                return;
-                            }
-                            else if (isDefault)
-                            {
-                                // Fresh install of newest
-                                File.Copy(cachedPath, destPath, overwrite: true);
-                                try { File.Delete(destPath + ".rhi_custom"); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildNvidiaProfileBody] Failed to delete .rhi_custom marker — {ex.Message}"); }
-                                CrashReporter.Log($"[NrDeployBtn] Deployed nvngx_dlssnr.dll (newest) to '{tc.InstallPath}'");
-                            }
-                        }
-
-                        // Deploy nvngx_dlss.dll alongside nvngx_dlssnr.dll — always to install path root
-                        // Creates a .original backup if the file already exists
-                        try
-                        {
-                            var dlssDest = Path.Combine(tc.InstallPath, "nvngx_dlss.dll");
-                            var cachedDlss = await dlssService.EnsureNewestDlssCachedAsync().ConfigureAwait(false);
-                            if (cachedDlss != null)
-                            {
-                                var backup = dlssDest + ".original";
-                                if (File.Exists(dlssDest) && !File.Exists(backup))
-                                    File.Copy(dlssDest, backup);
-                                File.Copy(cachedDlss, dlssDest, overwrite: true);
-                                CrashReporter.Log($"[NrDeployBtn] Deployed nvngx_dlss.dll to '{tc.InstallPath}'");
-                            }
-                        }
-                        catch (Exception dlssEx)
-                        {
-                            CrashReporter.Log($"[NrDeployBtn] nvngx_dlss.dll deploy failed — {dlssEx.Message}");
-                        }
-
-                        var detection = dlssService.Detect(tc.InstallPath);
-                        if (detection.HasAny)
-                        {
-                            dlssService.RecordDlssFound(tc.GameName);
-                            dlssService.RecordTrustedPath(tc.GameName, detection);
-                        }
-                        _window.DispatcherQueue?.TryEnqueue(
-                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                            () =>
-                        {
-                            tc.DlssDetection = detection;
-                            tc.ApplyDlssDetection(detection);
-                            tc.RefreshDlssVersions(dlssService);
-                            BuildOverridesPanel(tc);
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        CrashReporter.Log($"[NrDeployBtn] Failed — {ex.Message}");
-                        _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Deploy DLL"; deployNrBtn.IsEnabled = true; });
-                    }
-                };
-
-                deleteNrBtn.Click += (s, ev) =>
-                {
-                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                    if (tc == null || tc.DlssDetection?.DlssnrPath == null) return;
-                    try
-                    {
-                        dlssService.Restore(tc.DlssDetection.DlssnrPath);
-                        File.Delete(tc.DlssDetection.DlssnrPath);
-                        CrashReporter.Log($"[NrDeleteBtn] Deleted nvngx_dlssnr.dll from '{tc.InstallPath}'");
-                        var detection = dlssService.Detect(tc.InstallPath);
-                        if (detection.HasAny)
-                            dlssService.RecordTrustedPath(tc.GameName, detection);
-                        else
-                            dlssService.RecordNoDlssFound(tc.GameName);
-                        _window.DispatcherQueue?.TryEnqueue(
-                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                            () =>
-                        {
-                            tc.DlssDetection = detection;
-                            tc.ApplyDlssDetection(detection);
-                            tc.RefreshDlssVersions(dlssService);
-                            BuildOverridesPanel(tc);
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        CrashReporter.Log($"[NrDeleteBtn] Failed — {ex.Message}");
-                    }
-                };
-
-                Grid.SetColumn(deployNrBtn, 0);
-                Grid.SetColumn(deleteNrBtn, 1);
-                deployRow.Children.Add(deployNrBtn);
-                deployRow.Children.Add(deleteNrBtn);
-                nrCol.Children.Add(deployRow);
-
-                // Override column opacity so deploy buttons aren't dimmed when NR not present.
-                // Manually dim only the version/preset controls.
-                if (!hasDlssnr)
-                {
-                    nrCol.Opacity = 1.0;
-                    foreach (var child in nrCol.Children.OfType<UIElement>())
-                    {
-                        if (child != deployRow)
-                            child.Opacity = 0.4;
-                    }
-                }
                 Grid.SetColumn(nrCol, 8);
                 dlssRowGrid.Children.Add(nrCol);
                 _window.ViewModel.SetLastUiAction($"BuildNvidiaProfileBody:NR done({capturedGameName})");                dlssRowGrid.Children.Add(MakeDlssDivider(7));

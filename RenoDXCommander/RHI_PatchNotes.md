@@ -8,24 +8,26 @@
 ### New
 
 **Tabs layout**
-- Settings › General › Game page has a new Layout option. Tabs is a redesigned RHI window that shows the game page one tab at a time instead of one long page. Classic, the layout you know, stays the default, and every setting is available in both.
+- A new layout switch on the top bar (Classic+ | Tabs | Spotlight). Tabs is a redesigned RHI window that shows the game page one tab at a time instead of one long page. Classic+, the layout you know with the new top bar, stays the default, and every setting is available in every layout.
 - **Game header:** the game's name in large type with a Favourite star and Hide, tags for the store, engine, graphics API, 32/64-bit and mod author, the install path with Open folder and Config folder, and links to Nexus Mods, PCGamingWiki and ultrawide fixes. A large Launch button has a menu for the executable, launch arguments and a desktop shortcut, and HDR on launch and Resolution switch are labelled toggles.
 - **Overview tab:** a card for each component (ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter) with its version, a short description, the main button and Info, ⚙ and remove. ReLimiter and Display Commander share one card with a switch between them. Below, an At a glance tile for every other section shows its summary; click one to open that tab.
 - **Section tabs:**
   - Game Overrides is grouped into four cards: Names and matching, ReShade, DLL names, and Updates and launch.
-  - DLSS / Streamline shows every setting as a labelled dropdown in one card. Driver Settings keeps Classic's groups (VSync and latency, ReBAR, Smooth Motion, and Power, G-Sync and FPS).
+  - DLSS / Streamline has a column each for Super Resolution, Ray Reconstruction, Frame Generation and Neural Rendering, with Streamline underneath. Driver Settings keeps Classic+'s groups (VSync and latency, ReBAR, Smooth Motion, and Power, G-Sync and FPS).
   - Neural Rendering has a card for each method, with the setup underneath.
   - Extras is grouped into Loaders and upscalers, MFG unlocks and API upgrades, with a description for each component. When something can't be installed, the row says why (for example, DLSS Enabler is already provided by OptiScaler).
   - Management is four large buttons.
-- **Top bar and sidebar:** Available Mods and Shaders & Addons along the top, with when RHI last checked for updates, a refresh button, Update All showing how many games have updates (or All up to date), a Help menu and Settings. The Settings button stays lit while Settings is open; click it again, or the RHI logo, to go back to your games. The sidebar has All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
+- **Sidebar:** All, Installed, Favourites and Hidden as one switch, with the engine, mod and store filters behind a Filters button.
 - The tabs are always in the same order (Overview, Game Overrides, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Management), and RHI remembers which tab you were on.
+- A component's ⚙ settings open right under it on the page instead of in a pop-up. Click ⚙ again, or ✕, to close them.
 
 **Spotlight layout**
-- A third Layout option in Settings › General › Game page, built around the game you've picked.
+- A third layout on the top bar switch, built around the game you've picked.
 - **Hero banner:** the game's Steam artwork across the top (for any store, when the game is also on Steam), with the same name, tags, path, links, Launch button and HDR / Resolution toggles as Tabs.
 - **Cover shelf:** your games as a row of cover tiles instead of the sidebar list, with the search box, the All / Installed / Favourites / Hidden switch and Filters above it. Scroll it with the mouse wheel; right-click a cover for the usual game menu. A game with an update shows a purple Update label and outline on its cover.
 - **What's installed:** a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter showing what's installed, plus Manage components, which opens the component cards.
 - **Tune this game:** a tile for every section with its summary. Click one and that section slides in from the right, laid out as in Tabs; click outside it or ✕ to close.
+- A component's ⚙ settings open in the side panel, with a back button to the section you came from.
 - Artwork is downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once.
 - **Your own artwork:** right-click a cover or the banner and choose Artwork › Set custom cover or Set custom banner to use any image. Use Steam cover / Use Steam banner puts Steam's back. Handy for games that aren't on Steam.
 
@@ -35,6 +37,17 @@
 - Reset install folder is now its own button next to it.
 
 ### Changes
+
+**Top bar**
+- A new top bar, the same in all three layouts (the usual RHI window is now called Classic+): Available Mods and Shaders & Addons, when RHI last checked for updates, refresh, Update All with how many games have updates (or All up to date), the layout switch, a Help menu (Quick Start, Guide, Discord, links, patch notes, Donate, Ko-fi and more) and Settings.
+- The Settings button stays lit while Settings is open; click it again, or the RHI logo, to go back to your games.
+- The game list in Classic+ uses the same dark navy colours.
+
+**Component settings (⚙)**
+- Restyled to match the new layouts: settings are grouped into cards, in the same dark navy colours.
+
+**DLSS / Streamline**
+- Removed the Deploy DLL button under Neural Rendering. The Neural Rendering section installs the DLL when you pick a method; the version dropdown still changes the DLL a game already has.
 
 **Message of the day**
 - Links in the message can now be clicked.
