@@ -561,7 +561,8 @@
     "Mistfall Hunter": "Unreal Engine 5.7.4",
     "FINAL FANTASY RESONANCE": "Unreal Engine 5.6",
     "Kaku Ancient Seal": "Unreal Engine 4.27",
-    "The Witcher 3: Wild Hunt — Remastered": "REDengine 3"
+    "The Witcher 3: Wild Hunt — Remastered": "REDengine 3",
+    "Lords of the Fallen": "Unreal Engine 5.1.1"
   },
   "engineIniPathOverrides": {
     "Clive Barker's Hellraiser: Revival Demo": "Hellraiser_Demo",
@@ -625,7 +626,8 @@
     "DOOM \u002B DOOM II": "VLK",
     "DOOM 64": "VLK",
     "Crimson Desert Enhanced": "DX12",
-    "The Witcher 3: Wild Hunt - Complete Edition": "DX12"
+    "The Witcher 3: Wild Hunt - Complete Edition": "DX12",
+    "Lords of the Fallen": "DX12"
   },
   "dlssPathOverrides": {
     "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64",
@@ -673,7 +675,8 @@
     "Trackmania",
     "Watch_Dogs 2",
     "Watch_Dogs\u00AE 2",
-    "Silly Polly Beast"
+    "Silly Polly Beast",
+    "Lords of the Fallen"
   ],
   "dlssSkipGames": [
     "Dragon Age Inquisition",
