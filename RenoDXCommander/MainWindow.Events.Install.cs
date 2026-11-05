@@ -715,10 +715,21 @@ public sealed partial class MainWindow
                 }
             }
 
+            // Epic games launched from their exe need the Epic launcher running first
+            bool isEpicGame = string.Equals(card.Source, "Epic", StringComparison.OrdinalIgnoreCase)
+                || !string.IsNullOrEmpty(card.DetectedGame?.EpicAppName);
+            async Task EnsureEpicLauncherAsync()
+            {
+                if (!isEpicGame || await Task.Run(EpicLauncherHelper.IsRunning)) return;
+                ShowStatusBarMessage("Starting Epic Games Launcher before launching the game...", TimeSpan.FromSeconds(30));
+                await EpicLauncherHelper.EnsureRunningAsync(LifetimeToken);
+            }
+
             // 1. User override (absolute path)
             if (_gameNameService.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
+                await EnsureEpicLauncherAsync();
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via user override: {userExe} {launchArgs}");
                 var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
                 {
@@ -738,6 +749,7 @@ public sealed partial class MainWindow
                 var fullPath = Path.Combine(card.InstallPath, manifestExe);
                 if (File.Exists(fullPath))
                 {
+                    await EnsureEpicLauncherAsync();
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via manifest override: {fullPath} {launchArgs}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath)
                     {
@@ -824,6 +836,7 @@ public sealed partial class MainWindow
 
                 if (gameExe != null)
                 {
+                    await EnsureEpicLauncherAsync();
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
                     var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
                     {
@@ -922,7 +935,7 @@ public sealed partial class MainWindow
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
                     else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
-                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; RefocusAfterGameExit(gameName); });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)
@@ -978,7 +991,7 @@ public sealed partial class MainWindow
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
                     else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
-                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; RefocusAfterGameExit(gameName); });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)

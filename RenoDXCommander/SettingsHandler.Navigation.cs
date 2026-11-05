@@ -353,6 +353,8 @@ public partial class SettingsHandler
             }
             catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.OnSettingsPagePopulated] {ex.Message}"); }
         });
+        // After the restore above: opened with the controller (⚙ or Menu), start on the section's button
+        _window.DispatcherQueue?.TryEnqueue(DispatcherQueuePriority.Low, () => _window.PadFocusSettingsStart());
     }
 
     private void ScheduleRestoreScroll(int attempt)
@@ -487,6 +489,18 @@ public partial class SettingsHandler
         }
         catch (ArgumentException) { return null; }
         catch (System.Runtime.InteropServices.COMException) { return null; }
+    }
+
+    /// <summary>
+    /// Where the controller starts on Settings: the left-hand button of the section being shown
+    /// (General unless Settings was left elsewhere). Null before the navigation is built.
+    /// </summary>
+    internal Button? PadStartButton()
+    {
+        var visible = _sections.Where(s => s.Panel.Visibility == Visibility.Visible).ToList();
+        var section = visible.FirstOrDefault(s => string.Equals(s.Key, _highlightedSectionKey, StringComparison.Ordinal))
+                      ?? visible.FirstOrDefault();
+        return section?.Button is { Visibility: Visibility.Visible, IsLoaded: true } b ? b : null;
     }
 
     /// <summary>

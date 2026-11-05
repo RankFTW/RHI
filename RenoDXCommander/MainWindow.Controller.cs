@@ -107,9 +107,12 @@ public sealed partial class MainWindow
             if (NativeInterop.GetForegroundWindow() != _padHwnd)
             {
                 _padActive = false;
+                RestorePadPointer(); // never leave the pointer hidden over another app's turn
                 SetPadInterval(PadSlowMs);
                 return;
             }
+            // The mouse is back in use: show the pointer and drop the hints
+            if (PadPointerUsed()) ShowPadHints(false);
 
             long now = Environment.TickCount64;
             if (ReadPad(now) is not { } g)
@@ -687,8 +690,32 @@ public sealed partial class MainWindow
             FocusShelf();
             return;
         }
+        if (ViewModel.CurrentPage == AppPage.Settings && _settingsHandler.PadStartButton() is { } start)
+        {
+            PadFocus(start);
+            return;
+        }
         DependencyObject? root = ViewModel.CurrentPage == AppPage.Settings ? SettingsPanel : xamlRoot.Content;
         if (root != null && FocusManager.FindFirstFocusableElement(root) is { } first) PadFocus(first);
+    }
+
+    /// <summary>
+    /// Settings has just opened: if the controller is in use (its hints are showing), focus the
+    /// shown section's button on the left, so Down / Up and A work straight away. Mouse users
+    /// (hints hidden) keep normal focus.
+    /// </summary>
+    internal void PadFocusSettingsStart()
+    {
+        try
+        {
+            if (_padHints?.Visibility != Visibility.Visible || ViewModel.CurrentPage != AppPage.Settings) return;
+            if (Content?.XamlRoot is { } root && TopPopup(root, null) != null) return;
+            if (_settingsHandler.PadStartButton() is { } start) PadFocus(start);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.PadFocusSettingsStart] {ex.Message}");
+        }
     }
 
     private void FocusShelf()
@@ -715,11 +742,20 @@ public sealed partial class MainWindow
     }
 
     /// <summary>Moves focus to the nearest control in that direction, never into <paramref name="skip"/> (the footer).</summary>
-    private static void PadFocusNext(FocusNavigationDirection dir, DependencyObject? searchRoot, DependencyObject? skip = null)
+    private void PadFocusNext(FocusNavigationDirection dir, DependencyObject? searchRoot, DependencyObject? skip = null)
     {
         if (searchRoot == null) return;
         var options = new FindNextElementOptions { SearchRoot = searchRoot };
-        if (FocusManager.FindNextElement(dir, options) is { } next && (skip == null || !IsWithin(next, skip)))
+        // WinUI's search skips controls covered by something hit-testable, and the mouse shield
+        // (Controller.Pointer.cs) covers the whole window: let it through for the search only.
+        // Synchronous, so no pointer hit-test runs in between.
+        var shield = _padPointerShield;
+        bool lowered = shield is { IsHitTestVisible: true, Visibility: Visibility.Visible };
+        if (lowered) shield!.IsHitTestVisible = false;
+        DependencyObject? next;
+        try { next = FocusManager.FindNextElement(dir, options); }
+        finally { if (lowered) shield!.IsHitTestVisible = true; }
+        if (next != null && (skip == null || !IsWithin(next, skip)))
             PadFocus(next);
     }
 

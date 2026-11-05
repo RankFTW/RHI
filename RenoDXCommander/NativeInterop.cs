@@ -298,6 +298,12 @@ internal static class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool AllowSetForegroundWindow(uint dwProcessId);
 
+    /// <summary>Synthesises a key event. Used only to tap Alt, which lifts Windows' foreground lock.</summary>
+    [DllImport("user32.dll")]
+    internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+    internal const byte VK_MENU = 0x12;
+    internal const uint KEYEVENTF_KEYUP = 0x0002;
+
     [DllImport("user32.dll")]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 

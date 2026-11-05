@@ -299,6 +299,8 @@ When adding a new downloadable component variant:
 4. Epic protocol (`com.epicgames.launcher://apps/{AppName}?action=launch&silent=true`)
 5. Xbox/Game Pass — `shell:AppsFolder\{XboxAumid}` — AUMID captured from `package.GetAppListEntries()` during `FindXboxGames`. `DetectedGame.XboxAumid` stores it. Direct exe launch does NOT work for Game Pass games — WindowsApps paths are access-denied and packaged GDK apps require AUMID activation.
 6. Auto-detected exe (largest in InstallPath)
+- Store launch IDs (`SteamAppId`, `EpicAppName`, `EpicCatalogNamespace`, `XboxAumid`) are saved in `game_library.json` (`SavedGame`). Before Nov 2026 they weren't, so cache-built cards fell through to the direct exe until the background scan merged fresh `DetectedGame`s (Epic games then failed without the launcher running).
+- Epic games launched from an exe (paths 1, 2, 6: launch args set or exe override) call `EpicLauncherHelper.EnsureRunningAsync` first: starts `EpicGamesLauncher.exe -silent` (path from the `com.epicgames.launcher` protocol handler) and waits up to 20 s + 6 s.
 
 ### Last Selected Game
 - `LastSelectedGameName` must NOT be nulled after consumption (background merge re-uses it)

@@ -30,12 +30,14 @@ public sealed partial class MainWindow
             {
                 if (_padHints != null) _padHints.Visibility = Visibility.Collapsed;
                 SetPadHintRoom(false);
+                RestorePadPointer();
                 return;
             }
             if (!EnsurePadOverlay()) return;
             UpdatePadHints();
             _padHints!.Visibility = Visibility.Visible;
             SetPadHintRoom(true);
+            HidePadPointer();
         }
         catch (Exception ex)
         {
@@ -242,12 +244,11 @@ public sealed partial class MainWindow
             _padPointerHooked = true;
             root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((s, e) =>
             {
-                if (_padHints?.Visibility == Visibility.Visible
+                // While the pointer is hidden, PadTick's cursor-position check decides: the shield
+                // appearing under a resting mouse raises a PointerMoved without any movement.
+                if (_padHints?.Visibility == Visibility.Visible && !_padPointerHidden
                     && e.Pointer.PointerDeviceType == Microsoft.UI.Input.PointerDeviceType.Mouse)
-                {
-                    _padHints.Visibility = Visibility.Collapsed;
-                    SetPadHintRoom(false);
-                }
+                    ShowPadHints(false);
             }), handledEventsToo: true);
         }
         return true;

@@ -1,9 +1,9 @@
 // MainWindow.Controller.Rows.cs -- controller up / down / left / right on the Spotlight page and in
 // the slide-in panel. The focusable controls are grouped into rows by their position on screen
 // (top bar, filter row, covers, the header's buttons, each line of tiles…). Up / Down always go to
-// the row above / below, Left / Right stay in the row. Each row remembers where you were in it, so
-// going back up lands where you left. WinUI's nearest-control search picked a different control
-// depending on where things happened to sit; rows don't.
+// the row above / below, landing on the control straight above / below; Left / Right stay in the
+// row. WinUI's nearest-control search picked a different control depending on where things
+// happened to sit; rows don't.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,10 +21,6 @@ public sealed partial class MainWindow
     /// zone 1 is the scrolling content, measured inside it so scrolling doesn't reorder the rows.
     /// </summary>
     private sealed record PadTarget(Control Element, Rect Bounds, int Zone, double Top, bool IsShelf);
-
-    // Recently left controls, newest first: entering a row picks the newest one that's in it
-    private readonly List<WeakReference<Control>> _padRowMemory = new();
-    private const int PadRowMemorySize = 30;
 
     /// <summary>
     /// Moves by rows inside <paramref name="root"/>. False when the focused control isn't one of the
@@ -59,40 +55,34 @@ public sealed partial class MainWindow
             default:
                 int target = rowIndex + (dir == FocusNavigationDirection.Down ? 1 : -1);
                 if (target < 0 || target >= rows.Count) return true;
-                if (!current.IsShelf) RememberPadTarget(current.Element);
                 FocusPadTarget(PickInRow(rows[target], current));
                 return true;
         }
     }
 
-    /// <summary>The control to land on in a row: the one you were last on, Launch / the selected filter tab, else the nearest across.</summary>
+    /// <summary>
+    /// The control to land on in a row: Launch / the selected filter tab when the row has one, else
+    /// the one straight above / below (its width covers the current control's middle), else the
+    /// nearest across. No memory of earlier visits: that made Up / Down jump sideways in grids.
+    /// </summary>
     private PadTarget PickInRow(List<PadTarget> row, PadTarget from)
     {
-        foreach (var weak in _padRowMemory)
-            if (weak.TryGetTarget(out var remembered))
-                foreach (var t in row)
-                    if (ReferenceEquals(t.Element, remembered)) return t;
-
         var launch = _detailPanelBuilder.Layout.LaunchButton;
         var segment = SelectedSegment();
         foreach (var t in row)
             if (ReferenceEquals(t.Element, launch) || ReferenceEquals(t.Element, segment)) return t;
 
         double x = from.Bounds.X + from.Bounds.Width / 2;
-        return row.OrderBy(t => Math.Abs(t.Bounds.X + t.Bounds.Width / 2 - x)).First();
+        static double Gap(Rect r, double x) => x < r.Left ? r.Left - x : x > r.Right ? x - r.Right : 0;
+        return row.OrderBy(t => Gap(t.Bounds, x))
+                  .ThenBy(t => Math.Abs(t.Bounds.X + t.Bounds.Width / 2 - x))
+                  .First();
     }
 
     private void FocusPadTarget(PadTarget t)
     {
         if (t.IsShelf) FocusShelf();
         else PadFocus(t.Element);
-    }
-
-    private void RememberPadTarget(Control element)
-    {
-        _padRowMemory.RemoveAll(w => !w.TryGetTarget(out var e) || ReferenceEquals(e, element));
-        _padRowMemory.Insert(0, new WeakReference<Control>(element));
-        if (_padRowMemory.Count > PadRowMemorySize) _padRowMemory.RemoveRange(PadRowMemorySize, _padRowMemory.Count - PadRowMemorySize);
     }
 
     /// <summary>

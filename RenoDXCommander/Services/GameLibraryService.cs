@@ -90,7 +90,9 @@ public class GameLibraryService : IGameLibraryService
             FavouriteGames = favouriteGames,
             Games = games.Select(g => new SavedGame
             {
-                Name = g.Name, InstallPath = g.InstallPath, Source = g.Source
+                Name = g.Name, InstallPath = g.InstallPath, Source = g.Source,
+                SteamAppId = g.SteamAppId, EpicCatalogNamespace = g.EpicCatalogNamespace,
+                EpicAppName = g.EpicAppName, XboxAumid = g.XboxAumid,
             }).ToList(),
             ManualGames = manualGames.Select(g => new SavedGame
             {
@@ -119,7 +121,9 @@ public class GameLibraryService : IGameLibraryService
     public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) =>
         lib.Games.Select(g => new DetectedGame
         {
-            Name = g.Name, InstallPath = g.InstallPath, Source = g.Source
+            Name = g.Name, InstallPath = g.InstallPath, Source = g.Source,
+            SteamAppId = g.SteamAppId, EpicCatalogNamespace = g.EpicCatalogNamespace,
+            EpicAppName = g.EpicAppName, XboxAumid = g.XboxAumid,
         }).ToList();
 
     public List<DetectedGame> ToManualGames(SavedGameLibrary lib) =>
