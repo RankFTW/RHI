@@ -343,6 +343,18 @@ internal sealed partial class DetailLayoutHost
         var b = MakeToggle(label, on, click);
         b.Tag = true;
         Grid.SetColumn(b, column);
+        // Pressed with the controller / keyboard: the old button had focus. Removing it would send
+        // focus to the next control, so hand it to the replacement (same focus look) once it's loaded.
+        var focus = old.FocusState;
+        if (focus != FocusState.Unfocused)
+        {
+            b.FocusVisualPrimaryBrush = old.FocusVisualPrimaryBrush;
+            b.FocusVisualPrimaryThickness = old.FocusVisualPrimaryThickness;
+            b.FocusVisualSecondaryBrush = old.FocusVisualSecondaryBrush;
+            b.FocusVisualSecondaryThickness = old.FocusVisualSecondaryThickness;
+            void OnLoaded(object s, RoutedEventArgs e) { b.Loaded -= OnLoaded; b.Focus(focus); }
+            b.Loaded += OnLoaded;
+        }
         int idx = _hToggles!.Children.IndexOf(old);
         if (idx >= 0) _hToggles.Children[idx] = b; else _hToggles.Children.Add(b);
         return b;
