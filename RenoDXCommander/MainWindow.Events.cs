@@ -331,40 +331,16 @@ public sealed partial class MainWindow
 
             // One small card per author, two across
             var grid = new Controls.AutoFitGrid { MinColumnWidth = 300, MaxColumns = 2, ColumnSpacing = 10, RowSpacing = 10 };
-            string[] avatarTints = { "#6FA8FF", "#7FE0A0", "#D9C8FF", "#F0C35A", "#FF9AA8", "#7FD6E0" };
-            int index = 0;
 
             foreach (var name in entries)
             {
                 if (!donationUrls.TryGetValue(name, out var url)) continue;
                 roles.TryGetValue(name, out var role);
-                var tint = avatarTints[index++ % avatarTints.Length];
 
-                // [Avatar] [Name / role] [Ko-fi]
+                // [Name / role] [Ko-fi or Patreon]
                 var row = new Grid { ColumnSpacing = 12 };
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var avatar = new Border
-                {
-                    Width = 34, Height = 34,
-                    CornerRadius = new CornerRadius(17),
-                    Background = TabsTheme.B("#151C29"),
-                    BorderBrush = TabsTheme.B(tint),
-                    BorderThickness = new Thickness(1),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Child = new TextBlock
-                    {
-                        Text = name.Length > 0 ? char.ToUpperInvariant(name[0]).ToString() : "?",
-                        FontSize = 14,
-                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                        Foreground = TabsTheme.B(tint),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                };
-                row.Children.Add(avatar);
 
                 var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
                 text.Children.Add(new TextBlock
@@ -387,12 +363,11 @@ public sealed partial class MainWindow
                     ToolTipService.SetToolTip(roleBlock, role);
                     text.Children.Add(roleBlock);
                 }
-                Grid.SetColumn(text, 1);
                 row.Children.Add(text);
 
                 var kofiBtn = new Button
                 {
-                    Content = "Ko-fi",
+                    Content = url.Contains("patreon.com", StringComparison.OrdinalIgnoreCase) ? "Patreon" : "Ko-fi",
                     VerticalAlignment = VerticalAlignment.Center,
                 };
                 TabsTheme.Apply(kofiBtn, new TabsTheme.Look("#2A1418", "#5A2A30", "#FF8A88", "#351A1F", true), height: 32, fontSize: 12);
@@ -400,7 +375,7 @@ public sealed partial class MainWindow
                 var capturedUrl = url;
                 kofiBtn.Click += (s, ev) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(capturedUrl));
                 ToolTipService.SetToolTip(kofiBtn, capturedUrl);
-                Grid.SetColumn(kofiBtn, 2);
+                Grid.SetColumn(kofiBtn, 1);
                 row.Children.Add(kofiBtn);
 
                 var card = TabsTheme.MakeCard(row, 0);
