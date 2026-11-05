@@ -563,7 +563,8 @@
     "FINAL FANTASY RESONANCE": "Unreal Engine 5.6",
     "Kaku Ancient Seal": "Unreal Engine 4.27",
     "The Witcher 3: Wild Hunt — Remastered": "REDengine 3",
-    "Lords of the Fallen": "Unreal Engine 5.1.1"
+    "Lords of the Fallen": "Unreal Engine 5.1.1",
+    "Wuthering Waves": "Unreal Engine 4.26.2"
   },
   "engineIniPathOverrides": {
     "Clive Barker's Hellraiser: Revival Demo": "Hellraiser_Demo",
