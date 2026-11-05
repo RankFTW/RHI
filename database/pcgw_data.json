@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55971,
-  "generated": "2026-11-04T08:49:55Z",
+  "game_count": 55984,
+  "generated": "2026-11-05T09:05:52Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -3049,6 +3049,7 @@
     "ABC Coloring Town": {
       "steam_appid": 478010
     },
+    "ABC Monday Night Football": {},
     "ABD: A Beautiful Day": {
       "steam_appid": 384920
     },
@@ -13218,6 +13219,7 @@
     "ATROFIL: THE KEY": {
       "steam_appid": 1196350
     },
+    "Atrox": {},
     "Attached": {
       "steam_appid": 1076730,
       "engine": "Unreal Engine 4"
@@ -18290,6 +18292,7 @@
       "config_path": "<path-to-game>\\Besiege_Data\\Config.txt",
       "engine": "Unity"
     },
+    "Besieger": {},
     "Best Buds vs Bad Guys": {
       "steam_appid": 486130
     },
@@ -26278,6 +26281,8 @@
     },
     "Call of Duty: Modern Warfare 4": {
       "steam_appid": 4435490,
+      "dx12": true,
+      "config_path": "%APPDATA%\\Local\\Activision\\Call of Duty\\players",
       "engine": "IW engine"
     },
     "Call of Duty: Modern Warfare II": {
@@ -45475,6 +45480,9 @@
       "steam_appid": 4249140,
       "config_path": "<path-to-game>\\dino2.cfg"
     },
+    "Dino Crisis 3": {
+      "config_path": "<path-to-game>\\dc3.cfg"
+    },
     "Dino D-Day": {
       "steam_appid": 70000,
       "dx9": true,
@@ -51551,6 +51559,9 @@
     },
     "Dystoria": {
       "steam_appid": 516580
+    },
+    "Dōkyūsei: Bangin' Summer": {
+      "steam_appid": 1689910
     },
     "D├®j├á Vu": {
       "steam_appid": 843710
@@ -88888,6 +88899,9 @@
       "config_path": "%LOCALAPPDATA%\\Kiborg\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
+    "Kick": {
+      "steam_appid": 3760370
+    },
     "Kick Ass Commandos": {
       "steam_appid": 359140,
       "engine": "Unity"
@@ -95553,6 +95567,10 @@
     },
     "Living with Jaguars": {
       "steam_appid": 874090
+    },
+    "Living With Sister: Monochrome Fantasy": {
+      "steam_appid": 2429860,
+      "engine": "WOLF RPG Editor"
     },
     "Living World Racing": {
       "dx9": true,
@@ -108045,6 +108063,9 @@
       "steam_appid": 1198310,
       "engine": "Unity"
     },
+    "Mr.Mine": {
+      "steam_appid": 1397920
+    },
     "Mr.President Prologue Episode": {
       "steam_appid": 530540
     },
@@ -109396,6 +109417,10 @@
     },
     "My Sweet Waifu": {
       "steam_appid": 793760
+    },
+    "My Sweet Waifu Konko": {
+      "steam_appid": 3099780,
+      "engine": "TyranoScript"
     },
     "My Therapist is a Futanari": {
       "steam_appid": 1831260,
@@ -121138,6 +121163,7 @@
     "Pax Nova": {
       "steam_appid": 804850
     },
+    "Pax Romana": {},
     "Pax Romana: Romulus": {
       "steam_appid": 1034810
     },
@@ -135214,6 +135240,9 @@
       "config_path": "%APPDATA%\\YuzuSoft\\RiddleJoker",
       "engine": "KiriKiri"
     },
+    "Riddle of the Sphinx: An Egyptian Adventure": {
+      "engine": "Director"
+    },
     "Riddle of the Sphinx: The Awakening (Enhanced Edition)": {
       "steam_appid": 1521870,
       "dx11": true,
@@ -140266,7 +140295,7 @@
     "Samurai Jack: Battle through Time": {
       "steam_appid": 1150590,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\SJGAME\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\SJGAME\\Saved\\Config\\WindowsNoEditor\\*.ini, %LOCALAPPDATA%\\SJGAME\\Saved\\SaveGames\\SettingData.sav",
       "engine": "Unreal Engine 4"
     },
     "Samurai Jazz": {
@@ -162038,6 +162067,9 @@
     "Tale of Wuxia: The Pre-Sequel": {
       "steam_appid": 650760
     },
+    "Tale Sweeper": {
+      "steam_appid": 4764420
+    },
     "Talent Not Included": {
       "steam_appid": 485260
     },
@@ -162374,7 +162406,7 @@
     "Tandem: A Tale of Shadows": {
       "steam_appid": 1436920,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Shadows\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Shadows\\Saved\\Config\\WindowsNoEditor\\GameUserSettings.ini",
       "engine": "Unreal Engine 4"
     },
     "Tandis": {
@@ -164603,7 +164635,9 @@
     "The Adventures of Kusoge": {
       "steam_appid": 787140
     },
-    "The Adventures of Lomax": {},
+    "The Adventures of Lomax": {
+      "config_path": "HKEY_CURRENT_USER\\Software\\Psygnosis\\Lomax"
+    },
     "The Adventures of Looppy": {
       "steam_appid": 1152330
     },
@@ -171250,6 +171284,7 @@
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\House of Tales\\Mystery of the Druids\\Config",
       "engine": "Cougar Engine"
     },
+    "The Mystery of the Nautilus": {},
     "The Mystery of Woolley Mountain": {
       "steam_appid": 521560,
       "config_path": "HKEY_CURRENT_USER\\Software\\Lightfoot Bros Games\\The Mystery Of Woolley Mountain",
@@ -171455,7 +171490,7 @@
     "The Occultist": {
       "steam_appid": 2092840,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\The_Occultist\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%/The_Occultist/Saved/SaveGames/",
       "engine": "Unreal Engine 5"
     },
     "The Occupant": {
@@ -197098,7 +197133,6 @@
     },
     "Zombie Assault: Resurgence": {
       "steam_appid": 2747660,
-      "dx11": true,
       "dx12": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Ninja Kiwi\\Zombie Assault",
       "engine": "Unity"
