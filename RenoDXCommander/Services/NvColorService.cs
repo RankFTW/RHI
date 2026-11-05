@@ -254,12 +254,27 @@ public static class NvColorService
         }
     }
 
+    /// <summary>NVAPI status codes the colour settings dialog explains.</summary>
+    public const int StatusNotAvailable      = int.MinValue; // NVAPI not loaded / exception
+    public const int NVAPI_NOT_SUPPORTED     = -104;
+    public const int NVAPI_INVALID_ARGUMENT  = -5;
+    public const int NVAPI_INVALID_USER_PRIVILEGE = -137;
+
     /// <summary>
     /// Sets colour depth and dynamic range for the given displayId.
     /// Returns true on success.
     /// </summary>
     public static bool SetColorData(uint displayId, byte bpc, byte dynamicRange)
+        => SetColorData(displayId, bpc, dynamicRange, out _);
+
+    /// <summary>
+    /// Same as <see cref="SetColorData(uint, byte, byte)"/>; <paramref name="status"/> is the NVAPI
+    /// result (0 = OK, -104 = the display doesn't support it, -137 = needs admin) or
+    /// <see cref="StatusNotAvailable"/>.
+    /// </summary>
+    public static bool SetColorData(uint displayId, byte bpc, byte dynamicRange, out int status)
     {
+        status = StatusNotAvailable;
         if (!EnsureInit() || _colorControl == null) return false;
         try
         {
@@ -279,6 +294,7 @@ public static class NvColorService
                 bpc          = bpc,
             };
             int ret = _colorControl(displayId, ref data);
+            status = ret;
             if (ret != 0)
             {
                 CrashReporter.Log($"[NvColorService.SetColorData] NvAPI_Disp_ColorControl(SET) returned {ret} for displayId={displayId}");

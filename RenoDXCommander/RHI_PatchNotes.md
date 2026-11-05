@@ -77,6 +77,9 @@
 
 ### Bug Fixes
 
+**Display**
+- Fixed Output colour settings saying RHI needs to run as administrator when the monitor doesn't support the chosen colour depth (for example 12 bpc on a 10-bit monitor). It now says the monitor doesn't support it, and only mentions admin when that's the actual problem.
+
 **RTX Encore**
 - Fixed the XeSS upscaler not working: RHI didn't install Intel's libxess.dll, which it needs.
 - Fixed games breaking when RTX Encore was installed as binkw64.dll or bink2w64.dll. The game's own Bink file is now kept beside it as binkw64Hooked.dll (or bink2w64Hooked.dll), as RTX Encore requires.
@@ -95,6 +98,7 @@
 - Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.
 
 ### Manifest Updates
+- New addon in Shaders & Addons: BFI Presenter by artzox, black frame insertion without the usual brightness loss for clearer motion on 120 Hz+ OLEDs and other fixed-refresh displays (DX9, DX11, DX12 and OpenGL games). Its description lists what it needs (G-Sync off, no frame limiter) and links to the setup guide.
 - Support the Mod Authors now includes the ultrawide fix authors RHI links to (Lyall, p1xel8ted and RoseTheFlower) and the Ultra+ team (Lazorr, SammiLucia and mmike0913). Authors who use Patreon get a Patreon button.
 - Mafia: The Old Country: DLSS and Streamline are now found in the game's plugins folder, so the DLSS / Streamline section is no longer empty.
 

@@ -1572,6 +1572,12 @@
       "description": "Updated fork of REST: applies ReShade effects at a chosen point in the frame (for example under the HUD) using groups of game shaders. Adds auto scene colour for DLSS and dynamic resolution games, Vulkan shader hunting, technique routing, HUD suppression and controller shortcuts. Requires ReShade 6.8 or newer. Choose this or the original REST by 4lex4nder, not both.",
       "releaseApiUrl": "https://api.github.com/repos/BadassBaboon/ReshadeEffectShaderToggler/releases/latest",
       "repositoryUrl": "https://github.com/BadassBaboon/ReshadeEffectShaderToggler"
+    },
+    "bfi-presenter": {
+      "packageName": "BFI Presenter",
+      "description": "Black frame insertion without the usual brightness loss, for clearer motion on fixed-refresh displays (built and tested on a 120 Hz OLED; higher refresh rates work too). Variable MPRT mode (default) keeps full brightness at Gain 1.0; classic BFI and a CRT-style rolling scan are also included. SDR and HDR (scRGB / HDR10). Settings are in the BFI Presenter tab of the ReShade overlay and in BFIPresenter.ini, created next to the addon on first launch. Ctrl+Shift+B turns the strobe off. For DX9 (ReShade 6.8+), DX11, DX12 and OpenGL (NVIDIA only) games; Vulkan games need the author's separate Vulkan layer. Needs a fixed refresh rate: turn G-Sync / VRR off for the game, don't set NVIDIA VSync to Force off or Fast Sync, and don't use a frame limiter (NVIDIA FPS limit, ReLimiter, Display Commander). Aim for a steady frame rate that matches the refresh rate. Works with DLSS, FSR and XeSS frame generation, not with Lossless Scaling. Not compatible with Special K HDR. Flickers by design: not for people sensitive to flicker. See the repository for the full setup guide.",
+      "releaseApiUrl": "https://api.github.com/repos/artzox/BFI-Presenter/releases/latest",
+      "repositoryUrl": "https://github.com/artzox/BFI-Presenter"
     }
   },
   "renodxExtraSettings": [

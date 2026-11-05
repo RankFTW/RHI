@@ -1533,6 +1533,19 @@ public sealed partial class MainWindow
         _colorDisplayComboInit = false;
     }
 
+    /// <summary>Explains why the driver refused the colour settings, from its NVAPI status.</summary>
+    private static string ColorApplyFailureText(string displayName, string depth, string range, int status) => status switch
+    {
+        NvColorService.NVAPI_NOT_SUPPORTED or NvColorService.NVAPI_INVALID_ARGUMENT =>
+            $"{displayName} doesn't support {depth} with {range} range at its current resolution and refresh rate. "
+            + "Pick a lower colour depth, or lower the refresh rate if the monitor only offers it at lower ones.",
+        NvColorService.NVAPI_INVALID_USER_PRIVILEGE =>
+            $"Couldn't apply colour settings to {displayName}: the NVIDIA driver needs RHI to run as administrator. Turn on Admin Mode in Settings.",
+        NvColorService.StatusNotAvailable =>
+            $"Couldn't apply colour settings to {displayName}: the NVIDIA driver interface isn't available.",
+        _ => $"The NVIDIA driver couldn't apply {depth}, {range} to {displayName} (error {status}).",
+    };
+
     private async void ColorApplyBtn_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1547,14 +1560,18 @@ public sealed partial class MainWindow
             byte bpc = NvColorService.LabelToBpc(depthLabel);
             byte dr  = NvColorService.LabelToDynamicRange(rangeLabel);
 
-            bool ok = await Task.Run(() => NvColorService.SetColorData(display.DisplayId, bpc, dr));
+            var (ok, status) = await Task.Run(() =>
+            {
+                bool applied = NvColorService.SetColorData(display.DisplayId, bpc, dr, out int s);
+                return (applied, s);
+            });
 
             var dialog = new ContentDialog
             {
                 Title   = "Output Colour Settings",
                 Content = ok
                     ? $"Applied to {display.Name}: {depthLabel}, {rangeLabel}."
-                    : $"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.",
+                    : ColorApplyFailureText(display.Name, depthLabel, rangeLabel, status),
                 CloseButtonText = "OK",
                 XamlRoot        = Content.XamlRoot,
                 RequestedTheme  = ElementTheme.Dark,
