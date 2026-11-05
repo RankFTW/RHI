@@ -186,7 +186,7 @@ public sealed partial class MainWindow
             b.Background  = new SolidColorBrush(isActive ? active   : inactive);
             b.Foreground  = new SolidColorBrush(isActive ? activeFg : inactiveFg);
         }
-        if (_tabsChromeOn) RefreshTabsChromeSoon(); // Tabs: segmented filter + Filters count
+        if (_tabsChromeBuilt) RefreshTabsChromeSoon(); // segmented filter + Filters count
     }
 
     private void TryRestoreSelection()

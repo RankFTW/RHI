@@ -2,7 +2,7 @@
 // footer. Built in C# beside the XAML ones (XAML constraint); the XAML controls stay in the window,
 // hidden or restyled, and every new control calls the existing handlers. Classic is untouched:
 // switching back hides the Tabs chrome and restores the original looks.
-// The top bar is used in every layout (Classic too); the sidebar and footer restyle only in Tabs / Spotlight.
+// The top bar and the game list sidebar are used in every layout (Classic too); the footer restyles only in Tabs / Spotlight.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -42,7 +42,6 @@ public sealed partial class MainWindow
     private Grid? _countsGrid;
     private Button? _filtersBtn;
     private bool _filtersOpen;
-    private readonly Dictionary<FrameworkElement, (Brush? Bg, Brush? Border, Thickness Pad, Thickness Thick)> _sidebarClassic = new();
 
     // Footer
     private Border? _footer;
@@ -60,7 +59,7 @@ public sealed partial class MainWindow
 
     private void ApplyTabsChromeCore()
     {
-        // The top bar is the same in every layout; the sidebar and footer restyle only in Tabs / Spotlight
+        // The top bar and sidebar are the same in every layout; the footer restyles only in Tabs / Spotlight
         bool tabs = _detailPanelBuilder?.Layout.IsTabs == true;
         if (_tabsChromeBuilt && tabs == _tabsChromeOn) return;
         try
@@ -70,11 +69,11 @@ public sealed partial class MainWindow
                 BuildTabsChrome();
                 if (!_tabsChromeBuilt) return;
                 ShowTabsTopBar(true);
+                ShowTabsSidebar();
                 _checkedTimer ??= CreateCheckedTimer();
                 _checkedTimer.Start();
             }
             _tabsChromeOn = tabs;
-            ShowTabsSidebar(tabs);
             ShowTabsFooter(tabs);
             RefreshTabsChrome();
         }
@@ -158,8 +157,6 @@ public sealed partial class MainWindow
         }
         _countsRow.Child = _countsGrid;
 
-        foreach (var el in new FrameworkElement?[] { _sidebar, _searchRow, _chipsRow, _countsRow })
-            if (el is Border b) _sidebarClassic[b] = (b.Background, b.BorderBrush, b.Padding, b.BorderThickness);
         _footerClassic = (_footer.Background, _footer.BorderBrush);
 
         // Only the properties the chrome shows (the update count checks game folders, so not on every change)
@@ -401,21 +398,14 @@ public sealed partial class MainWindow
         _            => FilterDetected,
     };
 
-    private void ShowTabsSidebar(bool tabs)
+    /// <summary>The Tabs game list (segmented main filter, Filters button by the counts) in every layout.</summary>
+    private void ShowTabsSidebar()
     {
         if (_searchRow == null || _chipsRow == null || _countsRow == null) return;
-        if (_mainFilterChips != null) _mainFilterChips.Visibility = tabs ? Visibility.Collapsed : Visibility.Visible;
-        if (_segmentHost != null) _segmentHost.Visibility = tabs ? Visibility.Visible : Visibility.Collapsed;
-        if (_filtersBtn != null) _filtersBtn.Visibility = tabs ? Visibility.Visible : Visibility.Collapsed;
-        if (!tabs)
-        {
-            // Classic+: keeps its own layout (chips always shown, its paddings), only the colours follow Tabs
-            _chipsRow.Visibility = Visibility.Visible;
-            foreach (var (el, c) in _sidebarClassic)
-                if (el is Border b) { b.Background = c.Bg; b.BorderBrush = c.Border; b.Padding = c.Pad; b.BorderThickness = c.Thick; }
-        }
+        if (_mainFilterChips != null) _mainFilterChips.Visibility = Visibility.Collapsed;
+        if (_segmentHost != null) _segmentHost.Visibility = Visibility.Visible;
+        if (_filtersBtn != null) _filtersBtn.Visibility = Visibility.Visible;
         ApplySidebarColours();
-        if (!tabs) return;
 
         _searchRow.Padding = new Thickness(16, 16, 16, 6);
         _chipsRow.BorderThickness = new Thickness(0);
@@ -543,7 +533,7 @@ public sealed partial class MainWindow
                 _updateAllHost.Children.Add(MakeUpdateAllButton(count));
                 _lastUpdateCount = count; // only once it's shown, so a failure retries next time
             }
-            if (_tabsChromeOn) RefreshSidebar();
+            RefreshSidebar();
         }
         catch (Exception ex)
         {

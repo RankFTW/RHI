@@ -23,8 +23,7 @@ internal sealed partial class DetailLayoutHost
     private TextBlock? _hPath;
     private HyperlinkButton? _hConfig;
     private StackPanel? _hLinks;
-    private TextBlock? _hLaunchText;
-    private Button? _hHdr;
+    private TextBlock? _hLaunchText;    private Button? _hHdr;
     private Button? _hRes;
     private Grid? _hToggles;
     private bool _hFavOn, _hHdrOn, _hResOn;
@@ -97,14 +96,17 @@ internal sealed partial class DetailLayoutHost
         launchContent.Children.Add(_hLaunchText);
         var launch = new Button { Content = launchContent, HorizontalAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(28, 0, 28, 0) };
         TabsTheme.Apply(launch, new TabsTheme.Look("#1D5C36", "#2F7A4A", "#EFFFF4", "#236B40", true), height: 48, fontSize: 16);
-        launch.CornerRadius = new CornerRadius(10, 0, 0, 10);
+        // Square halves inside one rounded frame (below): a one-sided CornerRadius on the button
+        // drew its background see-through at some interface sizes
+        launch.CornerRadius = new CornerRadius(0);
+        launch.BorderThickness = new Thickness(0, 0, 1, 0); // divider before the chevron
         launch.Click += (s, e) => { w.HeaderLaunch(e); RefreshHeaderSoon(); };
         ToolTipService.SetToolTip(launch, "Launch the game");
 
         var more = new Button { Width = 44, Padding = new Thickness(0), Content = TabsTheme.Icon("", 13) }; // chevron down
         TabsTheme.Apply(more, new TabsTheme.Look("#1A5231", "#2F7A4A", "#CFF5DC", "#205E3A", false), height: 48);
-        more.CornerRadius = new CornerRadius(0, 10, 10, 0);
-        more.BorderThickness = new Thickness(0, 1, 1, 1);
+        more.CornerRadius = new CornerRadius(0);
+        more.BorderThickness = new Thickness(0);
         ToolTipService.SetToolTip(more, "Launch options");
         more.Click += (s, e) => ShowLaunchMenu(more);
 
@@ -114,6 +116,15 @@ internal sealed partial class DetailLayoutHost
         split.Children.Add(launch);
         Grid.SetColumn(more, 1);
         split.Children.Add(more);
+        var splitFrame = new Border
+        {
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(1),
+            BorderBrush = TabsTheme.B("#2F7A4A"),
+            Background = TabsTheme.B("#1D5C36"),
+            Child = split,
+        };
+        launch.Height = more.Height = 46; // 48 with the frame's border
 
         _hToggles = new Grid { ColumnSpacing = 8 };
         _hToggles.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -125,7 +136,7 @@ internal sealed partial class DetailLayoutHost
         _hToggles.Children.Add(_hRes);
 
         var right = new StackPanel { Spacing = 10, MinWidth = 260, VerticalAlignment = VerticalAlignment.Top };
-        right.Children.Add(split);
+        right.Children.Add(splitFrame);
         right.Children.Add(_hToggles);
 
         var grid = new Grid { ColumnSpacing = 20 };

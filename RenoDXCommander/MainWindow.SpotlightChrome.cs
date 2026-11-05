@@ -145,9 +145,9 @@ public sealed partial class MainWindow
                 Grid.SetRow(_countsRow, 2);
                 _countsRow.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _countsRow.VerticalAlignment = VerticalAlignment.Stretch;
-                // Re-apply the sidebar paddings of the current layout
-                ShowTabsSidebar(_tabsChromeOn);
-                if (_tabsChromeOn) RefreshSidebar();
+                // Re-apply the sidebar paddings
+                ShowTabsSidebar();
+                RefreshSidebar();
                 GameList.Visibility = Visibility.Visible;
                 if (_shelf != null) _shelf.Visibility = Visibility.Collapsed;
                 if (GameList.SelectedItem != null) GameList.ScrollIntoView(GameList.SelectedItem);
