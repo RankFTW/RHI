@@ -82,6 +82,22 @@ public class ControllerPollerTests
     }
 
     [Fact]
+    public void HeldTrigger_Repeats_OtherButtonsDont()
+    {
+        var p = new ControllerPoller();
+        p.Reset(0, 0, 0);
+        ushort rt = ControllerPoller.WithTriggers(0, 0, 255);
+        Assert.Equal(new[] { PadAction.PageForward }, Poll(p, rt, 0));
+        Assert.Empty(Poll(p, rt, ControllerPoller.TriggerRepeatDelayMs - 1));
+        Assert.Equal(new[] { PadAction.PageForward }, Poll(p, rt, ControllerPoller.TriggerRepeatDelayMs));
+        Assert.Equal(new[] { PadAction.PageForward },
+            Poll(p, rt, ControllerPoller.TriggerRepeatDelayMs + ControllerPoller.TriggerRepeatIntervalMs));
+        Poll(p, 0, 5000);
+        Assert.Equal(new[] { PadAction.Select }, Poll(p, ControllerPoller.A, 5001));
+        Assert.Empty(Poll(p, ControllerPoller.A, 9000)); // A never repeats
+    }
+
+    [Fact]
     public void RightStick_Scrolls()
     {
         var p = new ControllerPoller();

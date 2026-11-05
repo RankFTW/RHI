@@ -191,3 +191,4 @@ Low priority items with no current demand.
 - **Accessibility audit** — Screen reader support for code-behind UI elements.
 - **Plugin system** — Third-party components register without app changes.
 - **Telemetry** — Usage analytics. Privacy-sensitive, opt-in only.
+- **Controller: Steam Input doubling (maybe)** — with Steam running, Steam Input's desktop layout can turn a PlayStation pad (or an Xbox pad with Steam Input on) into mouse + keyboard, so RHI may get each press twice (XInput + Steam's fake Enter / mouse). Test with Steam open; if it doubles, note it in the Controller support tooltip or ignore keyboard / mouse input while the controller is in use.

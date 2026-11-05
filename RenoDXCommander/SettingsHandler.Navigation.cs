@@ -489,6 +489,20 @@ public partial class SettingsHandler
         catch (System.Runtime.InteropServices.COMException) { return null; }
     }
 
+    /// <summary>
+    /// Controller LB / RB: jumps to the previous / next section (no animation, so focusing its first
+    /// control afterwards doesn't fight the scroll). Returns the section's panel, or null.
+    /// </summary>
+    internal FrameworkElement? PadJumpSection(int delta)
+    {
+        var visible = _sections.Where(s => s.Panel.Visibility == Visibility.Visible).ToList();
+        if (visible.Count == 0) return null;
+        int index = visible.FindIndex(s => string.Equals(s.Key, _highlightedSectionKey, StringComparison.Ordinal));
+        int next = Math.Clamp(index < 0 ? 0 : index + delta, 0, visible.Count - 1);
+        JumpToSection(visible[next].Key, animate: false, saveAsLast: true);
+        return visible[next].Panel;
+    }
+
     private void JumpToSection(string key, bool animate, bool saveAsLast)
     {
         var sv = _settingsScroll;

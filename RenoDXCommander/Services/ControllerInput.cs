@@ -44,6 +44,11 @@ public sealed class ControllerPoller
     internal const long RepeatDelayMs = 400;
     internal const long RepeatIntervalMs = 80;
     internal const double ScrollPixelsPerTick = 28;
+    // Held triggers keep jumping (10 games at a time), a little slower than a held direction
+    internal const long TriggerRepeatDelayMs = 350;
+    internal const long TriggerRepeatIntervalMs = 110;
+    private const ushort RepeatingButtons = LeftTrigger | RightTrigger;
+    private readonly Dictionary<ushort, long> _buttonRepeatAt = new();
 
     private static readonly (ushort Bit, PadAction Action)[] Presses =
     {
@@ -77,6 +82,7 @@ public sealed class ControllerPoller
     {
         _prev = buttons;
         _blocked = buttons;
+        _buttonRepeatAt.Clear();
         _dir = Direction(buttons, lx, ly);
         _dirBlocked = _dir != null;
         _nextRepeat = long.MaxValue;
@@ -91,7 +97,17 @@ public sealed class ControllerPoller
         foreach (var (bit, action) in Presses)
         {
             bool down = (buttons & bit) != 0, wasDown = (_prev & bit) != 0;
-            if (down && !wasDown && (_blocked & bit) == 0) actions.Add(action);
+            if (!down || (_blocked & bit) != 0) continue;
+            if (!wasDown)
+            {
+                actions.Add(action);
+                if ((bit & RepeatingButtons) != 0) _buttonRepeatAt[bit] = nowMs + TriggerRepeatDelayMs;
+            }
+            else if ((bit & RepeatingButtons) != 0 && _buttonRepeatAt.TryGetValue(bit, out var at) && nowMs >= at)
+            {
+                actions.Add(action);
+                _buttonRepeatAt[bit] = nowMs + TriggerRepeatIntervalMs;
+            }
         }
         _prev = buttons;
 

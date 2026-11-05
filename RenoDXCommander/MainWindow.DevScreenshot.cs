@@ -20,8 +20,17 @@ public sealed partial class MainWindow
     private bool _devScreenshotBusy;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _padScriptTimer;
 
+    /// <summary>Dev: the first text inside an element (a button's label), for the pad script's log.</summary>
+    private static string FirstText(DependencyObject root)
+    {
+        if (root is TextBlock tb && !string.IsNullOrWhiteSpace(tb.Text)) return tb.Text;
+        for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            if (FirstText(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i)) is { Length: > 0 } t) return t;
+        return "";
+    }
+
     /// <summary>Dev: runs controller actions in order (after <paramref name="startMs"/>), logging where focus lands.</summary>
-    private void RunPadScript(List<PadAction> actions, int startMs)
+    private void RunPadScript(List<string> actions, int startMs)
     {
         if (actions.Count == 0) return;
         int next = 0;
@@ -31,19 +40,28 @@ public sealed partial class MainWindow
         {
             timer.Interval = TimeSpan.FromMilliseconds(600);
             if (next >= actions.Count) { timer.Stop(); return; }
+            WatchForNewPopup(); // as the controller's poll does between presses
             var action = actions[next++];
-            HandlePadAction(action);
+            // ScrollDown / ScrollUp: the right stick (one big flick); anything else is a PadAction
+            if (action.Equals("ScrollDown", StringComparison.OrdinalIgnoreCase)) PadScroll(400);
+            else if (action.Equals("ScrollUp", StringComparison.OrdinalIgnoreCase)) PadScroll(-400);
+            else if (Enum.TryParse<PadAction>(action, true, out var pa)) HandlePadAction(pa);
+            else return;
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
                 var f = Content?.XamlRoot is { } xr ? FocusManager.GetFocusedElement(xr) : null;
                 string what = f switch
                 {
                     ContentControl { Content: string text } cc => $"{cc.GetType().Name} '{text}'",
-                    FrameworkElement fe => $"{fe.GetType().Name} '{fe.Name}' tag={fe.Tag} tip={ToolTipService.GetToolTip(fe)}",
+                    FrameworkElement fe => $"{fe.GetType().Name} '{fe.Name}' tag={fe.Tag} tip={ToolTipService.GetToolTip(fe)} text='{FirstText(fe)}'",
                     null => "nothing",
                     _ => f.GetType().Name,
                 };
-                _crashReporter.Log($"[MainWindow.DevScreenshot] pad {action} -> focus: {what}");
+                string scrolled = "";
+                if (action.StartsWith("Scroll", StringComparison.OrdinalIgnoreCase) && Content?.XamlRoot is { } sr
+                    && TopPopup(sr, f as DependencyObject) is { } sp && PopupScroller(sp, f as DependencyObject) is { } psv)
+                    scrolled = $" (popup scroll {psv.VerticalOffset:0} of {psv.ScrollableHeight:0})";
+                _crashReporter.Log($"[MainWindow.DevScreenshot] pad {action} -> focus: {what}{scrolled}");
             });
         };
         timer.Start();
@@ -117,9 +135,7 @@ public sealed partial class MainWindow
         // pad=Down,Select,Back: controller actions, one every 600 ms, before the screenshot
         if (Opt("pad") is { Length: > 0 } pad)
         {
-            var actions = pad.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(t => Enum.TryParse<PadAction>(t, true, out var a) ? a : (PadAction?)null)
-                .Where(a => a != null).Select(a => a!.Value).ToList();
+            var actions = pad.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
             RunPadScript(actions, waitMs);
             waitMs += actions.Count * 600 + 800;
         }

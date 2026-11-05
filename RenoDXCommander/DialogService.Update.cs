@@ -263,7 +263,7 @@ public partial class DialogService
         // the Markdown small (the file has dozens of versions). The search box above narrows the
         // list to versions that mention the text and shows every matching line on the right.
         var navList = new StackPanel { Spacing = 2 };
-        var navItems = new List<(Border Item, TextBlock Label, TextBlock Count)>();
+        var navItems = new List<(Border Item, TextBlock Label, TextBlock Count, Button Button)>();
         int selected = -1;
 
         void Highlight(int index)
@@ -272,6 +272,8 @@ public partial class DialogService
             for (int i = 0; i < navItems.Count; i++)
             {
                 bool on = i == index;
+                // A controller starts on the selected version when the window opens (MainWindow.Controller.Popups)
+                navItems[i].Button.Tag = on ? "PadStart" : null;
                 navItems[i].Item.Background = on ? TabsTheme.B("#1A2336") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 navItems[i].Item.BorderBrush = on ? TabsTheme.B("#2A3D63") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 navItems[i].Label.Foreground = TabsTheme.B(on ? "#A9C6FF" : TabsTheme.TextSecondary);
@@ -313,7 +315,7 @@ public partial class DialogService
             query = query.Trim();
             if (query.Length == 0)
             {
-                foreach (var n in navItems) { n.Item.Visibility = Visibility.Visible; n.Count.Text = ""; }
+                foreach (var n in navItems) { n.Button.Visibility = Visibility.Visible; n.Count.Text = ""; }
                 ShowVersion(selected >= 0 ? selected : 0);
                 return;
             }
@@ -323,7 +325,7 @@ public partial class DialogService
             for (int i = 0; i < sections.Count; i++)
             {
                 var lines = MatchingLines(sections[i].Body, query);
-                navItems[i].Item.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                navItems[i].Button.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 int hits = lines.Count(l => l.StartsWith("- "));
                 navItems[i].Count.Text = hits > 0 ? hits.ToString() : "";
                 if (lines.Count == 0) continue;
@@ -375,9 +377,29 @@ public partial class DialogService
             TabsTheme.UseHandCursor(item);
             item.PointerEntered += (s, e) => { if (idx != selected) item.Background = TabsTheme.B(TabsTheme.RowHover); };
             item.PointerExited += (s, e) => { if (idx != selected) item.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); };
-            item.Tapped += (s, e) => { if (idx != selected) ShowVersion(idx); };
-            navItems.Add((item, label, count));
-            navList.Children.Add(item);
+            // A see-through Button around the row so a controller (or the keyboard) can focus it;
+            // moving onto a version with either shows it, a click shows it as before
+            var button = new Button
+            {
+                Content = item,
+                Padding = new Thickness(0),
+                BorderThickness = new Thickness(0),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                CornerRadius = item.CornerRadius,
+            };
+            var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            foreach (var key in new[] { "ButtonBackgroundPointerOver", "ButtonBackgroundPressed",
+                                        "ButtonBorderBrushPointerOver", "ButtonBorderBrushPressed" })
+                TabsTheme.SetResource(button.Resources, key, clear);
+            button.Click += (s, e) => { if (idx != selected) ShowVersion(idx); };
+            button.GotFocus += (s, e) =>
+            {
+                if (button.FocusState == FocusState.Keyboard && idx != selected) ShowVersion(idx);
+            };
+            navItems.Add((item, label, count, button));
+            navList.Children.Add(button);
         }
 
         var navHeading = TabsTheme.SectionHeading("Versions");

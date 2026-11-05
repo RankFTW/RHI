@@ -2,15 +2,15 @@
 // An Xbox-style controller (XInput, Services/ControllerInput.cs) is read only while RHI is the active
 // window, so it never acts while you're in a game: launch one and RHI goes quiet by itself. Buttons
 // held when RHI becomes active again are ignored until released.
-//   D-pad / left stick  move focus        A  select           B  back (closes menus, the panel, Settings)
-//   Y  Launch           X  game menu      LB / RB  previous / next game
+//   D-pad / left stick  move              A  select            B  back (closes menus, the panel, Settings)
+//   Y  Launch           X  game menu      LB / RB  previous / next game (in the panel: section;
+//   LT / RT  10 games (hold to keep going)          on Settings: section)
+//   Left stick click  All / Installed / Favourites  Right stick click  back to the covers
 //   Menu  Settings      View  Filters     Right stick  scroll
-// Focus moves with WinUI's own XY search (FocusManager.FindNextElement), and is set as keyboard focus
-// so the focus outline shows. Menus, dropdowns and dialogs (popups) get real Escape / Enter / arrow
-// key presses instead, sent to RHI's own window and only while it's the active window.
+// Moving goes by rows (MainWindow.Controller.Rows.cs); menus, dropdowns and dialogs are worked through
+// their controls (MainWindow.Controller.Popups.cs); hints and messages: MainWindow.Controller.Hints.cs.
 // Setting: Settings › General › Windows and Admin Mode › Controller support (default on).
 
-using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
@@ -42,6 +42,15 @@ public sealed partial class MainWindow
     private ScrollViewer? _shelfScroller;
     private bool _shelfBringHooked;
     private long _shelfPadFocusUntil;
+
+    // Launching with Y: a second press soon after is ignored, and coming back to RHI focuses the cover
+    private string? _padLaunchedGame;
+    private long _padLaunchedAt;
+    private bool _padReturnToCover;
+    private const long PadRelaunchGuardMs = 8000;
+
+    private static readonly SolidColorBrush PadFocusBrush = TabsTheme.B(TabsTheme.Accent);
+    private static readonly SolidColorBrush PadClearBrush = new(Microsoft.UI.Colors.Transparent);
 
     /// <summary>Starts or stops reading the controller: Spotlight layout and the setting on.</summary>
     internal void UpdateControllerTimer()
@@ -120,6 +129,7 @@ public sealed partial class MainWindow
                 _padActive = true;
                 _pad.Reset(buttons, g.ThumbLX, g.ThumbLY);
                 SetPadInterval(PadFastMs);
+                if (_padReturnToCover) ReturnToCoverAfterGame();
                 return;
             }
             SetPadInterval(PadFastMs);
@@ -127,6 +137,7 @@ public sealed partial class MainWindow
             var actions = _pad.Update(buttons, g.ThumbLX, g.ThumbLY, g.ThumbRY, now, out var scroll);
             foreach (var a in actions) HandlePadAction(a);
             if (scroll != 0) PadScroll(scroll);
+            WatchForNewPopup();
         }
         catch (DllNotFoundException ex)
         {
@@ -158,6 +169,7 @@ public sealed partial class MainWindow
         var popup = TopPopup(xamlRoot, focused);
         var layout = _detailPanelBuilder.Layout;
         bool onGames = ViewModel.CurrentPage == AppPage.GameView;
+        bool onSettings = ViewModel.CurrentPage == AppPage.Settings;
 
         switch (action)
         {
@@ -173,11 +185,11 @@ public sealed partial class MainWindow
                 break;
 
             case PadAction.Back:
-                PadBack(popup, xamlRoot);
+                PadBack(focused, popup, xamlRoot);
                 break;
 
             case PadAction.Launch:
-                if (popup == null && onGames) layout.PadLaunch();
+                if (popup == null && onGames) PadLaunch();
                 break;
 
             case PadAction.GameMenu:
@@ -186,12 +198,26 @@ public sealed partial class MainWindow
 
             case PadAction.PrevGame:
             case PadAction.NextGame:
-                if (popup == null && onGames) StepGame(action == PadAction.NextGame ? 1 : -1, focused);
+                if (popup != null) break;
+                int step = action == PadAction.NextGame ? 1 : -1;
+                if (onSettings)
+                {
+                    // Settings: previous / next section, focus its first setting
+                    if (_settingsHandler.PadJumpSection(step) is { } section)
+                        AfterLayout(() => { if (FocusManager.FindFirstFocusableElement(section) is { } first) PadFocus(first); });
+                }
+                else if (onGames && layout.IsPanelOpen)
+                {
+                    // In the side panel: previous / next section
+                    if (layout.StepPanel(step))
+                        AfterLayout(() => { if (layout.FirstInPanel() is { } first) PadFocus(first); });
+                }
+                else if (onGames) StepGame(step, focused);
                 break;
 
             case PadAction.PageBack:
             case PadAction.PageForward:
-                // A page of games at a time, for big libraries
+                // A page of games at a time, for big libraries (hold to keep going)
                 if (popup == null && onGames) StepGame(action == PadAction.PageForward ? PadPageSize : -PadPageSize, focused);
                 break;
 
@@ -209,7 +235,7 @@ public sealed partial class MainWindow
 
             case PadAction.Settings:
                 if (popup != null) break;
-                if (ViewModel.CurrentPage == AppPage.Settings) ViewModel.NavigateToGameView();
+                if (onSettings) ViewModel.NavigateToGameView();
                 else SettingsButton_Click(SettingsBtn, new RoutedEventArgs());
                 AfterLayout(() => FocusHome(xamlRoot));
                 break;
@@ -226,6 +252,9 @@ public sealed partial class MainWindow
                 });
                 break;
         }
+
+        // The hints follow focus; let focus and popups settle first
+        AfterLayout(() => AfterLayout(UpdatePadHints));
     }
 
     private void PadMove(PadAction action, DependencyObject? focused, Popup? popup, XamlRoot xamlRoot)
@@ -241,14 +270,7 @@ public sealed partial class MainWindow
 
         if (popup != null)
         {
-            // Menus and dropdown lists move with the arrow keys; anything else in a popup (a dialog) by XY
-            if (focused is SelectorItem or MenuFlyoutItemBase) { SendPadKey(ArrowKey(dir)); return; }
-            if (popup.Child is UIElement child && (focused == null || !IsWithin(focused, child)))
-            {
-                if (FocusManager.FindFirstFocusableElement(child) is { } first) PadFocus(first);
-                return;
-            }
-            PadFocusNext(dir, popup.Child);
+            PopupMove(dir, focused, popup);
             return;
         }
 
@@ -267,7 +289,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        // The slide-in panel keeps focus inside it
+        // The slide-in panel keeps focus inside it, row by row
         if (layout.IsPanelOpen && layout.PanelSheet is { } sheet)
         {
             if (!IsWithin(focused, sheet))
@@ -275,12 +297,14 @@ public sealed partial class MainWindow
                 if (layout.FirstInPanel() is { } first) PadFocus(first);
                 return;
             }
-            PadFocusNext(dir, sheet);
+            if (!PadRowMove(dir, focused, sheet, includeShelf: false, FindVisibleScrollViewer(sheet)))
+                PadFocusNext(dir, sheet);
             return;
         }
 
-        if (ViewModel.CurrentPage == AppPage.GameView && _shelf != null)
+        if (ViewModel.CurrentPage == AppPage.GameView && _shelf != null && Content is UIElement root)
         {
+            // On the covers: left / right change the game, Down goes to Launch
             if (IsWithin(focused, _shelf))
             {
                 switch (dir)
@@ -288,27 +312,11 @@ public sealed partial class MainWindow
                     case FocusNavigationDirection.Left: StepGame(-1, focused); return;
                     case FocusNavigationDirection.Right: StepGame(1, focused); return;
                     case FocusNavigationDirection.Down:
-                        if (layout.LaunchButton is { } launch) { PadFocus(launch); return; }
-                        break;
-                    case FocusNavigationDirection.Up:
-                        // The filter tabs (All / Installed / …), whichever cover is selected
-                        if (SelectedSegment() is { } seg) { PadFocus(seg); return; }
+                        if (layout.LaunchButton is { IsLoaded: true } launch) { PadFocus(launch); return; }
                         break;
                 }
             }
-            else if (dir == FocusNavigationDirection.Down && !(_filtersOpen && _chipsRow is { Visibility: Visibility.Visible })
-                     && ((_searchRowStack != null && IsWithin(focused, _searchRowStack)) || (_countsRow != null && IsWithin(focused, _countsRow))))
-            {
-                // From the search / filter row straight back to the selected cover, not the nearest one
-                FocusShelf();
-                return;
-            }
-            else if (dir == FocusNavigationDirection.Up && layout.LaunchButton is { } launch
-                     && (ReferenceEquals(focused, launch) || IsBesideLaunch(focused, launch)))
-            {
-                FocusShelf();
-                return;
-            }
+            if (PadRowMove(dir, focused, root, includeShelf: true, DetailScrollViewer)) return;
         }
 
         PadFocusNext(dir, xamlRoot.Content, skip: _footer);
@@ -328,26 +336,33 @@ public sealed partial class MainWindow
         return first;
     }
 
-    /// <summary>The Launch split button's other half (the menu chevron) also goes up to the shelf.</summary>
-    private static bool IsBesideLaunch(DependencyObject focused, Button launch) =>
-        focused is Button b && VisualTreeHelper.GetParent(b) is Grid g && ReferenceEquals(VisualTreeHelper.GetParent(launch), g);
-
     private void PadSelect(DependencyObject? focused, Popup? popup, XamlRoot xamlRoot)
     {
         var layout = _detailPanelBuilder.Layout;
         if (focused == null || (popup == null && _footer != null && IsWithin(focused, _footer))) { FocusHome(xamlRoot); return; }
 
-        if (popup != null && focused is SelectorItem or MenuFlyoutItemBase)
+        // A popup opened by itself (What's New at startup) while focus is still behind it: go into it, don't press what's behind
+        if (popup?.Child is UIElement popupChild && !IsWithin(focused, popupChild))
         {
-            SendPadKey(VkReturn);
+            if (FirstInPopup(popupChild) is { } first) PadFocus(first);
             return;
         }
+        if (popup != null && PopupSelect(focused)) return;
 
-        // A cover in the shelf: go to its Launch button
-        if (popup == null && _shelf != null && IsWithin(focused, _shelf))
+        if (popup == null)
         {
-            if (layout.LaunchButton is { } launch) PadFocus(launch);
-            return;
+            // A cover: go to its Launch button
+            if (_shelf != null && IsWithin(focused, _shelf))
+            {
+                if (layout.LaunchButton is { } launch) PadFocus(launch);
+                return;
+            }
+            // The Launch button itself: launch with the controller's double-press guard and message
+            if (ReferenceEquals(focused, layout.LaunchButton))
+            {
+                PadLaunch();
+                return;
+            }
         }
 
         bool panelWasOpen = layout.IsPanelOpen, cogWasOpen = layout.IsCogInPanel;
@@ -357,8 +372,7 @@ public sealed partial class MainWindow
         if (popup == null && _segmentHost != null && focused is Button segBtn && VisualTreeHelper.GetParent(segBtn) is Grid segGrid && IsWithin(focused, _segmentHost))
         {
             int segIndex = segGrid.Children.IndexOf(segBtn);
-            var segPeer = FrameworkElementAutomationPeer.FromElement(segBtn) ?? FrameworkElementAutomationPeer.CreatePeerForElement(segBtn);
-            if (segPeer?.GetPattern(PatternInterface.Invoke) is IInvokeProvider segInvoke) segInvoke.Invoke();
+            Press(segBtn);
             AfterLayout(() =>
             {
                 if ((_segmentHost.Child as Border)?.Child is Grid g && segIndex >= 0 && segIndex < g.Children.Count)
@@ -371,34 +385,27 @@ public sealed partial class MainWindow
         {
             case ComboBox combo:
                 combo.IsDropDownOpen = true;
-                break;
+                AfterLayout(() => FocusOpenCombo(combo));
+                return;
             case ToggleSwitch toggle:
                 toggle.IsOn = !toggle.IsOn;
                 break;
             case TextBox:
                 break; // typing needs a keyboard
             case UIElement element:
-                var peer = FrameworkElementAutomationPeer.FromElement(element)
-                           ?? FrameworkElementAutomationPeer.CreatePeerForElement(element);
-                if (peer?.GetPattern(PatternInterface.Invoke) is IInvokeProvider invoke) invoke.Invoke();
-                else if (peer?.GetPattern(PatternInterface.Toggle) is IToggleProvider toggleP) toggleP.Toggle();
-                else if (peer?.GetPattern(PatternInterface.ExpandCollapse) is IExpandCollapseProvider expand) expand.Expand();
-                else SendPadKey(VkReturn);
-                break;
-            default:
-                SendPadKey(VkReturn); // a Hyperlink in text
+                Press(element);
                 break;
         }
 
-        // Something opened in the panel (a section from a tile, or a cog's settings): focus its first control
+        // Something opened: a popup (menu, dialog) or the panel (a section from a tile, a cog's settings): focus its first control
         AfterLayout(() =>
         {
             if (TopPopup(xamlRoot, null) is { } opened)
             {
-                if (focused is ComboBox) return; // an open dropdown puts focus on the current choice itself
                 var now = FocusManager.GetFocusedElement(xamlRoot) as DependencyObject;
-                if ((now == null || opened.Child is not UIElement c || !IsWithin(now, c))
-                    && opened.Child is UIElement child && FocusManager.FindFirstFocusableElement(child) is { } first)
+                if (opened.Child is UIElement child
+                    && (now == null || !IsWithin(now, child) || (now is TextBox && FindPadStart(child) != null))
+                    && FirstInPopup(child) is { } first)
                     PadFocus(first);
                 return;
             }
@@ -407,19 +414,22 @@ public sealed partial class MainWindow
         });
     }
 
-    private void PadBack(Popup? popup, XamlRoot xamlRoot)
+    /// <summary>Presses a control as a click would (button, toggle, expander), through its automation peer.</summary>
+    private static void Press(UIElement element)
+    {
+        var peer = FrameworkElementAutomationPeer.FromElement(element) ?? FrameworkElementAutomationPeer.CreatePeerForElement(element);
+        if (peer?.GetPattern(PatternInterface.Invoke) is IInvokeProvider invoke) invoke.Invoke();
+        else if (peer?.GetPattern(PatternInterface.Toggle) is IToggleProvider toggle) toggle.Toggle();
+        else if (peer?.GetPattern(PatternInterface.ExpandCollapse) is IExpandCollapseProvider expand) expand.Expand();
+        else CrashReporter.Log($"[MainWindow.Controller] A: nothing to press on {element.GetType().Name}");
+    }
+
+    private void PadBack(DependencyObject? focused, Popup? popup, XamlRoot xamlRoot)
     {
         var layout = _detailPanelBuilder.Layout;
         if (popup != null)
         {
-            // A menu when RHI isn't the active window (the dev pad script): keys can't be sent, so close it directly
-            if (NativeInterop.GetForegroundWindow() != _padHwnd || _padHwnd == IntPtr.Zero)
-            {
-                if (popup.Child is MenuFlyoutPresenter) { popup.IsOpen = false; return; }
-                if ((popup.Child as ContentDialog ?? FindChild<ContentDialog>(popup.Child)) is { } dialog) { dialog.Hide(); return; }
-            }
-            // Escape, as on the keyboard: a dropdown closes without changing the setting
-            SendPadKey(VkEscape);
+            PopupBack(focused, popup, xamlRoot);
             return;
         }
 
@@ -447,6 +457,80 @@ public sealed partial class MainWindow
         FocusShelf();
     }
 
+    private Popup? _padLastPopup;
+
+    /// <summary>
+    /// While the controller is in use (hint bar showing): when a dialog appears (it opens a moment
+    /// after the press that asked for it, or by itself), move focus into it, to its "PadStart"
+    /// control when it has one rather than a search box.
+    /// </summary>
+    private void WatchForNewPopup()
+    {
+        if (_padHints?.Visibility != Visibility.Visible || Content?.XamlRoot is not { } xamlRoot) return;
+        var focused = FocusManager.GetFocusedElement(xamlRoot) as DependencyObject;
+        var popup = TopPopup(xamlRoot, focused);
+        if (ReferenceEquals(popup, _padLastPopup)) return;
+        _padLastPopup = popup;
+        if (popup?.Child is not UIElement child || popup.Child is MenuFlyoutPresenter) return; // menus focus their first item themselves
+        AfterLayout(() =>
+        {
+            var now = FocusManager.GetFocusedElement(xamlRoot) as DependencyObject;
+            bool outside = now == null || !IsWithin(now, child);
+            if ((outside || (now is TextBox && FindPadStart(child) != null)) && FirstInPopup(child) is { } first)
+                PadFocus(first);
+            AfterLayout(UpdatePadHints);
+        });
+    }
+
+    // ── Launch ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Y (or A on Launch): launches the selected game with a message, and ignores a second press for
+    /// the same game for a few seconds (or while it's running). When RHI is active again afterwards,
+    /// focus goes back to the game's cover.
+    /// </summary>
+    private void PadLaunch()
+    {
+        var layout = _detailPanelBuilder.Layout;
+        if (ViewModel.SelectedGame is not { } game) return;
+        string name = game.GameName;
+        if (game.IsRunning)
+        {
+            ShowPadToast($"{name} is already running");
+            return;
+        }
+        long now = Environment.TickCount64;
+        if (string.Equals(_padLaunchedGame, name, StringComparison.OrdinalIgnoreCase) && now - _padLaunchedAt < PadRelaunchGuardMs)
+        {
+            ShowPadToast($"Already launching {name}…");
+            return;
+        }
+        if (layout.LaunchButton is not { IsEnabled: true, IsLoaded: true })
+        {
+            ShowPadToast($"{name} can't be launched from here");
+            return;
+        }
+        _padLaunchedGame = name;
+        _padLaunchedAt = now;
+        _padReturnToCover = true;
+        CrashReporter.Log($"[MainWindow.PadLaunch] '{name}'");
+        ShowPadToast($"Launching {name}…", 5000);
+        layout.PadLaunch();
+    }
+
+    /// <summary>Back in RHI after launching: close the panel and focus the game's cover.</summary>
+    private void ReturnToCoverAfterGame()
+    {
+        _padReturnToCover = false;
+        if (ViewModel.CurrentPage != AppPage.GameView) return;
+        if (Content?.XamlRoot is { } root && TopPopup(root, null) != null) return;
+        var layout = _detailPanelBuilder.Layout;
+        if (layout.IsPanelOpen) layout.ClosePanel();
+        AfterLayout(FocusShelf);
+    }
+
+    // ── Games ─────────────────────────────────────────────────────────────────
+
     /// <summary>Left stick click: All → Installed → Favourites → All (from Hidden: All).</summary>
     private void CycleMainFilter(DependencyObject? focused)
     {
@@ -461,7 +545,7 @@ public sealed partial class MainWindow
         if (inShelf) AfterLayout(FocusShelf);
     }
 
-    /// <summary>LB / RB (and left / right on the shelf): the previous or next game.</summary>
+    /// <summary>LB / RB, LT / RT (and left / right on the shelf): another game.</summary>
     private void StepGame(int delta, DependencyObject? focused)
     {
         if (_shelf == null || ViewModel.DisplayedGames.Count == 0) return;
@@ -515,7 +599,10 @@ public sealed partial class MainWindow
     {
         ScrollViewer? sv;
         var layout = _detailPanelBuilder.Layout;
-        if (ViewModel.CurrentPage == AppPage.Settings) sv = FindChild<ScrollViewer>(SettingsPanel);
+        var xamlRoot = Content?.XamlRoot;
+        var focused = xamlRoot == null ? null : FocusManager.GetFocusedElement(xamlRoot) as DependencyObject;
+        if (xamlRoot != null && TopPopup(xamlRoot, focused) is { } popup) sv = PopupScroller(popup, focused);
+        else if (ViewModel.CurrentPage == AppPage.Settings) sv = FindChild<ScrollViewer>(SettingsPanel);
         else if (layout.IsPanelOpen && layout.PanelSheet != null)
             sv = FindVisibleScrollViewer(layout.PanelSheet);
         else sv = DetailScrollViewer;
@@ -575,10 +662,23 @@ public sealed partial class MainWindow
             PadFocus(next);
     }
 
-    /// <summary>Keyboard focus, so the focus outline shows (and scroll areas bring it into view).</summary>
+    /// <summary>
+    /// Keyboard focus, so the focus outline shows (and scroll areas bring it into view). The outline is
+    /// RHI's blue, matching the selected cover's ring, instead of Windows' white and black one.
+    /// </summary>
     private static void PadFocus(DependencyObject target)
     {
-        try { _ = FocusManager.TryFocusAsync(target, FocusState.Keyboard); }
+        try
+        {
+            if (target is FrameworkElement fe && !ReferenceEquals(fe.FocusVisualPrimaryBrush, PadFocusBrush))
+            {
+                fe.FocusVisualPrimaryBrush = PadFocusBrush;
+                fe.FocusVisualPrimaryThickness = new Thickness(2);
+                fe.FocusVisualSecondaryBrush = PadClearBrush;
+                fe.FocusVisualSecondaryThickness = new Thickness(0);
+            }
+            _ = FocusManager.TryFocusAsync(target, FocusState.Keyboard);
+        }
         catch (Exception ex) { CrashReporter.Log($"[MainWindow.PadFocus] {ex.Message}"); }
     }
 
@@ -621,127 +721,4 @@ public sealed partial class MainWindow
         }
         return null;
     }
-
-    // ── Button hints ──────────────────────────────────────────────────────────
-
-    /// <summary>The "A Select · B Back …" bar: shown once the controller is used, hidden when the mouse moves.</summary>
-    private void ShowPadHints(bool show)
-    {
-        try
-        {
-            if (!show)
-            {
-                if (_padHints != null) _padHints.Visibility = Visibility.Collapsed;
-                return;
-            }
-            if (_padHints == null)
-            {
-                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 18 };
-                foreach (var (key, label) in new[] { ("A", "Select"), ("B", "Back"), ("Y", "Launch"), ("X", "Game menu"),
-                                                     ("LB / RB", "Game"), ("LT / RT", "Skip 10"), ("LS", "Filter"),
-                                                     ("RS", "Home"), ("View", "Filters"), ("Menu", "Settings") })
-                {
-                    var pair = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
-                    pair.Children.Add(new Border
-                    {
-                        Background = TabsTheme.B("#1E2738"),
-                        BorderBrush = TabsTheme.B("#33405A"),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(5),
-                        Padding = new Thickness(7, 1, 7, 2),
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Child = new TextBlock { Text = key, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = TabsTheme.B(TabsTheme.TextPrimary) },
-                    });
-                    pair.Children.Add(new TextBlock { Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = TabsTheme.B(TabsTheme.TextSecondary) });
-                    row.Children.Add(pair);
-                }
-                _padHints = new Border
-                {
-                    Background = TabsTheme.B("#E6101520"),
-                    BorderBrush = TabsTheme.B(TabsTheme.CardBorder),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(10),
-                    Padding = new Thickness(16, 8, 16, 8),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Bottom,
-                    Margin = new Thickness(0, 0, 0, 14),
-                    IsHitTestVisible = false,
-                    Child = row,
-                    Visibility = Visibility.Collapsed,
-                };
-                Canvas.SetZIndex(_padHints, 50);
-                Grid.SetColumnSpan(_padHints, Math.Max(1, GameViewPanel.ColumnDefinitions.Count));
-                Grid.SetRowSpan(_padHints, Math.Max(1, GameViewPanel.RowDefinitions.Count));
-                GameViewPanel.Children.Add(_padHints);
-            }
-            if (!_padPointerHooked && Content is UIElement root)
-            {
-                _padPointerHooked = true;
-                root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((s, e) =>
-                {
-                    if (_padHints?.Visibility == Visibility.Visible
-                        && e.Pointer.PointerDeviceType == Microsoft.UI.Input.PointerDeviceType.Mouse)
-                        _padHints.Visibility = Visibility.Collapsed;
-                }), handledEventsToo: true);
-            }
-            _padHints.Visibility = ViewModel.CurrentPage == AppPage.GameView ? Visibility.Visible : Visibility.Collapsed;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.ShowPadHints] {ex.Message}");
-        }
-    }
-
-    // ── Key presses for popups ────────────────────────────────────────────────
-
-    private const ushort VkReturn = 0x0D, VkEscape = 0x1B, VkLeft = 0x25, VkUp = 0x26, VkRight = 0x27, VkDown = 0x28;
-
-    private static ushort ArrowKey(FocusNavigationDirection dir) => dir switch
-    {
-        FocusNavigationDirection.Up => VkUp,
-        FocusNavigationDirection.Down => VkDown,
-        FocusNavigationDirection.Left => VkLeft,
-        _ => VkRight,
-    };
-
-    /// <summary>Presses a key in RHI's window. Only while RHI is the active window, so it can't type into anything else.</summary>
-    private void SendPadKey(ushort vk)
-    {
-        if (NativeInterop.GetForegroundWindow() != _padHwnd || _padHwnd == IntPtr.Zero)
-        {
-            CrashReporter.Log($"[MainWindow.SendPadKey] RHI isn't the active window, key 0x{vk:X2} not sent");
-            return;
-        }
-        uint flags = vk is VkLeft or VkUp or VkRight or VkDown ? KeyeventfExtendedKey : 0;
-        var inputs = new[]
-        {
-            new PadInput { Type = InputKeyboard, Ki = new KeybdInput { Vk = vk, Flags = flags } },
-            new PadInput { Type = InputKeyboard, Ki = new KeybdInput { Vk = vk, Flags = flags | KeyeventfKeyUp } },
-        };
-        if (SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<PadInput>()) != inputs.Length)
-            CrashReporter.Log($"[MainWindow.SendPadKey] SendInput failed ({Marshal.GetLastWin32Error()})");
-    }
-
-    private const uint InputKeyboard = 1, KeyeventfExtendedKey = 0x0001, KeyeventfKeyUp = 0x0002;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KeybdInput
-    {
-        public ushort Vk;
-        public ushort Scan;
-        public uint Flags;
-        public uint Time;
-        public IntPtr ExtraInfo;
-    }
-
-    // INPUT: the union is sized for its largest member (MOUSEINPUT, 32 bytes on x64), so pad to it
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
-    private struct PadInput
-    {
-        [FieldOffset(0)] public uint Type;
-        [FieldOffset(8)] public KeybdInput Ki;
-    }
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint SendInput(uint count, PadInput[] inputs, int size);
 }
