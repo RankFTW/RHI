@@ -81,7 +81,7 @@ Other databases (`RenoDXdb*.json`, `engine-files/`) live in the separate `RankFT
 - `DetailPanelBuilder.*.cs`, `*PopupHelper.cs`, `*Dialog.cs`: **UI is built in C# code, not XAML templates.** There's one overrides builder (`DetailPanelBuilder`). There is one layout (Detail; Compact view was removed): game list + detail panel with 7 collapsible, reorderable sections (see `.claude/rules/rhi-ui.md`).
 - Root `.ini` files: templates shipped beside the exe.
 
-Other: `RenoDXCommander.Tests/` (xUnit + FsCheck; main file `CoreLogicTests.cs`), `RHI.DropHelper/` (non-elevated drag-drop helper for admin mode), `tools/` (ManifestEditor, PCGW-Editor, RenoDXdb-Editor, RHI-Stats, scripts), `game-db/` (community DB + merge scripts), `docs/` (guides, research, handovers). Gitignored reference copies: `Luma/`, `OptiScaler-DLSSNR-v*/`, `nvidiaProfileInspector-master/`.
+Other: `RenoDXCommander.Tests/` (xUnit + FsCheck; main file `CoreLogicTests.cs`), `RHI.DropHelper/` (non-elevated drag-drop helper for admin mode), `tools/` (ManifestEditor, PCGW-Editor, RenoDXdb-Editor, RHI-Stats, scripts; `tools/game-db/` = community DB + merge scripts), `docs/` (guides, research, handovers). Gitignored reference copies: `Luma/`, `OptiScaler-DLSSNR-v*/`, `nvidiaProfileInspector-master/`.
 
 ## Conventions
 

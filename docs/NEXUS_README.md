@@ -4,7 +4,7 @@
 
 RHI finds your games on Steam, Epic, GOG, EA App, Ubisoft Connect, Xbox / Game Pass, Battle.net and Rockstar. It then installs, updates and removes ReShade, RenoDX and Luma HDR mods, frame limiters, DLSS/Streamline files, OptiScaler, Neural Rendering tools and more, with per-game control over every one of them.
 
-[center][img]https://raw.githubusercontent.com/RankFTW/RHI/main/screenshots/game_view.png[/img][/center]
+[center][img]https://raw.githubusercontent.com/RankFTW/RHI/main/docs/images/game_view.png[/img][/center]
 
 [color=#FF6600][b]Single-player only.[/b][/color] ReShade with addon support, OptiScaler and DLSS/Streamline changes can trigger anti-cheat in online games. Uninstall them before playing multiplayer.
 

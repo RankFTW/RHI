@@ -6,7 +6,7 @@ RHI finds your games across eight storefronts, then installs, updates and remove
 
 **[Download the latest release](https://github.com/RankFTW/RHI/releases/latest)** · **[Detailed Guide](docs/DETAILED_GUIDE.md)** · **[Discord](https://discord.gg/ultraplace)**
 
-![RHI showing a game's detail panel with Components, Neural Rendering and Extras](screenshots/game_view.png)
+![RHI showing a game's detail panel with Components, Neural Rendering and Extras](docs/images/game_view.png)
 
 > **Single-player only.** ReShade with addon support, OptiScaler and DLSS/Streamline changes can trigger anti-cheat in online games. Uninstall them before playing multiplayer.
 

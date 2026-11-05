@@ -74,7 +74,7 @@ Items that improve maintainability, performance, or reliability. No user-facing 
   3. `tools/check-manifest.py`: also check each part, and fail if `manifest.json` doesn't match the parts. Add `manifest/**` to `.github/workflows/manifest-check.yml` paths.
   4. Manifest Editor (`tools/RHI-ManifestEditor`, `Json/JsonDoc.cs`): open one `JsonDoc` per part and route each field's edits to the part that holds it; saving stays text-preserving.
   5. Docs: "Push manifest" workflow in CLAUDE.md (edit part → build → push `manifest/` + `manifest.json` together), `.claude/rules/rhi-manifest.md` + `.kiro` copy, `docs/manifest-field-reference.md`.
-- `game-db/seed_from_manifest.py` reads `manifest.json` and keeps working unchanged.
+- `tools/game-db/seed_from_manifest.py` reads `manifest.json` and keeps working unchanged.
 - **Optional cleanup:** `_engineOverrides` (~5 KB) is switched-off data ("engine names now sourced from pcgw_data.json") and could be removed.
 - **Rejected:** one file per game (hundreds of files; edits happen by topic), and having the app fetch the parts itself (more API calls, older versions still need `manifest.json`).
 

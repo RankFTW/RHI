@@ -77,7 +77,7 @@ The **Quick Start** toolbar button opens an in-app walkthrough: selecting a game
 
 ## The Main Window
 
-![The RHI main window](../screenshots/game_view.png)
+![The RHI main window](images/game_view.png)
 
 RHI has one layout: the game list on the left, the selected game's detail panel on the right, the toolbar on top and the status bar at the bottom. Settings, About and Quick Start open as full pages with a **← Back to Games** button. The window remembers its size, position and maximised state. Its minimum width is 1220 pixels.
 

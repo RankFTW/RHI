@@ -9,7 +9,7 @@ Run this once to create an initial game_db.json, then run merge_game_db.py on to
 as community submissions arrive to fill in gaps and confirm values.
 
 Usage:
-  python seed_from_manifest.py [--manifest ../manifest.json] [--output .]
+  python seed_from_manifest.py [--manifest ../../manifest.json] [--output .]
 """
 
 import argparse
@@ -49,8 +49,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Seed game_db.json from manifest.json"
     )
-    parser.add_argument("--manifest", default="../manifest.json",
-                        help="Path to manifest.json (default: ../manifest.json)")
+    parser.add_argument("--manifest", default="../../manifest.json",
+                        help="Path to manifest.json (default: ../../manifest.json)")
     parser.add_argument("--output", default=".",
                         help="Output directory for game_db.json (default: current dir)")
     args = parser.parse_args()

@@ -1,9 +1,9 @@
 # RHI Game Data Submissions
 
-Drop user-submitted `RHI_GameData_*.zip` files here, then run:
+Drop user-submitted `RHI_GameData_*.zip` files in `tools/game-db/submissions/` (gitignored), then run from `tools/game-db`:
 
 ```
-python docs/merge_game_db.py --submissions submissions/ --output .
+python merge_game_db.py --submissions submissions/ --output .
 ```
 
 This produces:
@@ -14,7 +14,7 @@ This produces:
 
 1. User clicks **Export Game Data** in RHI Settings
 2. They paste the zip into Discord
-3. Download it and drop it in this folder
+3. Download it and drop it in `submissions/`
 4. Run the merge script
 5. Review `conflicts.json` for anything that needs a manual decision
 6. Push `game_db.json` to the repo alongside `manifest.json`
