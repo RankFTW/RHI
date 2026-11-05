@@ -16,6 +16,8 @@
     <SelfContained>false</SelfContained>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Program.cs wraps the generated Main to warn when the Windows App Runtime is missing -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>RHI</AssemblyName>
     <AssemblyTitle>RHI</AssemblyTitle>

@@ -88,6 +88,10 @@
 
 ### Bug Fixes
 
+**Installer**
+- Fixed the installer downloading and installing the Windows App Runtime 2.5.1 on every update for some people, even when it was already installed. The installer no longer installs it. If RHI can't start because the runtime is missing, it now says so and offers to open the download.
+- Fixed every RHI update leaving about 160 MB of old files in your Temp folder (`%TEMP%\.net\RHI`). RHI now removes the old copies a short while after it starts.
+
 **ASI Loader**
 - Fixed the DLL name lists for 20/30 FG Unlock, Universal MFG Unlocker and DLSS Enabler letting you pick the name ASI Loader or another extra was already using, which replaced it. Those names are now greyed out with what's using them.
 - Fixed installing ASI Loader over the name an extra was using: the extra was renamed so ASI Loader loads it, but RHI kept looking for it under the old name, so removing the extra later could delete ASI Loader. RHI now follows the rename and says which extra was moved.

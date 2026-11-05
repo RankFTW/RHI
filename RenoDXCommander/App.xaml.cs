@@ -18,6 +18,7 @@ public partial class App : Application
 
     public App()
     {
+        Program.XamlStarted = true; // WinUI loaded: later startup failures aren't a missing runtime
         InitializeComponent();
         // Register crash/error reporting before anything else runs.
         // This catches AppDomain, TaskScheduler, and WinUI exceptions.
