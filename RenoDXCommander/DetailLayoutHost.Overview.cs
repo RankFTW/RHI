@@ -158,7 +158,7 @@ internal sealed partial class DetailLayoutHost
         }
     }
 
-    internal Border MakeGlanceTile(string key)
+    internal Button MakeGlanceTile(string key)
     {
         var summary = new TextBlock
         {
@@ -191,10 +191,9 @@ internal sealed partial class DetailLayoutHost
         };
         TabsTheme.SetHandTip(tile, $"Open {GetTitle(key)}");
         TabsTheme.UseHandCursor(tile);
-        tile.PointerEntered += (s, e) => tile.Background = TabsTheme.B(TabsTheme.RowHover);
-        tile.PointerExited += (s, e) => tile.Background = TabsTheme.B(TabsTheme.Card);
-        tile.Tapped += (s, e) => SelectTab(key);
-        return tile;
+        var button = TabsTheme.WrapTile(tile, () => SelectTab(key));
+        button.Tag = key; // controller support returns to the tile by its section key
+        return button;
     }
 
     /// <summary>

@@ -178,6 +178,8 @@ public sealed partial class MainWindow
                 $"<Style {XamlNs} TargetType='ListViewItem'>" +
                 "<Setter Property='Padding' Value='0'/><Setter Property='Margin' Value='4,0,4,0'/>" +
                 "<Setter Property='MinWidth' Value='0'/><Setter Property='MinHeight' Value='0'/>" +
+                // No white focus box: the tile's blue selection ring already marks it (focus is always on the selected cover)
+                "<Setter Property='UseSystemFocusVisuals' Value='False'/>" +
                 "<Setter Property='VerticalContentAlignment' Value='Top'/></Style>"),
         };
         ScrollViewer.SetHorizontalScrollMode(_shelf, ScrollMode.Enabled);
@@ -270,7 +272,8 @@ public sealed partial class MainWindow
         _shelfSyncing = true;
         try { _shelf.SelectedItem = GameList.SelectedItem; }
         finally { _shelfSyncing = false; }
-        if (GameList.SelectedItem != null) _shelf.ScrollIntoView(GameList.SelectedItem);
+        // The controller centres the cover itself (CenterShelf)
+        if (GameList.SelectedItem != null && !_padStepping) _shelf.ScrollIntoView(GameList.SelectedItem);
         UpdateShelfHighlight();
     }
 

@@ -8,6 +8,8 @@
 
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using RenoDXCommander.Services;
 
@@ -16,6 +18,36 @@ namespace RenoDXCommander;
 public sealed partial class MainWindow
 {
     private bool _devScreenshotBusy;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _padScriptTimer;
+
+    /// <summary>Dev: runs controller actions in order (after <paramref name="startMs"/>), logging where focus lands.</summary>
+    private void RunPadScript(List<PadAction> actions, int startMs)
+    {
+        if (actions.Count == 0) return;
+        int next = 0;
+        var timer = _padScriptTimer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(Math.Max(600, startMs));
+        timer.Tick += (t, _) =>
+        {
+            timer.Interval = TimeSpan.FromMilliseconds(600);
+            if (next >= actions.Count) { timer.Stop(); return; }
+            var action = actions[next++];
+            HandlePadAction(action);
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                var f = Content?.XamlRoot is { } xr ? FocusManager.GetFocusedElement(xr) : null;
+                string what = f switch
+                {
+                    ContentControl { Content: string text } cc => $"{cc.GetType().Name} '{text}'",
+                    FrameworkElement fe => $"{fe.GetType().Name} '{fe.Name}' tag={fe.Tag} tip={ToolTipService.GetToolTip(fe)}",
+                    null => "nothing",
+                    _ => f.GetType().Name,
+                };
+                _crashReporter.Log($"[MainWindow.DevScreenshot] pad {action} -> focus: {what}");
+            });
+        };
+        timer.Start();
+    }
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _devScreenshotTimer;
 
     private void CheckDevScreenshotRequest()
@@ -81,6 +113,15 @@ public sealed partial class MainWindow
         {
             if (tab.Equals("none", StringComparison.OrdinalIgnoreCase)) _detailPanelBuilder.Layout.ClosePanel();
             else _detailPanelBuilder.Layout.SelectTab(tab);
+        }
+        // pad=Down,Select,Back: controller actions, one every 600 ms, before the screenshot
+        if (Opt("pad") is { Length: > 0 } pad)
+        {
+            var actions = pad.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => Enum.TryParse<PadAction>(t, true, out var a) ? a : (PadAction?)null)
+                .Where(a => a != null).Select(a => a!.Value).ToList();
+            RunPadScript(actions, waitMs);
+            waitMs += actions.Count * 600 + 800;
         }
         if (int.TryParse(Opt("wait"), out var w) && w > 0) waitMs = w;
         bool detail = string.Equals(Opt("target"), "detail", StringComparison.OrdinalIgnoreCase);

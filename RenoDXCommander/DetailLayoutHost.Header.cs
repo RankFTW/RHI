@@ -101,6 +101,7 @@ internal sealed partial class DetailLayoutHost
         launch.CornerRadius = new CornerRadius(0);
         launch.BorderThickness = new Thickness(0, 0, 1, 0); // divider before the chevron
         launch.Click += (s, e) => { w.HeaderLaunch(e); RefreshHeaderSoon(); };
+        _hLaunchBtn = launch;
         ToolTipService.SetToolTip(launch, "Launch the game");
 
         var more = new Button { Width = 44, Padding = new Thickness(0), Content = TabsTheme.Icon("", 13) }; // chevron down

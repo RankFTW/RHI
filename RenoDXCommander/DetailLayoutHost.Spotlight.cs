@@ -143,6 +143,7 @@ internal sealed partial class DetailLayoutHost
         manage.MinHeight = 60;
         manage.CornerRadius = new CornerRadius(12);
         manage.Click += (s, e) => OpenPanel(OverviewKey);
+        _manageBtn = manage;
         ToolTipService.SetToolTip(manage, "Install, update and configure this game's components");
         _statusGrid.Children.Add(manage);
 
@@ -410,7 +411,8 @@ internal sealed partial class DetailLayoutHost
         private readonly TextBlock _name;
         private readonly TextBlock _status;
 
-        internal Border Root { get; }
+        /// <summary>A button around the card, so a controller or the keyboard can select it.</summary>
+        internal Button Root { get; }
 
         internal StatusTile(DetailLayoutHost host, ComponentRowRef[] rows)
         {
@@ -440,7 +442,7 @@ internal sealed partial class DetailLayoutHost
             Grid.SetColumn(text, 1);
             grid.Children.Add(text);
 
-            Root = new Border
+            var card = new Border
             {
                 Background = TabsTheme.B(TabsTheme.Card),
                 BorderBrush = TabsTheme.B(TabsTheme.CardBorder),
@@ -448,13 +450,11 @@ internal sealed partial class DetailLayoutHost
                 CornerRadius = new CornerRadius(12),
                 Padding = new Thickness(16, 14, 16, 14),
                 Child = grid,
-                Visibility = Visibility.Collapsed,
             };
-            TabsTheme.UseHandCursor(Root);
-            TabsTheme.SetHandTip(Root, "Manage components");
-            Root.PointerEntered += (s, e) => Root.Background = TabsTheme.B(TabsTheme.RowHover);
-            Root.PointerExited += (s, e) => Root.Background = TabsTheme.B(TabsTheme.Card);
-            Root.Tapped += (s, e) => _host.OpenPanel(OverviewKey);
+            TabsTheme.UseHandCursor(card);
+            TabsTheme.SetHandTip(card, "Manage components");
+            Root = TabsTheme.WrapTile(card, () => _host.OpenPanel(OverviewKey));
+            Root.Visibility = Visibility.Collapsed;
         }
 
         internal void Update()

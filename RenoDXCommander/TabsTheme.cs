@@ -166,6 +166,42 @@ internal static class TabsTheme
     }
 
     /// <summary>
+    /// Puts a card tile inside a see-through button, so it can be focused and selected with a
+    /// controller or the keyboard (a Border alone can't take focus). The card keeps its own look;
+    /// it lights up on hover and while focused.
+    /// </summary>
+    internal static Button WrapTile(Border card, Action onClick)
+    {
+        card.HorizontalAlignment = HorizontalAlignment.Stretch;
+        card.VerticalAlignment = VerticalAlignment.Stretch;
+        var button = new Button
+        {
+            Content = card,
+            Padding = new Thickness(0),
+            BorderThickness = new Thickness(0),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch,
+            CornerRadius = card.CornerRadius,
+        };
+        var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        foreach (var key in new[] { "ButtonBackgroundPointerOver", "ButtonBackgroundPressed", "ButtonBackgroundDisabled",
+                                    "ButtonBorderBrushPointerOver", "ButtonBorderBrushPressed", "ButtonBorderBrushDisabled" })
+            SetResource(button.Resources, key, clear);
+
+        bool hover = false, focused = false;
+        void Paint() => card.Background = B(hover || focused ? RowHover : Card);
+        card.PointerEntered += (s, e) => { hover = true; Paint(); };
+        card.PointerExited += (s, e) => { hover = false; Paint(); };
+        button.GotFocus += (s, e) => { focused = button.FocusState == FocusState.Keyboard; Paint(); };
+        button.LostFocus += (s, e) => { focused = false; Paint(); };
+        button.Click += (s, e) => onClick();
+        return button;
+    }
+
+    /// <summary>
     /// A plain-text tooltip for a clickable element, drawn inside RHI's window. WinUI's own tooltips
     /// open as a separate little window, and Windows resets the cursor to the arrow when that
     /// appears; drawing it in-window keeps the hand cursor. Same delay and look as a tooltip.
@@ -521,6 +557,8 @@ internal static class TabsTheme
         if (text.FontSize < 12) text.FontSize = 12;
     }
 
+    internal const string SegmentSelectedTag = "SegmentSelected";
+
     /// <summary>Segmented switch (the mockup's All / Installed / … and ReLimiter / Display Commander).</summary>
     internal static Border MakeSegmented(IReadOnlyList<string> labels, int selected, Action<int> onPick, string track = PanelBg)
     {
@@ -553,9 +591,26 @@ internal static class TabsTheme
                 if (!on) label.Foreground = B(TextPrimary);
             };
             seg.PointerExited += (s, e) => { if (!on) label.Foreground = B(TextSecondary); };
-            seg.Tapped += (s, e) => { if (!on) onPick(idx); };
-            Grid.SetColumn(seg, i);
-            grid.Children.Add(seg);
+            // A see-through Button around the segment so a controller (or Tab) can focus it
+            var button = new Button
+            {
+                Content = seg,
+                Padding = new Thickness(0),
+                BorderThickness = new Thickness(0),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Stretch,
+                CornerRadius = seg.CornerRadius,
+                Tag = on ? SegmentSelectedTag : null, // the controller focuses the selected one
+            };
+            var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            foreach (var key in new[] { "ButtonBackgroundPointerOver", "ButtonBackgroundPressed",
+                                        "ButtonBorderBrushPointerOver", "ButtonBorderBrushPressed" })
+                SetResource(button.Resources, key, clear);
+            button.Click += (s, e) => { if (!on) onPick(idx); };
+            Grid.SetColumn(button, i);
+            grid.Children.Add(button);
         }
         return new Border
         {

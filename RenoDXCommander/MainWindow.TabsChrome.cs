@@ -55,6 +55,7 @@ public sealed partial class MainWindow
     {
         ApplyTabsChromeCore();
         ApplySpotlightChrome();
+        UpdateControllerTimer(); // controller support is Spotlight only
     }
 
     private void ApplyTabsChromeCore()
@@ -207,14 +208,14 @@ public sealed partial class MainWindow
             Child = new TextBlock { Text = "New", FontSize = 11, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = TabsTheme.B("#7FE0A0") },
             Visibility = Visibility.Collapsed,
         };
-        var mods = MakeNavItem("Available Mods", _navModsNew, (s, e) =>
+        var mods = MakeNavItem("Available Mods", _navModsNew, e =>
         {
             if (NewModsBtn.Visibility == Visibility.Visible) NewModsButton_Click(NewModsBtn, e);
             else HdrModsListBtn_Click(HdrModsListBtn, e);
         });
         TabsTheme.SetHandTip(mods, ToolTipService.GetToolTip(HdrModsListBtn) as string ?? "Browse every RenoDX and Luma mod");
-        var shaders = MakeNavItem("Shaders & Addons", null, null);
-        shaders.Tapped += (s, e) =>
+        Button shaders = null!;
+        shaders = MakeNavItem("Shaders & Addons", null, e =>
         {
             var menu = new MenuFlyout();
             var a = new MenuFlyoutItem { Text = "Global Shaders" };
@@ -224,7 +225,7 @@ public sealed partial class MainWindow
             menu.Items.Add(a);
             menu.Items.Add(b);
             menu.ShowAt(shaders, new FlyoutShowOptions { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft });
-        };
+        });
         nav.Children.Add(mods);
         nav.Children.Add(shaders);
 
@@ -275,7 +276,8 @@ public sealed partial class MainWindow
         return bar;
     }
 
-    private Border MakeNavItem(string text, UIElement? extra, TappedEventHandler? onTap)
+    /// <summary>A top bar page link. A see-through Button around the look, so a controller (or Tab) can focus it.</summary>
+    private Button MakeNavItem(string text, UIElement? extra, Action<RoutedEventArgs> onClick)
     {
         var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         sp.Children.Add(new TextBlock { Text = text, FontSize = 14, VerticalAlignment = VerticalAlignment.Center });
@@ -294,8 +296,20 @@ public sealed partial class MainWindow
             if (item.Tag is not true) item.Background = TabsTheme.B("#1E2738");
         };
         item.PointerExited += (s, e) => { if (item.Tag is not true) item.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); };
-        if (onTap != null) item.Tapped += onTap;
-        return item;
+        var button = new Button
+        {
+            Content = item,
+            Padding = new Thickness(0),
+            BorderThickness = new Thickness(0),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            CornerRadius = item.CornerRadius,
+        };
+        var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        foreach (var key in new[] { "ButtonBackgroundPointerOver", "ButtonBackgroundPressed",
+                                    "ButtonBorderBrushPointerOver", "ButtonBorderBrushPressed" })
+            TabsTheme.SetResource(button.Resources, key, clear);
+        button.Click += (s, e) => onClick(e);
+        return button;
     }
 
     private static void SetNavSelected(Border item, bool selected)

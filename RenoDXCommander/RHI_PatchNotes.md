@@ -31,6 +31,13 @@
 - Artwork is downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once.
 - **Your own artwork:** right-click a cover or the banner and choose Artwork › Set custom cover or Set custom banner to use any image. Use Steam cover / Use Steam banner puts Steam's back. Handy for games that aren't on Steam.
 
+**Controller support (Spotlight)**
+- Use an Xbox controller in the Spotlight layout. D-pad or left stick moves around, A selects, B goes back (closes a menu, the side panel or Settings), Y launches the game, X opens the game menu, LB / RB switch to the previous / next game, LT / RT skip 10 games back / on, View opens Filters, Menu opens Settings and the right stick scrolls. Click the left stick to switch between All, Installed and Favourites, and the right stick to go straight back to the game's cover from anywhere.
+- From the cover shelf, Down goes to Launch and on to the tiles; left and right on the shelf pick the next game, and the row scrolls to keep the selected cover in the middle (it moves towards the edge only near the start or end of the list). Up goes to the All / Installed / Favourites / Hidden switch and search box, then to Available Mods, Shaders & Addons and the rest of the top bar; Down comes back to the selected game. A tile opens its section in the side panel with the first setting selected, and B returns to the tile.
+- A bar of button hints appears at the bottom once you use the controller and hides when you move the mouse.
+- The controller only works while RHI is the active window, so it never does anything in RHI while you're playing. Buttons held when you switch back to RHI are ignored until you let go.
+- PlayStation controllers work through Steam Input or DS4Windows. Turn it off in Settings › General › Windows and Admin Mode › Controller support.
+
 **Remove a game from RHI**
 - Management has a new Remove from RHI button. Unlike Hide, the game is gone from every list, including Hidden, and doesn't come back when RHI scans your games. You can uninstall its components at the same time.
 - Changed your mind? Settings › Tools & Maintenance › Troubleshooting › Removed games lists every game you've removed, with Restore to put it back.

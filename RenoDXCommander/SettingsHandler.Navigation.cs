@@ -294,6 +294,7 @@ public partial class SettingsHandler
         EnsureNvAppLimitsPanel();
         EnsureRemovedGamesButton();
         EnsureCustomFoldersCard();
+        EnsureControllerSetting();
         EnsureSettingsNavigation();
         StartUpdateCountdown();
         if (wasAlreadyOpen || _settingsScroll == null) return; // keep the current position
