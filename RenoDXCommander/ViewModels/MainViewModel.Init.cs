@@ -480,9 +480,10 @@ public partial class MainViewModel
                     // Migrate legacy shared staging folder to variant-specific folders
                     MigrateDxvkStagingFolder();
 
-                    // Only download the globally selected variant at startup.
-                    // Other variants are downloaded on-demand when a per-game override needs them.
-                    await _dxvkService.EnsureStagingAsync();
+                    // Only download the globally selected variant at startup, and only when a
+                    // game uses DXVK. Other variants, and first installs, download on demand.
+                    if (ShouldAutoStageDxvk("InitializeAsync"))
+                        await _dxvkService.EnsureStagingAsync();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DXVK staging task failed — {ex.Message}"); }
             });

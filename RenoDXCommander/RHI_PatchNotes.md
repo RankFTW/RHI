@@ -77,6 +77,11 @@
 
 ### Bug Fixes
 
+**Antivirus**
+- Fixed RHI downloading DXVK and Universal MFG Unlocker on every launch even when no game uses them. Antivirus programs often flag these as false positives, so many people saw warnings for files they never installed. They now download only when a game uses them, or when you install them.
+- When an antivirus deletes one of these files straight after RHI downloads it, RHI now says so and explains how to add an exclusion, instead of downloading it again on every launch.
+- Fixed DXVK installs failing with "try clearing the DXVK cache" when an antivirus had removed only its 32-bit files. RHI now checks every DXVK file and downloads it again when one is missing.
+
 **Display**
 - Fixed Output colour settings saying RHI needs to run as administrator when the monitor doesn't support the chosen colour depth (for example 12 bpc on a 10-bit monitor). It now says the monitor doesn't support it, and only mentions admin when that's the actual problem.
 
@@ -98,6 +103,7 @@
 - Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.
 
 ### Manifest Updates
+- Baldur's Gate 3: ReShade now installs as the Vulkan layer, since the game's default exe (bg3.exe) uses Vulkan. Before, it was installed as dxgi.dll, which bg3.exe never loads. ReShade's Info explains how to switch to DX11 for bg3_dx11.exe, and to reinstall ReShade if an older install is still there.
 - New addon in Shaders & Addons: BFI Presenter by artzox, black frame insertion without the usual brightness loss for clearer motion on 120 Hz+ OLEDs and other fixed-refresh displays (DX9, DX11, DX12 and OpenGL games). Its description lists what it needs (G-Sync off, no frame limiter) and links to the setup guide.
 - Support the Mod Authors now includes the ultrawide fix authors RHI links to (Lyall, p1xel8ted and RoseTheFlower) and the Ultra+ team (Lazorr, SammiLucia and mmike0913). Authors who use Patreon get a Patreon button.
 - Mafia: The Old Country: DLSS and Streamline are now found in the game's plugins folder, so the DLSS / Streamline section is no longer empty.

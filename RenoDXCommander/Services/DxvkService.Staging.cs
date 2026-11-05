@@ -85,6 +85,11 @@ public partial class DxvkService
 
             progress?.Report(("Checking DXVK release...", 5));
 
+            // Remember the version file's time: a new one means a download completed,
+            // which is then checked for files an antivirus removed straight away.
+            var versionFile = GetVersionFileForVariant(_selectedVariant);
+            DateTime? versionBefore = File.Exists(versionFile) ? File.GetLastWriteTimeUtc(versionFile) : null;
+
             // ── 2. Route based on variant ────────────────────────────────────
             if (_selectedVariant == DxvkVariant.LiliumHdr)
             {
@@ -98,6 +103,10 @@ public partial class DxvkService
             {
                 await EnsureStagingGitHubAsync(progress).ConfigureAwait(false);
             }
+
+            if (File.Exists(versionFile) && File.GetLastWriteTimeUtc(versionFile) != versionBefore)
+                await AntivirusGuard.VerifyStagedAsync(AntivirusComponentName, StagedVersion,
+                    GetExpectedStagedFiles(_selectedVariant)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -497,6 +506,7 @@ public partial class DxvkService
         catch (Exception ex)
         {
             CrashReporter.Log($"[DxvkService.ExtractLilium7zToStagingAsync] Failed — {ex.Message}");
+            if (AntivirusGuard.IsVirusError(ex)) AntivirusGuard.Report(AntivirusComponentName, null, destDir);
             return false;
         }
     }
@@ -578,6 +588,7 @@ public partial class DxvkService
         catch (Exception ex)
         {
             CrashReporter.Log($"[DxvkService.ExtractZipToStagingAsync] Extraction failed — {ex.Message}");
+            if (AntivirusGuard.IsVirusError(ex)) AntivirusGuard.Report(AntivirusComponentName, null, StagingDir);
             return false;
         }
         finally
@@ -645,6 +656,7 @@ public partial class DxvkService
         catch (Exception ex)
         {
             CrashReporter.Log($"[DxvkService.ExtractTarGzToStagingAsync] Extraction failed — {ex.Message}");
+            if (AntivirusGuard.IsVirusError(ex)) AntivirusGuard.Report(AntivirusComponentName, null, StagingDir);
             return false;
         }
         finally

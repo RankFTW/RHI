@@ -48,7 +48,9 @@ public partial class DxvkService
                 if (!IsStagingReady)
                 {
                     CrashReporter.Log("[DxvkService.InstallAsync] Staging still not ready — aborting");
-                    progress?.Report(("DXVK staging not available", 0));
+                    progress?.Report((AntivirusGuard.IsBlocked(AntivirusComponentName)
+                        ? "DXVK couldn't be downloaded: your antivirus removed its files. Add an exclusion for %LocalAppData%\\RHI and try again."
+                        : "DXVK staging not available", 0));
                     return;
                 }
             }
@@ -78,7 +80,8 @@ public partial class DxvkService
             var sampleDll = Path.Combine(StagingDir, archFolder, dllNames[0]);
             if (!File.Exists(sampleDll))
             {
-                var msg = $"Staged DLL not found: '{sampleDll}' — try clearing the DXVK cache in Settings.";
+                var msg = $"DXVK's {archFolder}\\{dllNames[0]} is missing from RHI's download folder. "
+                        + "If your antivirus removed it, add an exclusion for %LocalAppData%\\RHI and install DXVK again.";
                 CrashReporter.Log($"[DxvkService.InstallAsync] {msg}");
                 progress?.Report((msg, 0));
                 return;
@@ -621,7 +624,9 @@ public partial class DxvkService
                 if (!IsStagingReady)
                 {
                     CrashReporter.Log("[DxvkService.UpdateAsync] Staging not ready after download — aborting");
-                    progress?.Report(("DXVK staging not available", 0));
+                    progress?.Report((AntivirusGuard.IsBlocked(AntivirusComponentName)
+                        ? "DXVK couldn't be downloaded: your antivirus removed its files. Add an exclusion for %LocalAppData%\\RHI and try again."
+                        : "DXVK staging not available", 0));
                     return;
                 }
             }

@@ -252,6 +252,7 @@ public sealed partial class MainWindow : Window
             CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
         ViewModel.ManualGameAdded += OpenAddedGame;
+        HookAntivirusNotice();
         StartStatusBarTimer();
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // When the filtered game list changes, preserve selection if the selected game is still visible

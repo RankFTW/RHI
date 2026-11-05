@@ -142,9 +142,10 @@ public partial class MainViewModel
             var dxvkTask     = Task.Run(async () => {
                 try
                 {
-                    // Only download the globally selected variant.
-                    // Other variants are downloaded on-demand when a per-game override needs them.
-                    await _dxvkService.EnsureStagingAsync();
+                    // Only download the globally selected variant, and only when a game uses DXVK.
+                    // Other variants, and first installs, download on demand.
+                    if (ShouldAutoStageDxvk("RunBackgroundScanAndMergeAsync"))
+                        await _dxvkService.EnsureStagingAsync();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DXVK staging task failed — {ex.Message}"); }
             });
@@ -171,9 +172,14 @@ public partial class MainViewModel
             var rtx40MfgTask = Task.Run(async () => {
                 try
                 {
-                    await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
-                    if (!_rtx40MfgService.IsStagingReady || _rtx40MfgService.HasUpdate)
-                        await _rtx40MfgService.EnsureStagingAsync();
+                    // Only kept up to date while a game uses it: installing downloads it.
+                    if (ShouldAutoStageRtx40Mfg("RunBackgroundScanAndMergeAsync"))
+                    {
+                        await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
+                        if ((!_rtx40MfgService.IsStagingReady || _rtx40MfgService.HasUpdate)
+                            && !AntivirusGuard.IsBlocked(Rtx40MfgService.AntivirusComponentName, _rtx40MfgService.LatestVersion))
+                            await _rtx40MfgService.EnsureStagingAsync();
+                    }
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] RTX40MFG staging failed — {ex.Message}"); }
             });

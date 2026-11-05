@@ -16,6 +16,9 @@ paths:
 - Lilium archive structure: `normal/x64/*.dll` and `normal/x32/*.dll`
 - `FormatVersionForDisplay()` trims Lilium tags to just the mod version (e.g. "0.3.3")
 
+- **Startup staging only when used** (Nov 2026): `ShouldAutoStageDxvk` (`MainViewModel.AutoStaging.cs`) skips the startup/background `EnsureStagingAsync` when `dxvk_installed.json` has no records or `AntivirusGuard` has DXVK blocked; installs still stage on demand. Same for Universal MFG Unlocker (`ShouldAutoStageRtx40Mfg`, `Rtx40MfgInstalledAs` empty). Antivirus was flagging the 32-bit DLLs for users who never used DXVK.
+- `IsStagingReadyForVariant` checks all 5 DLLs (d3d8, d3d9, d3d10core, d3d11, dxgi) in both x64 and x32. A completed download is re-checked after 3 s (`AntivirusGuard.VerifyStagedAsync`); missing files = antivirus, recorded in `%LocalAppData%\RHI\av_blocked.json`, the user is told once (`MainWindow.AntivirusNotice.cs`), and automatic downloads pause until a user install succeeds (or, for MFG, a new version).
+
 ## Direct Mode (All Variants, DX8/DX9)
 - ALL variants use direct mode: DXVK deployed as `d3d9.dll` directly, ReShade uses Vulkan implicit layer
 - Proxy mode (`dxgi_dxvk.dll` + `[PROXY]` section) eliminated for new installs

@@ -323,9 +323,13 @@ public partial class MainViewModel
 
                 try
                 {
-                    await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
-                    if (_rtx40MfgService.HasUpdate)
-                        await _rtx40MfgService.EnsureStagingAsync();
+                    if (ShouldAutoStageRtx40Mfg("PeriodicRefresh"))
+                    {
+                        await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
+                        if (_rtx40MfgService.HasUpdate
+                            && !AntivirusGuard.IsBlocked(Rtx40MfgService.AntivirusComponentName, _rtx40MfgService.LatestVersion))
+                            await _rtx40MfgService.EnsureStagingAsync();
+                    }
                     _rtx40MfgService.UpdateInstalledGames(GetRtx40MfgInstalls());
                     ReconcileMfgAdaXessFiles();
                     ReconcileRtxEncoreFiles();

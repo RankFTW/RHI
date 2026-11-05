@@ -603,7 +603,8 @@
     "Assassin\u0027s Creed\u00AE Origins": "DX11",
     "Assassin\u0027s Creed Odyssey": "DX11",
     "Assassin\u0027s Creed\u00AE Odyssey": "DX11",
-    "Baldur\u0027s Gate 3": "DX12, VLK",
+    "Baldur\u0027s Gate 3": "VLK",
+    "Baldurs Gate 3": "VLK",
     "Burnout Paradise Remastered": "DX11",
     "Far Cry 3": "DX11",
     "BurnoutPR": "DX11",
@@ -1182,6 +1183,12 @@
     }
   },
   "reshadeGameInfo": {
+    "Baldur's Gate 3": {
+      "notes": "bg3.exe, the game's default exe, uses Vulkan, so RHI installs ReShade as the Vulkan layer for this game. If you play with bg3_dx11.exe instead, set the graphics API to DX11 in Game Overrides and reinstall ReShade. If an older RHI install left dxgi.dll in the bin folder, uninstall ReShade and install it again."
+    },
+    "Baldurs Gate 3": {
+      "notes": "bg3.exe, the game's default exe, uses Vulkan, so RHI installs ReShade as the Vulkan layer for this game. If you play with bg3_dx11.exe instead, set the graphics API to DX11 in Game Overrides and reinstall ReShade. If an older RHI install left dxgi.dll in the bin folder, uninstall ReShade and install it again."
+    },
     "Max Payne 3": {
       "notes": "\u26A0\uFE0F ReShade 6.4.1 is required for RenoDX compatibility with this game. This has been automatically set in Overrides (RS Channel).\n\nIf you want to use a newer ReShade version, change the RS Channel in the Overrides panel \u2014 but RenoDX may not work correctly."
     },

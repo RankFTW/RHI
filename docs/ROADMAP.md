@@ -157,6 +157,20 @@ Confirmed bugs or UX problems with a known root cause.
 
 ---
 
+### GitHub issues investigated (Nov 2026), not yet fixed
+Root causes found; each is a small change unless noted.
+
+- **#147 RHI doesn't open (process runs, no window).** If the first instance hangs during startup, every later launch hands off to it over the single-instance pipe and exits silently (`SingleInstanceService.SendToRunningInstance` swallows failures; the listener only starts after `Activate()`, App.xaml.cs ~391; the second instance deletes its own log). Fixes: start the pipe listener right after `TryAcquire`; on failed hand-off, keep the log and offer "RHI is already running but not responding — end it?"; startup watchdog that logs a stack if the window isn't up after ~20 s; re-add the tray icon on `TaskbarCreated`; check the Admin Mode task's `/TR` path still matches the exe.
+- **#133 DLSS5 Tool NR DLL recorded but not copied.** `DeployNrDllSentinel` (DetailPanelBuilder.NeuralRendering.cs ~154) returns when `nvngx_dlssnr.dll.original` exists without checking the DLL is there; the shared-file owner is added anyway. Fix: use `DeployWithSentinel` like SR/RR/FG (also applies the chosen NR version) and only record the owner once the file exists. Same pattern in the Feeder deploy.
+- **#138 Engine.ini written to the other store's folder.** `AuxInstallService.FindPlatformConfigDir` always prefers `WinGDK` over `Windows`, ignoring the store. Fix: Xbox prefers WinGDK, other stores Windows; for pipe-separated overrides pick the store-matching candidate. Update the "Platform priority" line in rhi-install.md.
+- **#62 Uninstalled games stay listed.** Both merge paths (BackgroundScan.cs ~344, Init.cs ~661) keep every cached game the scan didn't find (meant for offline drives). Fix: keep only when the drive root is missing; drop when the drive is there but the folder is gone. Skip UNC paths (slow when unreachable).
+- **#105 Installed filter is ReShade-only.** FilterViewModel.cs ~330. Fix: `IsAnyComponentInstalled` (ReShade, RenoDX, Luma, OptiScaler, ReLimiter/DC, RE Framework, DXVK, DOF Fix); keep the "N ReShade" counter as a separate count.
+- **#159 Phantom Blade Zero.** The real exe is `platform\steam\PBZ.exe`; OptiScaler loads ReShade64.dll from the exe folder, but RHI installs to `ProjectPBZ\Binaries\Win64`. Fix (manifest): `installPathOverrides` "Phantom Blade Zero": `"platform\steam|ProjectPBZ\Binaries\Win64"`; check the Engine.ini project name still resolves; existing installs need a reinstall.
+- **#139 Euro Truck Simulator 2.** RTX Encore needs to be installed as `winmm.dll` there (rtx-encore v1.0.0-rc.3). Check for a manifest field for the default RTX Encore DLL name, else add one.
+- **#137 / #85 antivirus, remaining work.** Download only the needed bitness of DXVK; apply the "only when used" startup rule to DOF Fix, NR Cost Scaler and 20/30 FG Unlock too. **Smart App Control** blocking RHI.exe can only be fixed by Authenticode-signing RHI.exe and the installer (needs a certificate).
+
+---
+
 ### Slow first launch after install/update (Windows Defender scanning)
 **Symptom:** App takes 1–2 minutes to show the window on first launch after a fresh install or update. Black window, then eventually loads. Subsequent launches are instant.
 
