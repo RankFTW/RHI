@@ -46,12 +46,12 @@ public partial class SettingsHandler
             combo.Items.Add(new ComboBoxItem { Content = "On" });
             combo.SelectedIndex = ViewModel.Settings.ControllerSupport ? 1 : 0;
             ToolTipService.SetToolTip(combo,
-                "Use an Xbox controller in the Spotlight layout, only while RHI is the active window.\n"
+                "Use an Xbox or PlayStation controller in the Spotlight layout, only while RHI is the active window.\n"
               + "D-pad or left stick: move   A: select   B: back   Y: Launch   X: game menu\n"
               + "LB / RB: previous / next game (in the side panel and Settings: section)\n"
               + "LT / RT: 10 games back / on (hold to keep going)   View: Filters   Menu: Settings\n"
               + "Right stick: scroll   Click left stick: All / Installed / Favourites   Click right stick: back to the game's cover\n"
-              + "PlayStation controllers work through Steam Input or DS4Windows.");
+              + "PlayStation controllers (DualShock 4, DualSense, DualSense Edge) work directly over USB or Bluetooth.");
             combo.SelectionChanged += (s, e) =>
             {
                 if (combo.SelectedIndex < 0) return;

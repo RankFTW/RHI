@@ -127,6 +127,16 @@ Show the selected Steam game's achievements on the Spotlight page: progress, rec
 
 **Size:** medium, about 600–800 lines, no new libraries.
 
+### One-click updates (Velopack)
+Update like SCSKiller: download in the background, click **Restart to update**, done in seconds with no installer window or UAC prompt. Uses Velopack (per-user install in `%LocalAppData%\RHI.App\`, `Update.exe` swaps the app folder and restarts).
+
+- Full plan: `docs/velopack-updates-plan.md` (install location, channels, release steps, migration from the Inno install, testing).
+- **Decide first:** Admin Mode would run a user-writable exe elevated; plan option (a) is a small admin-owned launcher that checks RHI is genuine.
+- **Pitfall:** the old Inno uninstaller deletes `%LocalAppData%\RHI` (user data), so the migration must not run it as-is.
+- Pairs well with the .NET 10 move (on hold).
+
+**Source:** user request, Nov 2026.
+
 ### Store-Qualified installPathOverrides
 Games on both Steam and Xbox with different subfolder structures (`Win64` vs `WinGDK`).
 

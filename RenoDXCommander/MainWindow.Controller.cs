@@ -36,7 +36,11 @@ public sealed partial class MainWindow
     private Border? _padHints;
     private IntPtr _padHwnd;
 
-    private const int PadFastMs = 16, PadSlowMs = 250, PadScanMs = 2000;
+    private const int PadFastMs = 16, PadSlowMs = 250, PadScanMs = 2000, PsScanMs = 4000;
+    private readonly PlayStationPadReader _psPad = new();
+    private volatile bool _psScanRunning;
+    private long _psNextScan;
+    private bool _padIsPlayStation;
     private const int PadPageSize = 10; // LT / RT jump this many games
     private bool _padStepping;          // the controller is changing the selected cover (no ScrollIntoView)
     private ScrollViewer? _shelfScroller;
@@ -63,6 +67,7 @@ public sealed partial class MainWindow
             {
                 _padTimer?.Stop();
                 _padActive = false;
+                _psPad.Dispose(); // let go of a PlayStation pad until controller support is back on
                 ShowPadHints(false);
                 return;
             }
@@ -72,7 +77,11 @@ public sealed partial class MainWindow
                 _padTimer = DispatcherQueue.CreateTimer();
                 _padTimer.Interval = TimeSpan.FromMilliseconds(PadSlowMs);
                 _padTimer.Tick += (t, _) => PadTick();
-                LifetimeToken.Register(() => DispatcherQueue.TryEnqueue(() => _padTimer?.Stop()));
+                LifetimeToken.Register(() =>
+                {
+                    _psPad.Dispose();
+                    DispatcherQueue.TryEnqueue(() => _padTimer?.Stop());
+                });
                 CrashReporter.Log("[MainWindow.Controller] Controller support on");
             }
             if (!_padTimer.IsRunning) _padTimer.Start();
@@ -103,38 +112,25 @@ public sealed partial class MainWindow
             }
 
             long now = Environment.TickCount64;
-            XInput.State state = default;
-            if (_padSlot >= 0 && !XInput.TryGetState(_padSlot, out state))
-            {
-                CrashReporter.Log("[MainWindow.Controller] Controller disconnected");
-                _padSlot = -1;
-                _padActive = false;
-            }
-            if (_padSlot < 0)
+            if (ReadPad(now) is not { } g)
             {
                 SetPadInterval(PadSlowMs);
-                if (now < _padNextScan) return;
-                _padNextScan = now + PadScanMs;
-                for (int i = 0; i < 4 && _padSlot < 0; i++)
-                    if (XInput.TryGetState(i, out state)) _padSlot = i;
-                if (_padSlot < 0) return;
-                CrashReporter.Log($"[MainWindow.Controller] Controller found (slot {_padSlot})");
+                return;
             }
 
-            var g = state.Gamepad;
             ushort buttons = ControllerPoller.WithTriggers(g.Buttons, g.LeftTrigger, g.RightTrigger);
             if (!_padActive)
             {
-                // RHI just became active (or the controller was just found): ignore what's held
+                // RHI just became active (or the controller was just found / changed): ignore what's held
                 _padActive = true;
-                _pad.Reset(buttons, g.ThumbLX, g.ThumbLY);
+                _pad.Reset(buttons, g.LX, g.LY);
                 SetPadInterval(PadFastMs);
                 if (_padReturnToCover) ReturnToCoverAfterGame();
                 return;
             }
             SetPadInterval(PadFastMs);
 
-            var actions = _pad.Update(buttons, g.ThumbLX, g.ThumbLY, g.ThumbRY, now, out var scroll);
+            var actions = _pad.Update(buttons, g.LX, g.LY, g.RY, now, out var scroll);
             foreach (var a in actions) HandlePadAction(a);
             if (scroll != 0) PadScroll(scroll);
             WatchForNewPopup();
@@ -155,6 +151,71 @@ public sealed partial class MainWindow
         {
             CrashReporter.Log($"[MainWindow.PadTick] {ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// The controller's state: an Xbox-style pad (XInput) first, else a PlayStation pad read
+    /// directly (Services/PlayStationPad.cs). Null when neither is connected. Preferring XInput means
+    /// a PlayStation pad that DS4Windows or Steam also shows as an Xbox pad isn't read twice.
+    /// </summary>
+    private PadState? ReadPad(long now)
+    {
+        if (_padSlot >= 0)
+        {
+            if (XInput.TryGetState(_padSlot, out var x)) return UsePadSource(false, FromXInput(x));
+            CrashReporter.Log("[MainWindow.Controller] Controller disconnected");
+            _padSlot = -1;
+            _padActive = false;
+        }
+        if (now >= _padNextScan)
+        {
+            _padNextScan = now + PadScanMs;
+            for (int i = 0; i < 4; i++)
+                if (XInput.TryGetState(i, out var x))
+                {
+                    _padSlot = i;
+                    CrashReporter.Log($"[MainWindow.Controller] Controller found (slot {i})");
+                    return UsePadSource(false, FromXInput(x));
+                }
+        }
+
+        if (_psPad.TryGetState(out var ps)) return UsePadSource(true, ps);
+        if (!_psPad.Connected) StartPlayStationScan(now);
+        else return null; // connected, no report yet
+        _padActive = false;
+        return null;
+    }
+
+    private static PadState FromXInput(XInput.State s)
+    {
+        var g = s.Gamepad;
+        return new PadState(g.Buttons, g.LeftTrigger, g.RightTrigger, g.ThumbLX, g.ThumbLY, g.ThumbRX, g.ThumbRY);
+    }
+
+    /// <summary>Notes which kind of pad is in use (for the hints); switching kinds starts fresh like a reconnect.</summary>
+    private PadState UsePadSource(bool playStation, PadState state)
+    {
+        if (playStation != _padIsPlayStation)
+        {
+            _padIsPlayStation = playStation;
+            _padActive = false;
+            _padHintKey = null; // relabel the hints
+        }
+        return state;
+    }
+
+    /// <summary>Looks for a PlayStation pad in the background (device enumeration is slow), every few seconds.</summary>
+    private void StartPlayStationScan(long now)
+    {
+        if (_psScanRunning || now < _psNextScan) return;
+        _psScanRunning = true;
+        _psNextScan = now + PsScanMs;
+        _ = Task.Run(() =>
+        {
+            try { _psPad.TryConnect(); }
+            catch (Exception ex) { CrashReporter.Log($"[MainWindow.StartPlayStationScan] {ex.GetType().Name}: {ex.Message}"); }
+            finally { _psScanRunning = false; }
+        });
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────

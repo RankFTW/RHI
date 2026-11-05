@@ -47,7 +47,7 @@ public sealed partial class MainWindow
     private void UpdatePadHints()
     {
         if (_padHintRow == null || Content?.XamlRoot is not { } xamlRoot) return;
-        var hints = CurrentPadHints(xamlRoot);
+        var hints = CurrentPadHints(xamlRoot).Select(h => (Key: PadButtonName(h.Key), h.Label)).ToList();
         var key = string.Join("|", hints.Select(h => h.Key + h.Label));
         if (key == _padHintKey) return;
         _padHintKey = key;
@@ -91,6 +91,27 @@ public sealed partial class MainWindow
             _padSavedBottomPadding = null;
             sv.Padding = new Thickness(p.Left, p.Top, p.Right, saved);
         }
+    }
+
+    /// <summary>The button's name on the pad in use: Xbox names, or PlayStation ones (✕ ○ □ △, L1 / R1…).</summary>
+    private string PadButtonName(string xbox)
+    {
+        if (!_padIsPlayStation) return xbox;
+        bool ds4 = _psPad.Model == PlayStationModel.DualShock4;
+        return xbox switch
+        {
+            "A" => "✕",
+            "B" => "○",
+            "X" => "□",
+            "Y" => "△",
+            "LB / RB" => "L1 / R1",
+            "LT / RT" => "L2 / R2",
+            "LS" => "L3",
+            "RS" => "R3",
+            "View" => ds4 ? "Share" : "Create",
+            "Menu" => "Options",
+            _ => xbox,
+        };
     }
 
     /// <summary>What each button does right now, in the order they're listed.</summary>
