@@ -94,8 +94,9 @@ public class Dlssg20_30Service
         => !string.IsNullOrEmpty(installPath) && !string.IsNullOrEmpty(installedAs)
         && File.Exists(Path.Combine(installPath, installedAs));
 
+    /// <summary>A proxy name, or its &lt;name&gt;Hooked.dll form (loaded by ASI Loader installed as that name).</summary>
     public static bool IsSupportedProxyName(string? name)
-        => !string.IsNullOrEmpty(name) && ProxyNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+        => !string.IsNullOrEmpty(name) && ProxyNames.Contains(HookedDllNames.BaseOf(name), StringComparer.OrdinalIgnoreCase);
 
     // ── Staging ───────────────────────────────────────────────────────────────
 
@@ -246,10 +247,17 @@ public class Dlssg20_30Service
         }
     }
 
-    private string? StagedProxyPath(string dllName)
-        => dllName.Equals("version.dll", StringComparison.OrdinalIgnoreCase)
-            ? Path.Combine(_pkgDir, "version.dll")
-            : Path.Combine(_pkgDir, "alternatives", dllName);
+    private string? StagedProxyPath(string dllName) => StagedProxyRelPath(dllName) is { } rel ? Path.Combine(_pkgDir, rel) : null;
+
+    /// <summary>Package-relative build for a proxy name. A hooked name uses its base name's build (versionHooked.dll → version.dll).</summary>
+    public static string? StagedProxyRelPath(string dllName)
+    {
+        if (!IsSupportedProxyName(dllName)) return null;
+        var baseName = HookedDllNames.BaseOf(dllName);
+        return baseName.Equals("version.dll", StringComparison.OrdinalIgnoreCase)
+            ? "version.dll"
+            : Path.Combine("alternatives", baseName);
+    }
 
     // ── Install / Update ──────────────────────────────────────────────────────
 

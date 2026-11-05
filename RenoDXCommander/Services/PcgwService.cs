@@ -336,6 +336,42 @@ public class PcgwService : IPcgwService
         return title != null;
     }
 
+    private PcgwCentralData? _titleIndexFor;
+    private Dictionary<string, string>? _normalizedTitleIndex;
+    private readonly object _titleIndexLock = new();
+
+    /// <inheritdoc />
+    public string? FindCentralTitle(string gameName)
+    {
+        var data = _centralData;
+        if (data == null || string.IsNullOrWhiteSpace(gameName)) return null;
+        var (title, _) = data.TryLookup(gameName, steamAppId: null);
+        if (title != null) return title;
+
+        var norm = _gameDetection.NormalizeName(gameName);
+        if (norm.Length == 0) return null;
+        Dictionary<string, string> index;
+        lock (_titleIndexLock)
+        {
+            if (_normalizedTitleIndex == null || !ReferenceEquals(_titleIndexFor, data))
+            {
+                // Built once per data load. Titles that normalize the same are ambiguous: dropped.
+                var built = new Dictionary<string, string>(StringComparer.Ordinal);
+                var clash = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var t in data.Games.Keys)
+                {
+                    var n = _gameDetection.NormalizeName(t);
+                    if (n.Length == 0 || clash.Contains(n)) continue;
+                    if (!built.TryAdd(n, t)) { built.Remove(n); clash.Add(n); }
+                }
+                _normalizedTitleIndex = built;
+                _titleIndexFor = data;
+            }
+            index = _normalizedTitleIndex;
+        }
+        return index.TryGetValue(norm, out var found) ? found : null;
+    }
+
     public int? GetSteamAppIdFromCentralData(string gameName)
     {
         if (_centralData == null) return null;

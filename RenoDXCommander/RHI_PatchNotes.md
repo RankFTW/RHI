@@ -36,6 +36,12 @@
 - Changed your mind? Settings › Tools & Maintenance › Troubleshooting › Removed games lists every game you've removed, with Restore to put it back.
 - Reset install folder is now its own button next to it.
 
+**Custom game folders**
+- Settings › Tools & Maintenance › Custom game folders: add folders where you keep DRM-free or other non-store games. Each folder inside one is treated as a game (or add a single game's folder).
+- RHI checks them when it starts, on Refresh and when you click Scan now. Games it finds are never added on their own: a "new games found in your custom folders" link appears in the status bar, and Review lets you pick which to add.
+- For each game you can fix the name and choose the exe. RHI picks the most likely one (skipping installers, redistributables, crash reporters and launchers) and says "Check the exe" when two look alike. The chosen exe is used to launch the game.
+- Ignore selected stops a game being offered again, and so does removing a game you added this way. Forget ignored games in the same card undoes that.
+
 ### Changes
 
 **Top bar**
@@ -58,9 +64,11 @@
 
 **OptiScaler**
 - New Default version setting (Settings → Components → OptiScaler): Stable, Nightly, DLSS NR or F5 DLSSNR. It's used when OptiScaler is installed in a game you haven't picked a version for in its ⚙. Games that already have OptiScaler keep the version they have.
+- New DXGI Spoofing setting in OptiScaler's ⚙ on every version: Auto, True or False. True makes the game see an NVIDIA GPU so it offers DLSS options. Auto turns it on for AMD and Intel and off for NVIDIA. Set it to False if a game crashes or misbehaves with spoofing on. Presets save it too.
 
 **Interface size**
 - New Interface size setting (Settings → General → Windows), from 50% to 150%. It makes RHI's window smaller or larger without changing Windows' scaling, for TVs and high-DPI screens set to 200% or more. Pop-ups, dropdown lists and tooltips keep the Windows size.
+- Hold Ctrl and turn the mouse wheel anywhere in RHI to change the interface size, like zooming in a browser. The new size shows in the status bar and is remembered.
 
 **Adding games**
 - A game you add yourself (Add Game, or dropping its exe on RHI) now opens straight away, so you don't have to find it in the list. If your search or filter would hide it, they're cleared.
@@ -75,7 +83,15 @@
 - Intel's XeSS files are now installed the way RTX Encore Hub installs them. If the game already has its own copies (Unreal games often keep them under Engine\Plugins), RHI replaces them where they are with the version RTX Encore needs, and puts the game's copies back when you remove RTX Encore. Files the game doesn't have, and Intel's licence, go in RTX Encore's own folder. Games that already have RTX Encore are updated on the next launch.
 - The ⚙ tooltips have been brought up to date with RTX Encore 1.6.0, and XeSS on Tensor Cores is greyed out unless Upscaler is XeSS.
 
+**ASI Loader**
+- When ASI Loader is installed in a game, the DLL name lists for 20/30 FG Unlock, Universal MFG Unlocker, RTX Encore and DLSS Enabler offer a Hooked version of ASI Loader's name (for example versionHooked.dll when ASI Loader is version.dll). ASI Loader loads that file as the real DLL, so the extra runs alongside it. If ASI Loader is later removed, RHI renames the extra back to the normal name so it keeps working.
+
 ### Bug Fixes
+
+**ASI Loader**
+- Fixed the DLL name lists for 20/30 FG Unlock, Universal MFG Unlocker and DLSS Enabler letting you pick the name ASI Loader or another extra was already using, which replaced it. Those names are now greyed out with what's using them.
+- Fixed installing ASI Loader over the name an extra was using: the extra was renamed so ASI Loader loads it, but RHI kept looking for it under the old name, so removing the extra later could delete ASI Loader. RHI now follows the rename and says which extra was moved.
+- Fixed reinstalling ASI Loader under the same name renaming its own old copy to a Hooked file, so it was loaded twice.
 
 **Antivirus**
 - Fixed RHI downloading DXVK and Universal MFG Unlocker on every launch even when no game uses them. Antivirus programs often flag these as false positives, so many people saw warnings for files they never installed. They now download only when a game uses them, or when you install them.

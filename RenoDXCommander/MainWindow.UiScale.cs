@@ -54,6 +54,48 @@ public sealed partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Ctrl + mouse wheel steps the interface size through <see cref="UiScaleOptions"/>, like browser zoom.
+    /// Hooked on the original root (it stays in the tree when the scale host wraps it), with handled
+    /// events included so scroll areas under the pointer don't swallow it.
+    /// </summary>
+    private void HookUiScaleWheel()
+    {
+        if (Content is not UIElement root) return;
+        root.AddHandler(UIElement.PointerWheelChangedEvent,
+            new Microsoft.UI.Xaml.Input.PointerEventHandler(UiScaleWheel_Changed), handledEventsToo: true);
+    }
+
+    private void UiScaleWheel_Changed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        try
+        {
+            if (!e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control)) return;
+            int delta = e.GetCurrentPoint(null).Properties.MouseWheelDelta;
+            if (delta == 0) return;
+            e.Handled = true;
+
+            // Nearest option at or past the current size, then one step up or down
+            int current = ViewModel.Settings.UiScale;
+            int idx = Array.IndexOf(UiScaleOptions, current);
+            if (idx < 0) idx = Array.FindIndex(UiScaleOptions, p => p >= current);
+            if (idx < 0) idx = UiScaleOptions.Length - 1;
+            int next = Math.Clamp(idx + (delta > 0 ? 1 : -1), 0, UiScaleOptions.Length - 1);
+            int percent = UiScaleOptions[next];
+            if (percent == current) return;
+
+            ViewModel.Settings.UiScale = percent;
+            ViewModel.SaveSettingsPublic(); // debounced, so a fast scroll writes once
+            ApplyUiScale(percent);
+            _settingsHandler.SelectUiScale();
+            ShowStatusBarMessage($"Interface size {percent}%", TimeSpan.FromSeconds(2));
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.UiScaleWheel_Changed] {ex.Message}");
+        }
+    }
+
     private void SizeScaledRoot()
     {
         if (_uiScaleHost == null || _uiScaledRoot == null) return;

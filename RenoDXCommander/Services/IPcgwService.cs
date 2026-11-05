@@ -76,4 +76,10 @@ public interface IPcgwService
     /// Used to source cover art from Steam CDN for non-Steam games (e.g. Xbox/Game Pass).
     /// </summary>
     int? GetSteamAppIdFromCentralData(string gameName);
+
+    /// <summary>
+    /// The PCGW page title for a game name from the centralized data: exact lookup, then an exact
+    /// normalized-name match (letters and digits only). No fuzzy matching. Null when not found.
+    /// </summary>
+    string? FindCentralTitle(string gameName);
 }

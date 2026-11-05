@@ -179,9 +179,12 @@ public partial class Rtx40MfgService
         try
         {
             string? preferred = File.Exists(marker) ? File.ReadAllText(marker).Trim() : null;
-            if (string.IsNullOrEmpty(preferred) || !KnownProxyNames.Contains(preferred, StringComparer.OrdinalIgnoreCase))
-                preferred = "version.dll";
-            var name = new[] { preferred, "version.dll", "winmm.dll", "dinput8.dll" }
+            // A hooked name (versionHooked.dll) is only right while ASI Loader still holds its base name
+            bool preferredOk = !string.IsNullOrEmpty(preferred)
+                && KnownProxyNames.Contains(HookedDllNames.BaseOf(preferred), StringComparer.OrdinalIgnoreCase)
+                && (!HookedDllNames.TryGetBase(preferred, out var hookedBase) || File.Exists(Path.Combine(installPath, hookedBase)));
+            string first = preferredOk ? preferred! : "version.dll";
+            var name = new[] { first, "version.dll", "winmm.dll", "dinput8.dll" }
                 .Concat(KnownProxyNames)
                 .FirstOrDefault(n => !File.Exists(Path.Combine(installPath, n)));
             if (name == null)

@@ -24,6 +24,7 @@ public class OsPreset
     public string? FgEnabled              { get; set; }  // "true", "false" (auto = not set)
     public string? ForceReflex            { get; set; }  // "0", "1", "2"
     public string? UseGamesReflexMarkers  { get; set; }  // "true", "false"
+    public string? DxgiSpoofing           { get; set; }  // [Spoofing] Dxgi: "auto", "true", "false"
     // ── DLSS NR preset fields ─────────────────────────────────────────────────
     public string? NrRuntime              { get; set; }  // e.g. "310.8.2", "310.8.SF-v2"
     public string? NrEnabled              { get; set; }  // "true", "false", "auto"

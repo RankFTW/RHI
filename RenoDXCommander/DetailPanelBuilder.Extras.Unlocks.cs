@@ -655,12 +655,6 @@ public partial class DetailPanelBuilder
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return null;
 
-        // RHI-managed filenames to flag as conflict
-        var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
-
         string? chosen = null;
 
         var listPanel    = new StackPanel { Spacing = 4 };
@@ -671,13 +665,14 @@ public partial class DetailPanelBuilder
             Content   = listPanel,
         };
 
-        foreach (var name in DeDllNames)
+        foreach (var option in GetExtraDllOptions(card, DeDllNames, currentDllName))
         {
-            bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
-            bool isRhiOwned    = rhiOwned.Contains(name);
+            var name           = option.Name;
+            bool isRecommended = option.IsRecommended;
+            bool isRhiOwned    = option.BlockedBy != null;
             bool isDxgiConflict = string.Equals(name, "dxgi.dll", StringComparison.OrdinalIgnoreCase)
                                && !string.IsNullOrEmpty(card.RsInstalledFile);
-            bool isCurrent     = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isCurrent     = option.IsCurrent;
 
             var btn = new Button
             {
@@ -714,18 +709,15 @@ public partial class DetailPanelBuilder
 
             if (isRecommended)
                 contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
-            if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
-            else if (isDxgiConflict)
+            AddExtraDllBadges(contentRow, btn, option, "DLSS Enabler");
+            if (!isRhiOwned && isDxgiConflict)
                 contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
                 contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
-            if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name.");
-            else if (isDxgiConflict)
+            if (!isRhiOwned && isDxgiConflict)
                 ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OS components if they also use this name.");
 
             btn.Tag    = name;

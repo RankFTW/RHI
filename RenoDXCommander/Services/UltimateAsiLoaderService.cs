@@ -231,17 +231,24 @@ public class UltimateAsiLoaderService
         }
 
         // Hooked chaining — if the target DLL exists and is NOT ours, rename it first
+        // (a reinstall under the same name replaces ASI Loader's own file, it isn't chained)
         string? hookedOriginal = null;
-        if (File.Exists(destPath) && !IsRhiManagedFile(card, dllName))
+        bool reinstallSameName = existingRecord != null
+            && existingRecord.InstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase);
+        if (File.Exists(destPath) && !reinstallSameName && !IsRhiManagedFile(card, dllName))
         {
-            var ext        = Path.GetExtension(dllName);           // ".dll"
-            var nameNoExt  = Path.GetFileNameWithoutExtension(dllName); // "version"
-            var hookedName = $"{nameNoExt}Hooked{ext}";            // "versionHooked.dll"
+            var hookedName = HookedDllNames.ToHooked(dllName);     // "versionHooked.dll"
             var hookedPath = Path.Combine(card.InstallPath, hookedName);
+            if (File.Exists(hookedPath))
+            {
+                // Never overwrite a file already chained there (the game's own DLL or an RHI extra)
+                _crashReporter.Log($"[UltimateAsiLoaderService.InstallAsync] '{dllName}' and '{hookedName}' both exist in '{card.InstallPath}' — not installing over them");
+                return (false, null);
+            }
 
             try
             {
-                File.Move(destPath, hookedPath, overwrite: true);
+                File.Move(destPath, hookedPath, overwrite: false);
                 hookedOriginal = hookedName;
                 _crashReporter.Log($"[UltimateAsiLoaderService.InstallAsync] Chained '{dllName}' → '{hookedName}' for '{card.GameName}'");
             }

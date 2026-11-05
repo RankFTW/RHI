@@ -1050,6 +1050,7 @@ public partial class MainViewModel
                     if (success)
                     {
                         SetUalInstalledAs(gameName, chosenName, store);
+                        if (hookedOriginal != null) OnUalChainedFile(card, chosenName, hookedOriginal);
                         _crashReporter.Log($"[SfAutoConfig] Installed UAL as '{chosenName}' for '{gameName}'" +
                             (hookedOriginal != null ? $" (chained '{hookedOriginal}')" : ""));
                     }
@@ -1128,6 +1129,7 @@ public partial class MainViewModel
             var ualSvc = App.Services.GetRequiredService<UltimateAsiLoaderService>();
             ualSvc.Uninstall(card);
             SetUalInstalledAs(gameName, null, store);
+            OnUalReleasedName(card, ualInstalled);
             _crashReporter.Log($"[SfAutoConfig.Revert] Removed UAL ('{ualInstalled}') for '{gameName}'");
         }
 

@@ -350,7 +350,7 @@ public sealed partial class MainWindow
         _ => null
     };
 
-    private async Task<string?> PickFolderAsync(string? suggestedPath = null)
+    internal async Task<string?> PickFolderAsync(string? suggestedPath = null)
     {
         // WinUI 3 unpackaged FolderPicker ignores SuggestedStartLocation for arbitrary paths.
         // Use IFileOpenDialog via COM directly so we can call SetFolder() with the game directory.

@@ -516,6 +516,9 @@ public partial class MainViewModel
                 });
             });
 
+            // Custom game folders: offer games the store scan didn't find (background, only with folders set)
+            StartCustomFolderScan("BackgroundScan");
+
             // Update status text with final counts
             var offlineMode = wikiFetchFailed;
             DispatcherQueue?.TryEnqueue(() =>

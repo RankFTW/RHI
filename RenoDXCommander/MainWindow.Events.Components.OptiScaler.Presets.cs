@@ -262,6 +262,7 @@ public sealed partial class MainWindow
         if (!Same(p.HudFix, ReadOsIniSectionValue(card.InstallPath, "OptiFG", "HUDFix", ""), "auto")) return false;
         if (!Same(p.ForceReflex, ReadOsIniSectionValue(card.InstallPath, "fakenvapi", "ForceReflex", ""), "0")) return false;
         if (!Same(p.UseGamesReflexMarkers, ReadOsIniSectionValue(card.InstallPath, "DLSSG", "UseGamesReflexMarkers", ""), "true")) return false;
+        if (!Same(p.DxgiSpoofing, ReadOsIniSectionValue(card.InstallPath, "Spoofing", "Dxgi", ""), "auto")) return false;
         if (p.DeployStreamline.HasValue && p.DeployStreamline.Value != ViewModel.GetOsDeployStreamline(card.GameName, store)) return false;
         if (p.InstallUniversalMfg == true && !card.Rtx40MfgInstalled) return false;
         return true;

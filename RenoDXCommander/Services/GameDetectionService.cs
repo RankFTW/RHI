@@ -426,7 +426,7 @@ public partial class GameDetectionService : IGameDetectionService
     /// <summary>Folder names to skip during engine/exe heuristic searches.
     /// These contain bonus content (artbook viewers, soundtrack players, etc.)
     /// that can carry their own engine DLLs and exes.</summary>
-    private readonly HashSet<string> _skipFolders = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _skipFolders = new(StringComparer.OrdinalIgnoreCase)
     {
         "artbook", "art book", "artbooks", "digitalartbook",
         "soundtrack", "ost", "music",
@@ -434,6 +434,9 @@ public partial class GameDetectionService : IGameDetectionService
         "bonus", "bonuscontent", "bonus content", "extras",
         "wallpapers", "wallpaper",
     };
+
+    /// <summary>True for bonus-content folder names (artbook, soundtrack, manual...) that never hold the game.</summary>
+    internal static bool IsSkippedFolderName(string name) => _skipFolders.Contains(name);
 
     private bool IsSkippedFolder(string path)
     {

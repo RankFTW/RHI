@@ -148,7 +148,9 @@ public sealed partial class MainWindow
                                       { "Force Disable (1)" => "1", "Force Enable (2)" => "2", _ => "0" } : null;
         string? capturedReflexMarkers = ctx.ReflexMarkersCombo?.SelectedItem is string rm
                                         ? (rm == "False" ? "false" : "true") : null;
-        float?  capturedFps         = null;
+        string? capturedDxgi        = ctx.DxgiCombo?.SelectedItem is string dx
+                                      ? (dx == "True" ? "true" : dx == "False" ? "false" : "auto") : null;
+        float?  capturedFps        = null;
         if (ctx.FpsLimitCombo?.SelectedItem is string fpsSel)
         {
             if (fpsSel == "Off") capturedFps = 0f;
@@ -186,6 +188,7 @@ public sealed partial class MainWindow
         p.FgEnabled             = capturedFgEnabled;
         p.ForceReflex           = capturedForceReflex;
         p.UseGamesReflexMarkers = capturedReflexMarkers;
+        p.DxgiSpoofing          = capturedDxgi;
     }
 
     /// <summary>Writes a saved preset to the game (settings, OptiScaler.ini, Streamline, NR runtime).</summary>
@@ -314,6 +317,8 @@ public sealed partial class MainWindow
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "fakenvapi", "ForceReflex", p.ForceReflex);
             if (p.UseGamesReflexMarkers != null)
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSG", "UseGamesReflexMarkers", p.UseGamesReflexMarkers);
+            if (p.DxgiSpoofing != null)
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Spoofing", "Dxgi", p.DxgiSpoofing);
         }
 
         // OsVariant — change if preset has one

@@ -399,6 +399,9 @@ public partial class MainViewModel
         if (!card.IsManuallyAdded)
             return;
 
+        // A game from a custom game folder isn't offered again by the folder scan
+        IgnoreCustomFolderGameOnRemove(card);
+
         // Remove manual entries and the corresponding card
         _manualGames.RemoveAll(g => g.Name.Equals(card.GameName, StringComparison.OrdinalIgnoreCase));
         _allCards.RemoveAll(c => c.IsManuallyAdded && c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase));

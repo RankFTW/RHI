@@ -40,6 +40,7 @@ public partial class SettingsHandler
                 ToolTipService.SetToolTip(combo,
                     "Makes RHI's window smaller or larger without changing Windows' scaling. " +
                     "Useful on TVs and high-DPI screens set to 200% or more. " +
+                    "You can also hold Ctrl and turn the mouse wheel anywhere in RHI. " +
                     "Pop-ups, dropdown lists and tooltips keep the Windows size.");
                 Grid.SetColumn(combo, 1);
                 row.Children.Add(combo);
@@ -55,7 +56,8 @@ public partial class SettingsHandler
         }
     }
 
-    private void SelectUiScale()
+    /// <summary>Selects the saved size in the combo (also called after Ctrl + mouse wheel changes it).</summary>
+    internal void SelectUiScale()
     {
         if (_uiScaleCombo == null) return;
         _uiScaleSelecting = true;

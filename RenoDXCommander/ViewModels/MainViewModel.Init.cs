@@ -950,6 +950,9 @@ public partial class MainViewModel
                 }
             });
 
+            // Custom game folders: offer games the store scan didn't find (background, only with folders set)
+            StartCustomFolderScan("InitializeAsync");
+
             var offlineMode = wikiFetchFailed;
             StatusText    = offlineMode
                 ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"

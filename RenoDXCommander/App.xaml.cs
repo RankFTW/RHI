@@ -89,6 +89,7 @@ public partial class App : Application
         services.AddSingleton<INexusUpdateService, NexusUpdateService>();
         services.AddSingleton<ISteamAppIdResolver, SteamAppIdResolver>();
         services.AddSingleton<IPcgwService, PcgwService>();
+        services.AddSingleton<ICustomFolderScanService, CustomFolderScanService>();
         services.AddSingleton<IUltrawideFixService, UltrawideFixService>();
         services.AddSingleton<IUltraPlusService, UltraPlusService>();
 

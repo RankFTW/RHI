@@ -42,6 +42,7 @@ public sealed partial class MainWindow
         public ComboBox? FpsLimitCombo;
         public ComboBox? ApiCombo;
         public ComboBox? ApiUpscalerCombo;
+        public ComboBox? DxgiCombo;
         // Frame Generation (Nightly / DLSS NR / F5 only)
         public ComboBox? FgEnabledCombo;
         public ComboBox? CombinedCombo;
@@ -384,6 +385,20 @@ public sealed partial class MainWindow
                 });
             ctx.FpsLimitCombo = fpsCell.Combo;
 
+            // ── DXGI spoofing — [Spoofing] Dxgi ──────────────────────────────
+            var dxgiItems = new[] { "Auto (Default)", "True", "False" };
+            var dxgiCurrent = ReadOsIniSectionValue(card.InstallPath, "Spoofing", "Dxgi", "auto");
+            var dxgiCell = OsComboCell(cog, "DXGI Spoofing",
+                "Makes the game see an NVIDIA GPU (Dxgi in [Spoofing]) so it offers DLSS options. Auto turns it on for AMD and Intel GPUs and off for NVIDIA. " +
+                "Set it to False if a game crashes or behaves oddly with spoofing on.",
+                dxgiItems, dxgiCurrent.ToLowerInvariant() switch { "true" => 1, "false" => 2, _ => 0 },
+                i =>
+                {
+                    if (!card.IsOsInstalled || string.IsNullOrEmpty(card.InstallPath)) return;
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Spoofing", "Dxgi", i switch { 1 => "true", 2 => "false", _ => "auto" });
+                });
+            ctx.DxgiCombo = dxgiCell.Combo;
+
             // ── Upscaler: API selector + upscaler for that API ───────────────
             // Default the API combo to the game's detected graphics API
             var apiDefault = card.GraphicsApi switch
@@ -419,9 +434,9 @@ public sealed partial class MainWindow
 
             // Nightly: version and build share a row (both usable before installing), framerate limit goes last.
             if (isNightly)
-                AddOsGrid(ctx, variantCell, BuildOsNightlyBuildCell(ctx, isInstalled), apiCell, upscalerCell, fpsCell, null);
+                AddOsGrid(ctx, variantCell, BuildOsNightlyBuildCell(ctx, isInstalled), apiCell, upscalerCell, fpsCell, dxgiCell);
             else
-                AddOsGrid(ctx, variantCell, fpsCell, apiCell, upscalerCell);
+                AddOsGrid(ctx, variantCell, fpsCell, apiCell, upscalerCell, dxgiCell, null);
 
             apiCombo.SelectionChanged += (s, ev) => RefreshUpscalerCombo(apiCombo.SelectedItem as string ?? "DX11");
             apiUpscalerCombo.SelectionChanged += (s, ev) =>

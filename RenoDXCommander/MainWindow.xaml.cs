@@ -253,6 +253,7 @@ public sealed partial class MainWindow : Window
         ViewModel.PropertyChanged += OnViewModelChanged;
         ViewModel.ManualGameAdded += OpenAddedGame;
         HookAntivirusNotice();
+        HookCustomGamesNotice();
         StartStatusBarTimer();
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // When the filtered game list changes, preserve selection if the selected game is still visible
@@ -271,6 +272,7 @@ public sealed partial class MainWindow : Window
         UpdatePageVisibility();
         // Interface size (Settings › General › Windows)
         if (ViewModel.Settings.UiScale != 100) ApplyUiScale(ViewModel.Settings.UiScale);
+        HookUiScaleWheel();
         // Show version in status bar
         StatusBarVersionText.Content = $"v{Services.CrashReporter.AppVersion}";
         // Always show the ✕ clear button on search box
