@@ -1,6 +1,6 @@
 // MainWindow.Controller.cs -- controller support in the Spotlight layout.
-// An Xbox-style controller (XInput, Services/ControllerInput.cs) is read only while RHI is the active
-// window, so it never acts while you're in a game: launch one and RHI goes quiet by itself. Buttons
+// An Xbox-style controller (XInput, Services/ControllerInput.cs), a PlayStation pad (Services/PlayStationPad.cs)
+// or a Steam Controller (Services/SteamControllerPad.cs) is read only while RHI is the active window, so it never acts while you're in a game: launch one and RHI goes quiet by itself. Buttons
 // held when RHI becomes active again are ignored until released.
 //   D-pad / left stick  move              A  select            B  back (closes menus, the panel, Settings)
 //   Y  Launch           X  game menu      LB / RB  previous / next game (in the panel: section;
@@ -38,9 +38,12 @@ public sealed partial class MainWindow
 
     private const int PadFastMs = 16, PadSlowMs = 250, PadScanMs = 2000, PsScanMs = 4000;
     private readonly PlayStationPadReader _psPad = new();
+    private readonly SteamControllerReader _steamPad = new();
     private volatile bool _psScanRunning;
     private long _psNextScan;
-    private bool _padIsPlayStation;
+    private enum PadSource { XInput, PlayStation, Steam }
+    private PadSource _padSource;
+    private bool _padIsPlayStation => _padSource == PadSource.PlayStation;
     private const int PadPageSize = 10; // LT / RT jump this many games
     private bool _padStepping;          // the controller is changing the selected cover (no ScrollIntoView)
     private ScrollViewer? _shelfScroller;
@@ -67,7 +70,8 @@ public sealed partial class MainWindow
             {
                 _padTimer?.Stop();
                 _padActive = false;
-                _psPad.Dispose(); // let go of a PlayStation pad until controller support is back on
+                _psPad.Dispose(); // let go of a PlayStation pad / Steam Controller until controller support is back on
+                _steamPad.Dispose();
                 ShowPadHints(false);
                 return;
             }
@@ -80,6 +84,7 @@ public sealed partial class MainWindow
                 LifetimeToken.Register(() =>
                 {
                     _psPad.Dispose();
+                    _steamPad.Dispose();
                     DispatcherQueue.TryEnqueue(() => _padTimer?.Stop());
                 });
                 CrashReporter.Log("[MainWindow.Controller] Controller support on");
@@ -157,15 +162,15 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// The controller's state: an Xbox-style pad (XInput) first, else a PlayStation pad read
-    /// directly (Services/PlayStationPad.cs). Null when neither is connected. Preferring XInput means
-    /// a PlayStation pad that DS4Windows or Steam also shows as an Xbox pad isn't read twice.
+    /// The controller's state: an Xbox-style pad (XInput) first, else a PlayStation pad or a Steam
+    /// Controller read directly (Services/PlayStationPad.cs, SteamControllerPad.cs). Null when none is
+    /// connected. Preferring XInput means a pad that DS4Windows or Steam also shows as an Xbox pad isn't read twice.
     /// </summary>
     private PadState? ReadPad(long now)
     {
         if (_padSlot >= 0)
         {
-            if (XInput.TryGetState(_padSlot, out var x)) return UsePadSource(false, FromXInput(x));
+            if (XInput.TryGetState(_padSlot, out var x)) return UsePadSource(PadSource.XInput, FromXInput(x));
             CrashReporter.Log("[MainWindow.Controller] Controller disconnected");
             _padSlot = -1;
             _padActive = false;
@@ -178,13 +183,14 @@ public sealed partial class MainWindow
                 {
                     _padSlot = i;
                     CrashReporter.Log($"[MainWindow.Controller] Controller found (slot {i})");
-                    return UsePadSource(false, FromXInput(x));
+                    return UsePadSource(PadSource.XInput, FromXInput(x));
                 }
         }
 
-        if (_psPad.TryGetState(out var ps)) return UsePadSource(true, ps);
-        if (!_psPad.Connected) StartPlayStationScan(now);
-        else return null; // connected, no report yet
+        if (_psPad.TryGetState(out var ps)) return UsePadSource(PadSource.PlayStation, ps);
+        if (_steamPad.TryGetState(out var sc)) return UsePadSource(PadSource.Steam, sc);
+        // A Steam dongle stays open with its controller off, so each kind is looked for on its own
+        if (!_psPad.Connected || !_steamPad.Connected) StartNativePadScan(now);
         _padActive = false;
         return null;
     }
@@ -196,27 +202,31 @@ public sealed partial class MainWindow
     }
 
     /// <summary>Notes which kind of pad is in use (for the hints); switching kinds starts fresh like a reconnect.</summary>
-    private PadState UsePadSource(bool playStation, PadState state)
+    private PadState UsePadSource(PadSource source, PadState state)
     {
-        if (playStation != _padIsPlayStation)
+        if (source != _padSource)
         {
-            _padIsPlayStation = playStation;
+            _padSource = source;
             _padActive = false;
             _padHintKey = null; // relabel the hints
         }
         return state;
     }
 
-    /// <summary>Looks for a PlayStation pad in the background (device enumeration is slow), every few seconds.</summary>
-    private void StartPlayStationScan(long now)
+    /// <summary>Looks for a PlayStation pad and a Steam Controller in the background (device enumeration is slow), every few seconds.</summary>
+    private void StartNativePadScan(long now)
     {
         if (_psScanRunning || now < _psNextScan) return;
         _psScanRunning = true;
         _psNextScan = now + PsScanMs;
         _ = Task.Run(() =>
         {
-            try { _psPad.TryConnect(); }
-            catch (Exception ex) { CrashReporter.Log($"[MainWindow.StartPlayStationScan] {ex.GetType().Name}: {ex.Message}"); }
+            try
+            {
+                if (!_psPad.Connected) _psPad.TryConnect();
+                if (!_steamPad.Connected) _steamPad.TryConnect();
+            }
+            catch (Exception ex) { CrashReporter.Log($"[MainWindow.StartNativePadScan] {ex.GetType().Name}: {ex.Message}"); }
             finally { _psScanRunning = false; }
         });
     }

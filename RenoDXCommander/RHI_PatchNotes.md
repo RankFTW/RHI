@@ -3,6 +3,12 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.2 Beta
+
+### Changes
+
+- Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
+
 ## v2.9.1
 
 ### Bug Fixes
