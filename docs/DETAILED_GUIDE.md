@@ -48,7 +48,7 @@ This guide covers every feature in RHI (ReShade HDR Installer). For a short over
 ### Requirements
 
 - Windows 10 or 11 (64-bit).
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The installer also installs the Windows App Runtime if it's missing.
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) and the [Windows App Runtime 2.5](https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe). The installer doesn't install the Windows App Runtime; if it's missing or damaged, RHI says so when it starts and offers to open the download.
 - An NVIDIA GPU for DLSS presets, driver settings and Neural Rendering. ReShade, RenoDX, Luma and OptiScaler work on any GPU.
 
 ### First launch
@@ -71,7 +71,7 @@ RHI checks the token, stores it in `%LOCALAPPDATA%\RHI\github_api.txt` and uses 
 
 ### Quick Start
 
-The **Quick Start** toolbar button opens an in-app walkthrough: selecting a game, installing ReShade, RenoDX and Luma, shaders, DOF Fix, frame limiters, DLSS/Streamline, OptiScaler, settings, NVIDIA driver settings, Vulkan games, adding games manually, updating, and Full Refresh. **← Back to Games** returns to your library.
+**Help → Quick Start** opens an in-app walkthrough: selecting a game, installing ReShade, RenoDX and Luma, shaders, DOF Fix, frame limiters, DLSS/Streamline, OptiScaler, settings, NVIDIA driver settings, Vulkan games, adding games manually, updating, and Full Refresh. **← Back to Games** returns to your library.
 
 ---
 
@@ -79,35 +79,47 @@ The **Quick Start** toolbar button opens an in-app walkthrough: selecting a game
 
 ![The RHI main window](images/game_view.png)
 
-RHI has one layout: the game list on the left, the selected game's detail panel on the right, the toolbar on top and the status bar at the bottom. Settings, About and Quick Start open as full pages with a **← Back to Games** button. The window remembers its size, position and maximised state. Its minimum width is 1220 pixels.
+RHI has three layouts, chosen with the **Classic+ | Tabs | Spotlight** switch on the top bar. Every setting is available in every layout, and RHI remembers the one you used last. All three share the top bar and the status bar. Settings, About and Quick Start open as full pages; click the **Settings** button again, or the RHI logo, to go back to your games. The window remembers its size, position and maximised state. Its minimum size is 1220 × 800 pixels.
 
-### Toolbar
+### Layouts
 
-| Button | What it does |
+- **Classic+** (default): the game list on the left and the selected game's detail panel on the right, with seven collapsible sections. See [Sidebar](#sidebar) and [Detail panel](#detail-panel).
+- **Tabs**: the same sidebar, with the game page shown one tab at a time. See [Tabs layout](#tabs-layout).
+- **Spotlight**: your games as a shelf of covers under a large banner of the selected game. See [Spotlight layout](#spotlight-layout).
+
+### Top bar
+
+| Item | What it does |
 |---|---|
-| **New Mods Available** | Only shown when new RenoDX, Luma or Ultra+ mods have appeared since you last looked. Lists them; **Dismiss** hides the button until more arrive. |
-| **Quick Start** | Opens the in-app Quick Start guide. |
-| **Available Mods** | A searchable list of every supported game with **RenoDX**, **Luma** and **Ultra+** columns. ✓ = complete, 🔨 = in progress, ✗ = none. Click a tick to open that mod's page. Type `RenoDX`, `Luma` or `Ultra+` at the start of the search to show only that type, optionally followed by a name (e.g. `luma dead`). Includes Source engine games supported by RenoDX's Source addon; RHI lists these but can't install them yet. Disabled until mod data has loaded. |
+| **RHI** logo | Goes back to your games from Settings, About or Quick Start. |
+| **Available Mods** | A searchable list of every supported game with **RenoDX**, **Luma** and **Ultra+** columns. ✓ = complete, 🔨 = in progress, ✗ = none. Click a tick to open that mod's page. Type `RenoDX`, `Luma` or `Ultra+` at the start of the search to show only that type, optionally followed by a name (e.g. `luma dead`). Includes Source engine games supported by RenoDX's Source addon; RHI lists these but can't install them yet. A green **New** badge appears when new RenoDX, Luma or Ultra+ mods have arrived since you last looked; click it to see them. Disabled until mod data has loaded. |
+| **Shaders & Addons** | **Global Shaders** (shader pack picker) and **Global Addons** (ReShade addon manager). |
+| **Checked … ago** | When RHI last checked for updates. |
 | **Refresh** | Rescans your library and fetches the latest mod information. |
-| **Shaders/Addons** | **Global Shaders** (shader pack picker) and **Global Addons** (ReShade addon manager). |
-| **Update All** | Updates installed components across your library. Highlighted when updates are available. See [Updates](#updates). |
-| **Links** | RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub. |
-| **Help** | Discord, Guide (this page), Ko-fi, About. |
-| **Donate** | "Support the Mod Authors": the mod authors whose work RHI installs, with a Ko-fi button for each. |
-| **Settings** | Opens the [Settings page](#settings-page). |
+| **Update All** | Updates installed components across your library, with a count of the games that have updates. Shows **All up to date** when there's nothing to update. See [Updates](#updates). |
+| **Classic+ \| Tabs \| Spotlight** | Switches layout. |
+| **Help** | Quick Start, Guide (this page), Discord; RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub; Patch notes, Message of the day, Update log, About and Donate ("Support the Mod Authors": the mod authors whose work RHI installs, with a Ko-fi or Patreon button for each). |
+| **Settings** | Opens the [Settings page](#settings-page). Lit while Settings is open; click it again to go back. |
+
+Patch notes list every version down the left; click one to read its notes. The search box finds a word across every version and shows each matching line.
 
 ### Sidebar
+
+Used by Classic+ and Tabs.
 
 - **Search box** ("Filter games..."): filters live by game name, store, engine, graphics API, bitness, and RenoDX or Luma mod name and author. It also understands keywords such as `DLSS`, `Ray Reconstruction`, `Frame Generation`, `Streamline`, `RE Engine`, `RE Framework`, `32-bit`, `64-bit`, `UW Fix` and `Ultra+`.
 - **+** buttons next to the search box:
   - The green **+** (**Manually add a game**): see [Adding a game manually](#adding-a-game-manually).
-  - A second **+** appears while you're searching: **Save current search as a custom filter** saves the search as a named chip (like the teal DLSS, Vulkan or Xbox chips). Click the chip to toggle it; right-click it to delete it.
-- **Filter chips**: **All Games**, **Installed** (games with ReShade installed), **Favourites** and **Hidden** pick one view. **Unreal**, **Unity**, **Other**, **RenoDX** and **Luma** narrow it further and can be combined. Hidden games only appear under Hidden. Your selected filter is remembered.
+  - A second **+** appears while you're searching: **Save current search as a custom filter** saves the search as a named chip. Click the chip to toggle it; right-click it to delete it.
+- **All | Installed | Favourites | Hidden**: picks one view. Installed means games with ReShade installed; hidden games only appear under Hidden. Your choice is remembered.
+- **Filters**: shows the **Unreal**, **Unity**, **Other**, **RenoDX** and **Luma** filters and your saved search chips, which narrow the view further and can be combined. Shows **Filters (N)** while any are on.
 - A count line: games shown, games with ReShade, and hidden games.
 - Each game row shows its store icon and name, a **green dot** when any of its components has an update (unless excluded from Update All), and turns **green** while a game launched through RHI is running.
 - **Double-click** a game to launch it. **Right-click** for Open Folder, Favourite, Hide/Show, Discussion / Instructions and View Notes (when available), and **Create Desktop Shortcut**.
 
 ### Detail panel
+
+This is the Classic+ game page.
 
 **Header**
 
@@ -127,20 +139,74 @@ Below the header are seven sections:
 3. **Neural Rendering**: DLSS 5 tools.
 4. **DLSS / Streamline**: DLSS versions, presets and render scale.
 5. **Driver Settings**: per-game NVIDIA driver settings.
-6. **Management**: install folder, reset and report tools.
+6. **Management**: install folder, reset, remove and report tools.
 7. **Extras**: ASI Loader, OptiScaler, frame generation unlocks, DXVK and dgVoodoo2.
 
 Click a section heading to collapse or expand it. Drag the **≡** handle to reorder sections. A collapsed section shows a one-line summary, for example installed versions or active overrides. Order, collapsed state and summaries are remembered.
 
+### Tabs layout
+
+Tabs shows the game page one tab at a time, next to the same sidebar as Classic+.
+
+- **Game header**: the game's name in large type with a Favourite star and Hide, tags for the store, engine, graphics API, 32/64-bit and mod author, the install path with **Open folder** and **Config folder**, and links to Nexus Mods, PCGamingWiki, ultrawide fixes and Ultra+. A large **Launch** button has a menu for the executable, launch arguments and a desktop shortcut, and **HDR on launch** and **Resolution switch** are labelled toggles.
+- **Overview** tab: a card for each component (ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter) with its version, a short description, the main button and Info, ⚙ and remove. ReLimiter and Display Commander share one card with a switch between them. Below, an **At a glance** tile for every other section shows its summary; click one to open that tab.
+- The other tabs, always in this order: **Game Overrides** (four cards: Names and matching, ReShade, DLL names, and Updates and launch), **Extras** (Loaders and upscalers, MFG unlocks and API upgrades, with a description for each component; when something can't be installed, the row says why), **DLSS / Streamline** (a column each for Super Resolution, Ray Reconstruction, Frame Generation and Neural Rendering, with Streamline underneath), **Driver Settings**, **Neural Rendering** (a card for each method, with the setup underneath) and **Management** (large buttons).
+- RHI remembers which tab you were on.
+- A component's ⚙ settings open right under it on the page instead of in a pop-up. Click ⚙ again, or ✕, to close them.
+
+### Spotlight layout
+
+Spotlight is built around the game you've picked.
+
+- **Banner**: the game's Steam artwork across the top (for any store, when the game is also on Steam), with the same name, tags, path, links, Launch button and HDR / Resolution toggles as Tabs.
+- **Cover shelf**: your games as a row of covers instead of the sidebar list, with the search box, the All / Installed / Favourites / Hidden switch and Filters above it. Scroll it with the mouse wheel, click a cover to select the game, double-click to launch it, and right-click for the usual game menu. A game with an update shows a purple **Update** label and outline on its cover.
+- **What's installed**: a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter, plus **Manage components**, which opens the component cards.
+- **Tune this game**: a tile for every section with its summary. Click one and that section slides in from the right, laid out as in Tabs; click outside it or ✕ to close. A component's ⚙ settings open in the same side panel, with a back button to the section you came from.
+- **Artwork**: downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once. To use your own image, right-click a cover or the banner and choose **Artwork › Set custom cover...** or **Set custom banner...**. **Use Steam cover** / **Use Steam banner** puts Steam's back. Handy for games that aren't on Steam.
+
+### Controller support
+
+In Spotlight you can use an Xbox or PlayStation controller. PlayStation controllers (DualShock 4, DualSense and DualSense Edge, over USB or Bluetooth) work with nothing extra to install; if DS4Windows or Steam also shows the controller as an Xbox pad, RHI uses that one, so presses never count twice.
+
+| Button | What it does |
+|---|---|
+| D-pad / left stick | Move around |
+| A (✕) | Select. On a cover, moves to its Launch button |
+| B (○) | Back: closes a menu, dropdown, dialog, the side panel or Settings |
+| Y (△) | Launch the game |
+| X (□) | Open the game menu |
+| LB / RB (L1 / R1) | Previous / next game. In the side panel or Settings, previous / next section |
+| LT / RT (L2 / R2) | Skip 10 games back / on (hold to keep going) |
+| View (Share / Create) | Open or close Filters |
+| Menu (Options) | Open or close Settings |
+| Right stick | Scroll |
+| Left stick click | Switch between All, Installed and Favourites |
+| Right stick click | Back to the game's cover from anywhere |
+
+- Up and Down move a row at a time (top bar, filters, covers, the game's buttons, each line of tiles) and Left and Right stay in the row. Left and Right on the shelf pick the next game, and the shelf scrolls to keep the selected cover in the middle.
+- A tile opens its section in the side panel with the first setting selected; B goes back to the tile. Opening Settings with the controller starts on the section list on the left.
+- Dropdowns open on the current choice; A picks, B closes without changing anything. Left and Right change a slider. Text boxes can't be typed into with the controller.
+- Y shows a "Launching …" message and ignores a second press for the same game for a few seconds. When a game you started from RHI closes, RHI comes back to the front on its own (unless you'd put it in the tray), with the game's cover selected.
+- The focused item gets a blue outline. A bar of button hints shows what each button does where you are; it appears when you use the controller and hides when you move or click the mouse.
+- The controller only works while RHI is the active window, so it never does anything in RHI while you're playing. Buttons held when you switch back to RHI are ignored until you let go.
+- Turn it off in Settings → General → Windows and Admin Mode → **Controller support**.
+
+### Interface size
+
+Settings → General → Windows and Admin Mode → **Interface size** makes RHI's window smaller or larger (50% to 150%) without changing Windows' scaling, for TVs and high-DPI screens. You can also hold **Ctrl** and turn the mouse wheel anywhere in RHI; the new size shows in the status bar. Pop-ups, dropdown lists and tooltips keep the Windows size.
+
 ### Status bar
 
-- **Left**: what RHI is doing.
+- **Left**: what RHI is doing. When it's idle, when it last checked for updates and when the next check runs.
 - **Centre**: an anti-cheat reminder.
 - **Right**:
+  - **N new games found in your custom folders · Review**, when RHI has found games in your [custom game folders](#custom-game-folders).
   - The **version number**. Click it to check for an app update.
   - **Patch Notes**.
   - **MOTD**: shows the current message of the day again.
   - **Updates**: a dated history of every component update, showing old → new versions. It persists between sessions and can be cleared.
+
+Patch notes, the message of the day and the update history are also in the **Help** menu.
 
 ---
 
@@ -181,8 +247,22 @@ The API decides the ReShade DLL name, whether DXVK and generic Luma are offered,
 ### Adding a game manually
 
 - Click **+** (Manually add a game) next to the search box, choose the game's `.exe`, give it a name and click **Add Game**. Or drag the `.exe` onto the window.
-- Manually added games show the store **Manual**.
-- To remove one, use **Management → Reset / Remove game**.
+- Manually added games show the store **Manual**. The new game opens straight away; if your search or filter would hide it, they're cleared.
+- To remove one, use **Management → Remove from RHI**. A game you added yourself is deleted; add it again to get it back.
+
+### Custom game folders
+
+For DRM-free and other non-store games, add the folders you keep them in under Settings → Tools & Maintenance → **Custom game folders**. Each folder inside one is treated as a game; you can also add a single game's folder.
+
+- RHI checks the folders when it starts, on Refresh and when you click **Scan now**. Adding a folder scans it straight away.
+- Games are never added on their own. When RHI finds new ones, **N new games found in your custom folders · Review** appears in the status bar. **Review** lets you tick which to add, fix each name and choose the exe. RHI picks the most likely exe (skipping installers, redistributables and crash reporters, and ranking launchers lower) and says **Check the exe** when more than one looks like the game. The chosen exe is used to launch the game and decides where components are installed.
+- **Add selected** adds the ticked games, **Ignore selected** stops them being offered again, and **Not now** closes the list. Removing a game you added from a custom folder also stops it being offered again. **Forget ignored games** (in the Custom game folders card) undoes that.
+
+### Removing a game from RHI
+
+**Management → Remove from RHI** takes a game out of every list, including Hidden, and it doesn't come back when RHI scans your games. Unlike Hide, it's gone for good until you restore it. If components are installed, you can tick **Also uninstall all RHI-managed components from game folder**; otherwise they stay in the game folder and RHI stops updating them.
+
+To bring a game back, open Settings → Tools & Maintenance → Troubleshooting → **Removed games** and click **Restore**. Games you added yourself aren't listed there; add them again instead.
 
 ### Renaming, hiding and favourites
 
@@ -540,7 +620,7 @@ RHI scans the whole game folder in the background and caches the results. A game
 | **DLSS Super Resolution** | `nvngx_dlss.dll` | Version, Preset, Render Scale |
 | **Ray Reconstruction** | `nvngx_dlssd.dll` | Version, Preset, Render Scale |
 | **Frame Generation** | `nvngx_dlssg.dll` | Version, Preset, **Multi Frame Gen** |
-| **Neural Rendering** | `nvngx_dlssnr.dll` | Version, Preset, **Deploy DLL**, **✕** |
+| **Neural Rendering** | `nvngx_dlssnr.dll` | Version, Preset |
 | **Streamline** | `sl.*.dll` | Version, **Quick Apply**, **Restore DLSS/SL** |
 
 ### Changing versions
@@ -571,7 +651,7 @@ Written to the game's NVIDIA driver profile. They work without other tools and d
 | Super Resolution | Default, E/F (CNN), J/K (first-gen transformer, DLSS 4), L/M (second-gen transformer, DLSS 4.5), NVIDIA Recommended |
 | Ray Reconstruction | Default, D/E (first-gen transformer), F (second-gen transformer), NVIDIA Recommended |
 | Frame Generation | Default, A, B, C, NVIDIA Recommended |
-| Neural Rendering | Default, NVIDIA Recommended |
+| Neural Rendering | Default, A, B, NVIDIA Recommended |
 
 **Default** removes the override, so the game uses the driver's default. New presets can be added through the remote manifest without an app update.
 
@@ -581,8 +661,8 @@ Super Resolution and Ray Reconstruction: **Off** (the game decides), 100% DLAA, 
 
 ### Neural Rendering column
 
-- **Deploy DLL** copies the selected `nvngx_dlssnr.dll` version into the game. With Custom selected it copies from `Custom\DLSS\`.
-- **✕** removes it.
+- The [Neural Rendering section](#neural-rendering-dlss-5) installs `nvngx_dlssnr.dll` when you install a method.
+- When the game already has the DLL, the version dropdown swaps it, and **Default** puts the game's own copy back.
 - This column and the Neural Rendering section share the same NR version.
 
 ### Quick Apply and Restore
@@ -642,7 +722,7 @@ The **Driver Settings** section (its heading shows your driver version) changes 
 |---|---|
 | **VSync** | **Mode** (App Controlled, Force Off, Force On, Fast Sync, or the global value), **Tear Control** (Standard/Adaptive), **Low Latency** (Off/On/Ultra) |
 | **Smooth Motion** (RTX 40+) | **Enable**, **Allowed APIs**, **Flip Pacing**. Turning it on sets Allowed APIs to All and locks Low Latency to Ultra; turning it off restores your previous Low Latency |
-| **Other** | **Power Mode** (Optimal Performance, Adaptive, Maximum Performance), **G-Sync** (Enabled/Disabled), **Restore Defaults** |
+| **Other** | **Power Mode** (Optimal Performance, Adaptive, Maximum Performance), **G-Sync** (Enabled/Disabled; the section summary shows **G-Sync Off** when it's disabled), **FPS Limit** (Global uses the global limit, Off overrides it for this game, or pick a cap or Custom), **Restore Defaults** |
 | **ReBAR** | **Enable** (Auto/Off/On), **Mode** (Standard/Optimized), **Size Limit** (512MB–4GB). Mode and size need Enable = On |
 
 **Restore Defaults** resets this game's whole profile (presets, render scale, MFG, overrides and driver settings) and restores its original DLSS/Streamline files. It can't be undone.
@@ -669,12 +749,14 @@ The **Extras** section holds optional tools:
 - **MFG Unlocks**: **RTX Encore**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Ada Unlock**.
 - **API Upgrades**: **DXVK** and **dgVoodoo2** (see [DXVK and dgVoodoo2](#dxvk-and-dgvoodoo2)).
 
-Several of these are "proxy" DLLs that load by taking a system DLL's name. When you install one, RHI asks which name to use. Names RHI's other components already use are disabled. If the game already has a file with that name, RHI backs it up and restores it on uninstall.
+Several of these are "proxy" DLLs that load by taking a system DLL's name. When you install one, RHI asks which name to use. Names that ReShade, OptiScaler, Display Commander, ASI Loader or another extra already use are greyed out, with what's using them. If the game already has a file with that name, RHI backs it up and restores it on uninstall.
+
+**Running alongside ASI Loader**: when ASI Loader is installed, the name lists for 20/30 FG Unlock, Universal MFG Unlocker, RTX Encore and DLSS Enabler also offer a **Hooked** version of ASI Loader's name (for example `versionHooked.dll` when ASI Loader is `version.dll`). ASI Loader loads that file as the real DLL, so both run. If ASI Loader is removed later, RHI renames the extra back to the normal name.
 
 | Tool | What it does |
 |---|---|
-| **ASI Loader** ([Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)) | Loads `.asi` plugins. Recommended names are marked. If the chosen name already exists, the existing file is renamed to `<name>Hooked.dll` and still loaded. |
-| **RTX Encore** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40, and XeSS frame generation in place of a game's DLSS FG. RHI also installs the Intel XeSS files its XeFG engine needs, in an `rtx-encore-runtimes\intel` folder. Its ⚙ sets frame generation (engine, mode, multiplier, FG preset, frame limit), XeFG, generated frame quality, HUD/UI, upscaling (XeSS, DLSS render scale, Fast Super Resolution, SR/RR presets), Smooth Motion, Neural Rendering and compatibility options before you launch, and can deploy the NR DLL (`nvngx_dlssnr.dll` 310.9.16). Settings are saved to the game's `rtx-encore.jsonc`; everything else is in RTX Encore's in-game menu (Insert). |
+| **ASI Loader** ([Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)) | Loads `.asi` plugins. Recommended names are marked. If the chosen name already exists, the existing file is renamed to `<name>Hooked.dll` and still loaded (when that file was an RHI extra, RHI keeps track of the rename and tells you). If a `<name>Hooked.dll` is already there too, RHI stops rather than replace it. |
+| **RTX Encore** | Frame generation (X2–X6) and Smooth Motion on RTX 30, Neural Rendering on RTX 20/30/40, and XeSS frame generation in place of a game's DLSS FG. RHI also installs the Intel XeSS files it needs (including `libxess.dll` for the XeSS upscaler) the way RTX Encore Hub does: copies the game already has (Unreal games often keep them under `Engine\Plugins`) are replaced in place and put back when you remove RTX Encore, and the rest, with Intel's licence, go in an `rtx-encore-runtimes\intel` folder. Installed as `binkw64.dll` or `bink2w64.dll`, the game's own Bink file is kept beside it as `binkw64Hooked.dll` / `bink2w64Hooked.dll`. The `rtx-encore.asi` option uses the ASI build from RTX Encore's release, with the NR DLL in the `plugins` folder beside it. Its ⚙ sets frame generation (engine, mode, multiplier, FG preset, frame limit), XeFG, generated frame quality, HUD/UI, upscaling (XeSS, DLSS render scale, Fast Super Resolution, SR/RR presets), Smooth Motion, Neural Rendering and compatibility options before you launch, and can deploy the NR DLL (`nvngx_dlssnr.dll` 310.9.16). Settings are saved to the game's `rtx-encore.jsonc`; everything else is in RTX Encore's in-game menu (Insert). |
 | **DLSS Enabler** | DLSS Frame Generation support through a proxy DLL (`version.dll` works for most games). Not available while OptiScaler is installed, as OptiScaler includes it. |
 | **20/30 FG Unlock** | DLSS Frame Generation (up to 6X) on RTX 20 and 30 Series, DX12 only, NVIDIA driver R580 or newer. Installs a proxy DLL (start with `version.dll`; if FG doesn't appear in the game, try the next name), `dlssg_sm86.ini` and the `dlssg_sm86` folder; uninstall removes all of it. Its ⚙ sets Frame Generation on/off, Engine (DLSS or XeSS), Max Frames (2X–6X), Preset (A, B, or C for FG Lite), Speed Tier and Super Resolution (preset M/L, with faster INT8 kernels), and opens the ini and log. Settings are kept when the mod updates. |
 | **Universal MFG Unlocker** | Formerly RTX 40 MFG. Multi frame generation beyond 2x (up to 6x) on RTX 40 and 30 Series (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. RHI also installs the Intel XeSS files XeMFG needs, in an `RTXMFG-XeSS` folder. With OptiScaler nightly, F5 or DLSS NR installed it goes in as an OptiScaler plugin (`OptiScaler\plugins\MFGUnlocker.asi`); pick DLSSG or XeFG as FG Output in OptiScaler's ⚙. Press Backspace in-game for its menu. |
@@ -695,6 +777,7 @@ A one-time reminder points you to **Settings → Components → OptiScaler**:
 - **GPU type**: NVIDIA, AMD or Intel.
 - **DLSS inputs** (AMD/Intel): whether the game's DLSS inputs should be used.
 - **Overlay key** for the OptiScaler menu (Insert by default), with **Write key to all OptiScaler games**.
+- **Default version**: Stable, Nightly, DLSS NR or F5 DLSSNR. Used when you install OptiScaler in a game you haven't picked a version for in its ⚙. Games that already have OptiScaler keep the version they have.
 
 GPU type and DLSS inputs choose which ini template new installs get.
 
@@ -729,7 +812,7 @@ If ReShade uses the same file name, RHI renames ReShade to `ReShade64.dll` and O
 
 Settings are written straight into the game's `OptiScaler.ini`. Until OptiScaler is installed, only the version can be changed.
 
-- **All variants**: **Framerate Limit** (Off or VRR caps), **Upscaler API** and **Upscaler** (choices depend on DX11, DX12 or Vulkan).
+- **All variants**: **Framerate Limit** (Off or VRR caps), **Upscaler API** and **Upscaler** (choices depend on DX11, DX12 or Vulkan), and **DXGI Spoofing**: **Auto** (default; on for AMD and Intel, off for NVIDIA), **True** (the game sees an NVIDIA GPU, so it offers DLSS options) or **False** (try this if a game crashes or misbehaves with spoofing on).
 - **Frame Generation Settings** (Nightly, DLSS NR, F5): FG Enabled, Streamline/DLSS Enabler and its version, FG Input, FG Output, FG Nvngx Override, HUD Fix, Force Reflex, Use Games Reflex Markers.
 - **Additional Settings**: DLSS SR Preset, DLSS RR Preset, Render Scale, Disable Flip Metering.
 - **Engine.ini Settings** (Unreal games): Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin.
@@ -799,7 +882,8 @@ The HDR and RES buttons, DXVK, and the NVIDIA settings are also per game, but th
 ## Management
 
 - **Change install folder**: point RHI at the correct game folder.
-- **Reset / Remove game**: resets the folder to the auto-detected one, or removes a manually added game.
+- **Reset install folder**: goes back to the folder RHI detected, if you changed it. Not available for games you added yourself.
+- **Remove from RHI**: removes the game from every list, optionally uninstalling its components. See [Removing a game from RHI](#removing-a-game-from-rhi).
 - **Reset Overrides**: resets this game's overrides: name and wiki match, wiki lookup, shader and addon modes, DLL names, update inclusion, bitness, API, ReShade channel (reinstalling Stable if needed), DXVK, launch exe and arguments, and DLSS presets. The HDR and RES buttons aren't affected.
 - **Copy Report**: builds a report of this game's detection and install state for bug reports. RHI first asks you to correct any wrong values with overrides, then lets you add a description and copies the report to the clipboard.
 
@@ -818,9 +902,11 @@ RHI uses the first of these that applies:
 1. Your **Launch executable** override.
 2. An exe set by the remote manifest.
 3. **Steam**: through Steam (`steam://rungameid`), or `steam.exe -applaunch` when you've set launch arguments. Steam's overlay and playtime tracking work.
-4. **Epic**: through the Epic launcher. Not used when you've set launch arguments, since some Epic games fail to start with them.
+4. **Epic**: through the Epic Games Launcher, which starts the launcher if it isn't running. Not used when you've set launch arguments, since some Epic games fail to start with them. When RHI starts an Epic game's exe directly (launch arguments or a launch exe set), it first starts the Epic Games Launcher in the background and waits for it, since most Epic games need it running.
 5. **Xbox / Game Pass**: through the app's Windows entry.
 6. Otherwise, the largest `.exe` in the game folder (ignoring uninstallers, crash reporters and launchers).
+
+RHI remembers each game's store launch details between sessions, so games launched straight after RHI opens (or from the tray, jump list or a shortcut) still go through their store.
 
 The game starts in its own folder. While it's running, its sidebar row is green.
 
@@ -874,9 +960,10 @@ Updates and how RHI behaves on your PC.
 
 **Windows and Admin Mode** card:
 
-- **Windows**: **Close to tray**, **Recent games in tray menu** and **Start with Windows**. See [System tray and jump list](#system-tray-and-jump-list).
+- **Windows**: **Close to tray**, **Recent games in tray menu** and **Start with Windows** (see [System tray and jump list](#system-tray-and-jump-list)), and **Interface size** (see [Interface size](#interface-size)).
 - **Admin Mode**: RHI starts elevated without a UAC prompt each time (through a scheduled task called "RHI Admin Mode"). Needed for per-game driver settings, ReBAR, Low Latency Ultra, Smooth Motion, DLDSR and the DLSS indicator. Turning it on or off asks for UAC once.
 - **Drop Helper** (on by default, only used in Admin Mode): lets you drag files from Discord and browsers onto RHI while it's running as admin. Needs a restart to take effect.
+- **Controller support** (on by default): use an Xbox or PlayStation controller in the Spotlight layout. See [Controller support](#controller-support).
 
 ### Accounts & Data
 
@@ -939,9 +1026,11 @@ Driver defaults for every game. A game's own [Driver Settings](#driver-settings)
 Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 - **ReLimiter**: see [ReLimiter](#relimiter).
-- **OptiScaler**: GPU type, DLSS inputs and overlay key. See [OptiScaler](#before-your-first-install).
+- **OptiScaler**: Default version, GPU type, DLSS inputs and overlay key. See [OptiScaler](#before-your-first-install).
 
 ### Tools & Maintenance
+
+**Custom game folders** card: your custom game folders, each with **Remove**, plus **Add folder**, **Scan now**, **Review N new games** (when some are waiting) and **Forget ignored games** (when some are ignored). See [Custom game folders](#custom-game-folders).
 
 **Tools** card:
 
@@ -952,6 +1041,7 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 - **Full refresh**: clears RHI's caches and rescans everything from scratch. Use it when something looks out of date or a game's DLSS section is missing.
 - **Purge staging files**: deletes cached downloads (DLSS, Streamline and component files) to free space. They download again when needed.
+- **Removed games**: lists games you've removed with Remove from RHI, with **Restore** for each.
 
 ---
 
@@ -959,7 +1049,7 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 ### Update All
 
-**Update All** in the toolbar updates every installed component that has an update, in this order: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix.
+**Update All** on the top bar updates every installed component that has an update, in this order: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix.
 
 - Components excluded in Settings → General → **Components to check** (all games) or Game Overrides → **Update Inclusion** (one game) are skipped. So are Legacy ReShade and pinned OptiScaler Nightly builds.
 - Only mods with an update are reinstalled.
@@ -969,7 +1059,9 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 With **Background checks** on, RHI checks at startup and every 4 hours, even from the tray. Shader packs, addons and Extras tools also update at startup. With **Automatic updates → Components** on, component updates are installed without asking.
 
-Every component update is logged in the **Updates** window (status bar).
+Every component update is logged in the **Updates** window (status bar, or Help → Update log).
+
+DXVK and Universal MFG Unlocker download only when a game uses them or you install them, since antivirus programs often flag them as false positives. If an antivirus deletes a file straight after RHI downloads it, RHI tells you and explains how to add an exclusion, instead of downloading it again on every launch.
 
 ### App updates
 
@@ -1044,7 +1136,7 @@ RHI downloads a few files from its GitHub repository so fixes reach everyone wit
 - **Manifest**: game name fixes, install path and engine/API overrides, notes and install warnings, launch fixes, Engine.ini settings, link overrides, extra shader and addon packs, NVIDIA profile fixes, mod author details and feature switches. If it can't be downloaded, RHI uses the last copy.
 - **DLSS manifest**: the DLSS and Streamline versions offered in the dropdowns.
 - **PCGamingWiki data**: engine, API and config information for more than 55,000 games.
-- **Message of the day**: shown once per new message, and again from the **MOTD** button.
+- **Message of the day**: shown once per new message, and again from the **MOTD** button or Help → Message of the day. Links in it can be clicked.
 
 ---
 
@@ -1060,6 +1152,8 @@ Everything RHI stores is in `%LOCALAPPDATA%\RHI\`:
 | `update_log.json` | The Updates history |
 | `shader_profiles.json` | Shader profiles |
 | `nvidia_profiles_backup.json` | NVIDIA profile backup |
+| `artwork\` | Spotlight artwork downloaded from Steam, and your custom covers and banners (`artwork\custom\`) |
+| `av_blocked.json` | Downloads an antivirus deleted, so RHI doesn't keep downloading them |
 | `github_api.txt` | Your GitHub token |
 | `inis\` | ini templates (reshade.ini, relimiter.ini, OptiScaler templates…) and `reshade-presets\` |
 | `Custom\` | Your own ReShade DLLs, DLSS/Streamline DLLs and addons |
@@ -1078,7 +1172,9 @@ If RHI's window ever stops responding, RHI restarts itself after a few seconds a
 | Problem | Fix |
 |---|---|
 | Downloads or update checks failing, components "unavailable" | Add a [GitHub token](#add-a-github-token-recommended). |
-| Game not detected | Click **+** next to the search box, or drag the game's exe onto the window. |
+| Game not detected | Add its folder under Settings → Tools & Maintenance → **Custom game folders**, click **+** next to the search box, or drag the game's exe onto the window. |
+| Antivirus deleted a download | RHI tells you when this happens. Add an exclusion for `%LOCALAPPDATA%\RHI\` in your antivirus, then install again. |
+| "Game folder not found" when installing | The game was updated or moved (Game Pass games get a new folder with every update). Click **Refresh** to find the new folder, or **Choose folder...** to pick it. |
 | Wrong game folder | Management → **Change install folder**. |
 | Wrong RenoDX mod matched | Game Overrides → **Wiki mod name**. |
 | ReShade doesn't load | Check the install folder points at the folder with the game's exe. Try a different name under DLL naming overrides. |

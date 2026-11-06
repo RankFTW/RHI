@@ -12,6 +12,16 @@ RHI finds your games across eight storefronts, then installs, updates and remove
 
 ---
 
+## Three layouts, one app
+
+Switch layouts from the top bar at any time. Every setting is available in every layout.
+
+- **Classic+** (default): your game list on the left and the game's page on the right, in collapsible sections you can reorder.
+- **Tabs**: the same game page, one tab at a time, with a card for each component and an At a glance summary of everything else.
+- **Spotlight**: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side.
+- **Controller support** in Spotlight: browse, install, tweak and launch with an Xbox or PlayStation controller (DualShock 4, DualSense, DualSense Edge over USB or Bluetooth, nothing extra to install). RHI comes back to the front when your game closes.
+- **Interface size** from 50% to 150% (or Ctrl + mouse wheel), for TVs and high-DPI screens.
+
 ## HDR for every game
 
 - **[RenoDX](https://github.com/clshortfuse/renodx)**: finds and installs the right HDR mod for each game, and keeps it updated. Games without a dedicated mod get a generic one:
@@ -58,10 +68,10 @@ Pin versions of each tool and of `nvngx_dlssnr.dll`, and optionally add the **NR
 
 ## Frame generation and upscaling extras
 
-- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR variants. Upscaler, frame generation, Reflex, preset and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
+- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR variants, with a default variant of your choice for new installs. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
 - **Multi Frame Generation**: set Fixed or Dynamic MFG (2x–6x) and a target frame rate on RTX 50 Series.
 - **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
-- **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker.
+- **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker. Frame generation unlocks and RTX Encore can run alongside ASI Loader under its Hooked name.
 
 ## Frame limiters
 
@@ -88,6 +98,8 @@ Written directly to the driver, so you don't need NVIDIA App or Profile Inspecto
 - **Update All**: updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included, globally or per game. **Automatic Updates** can install them in the background.
 - **Game launch**: launch from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game.
 - **HDR and resolution auto-toggle**: turn Windows HDR on and switch resolution when a game starts, and switch both back when it closes. Global or per game, on the monitors you choose.
+- **Custom game folders**: point RHI at the folders where you keep DRM-free or other non-store games. It finds the games in them and lets you pick which to add, with the right exe chosen for you.
+- **Remove from RHI**: take a game out of every list for good (optionally uninstalling its components), and restore it later from Settings if you change your mind.
 - **Drag and drop**: drop a game exe, addon, archive, Luma mod, ReShade preset or link onto the window.
 - **Links per game**: Nexus Mods, PCGamingWiki, ultrawide fixes and Ultra+.
 - **RE Framework** for RE Engine games, **Ryubing** emulator support, and **custom game filters**.
@@ -99,14 +111,14 @@ Written directly to the driver, so you don't need NVIDIA App or Profile Inspecto
 
 Steam · Epic Games · GOG · EA App · Ubisoft Connect · Xbox / Game Pass · Battle.net · Rockstar
 
-Not detected? Click **+** next to the search box, or drag the game's `.exe` onto the window.
+Not detected? Add its folder under Settings → Tools & Maintenance → **Custom game folders**, click **+** next to the search box, or drag the game's `.exe` onto the window.
 
 ## Requirements
 
 - Windows 10 or 11 (64-bit)
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The installer adds the Windows App Runtime if it's missing.
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) and the [Windows App Runtime 2.5](https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe). If the Windows App Runtime is missing, RHI says so and offers to open the download.
 - An NVIDIA GPU for the DLSS preset, driver and Neural Rendering features. ReShade, RenoDX, Luma and OptiScaler work on any GPU.
-- **Admin Mode** (Settings → General → Admin Mode) for per-game driver settings, ReBAR, DLDSR Control and the DLSS on-screen indicator.
+- **Admin Mode** (Settings → General → Windows and Admin Mode) for per-game driver settings, ReBAR, DLDSR Control and the DLSS on-screen indicator.
 - **Recommended: a GitHub token.** Without one, GitHub allows 60 requests an hour, which can make downloads and update checks fail. Add a free token with no permissions under Settings → Accounts & Data → GitHub token to raise the limit to 5,000.
 
 ---

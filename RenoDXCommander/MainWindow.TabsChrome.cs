@@ -148,7 +148,7 @@ public sealed partial class MainWindow
         TabsTheme.Apply(_filtersBtn, TabsTheme.IconButton, height: 30, fontSize: 12);
         _filtersBtn.CornerRadius = new CornerRadius(6);
         _filtersBtn.Click += (s, e) => { _filtersOpen = !_filtersOpen; RefreshTabsChrome(); };
-        ToolTipService.SetToolTip(_filtersBtn, "Engine, API, mod and store filters");
+        ToolTipService.SetToolTip(_filtersBtn, "Engine and mod filters, and your saved searches");
         _countsGrid.Children.Add(_filtersBtn);
         if (countsContent != null)
         {
