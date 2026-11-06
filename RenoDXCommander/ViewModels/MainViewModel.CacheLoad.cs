@@ -492,6 +492,10 @@ public partial class MainViewModel
             var engineOverrideLabel = ResolveEngineOverride(game.Name, out var engineOverride);
             if (engineOverrideLabel != null)
                 engine = engineOverride;
+            // Same as BuildCards: scan said Unknown/UE3 but the RHI DB / manifest says UE4/UE5.
+            else if ((engine == EngineType.Unknown || engine == EngineType.UnrealLegacy)
+                     && KnownUnrealFromData(game.Name, cachedManifest))
+                engine = EngineType.Unreal;
 
             // Resolve bitness from cache
             var resolvedKey = installPath.ToLowerInvariant();

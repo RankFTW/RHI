@@ -1636,10 +1636,14 @@ public partial class OptiScalerService
                     {
                         var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
                         var url  = asset.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                        // Pick the main OptiScaler zip — must start with "OptiScaler-DLSSNR-F5-" to skip
-                        // optional companion zips like Optional-Vendor-Neutral-DLSS5-Forwarder.zip
-                        if (name?.StartsWith("OptiScaler-DLSSNR-F5-", StringComparison.OrdinalIgnoreCase) == true
+                        // Pick the main OptiScaler zip. Upstream has used both
+                        // "OptiScaler-DLSSNR-F5-*.zip" and "v0.1.37-Optiscaler-F5.zip", so match on
+                        // "OptiScaler" in the name and skip optional companion zips
+                        // like Optional-Vendor-Neutral-DLSS5-Forwarder.zip.
+                        if (name != null
                             && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                            && name.Contains("OptiScaler", StringComparison.OrdinalIgnoreCase)
+                            && !name.StartsWith("Optional", StringComparison.OrdinalIgnoreCase)
                             && url != null)
                         {
                             assetName = name; downloadUrl = url; break;

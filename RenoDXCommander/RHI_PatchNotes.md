@@ -3,6 +3,13 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.1
+
+### Bug Fixes
+
+- Fixed installing or updating OptiScaler F5 DLSSNR failing with "OptiScaler F5 staging not available". The F5 release renamed its download, and RHI no longer recognised it.
+- Fixed some Unreal Engine games (for example Phantom Blade Zero) showing "No RenoDX mod available" even though the game page said Unreal Engine. This happened when RHI's scan of the game folder didn't recognise the engine, for example if it was scanned while still downloading. Games RHI knows are Unreal Engine 4 or 5 now always get the Unreal Engine mod.
+
 ## v2.9.0 Beta 5
 
 ### New

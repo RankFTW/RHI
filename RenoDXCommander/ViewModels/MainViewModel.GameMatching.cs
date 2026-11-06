@@ -703,6 +703,21 @@ public partial class MainViewModel
     }
 
     /// <summary>
+    /// True when RHI's own data says the game is UE4/UE5 (used when the file scan said Unknown or UE3):
+    /// it has an entry in RenoDXdb-unreal.json, or its manifest engine hint is
+    /// "Unreal Engine 4…"/"Unreal Engine 5…". Used so the engine tag and the generic UE mod
+    /// can't disagree (e.g. a game first scanned while still downloading).
+    /// </summary>
+    private bool KnownUnrealFromData(string gameName, RemoteManifest? manifest)
+    {
+        if (GetDbUnrealEntry(gameName) != null) return true;
+        string? hint = null;
+        manifest?.EngineHintOverrides?.TryGetValue(gameName, out hint);
+        return hint != null
+            && System.Text.RegularExpressions.Regex.IsMatch(hint, @"^Unreal Engine [45](\.|$)");
+    }
+
+    /// <summary>
     /// Returns the manifest engine override for a game, if one exists.
     /// The out parameter <paramref name="overrideEngine"/> is the EngineType to use for
     /// mod/fallback selection ("Unreal", "Unreal (Legacy)", "Unity" map to their EngineType;

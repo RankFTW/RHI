@@ -162,6 +162,17 @@ public partial class MainViewModel
                 if (stamp != null) newEngineFolderStamps[rootKey] = stamp;
             }
 
+            // Scan said Unknown or UE3 but the RHI DB / manifest says UE4/UE5 → treat as Unreal.
+            // (A stray .u/.upk file makes a UE5 game look like UE3.) Applied after caching so
+            // the saved scan result is left as it was.
+            if ((engine == EngineType.Unknown || engine == EngineType.UnrealLegacy)
+                && engineOverrideLabel == null
+                && KnownUnrealFromData(game.Name, _manifest))
+            {
+                _crashReporter.Log($"[BuildCards] '{game.Name}': engine scan said {engine} — using Unreal from RHI DB/manifest");
+                engine = EngineType.Unreal;
+            }
+
             // Apply per-game install path overrides (e.g. Cyberpunk 2077 → bin\x64)
             // Supports pipe-separated paths (try each, use first that exists)
             if (_installPathOverrides.TryGetValue(game.Name, out var subPath))
