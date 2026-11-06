@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55984,
-  "generated": "2026-11-05T09:05:52Z",
+  "game_count": 55987,
+  "generated": "2026-11-06T12:00:12Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -18293,6 +18293,10 @@
       "engine": "Unity"
     },
     "Besieger": {},
+    "Bessie's Milk Delivery": {
+      "steam_appid": 3367320,
+      "engine": "RPGMaker"
+    },
     "Best Buds vs Bad Guys": {
       "steam_appid": 486130
     },
@@ -37103,10 +37107,12 @@
     },
     "Crusader: Adventure Out of Time": {},
     "Crusader: No Regret": {
-      "engine": "Pagan engine"
+      "steam_appid": 3066900,
+      "engine": "Enhanced Ultima VIII: Pagan engine"
     },
     "Crusader: No Remorse": {
-      "engine": "Pagan engine"
+      "steam_appid": 3066890,
+      "engine": "Enhanced Ultima VIII: Pagan engine"
     },
     "Crusaders of Light": {
       "steam_appid": 775220
@@ -95570,6 +95576,7 @@
     },
     "Living With Sister: Monochrome Fantasy": {
       "steam_appid": 2429860,
+      "config_path": "<path-to-game>\\Game.ini",
       "engine": "WOLF RPG Editor"
     },
     "Living World Racing": {
@@ -113023,6 +113030,7 @@
       "config_path": "%LOCALAPPDATA%\\Roguelite\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
+    "Nigel Mansell's World Championship Racing": {},
     "Nigel: The Minuscule Adventure": {
       "steam_appid": 1089520
     },
@@ -126895,6 +126903,7 @@
     },
     "Private Eye": {},
     "Privateer 2: The Darkening": {
+      "steam_appid": 3067130,
       "config_path": "<path-to-game>\\DARK.CFG",
       "engine": "Blazing Renderer"
     },
@@ -136319,6 +136328,7 @@
       "steam_appid": 884610
     },
     "Road Rash": {
+      "steam_appid": 2448570,
       "config_path": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Electronic Arts\\RoadRash 95\\",
       "engine": "Papy3D"
     },
@@ -157269,6 +157279,7 @@
       "steam_appid": 906020
     },
     "Strike Commander": {
+      "steam_appid": 3067110,
       "engine": "RealSpace"
     },
     "Strike Force Remastered": {
@@ -171658,7 +171669,7 @@
     "The Outer Worlds 2": {
       "steam_appid": 1449110,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Arkansas\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%/Arkansas/Saved/Config/Windows/",
       "engine": "Unreal Engine 5"
     },
     "The Outer Worlds: Spacer's Choice Edition": {
@@ -175226,6 +175237,7 @@
       "engine": "Z-Engine"
     },
     "Theme Hospital": {
+      "steam_appid": 2229820,
       "config_path": "<path-to-game>\\HOSPITAL.CFG"
     },
     "Theme Park": {},
@@ -179997,6 +180009,9 @@
       "steam_appid": 470170,
       "engine": "Unity"
     },
+    "Traitors Gate": {
+      "engine": "Director"
+    },
     "Traitors Gate 2: Cypher": {
       "config_path": "<path-to-game>\\script\\Config.py",
       "engine": "Gamebryo"
@@ -182898,26 +182913,47 @@
     "Ultima Defesa": {
       "steam_appid": 1146590
     },
-    "Ultima I: The First Age of Darkness": {},
-    "Ultima II: The Revenge of the Enchantress": {},
-    "Ultima III: Exodus": {},
-    "Ultima IV: Quest of the Avatar": {},
+    "Ultima I: The First Age of Darkness": {
+      "steam_appid": 3067480
+    },
+    "Ultima II: The Revenge of the Enchantress": {
+      "steam_appid": 3067490
+    },
+    "Ultima III: Exodus": {
+      "steam_appid": 3067500
+    },
+    "Ultima IV: Quest of the Avatar": {
+      "steam_appid": 3067510
+    },
     "Ultima IX: Ascension": {
+      "steam_appid": 3067560,
       "dx9": true,
       "config_path": "<path-to-game>\\Options.ini"
     },
     "Ultima Online": {},
     "Ultima Underworld II: Labyrinth of Worlds": {
+      "steam_appid": 3067590,
       "engine": "Underworld engine"
     },
     "Ultima Underworld: The Stygian Abyss": {
+      "steam_appid": 3067580,
       "engine": "Underworld engine"
     },
-    "Ultima V: Warriors of Destiny": {},
-    "Ultima VI: The False Prophet": {},
-    "Ultima VII Part Two: Serpent Isle": {},
-    "Ultima VII: The Black Gate": {},
-    "Ultima VIII: Pagan": {},
+    "Ultima V: Warriors of Destiny": {
+      "steam_appid": 3067520
+    },
+    "Ultima VI: The False Prophet": {
+      "steam_appid": 3067530
+    },
+    "Ultima VII Part Two: Serpent Isle": {
+      "steam_appid": 3067540
+    },
+    "Ultima VII: The Black Gate": {
+      "steam_appid": 3067540
+    },
+    "Ultima VIII: Pagan": {
+      "steam_appid": 3067550
+    },
     "Ultima Worlds of Adventure 2: Martian Dreams": {},
     "Ultimagus": {
       "steam_appid": 575360
@@ -192406,19 +192442,34 @@
     "Wing Breakers": {
       "steam_appid": 308080
     },
-    "Wing Commander": {},
-    "Wing Commander II: Vengeance of the Kilrathi": {},
-    "Wing Commander III: Heart of the Tiger": {},
+    "Wing Commander": {
+      "steam_appid": 1996640
+    },
+    "Wing Commander II: Vengeance of the Kilrathi": {
+      "steam_appid": 2008730
+    },
+    "Wing Commander III: Heart of the Tiger": {
+      "steam_appid": 2008740
+    },
     "Wing Commander IV: The Price of Freedom": {
+      "steam_appid": 2008750,
       "config_path": "<path-to-game>\\WC4.CFG"
     },
-    "Wing Commander: Academy": {},
-    "Wing Commander: Armada": {},
-    "Wing Commander: Privateer": {},
+    "Wing Commander: Academy": {
+      "steam_appid": 3067090
+    },
+    "Wing Commander: Armada": {
+      "steam_appid": 3067100
+    },
+    "Wing Commander: Privateer": {
+      "steam_appid": 2008760
+    },
     "Wing Commander: Prophecy": {
+      "steam_appid": 3067120,
       "engine": "VISION (Origin Systems)"
     },
     "Wing Commander: Secret Ops": {
+      "steam_appid": 3067120,
       "engine": "VISION (Origin Systems)"
     },
     "Wing Nuts: Battle in the Sky": {},
