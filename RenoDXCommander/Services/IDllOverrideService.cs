@@ -88,6 +88,13 @@ public interface IDllOverrideService
     /// </summary>
     DllDisableResult DisableDllOverride(GameCardViewModel card);
 
+    /// <summary>
+    /// Puts back a ReShade / Display Commander DLL that was renamed to the dropdown
+    /// placeholder ("--------") and clears the placeholder from the saved names.
+    /// Returns true if anything changed.
+    /// </summary>
+    bool RepairPlaceholderNames(GameCardViewModel card);
+
     // ── Name collision helpers ─────────────────────────────────────────────
 
     /// <summary>

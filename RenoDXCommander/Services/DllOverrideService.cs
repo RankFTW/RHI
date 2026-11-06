@@ -86,13 +86,23 @@ public class DllOverrideService : IDllOverrideService
     public DllOverrideConfig? GetDllOverride(string gameName)
         => _dllOverrides.TryGetValue(gameName, out var cfg) ? cfg : null;
 
+    /// <summary>The DLL name dropdowns' "no override" item. Never a file name.</summary>
+    public const string PlaceholderName = "--------";
+
+    /// <summary>Empty for the dropdown placeholder (or blank), else the trimmed name.</summary>
+    private static string CleanName(string? fileName)
+    {
+        var n = (fileName ?? "").Trim();
+        return n == PlaceholderName ? "" : n;
+    }
+
     public void SetDllOverride(string gameName, string reshadeFileName, string dcFileName)
     {
         var existing = GetDllOverride(gameName);
         _dllOverrides[gameName] = new DllOverrideConfig
         {
-            ReShadeFileName = reshadeFileName.Trim(),
-            DcFileName = dcFileName.Trim(),
+            ReShadeFileName = CleanName(reshadeFileName),
+            DcFileName = CleanName(dcFileName),
             OsFileName = existing?.OsFileName ?? "",
         };
         OverridesChanged?.Invoke();
@@ -111,10 +121,14 @@ public class DllOverrideService : IDllOverrideService
     public void EnableDllOverride(GameCardViewModel card, string reshadeFileName, string dcFileName)
     {
         var name = card.GameName;
+        // A dropdown left on "--------" means "keep the default name", never rename to it.
+        reshadeFileName = CleanName(reshadeFileName);
+        dcFileName = CleanName(dcFileName);
 
         // Collision guard: skip RS rename if reshadeFileName matches effective DC name
-        bool skipRsRename = !string.IsNullOrEmpty(dcFileName)
-            && reshadeFileName.Equals(dcFileName, StringComparison.OrdinalIgnoreCase);
+        bool skipRsRename = string.IsNullOrEmpty(reshadeFileName)
+            || (!string.IsNullOrEmpty(dcFileName)
+                && reshadeFileName.Equals(dcFileName, StringComparison.OrdinalIgnoreCase));
 
         // Rename existing ReShade to the custom filename
         if (!skipRsRename && card.RsRecord != null && !string.IsNullOrEmpty(card.InstallPath))
@@ -182,6 +196,9 @@ public class DllOverrideService : IDllOverrideService
     {
         var name = card.GameName;
         var installPath = card.InstallPath;
+        // A dropdown left on "--------" means "keep the current name", never rename to it.
+        newRsName = CleanName(newRsName);
+        newDcName = CleanName(newDcName);
         var oldCfg = GetDllOverride(name);
         if (oldCfg == null || string.IsNullOrEmpty(installPath))
         {
@@ -196,8 +213,8 @@ public class DllOverrideService : IDllOverrideService
             ? oldCfg.ReShadeFileName
             : card.RsRecord?.InstalledAs ?? card.RsInstalledFile;
 
-        // Rename ReShade if filename changed
-        if (!string.IsNullOrEmpty(currentRsFileName)
+        // Rename ReShade if filename changed (empty = no RS override: leave the file alone)
+        if (!string.IsNullOrEmpty(currentRsFileName) && !string.IsNullOrEmpty(newRsName)
             && !currentRsFileName.Equals(newRsName, StringComparison.OrdinalIgnoreCase))
         {
             var oldPath = Path.Combine(installPath, currentRsFileName);
@@ -388,6 +405,63 @@ public class DllOverrideService : IDllOverrideService
     /// Searches both the addon deploy path and the game install path.
     /// Updates the AuxInstalledRecord and card.DcInstalledFile on success.
     /// </summary>
+    /// <summary>
+    /// Repairs games hit by the 2.9.x bug where changing one DLL name renamed the other
+    /// component's file to the dropdown placeholder ("--------"). Puts the file back under its
+    /// default name (if that name is free) and clears the placeholder from the saved names,
+    /// keeping any real custom name. Returns true if anything changed.
+    /// </summary>
+    public bool RepairPlaceholderNames(GameCardViewModel card)
+    {
+        bool changed = false;
+        var name = card.GameName;
+        var cfg = GetDllOverride(name);
+
+        if (!string.IsNullOrEmpty(card.InstallPath)
+            && string.Equals(card.DcInstalledFile, PlaceholderName, StringComparison.Ordinal))
+        {
+            var defaultDc = MainViewModel.GetDcFileName(card.Is32Bit);
+            var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+            if (!File.Exists(Path.Combine(deployPath, defaultDc)))
+            {
+                RenameDcFile(card, PlaceholderName, defaultDc, "RepairPlaceholderNames");
+                CrashReporter.Log($"[DllOverrideService.RepairPlaceholderNames] '{name}': Display Commander '{PlaceholderName}' → '{defaultDc}'");
+                changed = true;
+            }
+            else CrashReporter.Log($"[DllOverrideService.RepairPlaceholderNames] '{name}': DC default name '{defaultDc}' occupied — left as '{PlaceholderName}'");
+        }
+
+        if (!string.IsNullOrEmpty(card.InstallPath) && card.RsRecord != null
+            && string.Equals(card.RsRecord.InstalledAs, PlaceholderName, StringComparison.Ordinal))
+        {
+            var oldPath = Path.Combine(card.InstallPath, PlaceholderName);
+            var target = AuxInstallService.RsNormalName;
+            if (File.Exists(Path.Combine(card.InstallPath, target)))
+                target = card.Is32Bit ? AuxInstallService.RsStaged32 : AuxInstallService.RsStaged64;
+            var newPath = Path.Combine(card.InstallPath, target);
+            try
+            {
+                if (File.Exists(oldPath) && !File.Exists(newPath))
+                {
+                    File.Move(oldPath, newPath);
+                    card.RsRecord.InstalledAs = target;
+                    _auxInstaller.SaveAuxRecord(card.RsRecord);
+                    card.RsInstalledFile = target;
+                    CrashReporter.Log($"[DllOverrideService.RepairPlaceholderNames] '{name}': ReShade '{PlaceholderName}' → '{target}'");
+                    changed = true;
+                }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.RepairPlaceholderNames] '{name}': ReShade repair failed — {ex.Message}"); }
+        }
+
+        if (cfg != null && (cfg.ReShadeFileName == PlaceholderName || cfg.DcFileName == PlaceholderName))
+        {
+            SetDllOverride(name, cfg.ReShadeFileName, cfg.DcFileName); // CleanName drops the placeholder
+            changed = true;
+        }
+        return changed;
+    }
+
     private void RenameDcFile(GameCardViewModel card, string oldFileName, string newFileName, string caller)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;

@@ -207,12 +207,14 @@ public partial class DetailPanelBuilder
         };
 
         // ── DLL naming override (placed in Top Row right column) ───────────
+        // Undo the 2.9.x bug that renamed a component's DLL to the "--------" placeholder
+        if (_dllOverrideService.RepairPlaceholderNames(card)) card.NotifyAll();
         bool isDllOverride = _window.ViewModel.HasDllOverride(gameName);
         var existingCfg = _window.ViewModel.GetDllOverride(gameName);
         bool is32Bit = card.Is32Bit;
         var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
 
-        const string DllDefaultSentinel = "--------";
+        const string DllDefaultSentinel = DllOverrideService.PlaceholderName;
         Button? resetDllBtn = null; // declared early so lambdas can capture it
         TextBlock? dllOverrideLabel = null; // declared early so UpdateAllDropdowns can refresh its tooltip
         string DllOverrideLabelTip(bool hasOverride) => hasOverride

@@ -12,6 +12,25 @@ public partial class MainViewModel
     // 1 while an auto-restart is pending, so later failing ticks don't schedule more restarts.
     private int _restartPending;
 
+    // Games launched from RHI that are still running (MainWindow.MonitorProcessForHdr).
+    private int _gamesRunningFromRhi;
+    // System memory load (%) at or above which a stall is treated as RHI being paged out.
+    private const uint PagedOutMemoryLoadPct = 90;
+
+    /// <summary>Called when a game launched from RHI starts / exits.</summary>
+    internal void NoteGameRunning(bool running)
+    {
+        if (running) System.Threading.Interlocked.Increment(ref _gamesRunningFromRhi);
+        else if (System.Threading.Interlocked.Decrement(ref _gamesRunningFromRhi) < 0)
+            System.Threading.Interlocked.Exchange(ref _gamesRunningFromRhi, 0);
+    }
+
+    private static uint SystemMemoryLoad()
+    {
+        var mem = new NativeInterop.MEMORYSTATUSEX { dwLength = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.MEMORYSTATUSEX>() };
+        return NativeInterop.GlobalMemoryStatusEx(ref mem) ? mem.dwMemoryLoad : 0;
+    }
+
     /// <summary>
     /// Starts a 1-second heartbeat timer. On each tick it posts a High-priority probe to the UI thread.
     /// Two consecutive failures trigger the freeze diagnostics and fast-restart path (~5s total).
@@ -106,6 +125,20 @@ public partial class MainViewModel
                 }
 
                 if (_backgroundStopped) return;
+
+                // ── Paged out, not frozen ─────────────────────────────────────────
+                // While a game started from RHI runs, or Windows is short of memory, a stall is
+                // RHI's memory being read back from disk (WaitReason=PageIn). The diagnostics below
+                // (process snapshot, module scan, 1 GB dump) and a restart would read in even more
+                // and fight the game for memory, turning seconds into a minute. Log once and wait.
+                var memLoad = SystemMemoryLoad();
+                var gamesRunning = System.Threading.Volatile.Read(ref _gamesRunningFromRhi);
+                if (memLoad >= PagedOutMemoryLoadPct || gamesRunning > 0)
+                {
+                    if (System.Threading.Interlocked.CompareExchange(ref _freezeStackCaptured, 1, 0) == 0)
+                        CrashReporter.LogSync($"[Heartbeat] UI slow to respond (memory load {memLoad}%, {gamesRunning} game(s) running from RHI) — likely paged out by Windows; skipping freeze diagnostics and restart");
+                    return;
+                }
 
                 // ── 1. Last N UI actions ──────────────────────────────────────────
                 var recentActions = CrashReporter.GetRecentUiActions(20);
@@ -346,11 +379,12 @@ public partial class MainViewModel
                     // Native stack capture
                     _ = Task.Run(CaptureNativeUiThreadStack);
 
-                    // ── 5. Minidump — dev only, ~2s after freeze detection ────────
-                    // Real freezes write freeze_*.dmp to dumps\, keep last 3, no skip.
-                    // Test-button freezes write test_*.dmp to test_dumps\, never pruned or suppressed.
-                    // dumpCompleted is signalled when the dump finishes so the restart task can wait.
-                    if (DevUnlockService.IsUnlocked)
+                    // ── 5. Minidump — dev freeze-test buttons only, ~2s after detection ──
+                    // Real freezes never write a dump: a full-memory dump (1–1.3 GB) pages the whole
+                    // process back in and turned short stalls into minute-long hangs while a game was
+                    // using most of the RAM (Phantom Blade Zero, Nov 2026). Test freezes write
+                    // test_*.dmp to test_dumps\. dumpCompleted is signalled so the restart task can wait.
+                    if (DevUnlockService.IsUnlocked && IsTestFreezeActive)
                     _ = Task.Run(async () =>
                     {
                         try
@@ -366,40 +400,12 @@ public partial class MainViewModel
                             catch (TimeoutException) { stillFrozen = true; }
                             if (!stillFrozen) { CrashReporter.LogSync("[Heartbeat.Dump] UI recovered before 2s — skipping minidump"); return; }
 
-                            bool isTest = IsTestFreezeActive;
                             var dumpTs = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-                            string dumpDir, dumpPath;
-
-                            if (isTest)
-                            {
-                                // Test dump — separate folder, no pruning, no pending marker, never suppressed
-                                dumpDir  = System.IO.Path.Combine(
-                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "test_dumps");
-                                System.IO.Directory.CreateDirectory(dumpDir);
-                                dumpPath = System.IO.Path.Combine(dumpDir, $"test_{dumpTs}.dmp");
-                                CrashReporter.LogSync($"[Heartbeat.Dump] Writing TEST minidump to '{dumpPath}'...");
-                            }
-                            else
-                            {
-                                // Real freeze dump — keep last 3, no skip
-                                dumpDir  = System.IO.Path.Combine(
-                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "dumps");
-                                System.IO.Directory.CreateDirectory(dumpDir);
-                                dumpPath = System.IO.Path.Combine(dumpDir, $"freeze_{dumpTs}.dmp");
-
-                                // Prune to keep last 3
-                                try
-                                {
-                                    var existing = System.IO.Directory.GetFiles(dumpDir, "freeze_*.dmp").OrderBy(f => f).ToArray();
-                                    while (existing.Length >= 3) { System.IO.File.Delete(existing[0]); CrashReporter.LogSync($"[Heartbeat.Dump] Pruned: {System.IO.Path.GetFileName(existing[0])}"); existing = existing.Skip(1).ToArray(); }
-                                }
-                                catch (Exception pruneEx) { CrashReporter.LogSync($"[Heartbeat.Dump] Prune failed: {pruneEx.Message}"); }
-
-                                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
-                                CrashReporter.LogSync($"[Heartbeat.Dump] Writing minidump at {timestamp} to '{dumpPath}'...");
-                                var pendingMarker = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "rhi_pending_dump");
-                                try { System.IO.File.WriteAllText(pendingMarker, dumpPath); } catch { }
-                            }
+                            var dumpDir = System.IO.Path.Combine(
+                                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "test_dumps");
+                            System.IO.Directory.CreateDirectory(dumpDir);
+                            var dumpPath = System.IO.Path.Combine(dumpDir, $"test_{dumpTs}.dmp");
+                            CrashReporter.LogSync($"[Heartbeat.Dump] Writing TEST minidump to '{dumpPath}'...");
 
                             var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
                             var pid = (uint)Environment.ProcessId;
@@ -423,18 +429,10 @@ public partial class MainViewModel
                                 if (ok)
                                 {
                                     var sizeMb = new System.IO.FileInfo(dumpPath).Length / 1024 / 1024;
-                                    CrashReporter.LogSync($"[Heartbeat.Dump] {(isTest ? "Test" : "Real")} minidump written ({sizeMb} MB) — '{dumpPath}'");
-                                    if (!isTest)
-                                    {
-                                        var pendingMarker2 = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "rhi_pending_dump");
-                                        try { System.IO.File.WriteAllText(pendingMarker2, $"{dumpPath}|{sizeMb}MB"); } catch { }
-                                    }
+                                    CrashReporter.LogSync($"[Heartbeat.Dump] Test minidump written ({sizeMb} MB) — '{dumpPath}'");
                                 }
                                 else
-                                {
                                     CrashReporter.LogSync($"[Heartbeat.Dump] MiniDumpWriteDump failed — Win32 error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
-                                    if (!isTest) { var pendingMarker3 = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "rhi_pending_dump"); try { System.IO.File.Delete(pendingMarker3); } catch { } }
-                                }
                             }
                             finally { if (snapshotHandle != IntPtr.Zero) NativeInterop.PssFreeSnapshot(hProcess, snapshotHandle); }
                         }
@@ -442,7 +440,7 @@ public partial class MainViewModel
                         finally { dumpCompleted.TrySetResult(true); }
                     });
                     else
-                        dumpCompleted.TrySetResult(true); // dumps disabled — signal immediately so restart doesn't wait
+                        dumpCompleted.TrySetResult(true); // no dump for real freezes — signal immediately so restart doesn't wait
 
                 } // end once-per-stall diagnostics gate
                 else

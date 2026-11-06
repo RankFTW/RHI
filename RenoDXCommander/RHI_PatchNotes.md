@@ -9,6 +9,12 @@
 
 - Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
 
+### Bug Fixes
+
+- Fixed RHI showing "Not Responding" for a minute or more, and sometimes restarting itself, while a game that uses a lot of memory was running. When Windows is short of memory it moves RHI out of RAM to make room for the game, and RHI then treated the slow response as a freeze and ran heavy checks that made it worse. RHI now waits it out while a game launched from RHI is running or memory is low, and never restarts itself mid-game.
+- Fixed RHI watching a game's crash reporter instead of the game itself (for example Phantom Blade Zero, and other Unreal Engine games started through Steam or Epic). The game could show as running after it closed, or stop showing as running while it was still open, and HDR and resolution could switch back at the wrong time. RHI now also finds games whose exe runs from another folder inside the game's install, and waits for all of the game's processes to close.
+- Fixed changing the ReShade DLL name in Game Overrides renaming Display Commander's file to "--------" (and changing Display Commander's name doing the same to ReShade) when the other dropdown was left on its default. Games this already happened to are put right the next time you open them in RHI, keeping the name you picked.
+
 ## v2.9.1
 
 ### Bug Fixes
