@@ -65,6 +65,15 @@ public class RemoteManifest
     [JsonPropertyName("installPathOverrides")]
     public Dictionary<string, string>? InstallPathOverrides { get; set; }
 
+    /// <summary>
+    /// Same format as <see cref="InstallPathOverrides"/> (game → subpath, pipe-separated candidates),
+    /// for games whose install folder RHI moves: an entry here wins over installPathOverrides, and RHI
+    /// moves the game's existing installs from the old folder to the new one. Older app versions
+    /// ignore this field, so they keep using the old folder instead of switching without moving.
+    /// </summary>
+    [JsonPropertyName("installPathMigrations")]
+    public Dictionary<string, string>? InstallPathMigrations { get; set; }
+
     [JsonPropertyName("wikiStatusOverrides")]
     public Dictionary<string, string>? WikiStatusOverrides { get; set; }
 

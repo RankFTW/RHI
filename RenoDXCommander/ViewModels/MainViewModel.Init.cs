@@ -724,6 +724,9 @@ public partial class MainViewModel
                 allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)
                     && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
+            // Move installs whose folder the manifest changed, before records are read (so they match)
+            await RunManifestFolderMigrationsAsync(allGames);
+
             var records    = _installer.LoadAll();
             var auxRecords = _auxInstaller.LoadAll();
 
@@ -747,6 +750,7 @@ public partial class MainViewModel
             _allCards = WithoutRemovedGames(_allCards);
             PropagateDispatcherToCards();
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
+            PublishFolderMigrationNotices();
             GraphicsApiDetector.SaveCache();
             SaveGameApiCache();
 

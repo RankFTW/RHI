@@ -715,6 +715,38 @@ public partial class AuxInstallService
                 return candidate;
             }
         }
+        return FindUeProjectNear(normalized);
+    }
+
+    /// <summary>
+    /// Fallback for install folders outside Binaries (e.g. an exe folder like PBZ\platform\steam that RHI
+    /// moved a game's installs to): walks up at most three folders, never into a store library folder,
+    /// and returns the single child folder X with X\Binaries\Win64 (or WinGDK), Engine excluded.
+    /// Returns null when there's none or more than one.
+    /// </summary>
+    private static string? FindUeProjectNear(string installPath)
+    {
+        try
+        {
+            var cur = installPath;
+            for (int up = 0; up < 3; up++)
+            {
+                cur = Path.GetDirectoryName(cur) ?? "";
+                if (string.IsNullOrEmpty(cur) || DlssStreamlineService.IsStoreLibraryFolder(cur)) break;
+                var projects = Directory.EnumerateDirectories(cur)
+                    .Where(d => !Path.GetFileName(d).Equals("Engine", StringComparison.OrdinalIgnoreCase)
+                             && (Directory.Exists(Path.Combine(d, "Binaries", "Win64"))
+                              || Directory.Exists(Path.Combine(d, "Binaries", "WinGDK"))))
+                    .Select(Path.GetFileName)
+                    .ToList();
+                if (projects.Count == 1) return projects[0];
+                if (projects.Count > 1) break;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[AuxInstallService.FindUeProjectNear] '{installPath}' — {ex.Message}");
+        }
         return null;
     }
 

@@ -186,6 +186,41 @@ public partial class DlssStreamlineService
     /// </summary>
     internal static string ResolveSearchRoot(string installPath)
     {
+        // A folder RHI moved a game's installs to (manifest installPathMigrations) can sit outside the
+        // folder the old one resolved to (PBZ: ProjectPBZ\Binaries\Win64 → PBZ, platform\steam → itself),
+        // so it searches from the game's root: swapped DLLs and RTX Encore's native: entries stay in reach.
+        if (_searchRootOverrides.TryGetValue(SearchRootKey(installPath), out var movedRoot) && Directory.Exists(movedRoot))
+            return movedRoot;
+        return ResolveSearchRootDefault(installPath);
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _searchRootOverrides =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private static string SearchRootKey(string path) => path.Replace('/', '\\').TrimEnd('\\');
+
+    /// <summary>
+    /// For a game whose install folder comes from manifest installPathMigrations: searches from
+    /// <paramref name="gameRoot"/> (its store folder, e.g. steamapps\common\PBZ) instead of the narrower
+    /// folder the default rules pick. Only widens: no-op when the default root already covers the game
+    /// root or the install folder isn't inside it, so other games are unaffected.
+    /// </summary>
+    internal static void RegisterMovedInstallRoot(string installPath, string gameRoot)
+    {
+        if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(gameRoot)) return;
+        var root = SearchRootKey(gameRoot);
+        var key = SearchRootKey(installPath);
+        if (IsStoreLibraryFolder(root)) return;
+        bool inside = key.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase);
+        bool narrower = SearchRootKey(ResolveSearchRootDefault(installPath)).StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase);
+        if (!inside || !narrower) { _searchRootOverrides.TryRemove(key, out _); return; }
+        if (_searchRootOverrides.TryGetValue(key, out var existing) && existing.Equals(root, StringComparison.OrdinalIgnoreCase)) return;
+        _searchRootOverrides[key] = root;
+        CrashReporter.Log($"[DlssStreamlineService.RegisterMovedInstallRoot] '{installPath}' searches from '{root}'");
+    }
+
+    private static string ResolveSearchRootDefault(string installPath)
+    {
         // Check if this is a WindowsApps path — go up to the package root
         if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
             || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
@@ -251,7 +286,7 @@ public partial class DlssStreamlineService
     /// Returns true if the given path is a known store library folder that should NOT
     /// be used as a search root (would scan all games in the library).
     /// </summary>
-    private static bool IsStoreLibraryFolder(string path)
+    internal static bool IsStoreLibraryFolder(string path)
     {
         var name = Path.GetFileName(path);
         if (string.IsNullOrEmpty(name)) return true; // drive root

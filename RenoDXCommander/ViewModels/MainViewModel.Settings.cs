@@ -1176,7 +1176,12 @@ public partial class MainViewModel
     /// <summary>Per-game install folder overrides. Key = game name, Value = "overridePath|originalPath".</summary>
     private Dictionary<string, string> _folderOverrides => _gameNameService.FolderOverrides;
 
-    public void SetFolderOverride(string gameName, string folderPath, string store = "")
+    /// <param name="originalPath">
+    /// The folder RHI detected, captured by the caller before it changed the card (used on the first
+    /// override). Without it the card's current folder is used, which is wrong once the card points at
+    /// the picked folder: Reset install folder then went back to the picked folder.
+    /// </param>
+    public void SetFolderOverride(string gameName, string folderPath, string store = "", string? originalPath = null)
     {
         var key = GameKey.From(gameName, store).ToKey();
         // Preserve the original path if this is the first override
@@ -1185,6 +1190,10 @@ public partial class MainViewModel
         {
             var parts = existing.Split('|');
             original = parts.Length > 1 ? parts[1] : parts[0];
+        }
+        else if (!string.IsNullOrEmpty(originalPath))
+        {
+            original = originalPath;
         }
         else
         {
@@ -1202,13 +1211,14 @@ public partial class MainViewModel
     /// <summary>
     /// Resets the folder for an auto-detected game back to its original detected path.
     /// For manual games, removes the game entirely.
+    /// Returns the detected game folder it went back to (null when none was stored).
     /// </summary>
-    public void ResetFolderOverride(GameCardViewModel card)
+    public string? ResetFolderOverride(GameCardViewModel card)
     {
         if (card.IsManuallyAdded)
         {
             RemoveManualGameCommand.Execute(card);
-            return;
+            return null;
         }
 
         var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
@@ -1232,6 +1242,7 @@ public partial class MainViewModel
         SaveNameMappings();
         SaveLibrary();
         card.NotifyAll();
+        return string.IsNullOrEmpty(originalPath) ? null : originalPath;
     }
 
     public bool HasDllOverride(string gameName) => _dllOverrideService.HasDllOverride(gameName);

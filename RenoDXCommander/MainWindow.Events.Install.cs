@@ -1000,31 +1000,6 @@ public sealed partial class MainWindow
         return null;
     }
 
-    internal async void BrowseFolder_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var card = GetCardFromSender(sender);
-            if (card == null) return;
-            var suggestedPath = card.InstallPath is { Length: > 0 } p && Directory.Exists(p) ? p
-                              : card.DetectedGame?.InstallPath is { Length: > 0 } dp && Directory.Exists(dp) ? dp
-                              : null;
-            var folder = await PickFolderAsync(suggestedPath);
-            if (folder != null)
-            {
-                card.InstallPath = folder;
-                if (card.DetectedGame != null)
-                    card.DetectedGame.InstallPath = folder;
-                // Persist the override so it survives Refresh / app restart
-                ViewModel.SetFolderOverride(card.GameName, folder, card.Source);
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.BrowseFolder_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
-        }
-    }
-
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);
@@ -1059,21 +1034,6 @@ public sealed partial class MainWindow
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
                 return;
             }
-        }
-    }
-
-    /// <summary>Management › Reset install folder: back to the auto-detected folder (detected games only).</summary>
-    internal void ResetInstallFolder_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var card = GetCardFromSender(sender);
-            if (card == null || card.IsManuallyAdded) return;
-            ViewModel.ResetFolderOverride(card);
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.ResetInstallFolder_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 

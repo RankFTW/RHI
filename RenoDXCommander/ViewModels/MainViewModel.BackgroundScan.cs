@@ -396,6 +396,9 @@ public partial class MainViewModel
                 allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)
                     && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
+            // Move installs whose folder the manifest changed, before records are read (so they match)
+            await RunManifestFolderMigrationsAsync(allGames);
+
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Loading install records...");
             var records    = _installer.LoadAll();
             var auxRecords = _auxInstaller.LoadAll();
@@ -437,6 +440,7 @@ public partial class MainViewModel
 
             // Merge fresh cards into displayed cards
             await MergeCardsAsync(freshCards);
+            PublishFolderMigrationNotices();
 
             // Save updated library
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } });

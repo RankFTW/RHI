@@ -108,6 +108,7 @@ public partial class App : Application
         services.AddSingleton<IOptiScalerWikiService, OptiScalerWikiService>();
         services.AddSingleton<IHdrDatabaseService, HdrDatabaseService>();
         services.AddSingleton<IDxvkService, DxvkService>();
+        services.AddSingleton<IInstallFolderMigrationService, InstallFolderMigrationService>();
         // Lazy<IDxvkService> breaks the circular dependency between OptiScalerService ↔ DxvkService
         services.AddSingleton<Lazy<IDxvkService>>(sp => new Lazy<IDxvkService>(() => sp.GetRequiredService<IDxvkService>()));
         services.AddSingleton<IDlssStreamlineService, DlssStreamlineService>();

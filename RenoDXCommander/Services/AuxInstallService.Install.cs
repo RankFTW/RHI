@@ -464,6 +464,27 @@ public partial class AuxInstallService
         }
     }
 
+    /// <inheritdoc/>
+    public int RepointRecords(string gameName, string oldPath, string newPath, Func<AuxInstalledRecord, bool>? include = null)
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var db = LoadDb();
+            int changed = 0;
+            foreach (var r in db.Where(r => r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                                         && r.InstallPath.Equals(oldPath, StringComparison.OrdinalIgnoreCase)
+                                         && (include == null || include(r))).ToList())
+            {
+                bool newExists = db.Any(o => o != r && o.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) && o.InstallPath.Equals(newPath, StringComparison.OrdinalIgnoreCase) && o.AddonType.Equals(r.AddonType, StringComparison.OrdinalIgnoreCase));
+                if (newExists) db.Remove(r); else r.InstallPath = newPath;
+                changed++;
+                CrashReporter.Log($"[AuxInstallService.RepointRecords] '{gameName}': {(newExists ? "dropped old record (new folder has one)" : "moved")} '{oldPath}' → '{newPath}'");
+            }
+            if (changed > 0) SaveDb(db);
+            return changed;
+        }
+    }
+
     // SafeJsonFile: atomic write + .bak, corrupt-file recovery, no save over an unreadable file.
     private List<AuxInstalledRecord> LoadDb() => SafeJsonFile.ReadList<AuxInstalledRecord>(DbPath);
 

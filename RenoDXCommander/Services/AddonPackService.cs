@@ -1550,6 +1550,52 @@ public class AddonPackService : IAddonPackService
         if (rootTracked.Count == 0) deployments.Remove(installPath);
     }
 
+    /// <summary>Addon file names the tracker lists for a folder (trailing-slash differences ignored).</summary>
+    public static List<string> GetTrackedAddons(string folder)
+    {
+        var key = folder.Replace('/', '\\').TrimEnd('\\');
+        return LoadDeployments()
+            .Where(kv => kv.Key.Replace('/', '\\').TrimEnd('\\').Equals(key, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(kv => kv.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Install folder migration: moves the tracked addon names for <paramref name="oldFolder"/> to
+    /// <paramref name="newFolder"/> (merged with any already tracked there). Only call once the files moved.
+    /// </summary>
+    public static void RepointDeployments(string oldFolder, string newFolder)
+    {
+        try
+        {
+            lock (_deploymentsLock)
+            {
+                var deployments = LoadDeployments();
+                var oldKey = oldFolder.Replace('/', '\\').TrimEnd('\\');
+                var keys = deployments.Keys
+                    .Where(k => k.Replace('/', '\\').TrimEnd('\\').Equals(oldKey, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (keys.Count == 0) return;
+                var newKey = newFolder.Replace('/', '\\').TrimEnd('\\');
+                if (!deployments.TryGetValue(newKey, out var target))
+                    deployments[newKey] = target = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var k in keys)
+                {
+                    if (k.Equals(newKey, StringComparison.OrdinalIgnoreCase)) continue;
+                    target.UnionWith(deployments[k]);
+                    deployments.Remove(k);
+                }
+                SaveDeployments(deployments);
+                CrashReporter.Log($"[AddonPackService.RepointDeployments] '{oldFolder}' → '{newFolder}' ({target.Count} addons tracked)");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            CrashReporter.Log($"[AddonPackService.RepointDeployments] Failed — {ex.Message}");
+        }
+    }
+
     public static void TrackAddonDeployment(string installPath, string addonFileName)
     {
         try

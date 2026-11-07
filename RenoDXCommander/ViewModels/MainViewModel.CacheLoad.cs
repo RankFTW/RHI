@@ -430,6 +430,10 @@ public partial class MainViewModel
         if (cachedManifest?.InstallPathOverrides != null)
             foreach (var (key, value) in cachedManifest.InstallPathOverrides)
                 _installPathOverrides.TryAdd(key, value);
+        if (cachedManifest?.InstallPathMigrations != null)
+            foreach (var (key, value) in cachedManifest.InstallPathMigrations)
+                _installPathOverrides[key] = value; // migrations win over installPathOverrides
+        NoteInstallPathMigrations(cachedManifest?.InstallPathMigrations);
 
         // 8. Load installed records and aux records from disk (fast local reads)
         var records    = _installer.LoadAll();
@@ -481,6 +485,8 @@ public partial class MainViewModel
                 }
                 // Trust first candidate if none exist on disk (Phase 2 will verify)
                 installPath = resolvedOverride ?? Path.Combine(game.InstallPath, candidates[0].Trim());
+                if (resolvedOverride != null && _installPathMigrationGames.Contains(game.Name))
+                    DlssStreamlineService.RegisterMovedInstallRoot(installPath, game.InstallPath);
             }
 
             // Resolve engine from cache

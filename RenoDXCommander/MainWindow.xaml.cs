@@ -252,6 +252,7 @@ public sealed partial class MainWindow : Window
             CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
         ViewModel.ManualGameAdded += OpenAddedGame;
+        ViewModel.FolderMigrated += OnFolderMigrated;
         HookAntivirusNotice();
         HookCustomGamesNotice();
         StartStatusBarTimer();

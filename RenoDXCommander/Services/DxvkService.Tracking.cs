@@ -40,6 +40,27 @@ public partial class DxvkService
         }
     }
 
+    /// <inheritdoc />
+    public int RepointRecords(string gameName, string oldPath, string newPath)
+    {
+        lock (_dbLock)
+        {
+            var db = LoadAllRecords();
+            int changed = 0;
+            foreach (var r in db.Where(r => r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                                         && r.InstallPath.Equals(oldPath, StringComparison.OrdinalIgnoreCase)
+                                         ).ToList())
+            {
+                bool newExists = db.Any(o => o != r && o.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) && o.InstallPath.Equals(newPath, StringComparison.OrdinalIgnoreCase));
+                if (newExists) db.Remove(r); else r.InstallPath = newPath;
+                changed++;
+                CrashReporter.Log($"[DxvkService.RepointRecords] '{gameName}': {(newExists ? "dropped old record (new folder has one)" : "moved")} '{oldPath}' → '{newPath}'");
+            }
+            if (changed > 0) SafeJsonFile.Write(DbPath, db, "DxvkService.SaveRecords", _jsonOptions);
+            return changed;
+        }
+    }
+
     /// <summary>
     /// Persists a <see cref="DxvkInstalledRecord"/> to the tracking file.
     /// If a record with the same game name and install path already exists,

@@ -188,6 +188,9 @@ public partial class MainViewModel
                         break;
                     }
                 }
+                // Moved install folders search for DLSS files from the game's root
+                if (_installPathMigrationGames.Contains(game.Name))
+                    DlssStreamlineService.RegisterMovedInstallRoot(installPath, game.InstallPath);
             }
 
             // Detect bitness: use cached value if available, otherwise run PE detection.
@@ -292,7 +295,8 @@ public partial class MainViewModel
             // When the record's GameName matches but InstallPath differs, try to
             // migrate the addon file to the new path so the mod stays detected.
             if (record != null
-                && !record.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                && !record.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase)
+                && !ShouldDeferPathReconciliation(game.Name, game.Source, record.InstallPath))
             {
                 var oldPath = record.InstallPath;
 
@@ -590,7 +594,8 @@ public partial class MainViewModel
             // ── Path reconciliation for ReShade aux records ───────────────────────
             // Same Xbox/Microsoft Store path-change issue as RenoDX mod records above.
             if (rsRec != null
-                && !rsRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                && !rsRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase)
+                && !ShouldDeferPathReconciliation(game.Name, game.Source, rsRec.InstallPath))
             {
                 var oldRsPath = rsRec.InstallPath;
                 var rsFile = rsRec.InstalledAs;
@@ -1064,7 +1069,8 @@ public partial class MainViewModel
 
                         // ── Path reconciliation for DC aux records ────────────────────
                         if (dcRec != null
-                            && !dcRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                            && !dcRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase)
+                            && !ShouldDeferPathReconciliation(game.Name, game.Source, dcRec.InstallPath))
                         {
                             var oldDcPath = dcRec.InstallPath;
                             var dcFile = dcRec.InstalledAs;
@@ -1131,7 +1137,8 @@ public partial class MainViewModel
 
                 // ── Path reconciliation for OptiScaler aux records ────────────────
                 if (osRec != null
-                    && !osRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                    && !osRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase)
+                    && !ShouldDeferPathReconciliation(game.Name, game.Source, osRec.InstallPath))
                 {
                     var oldOsPath = osRec.InstallPath;
                     var osFile = osRec.InstalledAs;

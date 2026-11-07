@@ -30,6 +30,13 @@ public interface IREFrameworkService
     List<REFrameworkInstalledRecord> GetRecords();
 
     /// <summary>
+    /// Install folder migration: points every record of <paramref name="gameName"/> at
+    /// <paramref name="oldPath"/> to <paramref name="newPath"/>. A record already at the new path
+    /// wins (the old one is dropped). Returns how many records changed.
+    /// </summary>
+    int RepointRecords(string gameName, string oldPath, string newPath);
+
+    /// <summary>
     /// Downloads and installs the pd-upscaler branch of REFramework for OptiScaler compatibility.
     /// The pd-upscaler builds are double-zipped from nightly.link.
     /// </summary>

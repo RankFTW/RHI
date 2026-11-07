@@ -632,6 +632,27 @@ public class ModInstallService : IModInstallService
         }
     }
 
+    /// <inheritdoc/>
+    public int RepointRecords(string gameName, string oldPath, string newPath)
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var db = LoadDb();
+            int changed = 0;
+            foreach (var r in db.Where(r => r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                                         && r.InstallPath.Equals(oldPath, StringComparison.OrdinalIgnoreCase)
+                                         ).ToList())
+            {
+                bool newExists = db.Any(o => o != r && o.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) && o.InstallPath.Equals(newPath, StringComparison.OrdinalIgnoreCase));
+                if (newExists) db.Remove(r); else r.InstallPath = newPath;
+                changed++;
+                CrashReporter.Log($"[ModInstallService.RepointRecords] '{gameName}': {(newExists ? "dropped old record (new folder has one)" : "moved")} '{oldPath}' → '{newPath}'");
+            }
+            if (changed > 0) SaveDb(db);
+            return changed;
+        }
+    }
+
     // SafeJsonFile: atomic write + .bak, corrupt-file recovery, no save over an unreadable file.
     private List<InstalledModRecord> LoadDb() => SafeJsonFile.ReadList<InstalledModRecord>(DbPath);
 

@@ -426,6 +426,7 @@ public sealed partial class MainWindow
     {
         if (_searchRow == null || _chipsRow == null || _countsRow == null) return;
         if (_mainFilterChips != null) _mainFilterChips.Visibility = Visibility.Collapsed;
+        WrapEngineModChips();
         if (_segmentHost != null) _segmentHost.Visibility = Visibility.Visible;
         if (_filtersBtn != null) _filtersBtn.Visibility = Visibility.Visible;
         ApplySidebarColours();
@@ -434,6 +435,23 @@ public sealed partial class MainWindow
         _chipsRow.BorderThickness = new Thickness(0);
         _chipsRow.Padding = new Thickness(16, 6, 16, 6);
         _countsRow.Padding = new Thickness(16, 6, 16, 8);
+    }
+
+    /// <summary>
+    /// The engine / mod chips (Unreal … Luma) are a single XAML row, so on a narrow game list the
+    /// last chip was cut off. Moves them into a WrapPanel (once) so they flow onto a second line.
+    /// </summary>
+    private void WrapEngineModChips()
+    {
+        if (FilterUnreal.Parent is not StackPanel row || row.Parent is not Panel outer) return;
+        int idx = outer.Children.IndexOf(row);
+        if (idx < 0) return;
+        var chips = row.Children.ToList();
+        row.Children.Clear(); // a control can only have one parent
+        var wrap = new Controls.WrapPanel { HorizontalSpacing = 4, VerticalSpacing = 4 };
+        foreach (var chip in chips) wrap.Children.Add(chip);
+        outer.Children.RemoveAt(idx);
+        outer.Children.Insert(idx, wrap);
     }
 
     /// <summary>The game list's Tabs colours, used in every layout.</summary>

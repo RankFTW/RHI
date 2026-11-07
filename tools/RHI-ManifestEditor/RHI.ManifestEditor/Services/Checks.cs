@@ -18,7 +18,7 @@ public static class Checks
     {
         "authorDisplayNames", "displayCommanderGameInfo", "dllNameOverrides", "dlssPathOverrides", "donationUrls",
         "engineOverrides", "forceExternalOnly", "gacSymlinkGames", "gameNotes", "graphicsApiOverrides",
-        "installPathOverrides", "installWarnings", "lumaGameInfo", "lumaGameNotes", "lumaNameOverrides",
+        "installPathMigrations", "installPathOverrides", "installWarnings", "lumaGameInfo", "lumaGameNotes", "lumaNameOverrides",
         "optiScalerGameInfo", "optiScalerWikiNames", "reframeworkGameInfo", "relimiterGameInfo", "reshadeGameInfo",
         "snapshotOverrides", "streamlinePathOverrides", "wikiNameOverrides", "wikiStatusOverrides",
     };

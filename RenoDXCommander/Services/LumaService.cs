@@ -963,6 +963,30 @@ public class LumaService : ILumaService
         }
     }
 
+    /// <summary>Every Luma install record (install folder migration looks for a game's old folders).</summary>
+    public static List<LumaInstalledRecord> GetAllRecords() => LoadAllRecords();
+
+    /// <inheritdoc/>
+    public int RepointRecords(string gameName, string oldPath, string newPath)
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var db = LoadAllRecords();
+            int changed = 0;
+            foreach (var r in db.Where(r => r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                                         && r.InstallPath.Equals(oldPath, StringComparison.OrdinalIgnoreCase)
+                                         ).ToList())
+            {
+                bool newExists = db.Any(o => o != r && o.InstallPath.Equals(newPath, StringComparison.OrdinalIgnoreCase));
+                if (newExists) db.Remove(r); else r.InstallPath = newPath;
+                changed++;
+                CrashReporter.Log($"[LumaService.RepointRecords] '{gameName}': {(newExists ? "dropped old record (new folder has one)" : "moved")} '{oldPath}' → '{newPath}'");
+            }
+            if (changed > 0) SaveAllRecords(db);
+            return changed;
+        }
+    }
+
     /// <summary>Get record by install path only (for matching by game folder).</summary>
     public static LumaInstalledRecord? GetRecordByPath(string installPath)
     {

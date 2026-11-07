@@ -35,7 +35,9 @@ public partial class DetailPanelBuilder
         // Consistency guard: if the dict says installed but FindRecord finds no record,
         // the aux record was lost (e.g. Game Pass path version change). Clear the stale dict entry
         // so the collapsed header doesn't show "ASI Loader winmm.dll" when nothing is actually installed.
-        if (!isInstalled && !string.IsNullOrEmpty(_window.ViewModel.GetUalInstalledAs(gameName, store)))
+        // Not while an install folder move is waiting: the record still points at the old folder.
+        if (!isInstalled && !string.IsNullOrEmpty(_window.ViewModel.GetUalInstalledAs(gameName, store))
+            && !_window.ViewModel.IsFolderMigrationPending(card))
         {
             CrashReporter.Log($"[BuildUalRow] Clearing stale UalInstalledAs entry for '{gameName}' — dict said installed but no aux record found");
             _window.ViewModel.SetUalInstalledAs(gameName, null, store);

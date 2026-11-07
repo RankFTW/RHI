@@ -874,6 +874,7 @@ public partial class MainViewModel
             _installPathOverrides,
             NormalizeForLookup,
             _manifestUeExtendedCompat);
+        NoteInstallPathMigrations(manifest?.InstallPathMigrations);
     }
 
     /// <summary>

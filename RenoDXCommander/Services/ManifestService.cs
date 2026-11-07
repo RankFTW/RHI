@@ -162,6 +162,8 @@ public class ManifestService : IManifestService
             m.ForceExternalOnly = new Dictionary<string, ForceExternalEntry>(m.ForceExternalOnly, StringComparer.OrdinalIgnoreCase);
         if (m.InstallPathOverrides != null)
             m.InstallPathOverrides = new Dictionary<string, string>(m.InstallPathOverrides, StringComparer.OrdinalIgnoreCase);
+        if (m.InstallPathMigrations != null)
+            m.InstallPathMigrations = new Dictionary<string, string>(m.InstallPathMigrations, StringComparer.OrdinalIgnoreCase);
         if (m.WikiStatusOverrides != null)
             m.WikiStatusOverrides = new Dictionary<string, string>(m.WikiStatusOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.SnapshotOverrides != null)

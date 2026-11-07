@@ -17,6 +17,7 @@
 
 ### Changes
 
+- When a game's install folder changes, RHI now moves its installed mods with it. After Change install folder or Reset install folder, RHI asks whether to move the mods, their settings and presets to the new folder; when RHI itself corrects a game's folder, it moves them on its own and says so in the status bar. The game's own files that RHI had replaced are put back in the old folder, and nothing is moved while the game is running.
 - (WIP) Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
 - Spotlight has a new Covers at bottom button next to Filters. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.
 - The controller's button hints now sit in the middle of the bottom status bar, in place of the anti-cheat notice, instead of floating over the page. They no longer cover anything, wherever the covers are, and the notice comes back when you use the mouse.
@@ -24,12 +25,15 @@
 
 ### Bug Fixes
 
+- Fixed Reset install folder going back to the folder you picked with Change install folder instead of the folder RHI detected.
 - Fixed games using RTX HDR or Auto HDR (instead of a RenoDX mod) showing "—" on the RenoDX row, the Overview card and Spotlight's What's installed tile. They now show RTX HDR or Auto HDR, with "on" in green.
 - Fixed some games being detected as DirectX 12 because of video, UI or windowing libraries they ship (FFmpeg, Qt, SDL, Chromium) rather than what they render with. For example, OpenMW (OpenGL) showed as DX12, so the wrong ReShade setup and options were offered.
 - Fixed RHI showing "Not Responding" for a minute or more, and sometimes restarting itself, while a game that uses a lot of memory was running. When Windows is short of memory it moves RHI out of RAM to make room for the game, and RHI then treated the slow response as a freeze and ran heavy checks that made it worse. RHI now waits it out while a game launched from RHI is running or memory is low, and never restarts itself mid-game.
 - Fixed RHI watching a game's crash reporter instead of the game itself (for example Phantom Blade Zero, and other Unreal Engine games started through Steam or Epic). The game could show as running after it closed, or stop showing as running while it was still open, and HDR and resolution could switch back at the wrong time. RHI now also finds games whose exe runs from another folder inside the game's install, and waits for all of the game's processes to close.
 - Fixed changing the ReShade DLL name in Game Overrides renaming Display Commander's file to "--------" (and changing Display Commander's name doing the same to ReShade) when the other dropdown was left on its default. Games this already happened to are put right the next time you open them in RHI, keeping the name you picked.
 - Fixed headings in What's New, the message of the day and mod release notes being hard to read (dark grey or black on the dark background) on PCs with Windows set to Light mode. Patch note text is also a little brighter.
+- Fixed the Luma filter chip being cut off at the edge of the game list when Filters is open. The engine and mod chips now move onto a second line when they don't fit.
+- Fixed the game header still showing the old install folder after Change install folder or Reset install folder until you moved to another game and back.
 
 ## v2.9.1
 

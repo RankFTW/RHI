@@ -26,6 +26,13 @@ Supports pipe-separated candidates: `"Win64|WinGDK"` — tried in order, first e
 - `GameInitializationService.ApplyManifest()` → merges into shared `_installPathOverrides` dict
 - `BuildCards`, `CacheLoad`, `AddManualGame` → applies path resolution before card creation
 
+### `installPathMigrations` — `Dict<string,string>`
+Same format and semantics as `installPathOverrides` (game → subpath, pipe-separated candidates, first existing wins), for games whose mod folder RHI moves (Phantom Blade Zero: `ProjectPBZ\Binaries\Win64` → `platform\steam`).
+- Wins over `installPathOverrides` for the same game (merged with the indexer in `GameInitializationService.ApplyManifest()` and the `CacheLoad` seeding).
+- RHI moves the game's existing installs from the old folder to the new one on the next launch / Refresh (`MainViewModel.FolderMigration.cs` → `InstallFolderMigrationService`).
+- Older app versions ignore the field, so they keep using the old folder instead of switching without moving anything. Add the entry only once a version with the mover has shipped.
+- Also widens the DLSS search root for the game to its store folder (`DlssStreamlineService.RegisterMovedInstallRoot`).
+
 ### `splitGames` — `Dict<string,List<SplitGameEntry>>`
 Splits a single detected store entry into multiple cards, each pointing to a subfolder.
 - `MainViewModel.BuildCards` → very early, replaces one `DetectedGame` entry with N sub-entries
