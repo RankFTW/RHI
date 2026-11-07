@@ -579,7 +579,7 @@ Put your own shaders in `%LOCALAPPDATA%\RHI\reshade\Custom\Shaders\` and texture
 
 Toolbar **Shaders/Addons → Global Addons** opens the **ReShade Addon Manager**. It lists the official ReShade addon list plus extras added by RHI, such as RenoDX DevKit, DLSS Fix, ReShade HDR Metadata, RenoDX Upgrade, Depth3D Cursor Add-on and ReShade Screenshot Discord Fix. Each entry links to its repository and usage notes. Addons that can't be used together are blocked with a message telling you which one to turn off first.
 
-Tools that RHI manages elsewhere (Neural Rendering methods, MFG Ada Unlock) aren't in this list.
+Tools that RHI manages elsewhere (Neural Rendering methods, MFG Unlock) aren't in this list.
 
 ### Per-game addons
 
@@ -746,7 +746,7 @@ The **Extras** section holds optional tools:
 
 - **ASI Loader**.
 - **OptiScaler** (see [OptiScaler](#optiscaler)).
-- **MFG Unlocks**: **RTX Encore**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Ada Unlock**.
+- **MFG Unlocks**: **RTX Encore**, **DLSS Enabler**, **20/30 FG Unlock**, **Universal MFG Unlocker**, **MFG Unlock**.
 - **API Upgrades**: **DXVK** and **dgVoodoo2** (see [DXVK and dgVoodoo2](#dxvk-and-dgvoodoo2)).
 
 Several of these are "proxy" DLLs that load by taking a system DLL's name. When you install one, RHI asks which name to use. Names that ReShade, OptiScaler, Display Commander, ASI Loader or another extra already use are greyed out, with what's using them. If the game already has a file with that name, RHI backs it up and restores it on uninstall.
@@ -760,9 +760,9 @@ Several of these are "proxy" DLLs that load by taking a system DLL's name. When 
 | **DLSS Enabler** | DLSS Frame Generation support through a proxy DLL (`version.dll` works for most games). Not available while OptiScaler is installed, as OptiScaler includes it. |
 | **20/30 FG Unlock** | DLSS Frame Generation (up to 6X) on RTX 20 and 30 Series, DX12 only, NVIDIA driver R580 or newer. Installs a proxy DLL (start with `version.dll`; if FG doesn't appear in the game, try the next name), `dlssg_sm86.ini` and the `dlssg_sm86` folder; uninstall removes all of it. Its ⚙ sets Frame Generation on/off, Engine (DLSS or XeSS), Max Frames (2X–6X), Preset (A, B, or C for FG Lite), Speed Tier and Super Resolution (preset M/L, with faster INT8 kernels), and opens the ini and log. Settings are kept when the mod updates. |
 | **Universal MFG Unlocker** | Formerly RTX 40 MFG. Multi frame generation beyond 2x (up to 6x) on RTX 40 and 30 Series (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. RHI also installs the Intel XeSS files XeMFG needs, in an `RTXMFG-XeSS` folder. With OptiScaler nightly, F5 or DLSS NR installed it goes in as an OptiScaler plugin (`OptiScaler\plugins\MFGUnlocker.asi`); pick DLSSG or XeFG as FG Output in OptiScaler's ⚙. Press Backspace in-game for its menu. |
-| **MFG Ada Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). RHI also installs the Intel XeSS files its XeMFG modes need in the game folder (a game's own older copies are backed up and restored on uninstall). Its ⚙ sets the frame generation method (DLSS-G, XeMFG (CUDA) or XeMFG via DLSS-G (XMX)) and DLSS-SR input, saved to `MFGAdaUnlock.ini`. As of MFG Ada Unlock 1.8.0 it works in DirectX 12 games (Vulkan experimental); the ⚙ warns on other APIs. |
+| **MFG Unlock** | In-memory 3x/4x+ MFG unlock for RTX 40 Series, loaded as a ReShade addon (needs ReShade). RHI also installs the Intel XeSS files its XeMFG modes need in the game folder (a game's own older copies are backed up and restored on uninstall). Its ⚙ sets the frame generation method (DLSS-G, XeMFG (CUDA) or XeMFG via DLSS-G (XMX)) and DLSS-SR input, saved to `MFGAdaUnlock.ini`. As of MFG Unlock 1.8.0 it works in DirectX 12 games (Vulkan experimental); the ⚙ warns on other APIs. |
 
-Universal MFG Unlocker and MFG Ada Unlock can't be installed together, and 20/30 FG Unlock is blocked while MFG Ada Unlock is installed.
+Universal MFG Unlocker and MFG Unlock can't be installed together, and 20/30 FG Unlock is blocked while MFG Unlock is installed.
 
 ---
 
@@ -1213,7 +1213,7 @@ RHI downloads these from their official sources. All credit goes to their author
 | [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) | jlrouzies-fr | See repository |
 | [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge) | NIGos | See repository |
 | [Universal MFG Unlocker](https://github.com/dashdogy/MFG-Unlocker) | dashdogy | See repository |
-| [MFG Ada Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg | See repository |
+| [MFG Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg | See repository |
 | [20/30 FG Unlock](https://github.com/sdli1995/dlssg_for_sm86) | sdli1995 | See repository |
 | [RTX Encore](https://github.com/SilyNoMeta/rtx-encore) | SilyNoMeta | See repository |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |

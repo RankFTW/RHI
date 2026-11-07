@@ -52,12 +52,12 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "MFG Ada Unlock",
+            Text = "MFG Unlock",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40 Series GPUs, or Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50 Series. Requires ReShade.");
+        ToolTipService.SetToolTip(label, "MFG Unlock — unlocks DLSS Multi Frame Generation (3x/4x/6x) on RTX 40 Series GPUs, brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series (experimental), and runs Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50 Series. Requires ReShade.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -95,7 +95,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open MFG Ada Unlock GitHub page");
+        ToolTipService.SetToolTip(infoBtn, "Open MFG Unlock GitHub page");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx"));
         Grid.SetColumn(infoBtn, 2);
@@ -116,12 +116,12 @@ public partial class DetailPanelBuilder
         }
         else if (!staged)
         {
-            btnLabel   = "⬇  Install MFG Ada Unlock";
+            btnLabel   = "⬇  Install MFG Unlock";
             btnEnabled = true; // will download on demand when clicked
         }
         else
         {
-            btnLabel = isInstalled ? "↺  Reinstall MFG Ada Unlock" : "⬇  Install MFG Ada Unlock";
+            btnLabel = isInstalled ? "↺  Reinstall MFG Unlock" : "⬇  Install MFG Unlock";
         }
 
         var installBtn = new Button
@@ -140,7 +140,7 @@ public partial class DetailPanelBuilder
         };
 
         if (!rsInstalled)
-            ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Ada Unlock requires it");
+            ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Unlock requires it");
         else if (rtx40Conflict)
             ToolTipService.SetToolTip(installBtn, "Universal MFG Unlocker is already installed and conflicts. Remove it first.");
 
@@ -200,12 +200,12 @@ public partial class DetailPanelBuilder
         row.Children.Add(installBtn);
 
         // Col 4 — Cog
-        var cogBtn = CogDialog.MakeCogButton("MFG Ada Unlock settings");
+        var cogBtn = CogDialog.MakeCogButton("MFG Unlock settings");
         cogBtn.Click += async (s, e) =>
         {
             try
             {
-                var cog = new CogDialog("MFG Ada Unlock", _window.Content.XamlRoot);
+                var cog = new CogDialog("MFG Unlock", _window.Content.XamlRoot);
                 BuildMfgAdaCogContent(cog, card);
                 await cog.ShowAsync();
             }
@@ -232,7 +232,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove MFG Ada Unlock from this game");
+        ToolTipService.SetToolTip(removeBtn, "Remove MFG Unlock from this game");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -365,20 +365,21 @@ public partial class DetailPanelBuilder
         var installPath = card.InstallPath ?? "";
         var iniPath = string.IsNullOrEmpty(installPath) ? "" : Path.Combine(installPath, MfgAdaIniName);
 
-        cog.AddIntro("MFG Ada Unlock unlocks DLSS multi frame generation (3x, 4x and 6x) on RTX 40 Series GPUs, " +
-                     "or runs Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs.");
+        cog.AddIntro("MFG Unlock unlocks DLSS multi frame generation (3x, 4x and 6x) on RTX 40 Series GPUs, " +
+                     "brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental), " +
+                     "and runs Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs.");
 
         // Graphics API support, from the mod's README comparison table (1.8.0). Dual-API games with
         // DirectX 12 get no warning: the user can run the DX12 version.
         var apis = new HashSet<GraphicsApiType>(card.DetectedApis ?? new HashSet<GraphicsApiType>()) { card.GraphicsApi };
         if (apis.Contains(GraphicsApiType.DirectX12)) { }
         else if (apis.Contains(GraphicsApiType.Vulkan))
-            cog.AddWarning("This is a Vulkan game. As of MFG Ada Unlock 1.8.0, Vulkan support is experimental: Intel XeMFG (CUDA) needs the game " +
+            cog.AddWarning("This is a Vulkan game. As of MFG Unlock 1.8.0, Vulkan support is experimental: Intel XeMFG (CUDA) needs the game " +
                            "to use DLSS Super Resolution or Ray Reconstruction, NVIDIA DLSS-G is experimental, and XeMFG via DLSS-G (XMX) is DirectX 12 only. " +
                            "Some Vulkan games also need a launch option before ReShade loads (for example +r_allowBlackListedLayers 1).");
         else if (apis.Overlaps(new[] { GraphicsApiType.DirectX8, GraphicsApiType.DirectX9, GraphicsApiType.DirectX10,
                                        GraphicsApiType.DirectX11, GraphicsApiType.OpenGL }))
-            cog.AddWarning($"This game uses {ApiDisplayName(card.GraphicsApi, apis)}. As of MFG Ada Unlock 1.8.0, it only works in DirectX 12 games " +
+            cog.AddWarning($"This game uses {ApiDisplayName(card.GraphicsApi, apis)}. As of MFG Unlock 1.8.0, it only works in DirectX 12 games " +
                            "(and experimentally in Vulkan games), so it won't work here.");
 
         cog.AddSection("Frame generation");
@@ -386,7 +387,7 @@ public partial class DetailPanelBuilder
         ComboBox? dlssSrCombo = null;
         int current = string.IsNullOrEmpty(iniPath) ? 0 : ReadMfgAdaFgMethod(iniPath);
         cog.AddCombo("Frame generation method",
-            "NVIDIA DLSS-G: NVIDIA's frame generation, 3x to 6x on RTX 40 Series (needs a DLSS Frame Generation DLL 310 or newer). " +
+            "NVIDIA DLSS-G: NVIDIA's frame generation, 3x to 6x on RTX 40 Series and, experimentally, on RTX 20 and 30 Series (needs a DLSS Frame Generation DLL 310 or newer; RTX 20/30 need one game restart the first time). " +
             "Intel XeMFG (CUDA): Intel's XeSS frame generation, 2x to 6x on RTX 20 to RTX 50 Series. " +
             "XeMFG via DLSS-G (XMX): the game's DLSS frame generation, with Intel's model generating the frames. " +
             "Restart the game after changing this, and turn frame generation on in the game's own menu.",
@@ -427,12 +428,12 @@ public partial class DetailPanelBuilder
                 cog.AddNote("Intel XeSS files (libxess_fg.dll and libxell.dll) are in the game folder, so both XeMFG methods are ready.");
                 break;
             case Rtx40MfgService.AdaXessState.WrongVersion:
-                cog.AddWarning($"The game folder has a version of Intel's XeSS files that MFG Ada Unlock doesn't accept ({xessDetail}). " +
-                               "Reinstall MFG Ada Unlock to replace them. The game's own copies are kept as a backup and put back if you remove the mod.");
+                cog.AddWarning($"The game folder has a version of Intel's XeSS files that MFG Unlock doesn't accept ({xessDetail}). " +
+                               "Reinstall MFG Unlock to replace them. The game's own copies are kept as a backup and put back if you remove the mod.");
                 break;
             default:
                 cog.AddWarning($"Intel XeSS files are missing from the game folder ({xessDetail}). Both XeMFG methods need them. " +
-                               "Reinstall MFG Ada Unlock to add them.");
+                               "Reinstall MFG Unlock to add them.");
                 break;
         }
 

@@ -70,7 +70,7 @@ Pin versions of each tool and of `nvngx_dlssnr.dll`, and optionally add the **NR
 
 - **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR variants, with a default variant of your choice for new installs. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
 - **Multi Frame Generation**: set Fixed or Dynamic MFG (2x–6x) and a target frame rate on RTX 50 Series.
-- **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
+- **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
 - **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker. Frame generation unlocks and RTX Encore can run alongside ASI Loader under its Hooked name.
 
 ## Frame limiters
@@ -147,7 +147,7 @@ RHI downloads these from their official sources. All credit goes to their author
 | [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) | jlrouzies-fr |
 | [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge) | NIGos |
 | [Universal MFG Unlocker](https://github.com/dashdogy/MFG-Unlocker) | dashdogy |
-| [MFG Ada Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg |
+| [MFG Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg |
 | [20/30 FG Unlock](https://github.com/sdli1995/dlssg_for_sm86) | sdli1995 |
 | [RTX Encore](https://github.com/SilyNoMeta/rtx-encore) | SilyNoMeta |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov |

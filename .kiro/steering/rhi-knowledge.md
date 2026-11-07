@@ -1149,6 +1149,7 @@ When RHI deploys a file to a game folder, it needs to distinguish three cases on
 ## MFG Ada Unlock Addon
 
 - Package name: `"MFG Ada Unlock"`, section ID: `"mfgunlock"`
+- **Shown as "MFG Unlock"** since v2.9.2 (the mod dropped "Ada" in 1.9.0 when it added RTX 20/30). Only UI text changed: `"MFG Ada Unlock"` stays as the manifest `packageName`, staging file (`MFG Ada Unlock.addon64`), version key and saved addon-selection name, and the mod still uses `MFGAdaUnlock.ini`. Don't rename those (existing installs and settings would be lost).
 - GitHub: `https://github.com/mavismmg/MFGAdaUnlock-RenoDx/releases`
 - Unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40-series. In-memory only, no files modified on disk.
 - Requires ReShade + a game with DLSS FG via Streamline + modern `nvngx_dlssg.dll` (310.x).

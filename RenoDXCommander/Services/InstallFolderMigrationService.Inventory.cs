@@ -251,7 +251,7 @@ public partial class InstallFolderMigrationService
 
         // ── DOF Fix (file only) / MFG Ada Unlock settings ────────────────────
         b.File(b.Group("DOF Fix"), "renodx-universal_ue-dof-fix.addon64", suffix: null);
-        b.File(b.Group("MFG Ada Unlock"), "MFGAdaUnlock.ini");
+        b.File(b.Group("MFG Unlock"), "MFGAdaUnlock.ini");
 
         // ── RE Framework ─────────────────────────────────────────────────────
         var refs = _ref.GetRecords().Where(r => Mine(r.GameName)).ToList();

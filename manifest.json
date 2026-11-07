@@ -1560,7 +1560,7 @@
     },
     "mfgunlock": {
       "packageName": "MFG Ada Unlock",
-      "description": "Unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series cards, which NVIDIA ships gated to RTX 50-series only. Corrects frame interpolation so generated frames carry new motion. In-memory only \u2014 no files on disk are modified. Requires a game with DLSS frame generation via Streamline and a modern nvngx_dlssg.dll (310.x).",
+      "description": "DLSS Multi Frame Generation beyond RTX 50: unlocks 3x/4x/6x on RTX 40, brings DLSS-G and XMX frame generation to RTX 20/30 (experimental), and XeMFG on RTX 20, 30, 40 and 50 cards.",
       "releaseApiUrl": "https://api.github.com/repos/mavismmg/MFGAdaUnlock-RenoDx/releases?per_page=1",
       "repositoryUrl": "https://github.com/mavismmg/MFGAdaUnlock-RenoDx"
     },

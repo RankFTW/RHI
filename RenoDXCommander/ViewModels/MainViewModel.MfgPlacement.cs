@@ -60,7 +60,7 @@ public partial class MainViewModel
     public async Task<string?> EnsureUniversalMfgForPresetAsync(GameCardViewModel card)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return "This game has no install folder.";
-        if (card.MfgAdaInstalled) return "MFG Ada Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the addon picker first.";
+        if (card.MfgAdaInstalled) return "MFG Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the addon picker first.";
 
         var installPath = card.InstallPath;
         var store       = card.Source ?? "";

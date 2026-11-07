@@ -171,8 +171,8 @@ public partial class DetailPanelBuilder
         {
             installBtn.IsEnabled = false;
             installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is installed and conflicts. Remove it from the addon picker first.");
+            installBtn.Content   = "Uninstall MFG Unlock first";
+            ToolTipService.SetToolTip(installBtn, "MFG Unlock (addon) is installed and conflicts. Remove it from the addon picker first.");
         }
         else
         {
@@ -457,8 +457,8 @@ public partial class DetailPanelBuilder
         {
             installBtn.IsEnabled = false;
             installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is already installed and conflicts with Universal MFG Unlocker. Remove it from the addon picker first.");
+            installBtn.Content   = "Uninstall MFG Unlock first";
+            ToolTipService.SetToolTip(installBtn, "MFG Unlock (addon) is already installed and conflicts with Universal MFG Unlocker. Remove it from the addon picker first.");
         }
         else
         {

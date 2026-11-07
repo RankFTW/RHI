@@ -75,7 +75,7 @@ public partial class DetailPanelBuilder
         var exSummaryEntries = new List<(string, string?)>();
         if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
         if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("Universal MFG", "On"));
-        if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Ada", "On"));
+        if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Unlock", "On"));
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));

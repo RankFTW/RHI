@@ -24,6 +24,7 @@
 ### Changes
 
 - Support the Mod Authors (Help › Donate) can show both a Ko-fi and a Patreon button for an author.
+- MFG Ada Unlock is now called MFG Unlock, matching the mod, and its descriptions say it brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental). Existing installs and settings carry over.
 - When a game's install folder changes, RHI now moves its installed mods with it. After Change install folder or Reset install folder, RHI asks whether to move the mods, their settings and presets to the new folder; when RHI itself corrects a game's folder, it moves them on its own and says so in the status bar. The game's own files that RHI had replaced are put back in the old folder, and nothing is moved while the game is running.
 - (WIP) Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
 - Spotlight has a new Covers at bottom button next to Filters. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.

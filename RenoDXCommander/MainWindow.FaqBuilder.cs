@@ -91,7 +91,7 @@ public sealed partial class MainWindow
         // Extras
         panel.Children.Add(BuildFaqSpecialSection("X", "AccentAmberBrush",
             "Extras (Optional)",
-            "The Extras section holds optional tools:\n• Frame generation unlocks: Universal MFG Unlocker (RTX 40/30), MFG Ada Unlock (RTX 40), 20/30 FG Unlock (RTX 20/30), RTX Encore and DLSS Enabler.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
+            "The Extras section holds optional tools:\n• Frame generation unlocks: Universal MFG Unlocker (RTX 40/30), MFG Unlock (RTX 40, RTX 20/30 experimental), 20/30 FG Unlock (RTX 20/30), RTX Encore and DLSS Enabler.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
             "Most of these ask which file name to use when you install them. Names already used by RHI's other components are disabled, and any game file that gets replaced is backed up."));
 
         // NVIDIA Driver Settings
