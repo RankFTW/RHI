@@ -23,7 +23,7 @@
 
 ### Changes
 
-- Support the Mod Authors (Help › Donate) can show both a Ko-fi and a Patreon button for an author, and a Donate button for other donation pages.
+- Support the Mod Authors (Help › Donate) can show both a Ko-fi and a Patreon button for an author.
 - When a game's install folder changes, RHI now moves its installed mods with it. After Change install folder or Reset install folder, RHI asks whether to move the mods, their settings and presets to the new folder; when RHI itself corrects a game's folder, it moves them on its own and says so in the status bar. The game's own files that RHI had replaced are put back in the old folder, and nothing is moved while the game is running.
 - (WIP) Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
 - Spotlight has a new Covers at bottom button next to Filters. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.
@@ -188,7 +188,7 @@
 - Fixed installing or updating a component opening a folder browser when the game had been updated or moved since RHI last scanned it. Game Pass games get a new folder with every update. RHI now explains what happened and offers to refresh the game list to find the new folder, with the folder browser still available as an option.
 
 ### Manifest Updates
-- Support the Mod Authors now includes The Ultra Place, Kronir and Vaxis from the Ultra+ team, and Patreon links for Lazorr and SammiLucia.
+- Support the Mod Authors now includes Kronir and Vaxis from the Ultra+ team, and Patreon links for Lazorr and SammiLucia.
 - Baldur's Gate 3: ReShade now installs as the Vulkan layer, since the game's default exe (bg3.exe) uses Vulkan. Before, it was installed as dxgi.dll, which bg3.exe never loads. ReShade's Info explains how to switch to DX11 for bg3_dx11.exe, and to reinstall ReShade if an older install is still there.
 - New addon in Shaders & Addons: BFI Presenter by artzox, black frame insertion without the usual brightness loss for clearer motion on 120 Hz+ OLEDs and other fixed-refresh displays (DX9, DX11, DX12 and OpenGL games). Its description lists what it needs (G-Sync off, no frame limiter) and links to the setup guide.
 - Support the Mod Authors now includes the ultrawide fix authors RHI links to (Lyall, p1xel8ted and RoseTheFlower) and the Ultra+ team (Lazorr, SammiLucia and mmike0913). Authors who use Patreon get a Patreon button.
