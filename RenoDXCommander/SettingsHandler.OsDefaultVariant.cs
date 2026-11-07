@@ -62,9 +62,11 @@ public partial class SettingsHandler
                 _osDefaultVariantCombo = combo;
                 SelectOsDefaultVariant();
                 combo.SelectionChanged += OsDefaultVariantCombo_SelectionChanged;
+                list.Children.Insert(list.Children.IndexOf(gpuRow), MakeOsNightlyCleanupRow());
                 return;
             }
             SelectOsDefaultVariant();
+            if (_osNightlyCleanupCombo != null) _osNightlyCleanupCombo.SelectedIndex = ViewModel.Settings.OsNightlyCleanup ? 1 : 0;
         }
         catch (Exception ex)
         {
@@ -88,6 +90,52 @@ public partial class SettingsHandler
         else if (root is ScrollViewer { Content: DependencyObject sc }) return FindRowOf(sc, target);
         else if (root is ContentControl { Content: DependencyObject cc }) return FindRowOf(cc, target);
         return null;
+    }
+
+    private ComboBox? _osNightlyCleanupCombo;
+
+    /// <summary>"Remove old Nightly builds" Off / On, under Default version.</summary>
+    private Grid MakeOsNightlyCleanupRow()
+    {
+        var row = new Grid { ColumnSpacing = 10 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 210 });
+        row.Children.Add(new TextBlock { Text = "Remove old Nightly builds", Style = FindStyle("SettingsLabelStyle") });
+        var combo = new ComboBox { Style = FindStyle("SettingsComboStyle") };
+        combo.Items.Add("Off");
+        combo.Items.Add("On");
+        combo.SelectedIndex = ViewModel.Settings.OsNightlyCleanup ? 1 : 0;
+        ToolTipService.SetToolTip(combo,
+            "RHI keeps a copy of every OptiScaler Nightly build it downloads, about 200-300 MB each. " +
+            "On: when a new Nightly build is downloaded, older ones are deleted. RHI keeps the newest build " +
+            "and any build a game is pinned to in its OptiScaler ⚙. A deleted build downloads again if you pick it later. " +
+            "Games that already have OptiScaler installed aren't affected.");
+        combo.SelectionChanged += (s, e) =>
+        {
+            if (combo.SelectedIndex < 0) return;
+            bool on = combo.SelectedIndex == 1;
+            if (on == ViewModel.Settings.OsNightlyCleanup) return;
+            ViewModel.Settings.OsNightlyCleanup = on;
+            ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[SettingsHandler.OsNightlyCleanup] {(on ? "On" : "Off")}");
+            if (!on) return;
+            // Clear the builds that have piled up so far
+            _ = Task.Run(() =>
+            {
+                var (removed, bytes) = ViewModel.CleanUpOldNightlyBuilds();
+                if (removed == 0) return;
+                var size = bytes >= 1024L * 1024 * 1024
+                    ? $"{bytes / (1024.0 * 1024 * 1024):0.0} GB"
+                    : $"{bytes / (1024 * 1024)} MB";
+                _window.DispatcherQueue.TryEnqueue(() => _window.ShowStatusBarMessage(
+                    $"Removed {removed} old OptiScaler Nightly build{(removed == 1 ? "" : "s")} ({size} freed)",
+                    TimeSpan.FromSeconds(8)));
+            });
+        };
+        Grid.SetColumn(combo, 1);
+        row.Children.Add(combo);
+        _osNightlyCleanupCombo = combo;
+        return row;
     }
 
     private bool _osDefaultVariantSelecting;

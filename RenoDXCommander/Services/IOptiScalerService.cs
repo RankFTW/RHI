@@ -86,6 +86,18 @@ public interface IOptiScalerService
     bool IsNightlyBuildStaged(string buildDate);
 
     /// <summary>
+    /// Deletes staged nightly builds except the newest complete one and those in <paramref name="keep"/>
+    /// (builds games are pinned to). Returns how many were removed and the bytes freed.
+    /// </summary>
+    (int Removed, long Bytes) RemoveOldNightlyBuilds(IReadOnlyCollection<string> keep);
+
+    /// <summary>
+    /// Called after a new nightly build is staged: the builds to keep when old ones should be removed,
+    /// or null to keep everything (setting off).
+    /// </summary>
+    Func<IReadOnlyCollection<string>?>? NightlyCleanupKeepProvider { get; set; }
+
+    /// <summary>
     /// Returns the list of available nightly builds (up to 30) fetched from GitHub.
     /// Cached in available_builds.json. Returns cached list immediately; call FetchAvailableNightlyBuildsAsync to refresh.
     /// </summary>

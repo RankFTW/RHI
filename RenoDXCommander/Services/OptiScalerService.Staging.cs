@@ -865,11 +865,63 @@ public partial class OptiScalerService
                     OldVersion    = previousStagedVersion,
                     NewVersion    = tagName,
                 });
+                // A new build arrived: drop the old ones if the user turned that on
+                if (NightlyCleanupKeepProvider?.Invoke() is { } keep)
+                    RemoveOldNightlyBuilds(keep);
             }
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public Func<IReadOnlyCollection<string>?>? NightlyCleanupKeepProvider { get; set; }
+
+    private static readonly object NightlyCleanupLock = new();
+
+    /// <inheritdoc />
+    public (int Removed, long Bytes) RemoveOldNightlyBuilds(IReadOnlyCollection<string> keep)
+    {
+        lock (NightlyCleanupLock)
+        {
+            int removed = 0;
+            long bytes = 0;
+            try
+            {
+                if (!Directory.Exists(NightlyStagingRoot)) return (0, 0);
+                var builds = Directory.GetDirectories(NightlyStagingRoot)
+                    .Select(d => (Dir: d, Name: Path.GetFileName(d)))
+                    .Where(b => b.Name is { Length: 8 } n && n.All(char.IsDigit))
+                    .ToList();
+                // The newest complete build is always kept (it's what new installs and updates use).
+                // Folders without OptiScaler.dll may be a download still unpacking: left alone.
+                var newest = builds.Where(b => IsNightlyBuildStaged(b.Name))
+                    .Select(b => b.Name).OrderByDescending(n => n, StringComparer.Ordinal).FirstOrDefault();
+                if (newest == null) return (0, 0);
+                foreach (var (dir, name) in builds)
+                {
+                    if (name == newest || keep.Contains(name, StringComparer.Ordinal) || !IsNightlyBuildStaged(name)) continue;
+                    if (string.CompareOrdinal(name, newest) > 0) continue; // newer than the newest complete one
+                    long size = 0;
+                    try { size = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length); }
+                    catch (IOException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] Can't size {name} — {ex.Message}"); }
+                    catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] Can't size {name} — {ex.Message}"); }
+                    try
+                    {
+                        Directory.Delete(dir, recursive: true);
+                        removed++;
+                        bytes += size;
+                    }
+                    catch (IOException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] Can't delete {name} — {ex.Message}"); }
+                    catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] Can't delete {name} — {ex.Message}"); }
+                }
+                CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] Removed {removed} old build(s), {bytes / (1024 * 1024)} MB; kept newest {newest ?? "(none)"} and pinned [{string.Join(", ", keep)}]");
+            }
+            catch (IOException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] {ex.Message}"); }
+            catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[OptiScalerService.RemoveOldNightlyBuilds] {ex.Message}"); }
+            return (removed, bytes);
         }
     }
 

@@ -442,6 +442,8 @@ public partial class MainViewModel
                     // Only download nightly staging if at least one game uses nightly variant
                     if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
                         await _optiScalerService.EnsureNightlyStagingAsync();
+                    // Settings › OptiScaler › Remove old Nightly builds (no-op when off)
+                    CleanUpOldNightlyBuilds();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });

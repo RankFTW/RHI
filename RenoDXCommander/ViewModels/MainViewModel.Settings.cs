@@ -239,6 +239,39 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── OptiScaler Nightly cleanup ────────────────────────────────────────────
+
+    /// <summary>
+    /// The nightly builds to keep when old ones are removed: every build a game is pinned to (its
+    /// OptiScaler ⚙, Control's UE fix). Null when Settings › Remove old Nightly builds is off.
+    /// </summary>
+    internal IReadOnlyCollection<string>? NightlyBuildsToKeep()
+    {
+        if (!Settings.OsNightlyCleanup) return null;
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                return _gameNameService.OsNightlyBuild.Values
+                    .Where(v => !string.IsNullOrEmpty(v))
+                    .ToHashSet(StringComparer.Ordinal);
+            }
+            catch (InvalidOperationException) { } // the pins changed while copying: try again
+        }
+        CrashReporter.Log("[MainViewModel.NightlyBuildsToKeep] Pins kept changing — skipping cleanup");
+        return null;
+    }
+
+    /// <summary>
+    /// Removes old nightly builds now when the setting is on (background thread). Returns what was
+    /// removed, or (0, 0).
+    /// </summary>
+    internal (int Removed, long Bytes) CleanUpOldNightlyBuilds()
+    {
+        if (NightlyBuildsToKeep() is not { } keep) return (0, 0);
+        return _optiScalerService.RemoveOldNightlyBuilds(keep);
+    }
+
     // ── OptiScaler Nightly Build ──────────────────────────────────────────────
 
     /// <summary>Returns the pinned nightly build date for a game. Empty string = "Latest" (auto-update).</summary>

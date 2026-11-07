@@ -17,31 +17,6 @@ using Microsoft.Win32;
 
 namespace RenoDXCommander.Services;
 
-/// <summary>One achievement as shown in RHI.</summary>
-internal sealed record SteamAchievement(
-    string ApiName,
-    string Name,
-    string Description,
-    bool Hidden,
-    bool Unlocked,
-    DateTime? UnlockedUtc,
-    string? Icon,
-    string? IconGray)
-{
-    /// <summary>Percentage of all players who have it, or null when unknown.</summary>
-    public double? Percent { get; init; }
-}
-
-/// <summary>A game's achievements: unlocked first (newest first), then locked in the game's order.</summary>
-internal sealed record SteamAchievementSet(int AppId, IReadOnlyList<SteamAchievement> Items)
-{
-    public int Total => Items.Count;
-    public int Unlocked => Items.Count(a => a.Unlocked);
-    /// <summary>Whole percent, rounded down like Steam's hero strip.</summary>
-    public int PercentDone => Total == 0 ? 0 : (int)Math.Floor(Unlocked * 100.0 / Total);
-    public bool HasRarity => Items.Any(a => a.Percent.HasValue);
-}
-
 internal static class SteamAchievementService
 {
     private const ulong SteamId64Base = 76561197960265728UL;
@@ -56,7 +31,7 @@ internal static class SteamAchievementService
     private static readonly ConcurrentDictionary<string, Task<string?>> IconsInFlight = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<int, (DateTime Fetched, Dictionary<string, double> Map)> RarityCache = new();
     private static readonly ConcurrentDictionary<int, Task<Dictionary<string, double>?>> RarityInFlight = new();
-    private static readonly ConcurrentDictionary<int, (DateTime Schema, DateTime Stats, string Lang, SteamAchievementSet Set)> SetCache = new();
+    private static readonly ConcurrentDictionary<int, (DateTime Schema, DateTime Stats, string Lang, AchievementSet Set)> SetCache = new();
 
     // ── Steam folders and account ─────────────────────────────────────────────
 
@@ -141,7 +116,7 @@ internal static class SteamAchievementService
     /// The game's achievements from Steam's cache, or null when there is no (readable) schema for it.
     /// File reads: call it off the UI thread. Re-reads only when a cache file has changed.
     /// </summary>
-    internal static SteamAchievementSet? Load(int appId)
+    internal static AchievementSet? Load(int appId)
     {
         var steam = SteamPath();
         if (steam == null) return null;
@@ -188,7 +163,7 @@ internal static class SteamAchievementService
     /// Schema: {appid} → stats → {block} → bits → {bit} → name, display → name / desc (per language), hidden, icon, icon_gray.
     /// Stats:  cache → {block} → data (unlocked bitfield), AchievementTimes → {bit} = unix time.
     /// </summary>
-    internal static SteamAchievementSet? Build(int appId, Dictionary<string, object> schema, Dictionary<string, object>? stats, string language)
+    internal static AchievementSet? Build(int appId, Dictionary<string, object> schema, Dictionary<string, object>? stats, string language)
     {
         var root = schema.TryGetValue(appId.ToString(CultureInfo.InvariantCulture), out var r) && r is Dictionary<string, object> rd
             ? rd
@@ -196,8 +171,8 @@ internal static class SteamAchievementService
         if (root == null || Child(root, "stats") is not { } blocks) return null;
         var cache = stats != null ? Child(stats, "cache") : null;
 
-        var unlocked = new List<(SteamAchievement A, long Order)>();
-        var locked = new List<(SteamAchievement A, long Order)>();
+        var unlocked = new List<(Achievement A, long Order)>();
+        var locked = new List<(Achievement A, long Order)>();
         foreach (var (blockKey, blockObj) in blocks.OrderBy(kv => NumKey(kv.Key)))
         {
             if (blockObj is not Dictionary<string, object> block || Child(block, "bits") is not { } bits) continue;
@@ -218,7 +193,7 @@ internal static class SteamAchievementService
                 DateTime? when = null;
                 if (isUnlocked && times != null && times.TryGetValue(bitKey, out var t) && ToLong(t) > 0)
                     when = DateTimeOffset.FromUnixTimeSeconds(ToLong(t)).UtcDateTime;
-                var a = new SteamAchievement(apiName, name, desc, hidden, isUnlocked, when,
+                var a = new Achievement(apiName, name, desc, hidden, isUnlocked, when,
                     IconFile(display, "icon"), IconFile(display, "icon_gray"));
                 long order = NumKey(blockKey) * 64 + bitIndex;
                 (isUnlocked ? unlocked : locked).Add((a, order));
@@ -230,7 +205,7 @@ internal static class SteamAchievementService
             .OrderByDescending(x => x.A.UnlockedUtc ?? DateTime.MinValue).ThenBy(x => x.Order)
             .Concat(locked.OrderBy(x => x.Order))
             .Select(x => x.A).ToList();
-        return new SteamAchievementSet(appId, items);
+        return new AchievementSet(AchievementStore.Steam, appId.ToString(CultureInfo.InvariantCulture), items);
     }
 
     private static Dictionary<string, object>? Child(Dictionary<string, object> node, string key) =>
@@ -288,7 +263,7 @@ internal static class SteamAchievementService
     }
 
     /// <summary>Adds rarity to a set. Returns the same set when there's no rarity.</summary>
-    internal static SteamAchievementSet WithRarity(SteamAchievementSet set, Dictionary<string, double>? rarity)
+    internal static AchievementSet WithRarity(AchievementSet set, Dictionary<string, double>? rarity)
     {
         if (rarity == null || rarity.Count == 0) return set;
         return set with

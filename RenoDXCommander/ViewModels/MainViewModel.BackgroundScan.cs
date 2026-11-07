@@ -119,6 +119,8 @@ public partial class MainViewModel
                         // Fetch the list even when no nightly game is installed — user may switch variant
                         _ = _optiScalerService.FetchAvailableNightlyBuildsAsync();
                     }
+                    // Settings › OptiScaler › Remove old Nightly builds (no-op when off)
+                    CleanUpOldNightlyBuilds();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });

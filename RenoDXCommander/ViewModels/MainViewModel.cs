@@ -832,6 +832,8 @@ public partial class MainViewModel : ObservableObject
         _uwFixService = uwFixService;
         _ultraPlusService = ultraPlusService;
         _optiScalerService = optiScalerService;
+        // Old nightly builds are removed after a new one downloads when the setting is on
+        _optiScalerService.NightlyCleanupKeepProvider = NightlyBuildsToKeep;
         _dxvkService = dxvkService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;

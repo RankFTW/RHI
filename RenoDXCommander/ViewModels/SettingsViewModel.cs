@@ -30,6 +30,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _osGpuType = "NVIDIA";
     /// <summary>OptiScaler version for games that don't have one chosen: "Stable", "Nightly", "DlssNr" or "F5".</summary>
     [ObservableProperty] private string _osDefaultVariant = "Stable";
+    /// <summary>Delete old OptiScaler Nightly builds when a new one is downloaded (keeps the newest and pinned builds).</summary>
+    [ObservableProperty] private bool _osNightlyCleanup;
     /// <summary>RHI's own interface size in percent (on top of Windows scaling). 100 = normal.</summary>
     [ObservableProperty] private int _uiScale = 100;
     [ObservableProperty] private bool _osDlssInputs = true;
@@ -93,6 +95,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _controllerSupport = true;
     /// <summary>Spotlight: show the selected Steam game's achievements (opt-in, Settings › Achievements).</summary>
     [ObservableProperty] private bool _steamAchievements;
+    /// <summary>Spotlight: show the selected Xbox game's achievements (opt-in, Settings › Achievements).</summary>
+    [ObservableProperty] private bool _xboxAchievements;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
     [ObservableProperty] private bool _closeToTray;
@@ -271,6 +275,7 @@ public partial class SettingsViewModel : ObservableObject
             OsGpuType = ogtVal ?? "NVIDIA";
         if (s.TryGetValue("OsDefaultVariant", out var odvVal) && odvVal is "Stable" or "Nightly" or "DlssNr" or "F5")
             OsDefaultVariant = odvVal;
+        if (s.TryGetValue("OsNightlyCleanup", out var oncVal)) OsNightlyCleanup = oncVal == "true"; // default false
         if (s.TryGetValue("UiScale", out var uisVal) && int.TryParse(uisVal, out var uis))
             UiScale = Math.Clamp(uis, 50, 200);
 
@@ -380,6 +385,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("ControllerSupport", out var csVal)) ControllerSupport = csVal != "false"; // default true
         if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
+        if (s.TryGetValue("XboxAchievements", out var xaVal)) XboxAchievements = xaVal == "true"; // default false (opt-in)
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -497,6 +503,7 @@ public partial class SettingsViewModel : ObservableObject
         s["OsHotkey"] = OsHotkey;
         s["OsGpuType"] = OsGpuType;
         s["OsDefaultVariant"] = OsDefaultVariant;
+        s["OsNightlyCleanup"] = OsNightlyCleanup ? "true" : "false";
         s["UiScale"] = UiScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
         s["OsDlssInputs"] = OsDlssInputs ? "true" : "false";
         s["OsFirstTimeWarningDismissed"] = OsFirstTimeWarningDismissed ? "true" : "false";
@@ -547,6 +554,7 @@ public partial class SettingsViewModel : ObservableObject
         else s["DropHelperEnabled"] = "true";
         s["ControllerSupport"] = ControllerSupport ? "true" : "false";
         s["SteamAchievements"] = SteamAchievements ? "true" : "false";
+        s["XboxAchievements"] = XboxAchievements ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";

@@ -383,17 +383,18 @@ public sealed partial class MainWindow
 
         if (ViewModel.CurrentPage == AppPage.GameView && _shelf != null && Content is UIElement root)
         {
-            // On the covers: left / right change the game, towards the page goes to Launch
-            // (Down with the covers on top, Up with them at the bottom)
+            // On the covers: left / right change the game. With the covers on top, Down goes to Launch;
+            // with them at the bottom, Up goes to the row just above (the Tune tiles), like any row move
             if (IsWithin(focused, _shelf))
             {
-                var towardsPage = ViewModel.Settings.SpotlightShelfAtBottom ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
+                bool atBottom = ViewModel.Settings.SpotlightShelfAtBottom;
+                var towardsPage = atBottom ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
                 var awayFromPage = towardsPage == FocusNavigationDirection.Down ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
                 switch (dir)
                 {
                     case FocusNavigationDirection.Left: StepGame(-1, focused); return;
                     case FocusNavigationDirection.Right: StepGame(1, focused); return;
-                    case var d when d == towardsPage:
+                    case var d when d == towardsPage && !atBottom:
                         if (layout.LaunchButton is { IsLoaded: true } launch) { PadFocus(launch); return; }
                         break;
                     case var d when d == awayFromPage && !_filtersOpen:
