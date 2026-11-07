@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55987,
-  "generated": "2026-11-06T12:00:12Z",
+  "game_count": 55999,
+  "generated": "2026-11-07T16:46:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -8050,6 +8050,7 @@
     "American Railroads - Summit River & Pine Valley": {
       "steam_appid": 787930
     },
+    "American Rodeo: Bull Rider 2000": {},
     "American Theft 80s": {
       "steam_appid": 1321450,
       "config_path": "HKEY_CURRENT_USER\\Software\\Noble Muffins\\American Theft 80s\\",
@@ -9114,6 +9115,12 @@
     },
     "Ankh Guardian - Treasure of the Demon's Temple/Òé┤ÒââÒâëÒâ╗Òé¬ÒâûÒâ╗ÒéªÒé®Òâ╝Òâ½ Ú¡öÕ««Òü«þºÿÕ«Ø": {
       "steam_appid": 975160
+    },
+    "Ankh: Anniversary Edition": {
+      "steam_appid": 353980,
+      "dx9": true,
+      "config_path": "<path-to-game>\\media\\Ankh.ini, <path-to-game>\\media\\keybinds.ini",
+      "engine": "Ogre"
     },
     "Ankh: Battle of the Gods": {
       "steam_appid": 12450,
@@ -15626,7 +15633,8 @@
       "steam_appid": 456170
     },
     "Bannermen": {
-      "steam_appid": 699740
+      "steam_appid": 699740,
+      "engine": "Unreal Engine 4"
     },
     "Banners of Ruin": {
       "steam_appid": 1075740,
@@ -24194,6 +24202,7 @@
       "steam_appid": 1196160,
       "engine": "Unity"
     },
+    "British Open Championship Golf": {},
     "Britney's Dance Beat": {
       "opengl": true
     },
@@ -25440,6 +25449,9 @@
       "config_path": "%LOCALAPPDATA%\\Criterion Games\\Burnout Paradise Remastered\\*.ini",
       "engine": "RenderWare"
     },
+    "Burnout: Championship Drag Racing": {
+      "engine": "XnGine"
+    },
     "Burnouts: The Igne Mori": {
       "steam_appid": 970820
     },
@@ -26543,7 +26555,8 @@
       "config_path": "<path-to-game>\\Options_c2.dat"
     },
     "Can 'Em All": {
-      "steam_appid": 5133900
+      "steam_appid": 5133900,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\LuisDev\\Can 'Em All\\settings.sav, HKEY_CURRENT_USER\\Software\\LuisDev\\Can 'Em All\\"
     },
     "Can of Wormholes": {
       "steam_appid": 1295320
@@ -37108,11 +37121,11 @@
     "Crusader: Adventure Out of Time": {},
     "Crusader: No Regret": {
       "steam_appid": 3066900,
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusader: No Remorse": {
       "steam_appid": 3066890,
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusaders of Light": {
       "steam_appid": 775220
@@ -38677,6 +38690,7 @@
     "CYCOM: Cybernet Combat": {
       "steam_appid": 713440
     },
+    "Cydonia: Mars - The First Manned Mission": {},
     "Cygni: All Guns Blazing": {
       "steam_appid": 1248080,
       "dx11": true,
@@ -45700,7 +45714,7 @@
     "Directive 8020": {
       "steam_appid": 2255370,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Directive8020\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%/Directive8020/Saved/SaveGames/Option*.sav",
       "engine": "Unreal Engine 5"
     },
     "Director of Football": {
@@ -60588,6 +60602,7 @@
     "Fighter of Evil": {
       "steam_appid": 628840
     },
+    "Fighter Pilot": {},
     "Fighter Royale - Last Ace Flying": {
       "steam_appid": 803350
     },
@@ -64087,6 +64102,7 @@
     },
     "Foxy Dumplings": {
       "steam_appid": 4184130,
+      "dx11": true,
       "engine": "Unity"
     },
     "FoxyLand": {
@@ -77801,6 +77817,7 @@
     "High Fidelity": {
       "steam_appid": 390540
     },
+    "High Heat Major League Baseball 2002": {},
     "High Heat Major League Baseball 2003": {
       "config_path": "<path-to-game>\\exPrefs.bin, <path-to-game>\\gfxopts.bin"
     },
@@ -83154,7 +83171,7 @@
     },
     "Indigo Park: Chapter 1": {
       "steam_appid": 2504480,
-      "config_path": "%LOCALAPPDATA%\\RaccoonCh1\\Saved\\Config\\",
+      "config_path": "%LOCALAPPDATA%\\RaccoonCh1\\Saved\\Config",
       "engine": "Unreal Engine 5"
     },
     "Indika": {
@@ -88551,6 +88568,7 @@
       "steam_appid": 347040,
       "engine": "Unity"
     },
+    "Keef the Thief: A Boy and His Lockpick": {},
     "KEEK": {
       "steam_appid": 2088080,
       "engine": "Unity"
@@ -92573,7 +92591,7 @@
     "Layers of Fear (2023)": {
       "steam_appid": 1946700,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Local\\Cron\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Cron\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
     "Layers of Fear 2": {
@@ -125400,6 +125418,7 @@
     },
     "Pool of Radiance: Ruins of Myth Drannor": {
       "steam_appid": 4834760,
+      "dx11": true,
       "config_path": "<path-to-game>"
     },
     "Pool Panic": {
@@ -137121,7 +137140,7 @@
     "Rockman's Gold Empire": {},
     "Rocko's Quest": {
       "steam_appid": 297620,
-      "config_path": "<path-to-game>\\Options.cfg"
+      "config_path": "<path-to-game>\\Options.cfg, <path-to-game>\\RData\\Misc\\strujen.opt"
     },
     "Rockochet": {
       "steam_appid": 761990
@@ -140211,6 +140230,7 @@
     "Samhain World": {
       "steam_appid": 618840
     },
+    "Sammy Sosa High Heat Baseball 2001": {},
     "Sammy the Suricate in Lion Land": {
       "engine": "Gamestudio"
     },
@@ -165740,6 +165760,9 @@
       "config_path": "%LOCALAPPDATA%\\CallistoProtocol\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
+    "The Cameron Files: Pharaoh's Curse": {
+      "engine": "Phoenix VR"
+    },
     "The Cameron Files: The Secret at Loch Ness": {
       "steam_appid": 302170,
       "engine": "Phoenix VR"
@@ -171556,6 +171579,9 @@
     },
     "The Olivia Saga": {
       "steam_appid": 967160
+    },
+    "The Omega Stone: Riddle of the Sphinx II": {
+      "engine": "Phoenix VR"
     },
     "The Omega Syndrome": {},
     "The One We Found": {
@@ -186932,6 +186958,7 @@
     "Virtual Debating Chamber": {
       "steam_appid": 1103940
     },
+    "Virtual Deep Sea Fishing": {},
     "Virtual Earth Online": {
       "steam_appid": 910180
     },
@@ -196419,6 +196446,7 @@
     },
     "Z.A.R.": {
       "steam_appid": 351820,
+      "opengl": true,
       "engine": "HiRend"
     },
     "Z.A.T.O. // I Love the World and Everything In It": {
