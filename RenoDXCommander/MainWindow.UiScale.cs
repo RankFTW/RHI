@@ -14,8 +14,11 @@ public sealed partial class MainWindow
     private FrameworkElement? _uiScaledRoot;
     private double _uiScale = 1.0;
 
-    /// <summary>Interface sizes offered in Settings, in percent.</summary>
-    internal static readonly int[] UiScaleOptions = { 50, 60, 67, 75, 80, 90, 100, 110, 125, 150 };
+    /// <summary>
+    /// Interface sizes offered in Settings and stepped through by Ctrl + mouse wheel, in percent:
+    /// every 5% from 50 to 200 (the range <see cref="ApplyUiScale"/> accepts).
+    /// </summary>
+    internal static readonly int[] UiScaleOptions = Enumerable.Range(0, 31).Select(i => 50 + i * 5).ToArray();
 
     /// <summary>
     /// Sizes the whole window content to <paramref name="percent"/> of normal (on top of Windows
@@ -75,13 +78,11 @@ public sealed partial class MainWindow
             if (delta == 0) return;
             e.Handled = true;
 
-            // Nearest option at or past the current size, then one step up or down
+            // The next size up or down from the current one (which may be off the list, e.g. an old 67%)
             int current = ViewModel.Settings.UiScale;
-            int idx = Array.IndexOf(UiScaleOptions, current);
-            if (idx < 0) idx = Array.FindIndex(UiScaleOptions, p => p >= current);
-            if (idx < 0) idx = UiScaleOptions.Length - 1;
-            int next = Math.Clamp(idx + (delta > 0 ? 1 : -1), 0, UiScaleOptions.Length - 1);
-            int percent = UiScaleOptions[next];
+            int percent = delta > 0
+                ? UiScaleOptions.FirstOrDefault(p => p > current, UiScaleOptions[^1])
+                : UiScaleOptions.LastOrDefault(p => p < current, UiScaleOptions[0]);
             if (percent == current) return;
 
             ViewModel.Settings.UiScale = percent;

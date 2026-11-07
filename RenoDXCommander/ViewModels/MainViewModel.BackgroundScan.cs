@@ -477,6 +477,9 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Cost Scaler/RTX40MFG auto-deploy failed — {ex.Message}"); }
 
+                // GITC Uplift: check for a new release and update the games that have it
+                await RefreshUpliftInstallsAsync("RunBackgroundScanAndMergeAsync");
+
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
 

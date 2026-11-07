@@ -1,6 +1,6 @@
 // DetailPanelBuilder.NeuralRendering.cs — Self-contained Neural Rendering section.
 // Shown between Game Overrides and NVIDIA Profile Overrides.
-// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, ShortFuse DLSS Tool, and DLSS5 Feeder.
+// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, ShortFuse DLSS Tool, DLSS5 Feeder and GITC Uplift.
 // All files are deployed automatically — no addon picker required.
 
 using Microsoft.Extensions.DependencyInjection;
@@ -73,6 +73,7 @@ public partial class DetailPanelBuilder
     private const string NrMethodDlss5ToolBridge  = "DLSS5ToolBridge";
     private const string NrMethodShortFuse         = "ShortFuse";
     private const string NrMethodFeeder            = "Feeder";
+    private const string NrMethodUplift            = "Uplift"; // GITC Uplift (UpliftService)
 
     public void BuildNeuralRenderingSection(GameCardViewModel card)
     {
@@ -97,7 +98,7 @@ public partial class DetailPanelBuilder
             catch (OperationCanceledException) { CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore cancelled: '{card.GameName}'"); return; }
             CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore acquired, scanning files: '{card.GameName}'");
 
-            bool dlss5Installed, sfInstalled, nrDllPresent, nrDllOwnedByRhi, bridgePresent, feederPresent;
+            bool dlss5Installed, sfInstalled, nrDllPresent, nrDllOwnedByRhi, bridgePresent, feederPresent, upliftPresent;
             string? nrDllVersion;
             try
             {
@@ -110,6 +111,13 @@ public partial class DetailPanelBuilder
                     nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
                 bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
                 feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                upliftPresent = UpliftService.IsInstalledIn(installPath, card.Is32Bit);
+                // Uplift keeps its NR DLL in its own folder: show that version in the summary
+                if (upliftPresent && !nrDllPresent && File.Exists(UpliftService.NrDllPath(installPath)))
+                {
+                    nrDllPresent = true;
+                    nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(UpliftService.NrDllPath(installPath)));
+                }
             }
             finally
             {
@@ -138,7 +146,7 @@ public partial class DetailPanelBuilder
                 var __sw = System.Diagnostics.Stopwatch.StartNew();
                 var nrContainerWidth = _window.NeuralRenderingContainer.ActualWidth;
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
-                    nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent, nrContainerWidth);
+                    nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent, upliftPresent, nrContainerWidth);
                 Layout.SummaryChanged(); // Tabs / Spotlight: refresh the section's tile
                 __sw.Stop();
                 if (__sw.ElapsedMilliseconds > 30)

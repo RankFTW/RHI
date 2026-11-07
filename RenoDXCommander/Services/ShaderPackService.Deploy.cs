@@ -239,6 +239,13 @@ public partial class ShaderPackService
     // ── Global sync (called on Refresh) ──────────────────────────────────────────
 
     /// <summary>
+    /// Files a component needs in a game's reshade-shaders folder whatever its shader selection:
+    /// gameDir → (path inside reshade-shaders, e.g. "Shaders\Uplift.fx", staged source). They're
+    /// added to every sync's plan, so the mirror never prunes them. Set at startup (App.xaml.cs).
+    /// </summary>
+    public static Func<string, IReadOnlyList<(string Rel, string Source)>>? ExtraGameFiles { get; set; }
+
+    /// <summary>
     /// Synchronises the game-local reshade-shaders folder to match the current selection.
     /// Null/empty selection → remove managed shaders and restore originals.
     /// Custom shader sentinel → deploy from user-managed custom directories.
@@ -247,8 +254,14 @@ public partial class ShaderPackService
     public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null,
         Dictionary<string, HashSet<string>>? fileExclusions = null)
     {
-        // Null/empty selection → remove managed shaders and restore originals
-        if (selectedPackIds == null || !selectedPackIds.Any())
+        // Shaders a component needs in this game whatever the shader selection (GITC Uplift)
+        IReadOnlyList<(string Rel, string Source)> extras = Array.Empty<(string, string)>();
+        try { extras = ExtraGameFiles?.Invoke(gameDir) ?? extras; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Extra files lookup failed for {gameDir} — {ex.Message}"); }
+
+        // Null/empty selection → remove managed shaders and restore originals (unless a component needs some)
+        if ((selectedPackIds == null || !selectedPackIds.Any()) && extras.Count == 0)
         {
             CrashReporter.Log($"[ShaderPackService.SyncGameFolder] No packs selected → removing managed shaders for {gameDir}");
             if (IsManagedByRdxc(gameDir))
@@ -279,8 +292,10 @@ public partial class ShaderPackService
         // Work out exactly which files the folder should hold, then mirror it (copy missing or
         // changed files, delete the rest). Same result as the old wipe-and-redeploy, but no
         // writes when nothing changed.
+        selectedPackIds ??= Array.Empty<string>();
         var plan = new ShaderFolderPlan();
-        if (selectedPackIds.Contains(CustomShaderSentinel))
+        if (!selectedPackIds.Any()) { /* only the extras below */ }
+        else if (selectedPackIds.Contains(CustomShaderSentinel))
         {
             // Custom shader source: the user's Custom\Shaders and Custom\Textures folders.
             Directory.CreateDirectory(CustomShadersDir);
@@ -296,6 +311,12 @@ public partial class ShaderPackService
                 AddPackFiles(plan, normalPacks, fileExclusions);
             if (selectedPackIds.Any(IsCustomFilePack))
                 AddCustomFiles(plan, CustomFileExclusions(fileExclusions));
+        }
+
+        foreach (var (rel, source) in extras)
+        {
+            var sub = rel.Split('\\', '/')[0];
+            plan.Add(sub, rel.Substring(sub.Length).TrimStart('\\', '/'), source);
         }
 
         if (CrashReporter.VerboseLogging)

@@ -5,12 +5,27 @@
 
 ## v2.9.2 Beta
 
+### New
+
+**GITC Uplift**
+- New Neural Rendering method: GITC Uplift by ghostinthecamera, DLSS Neural Rendering through a ReShade addon, built for ease of use, stability and performance (it also works well for virtual photography). It works with any game, no DLSS needed, and is now the default method for 64-bit DX11, DX12 and Vulkan games (games where you've already picked or installed a method keep it). Pick it in the Neural Rendering section's Method list and click Install.
+- Uplift Version picks the release: Latest installs the newest and keeps it up to date, a picked version stays as it is. Changing it while installed swaps it in place.
+- RHI installs the addon (32- or 64-bit to match the game), its 64-bit helper, the NR DLL you pick in NR DLL Version (in the GITC-Uplift folder, where Uplift looks for it) and its shaders. If you already put your own nvngx_dlssnr.dll there, RHI leaves it alone.
+- Turn it on in the game: open ReShade (Home), go to the GITC Uplift tab and tick Enable. Its DLSS-based options need a 64-bit DX11, DX12 or Vulkan game.
+- OpenGL games (OpenMW and others) get Uplift's own ReShade technique switched on first in the effect list. Without it, Uplift can't run on games that use anti-aliasing (MSAA). RHI does this once per install, so if you turn it off in ReShade it stays off, and removing Uplift takes it back out.
+- RHI downloads it only once a game uses it, checks the download against the release's checksums, and keeps it up to date in every game it's installed in. Removing it, or switching to another method, takes out only the files RHI put there.
+
 ### Changes
 
 - Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
+- Spotlight has a new Covers at bottom button next to Filters. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.
+- The controller's button hints now sit in the middle of the bottom status bar, in place of the anti-cheat notice, instead of floating over the page. They no longer cover anything, wherever the covers are, and the notice comes back when you use the mouse.
+- Interface size (Settings › General, or Ctrl + mouse wheel) now goes in 5% steps and up to 200%, so each wheel notch is a small change and large screens can go bigger than 150%.
 
 ### Bug Fixes
 
+- Fixed games using RTX HDR or Auto HDR (instead of a RenoDX mod) showing "—" on the RenoDX row, the Overview card and Spotlight's What's installed tile. They now show RTX HDR or Auto HDR, with "on" in green.
+- Fixed some games being detected as DirectX 12 because of video, UI or windowing libraries they ship (FFmpeg, Qt, SDL, Chromium) rather than what they render with. For example, OpenMW (OpenGL) showed as DX12, so the wrong ReShade setup and options were offered.
 - Fixed RHI showing "Not Responding" for a minute or more, and sometimes restarting itself, while a game that uses a lot of memory was running. When Windows is short of memory it moves RHI out of RAM to make room for the game, and RHI then treated the slow response as a freeze and ran heavy checks that made it worse. RHI now waits it out while a game launched from RHI is running or memory is low, and never restarts itself mid-game.
 - Fixed RHI watching a game's crash reporter instead of the game itself (for example Phantom Blade Zero, and other Unreal Engine games started through Steam or Epic). The game could show as running after it closed, or stop showing as running while it was still open, and HDR and resolution could switch back at the wrong time. RHI now also finds games whose exe runs from another folder inside the game's install, and waits for all of the game's processes to close.
 - Fixed changing the ReShade DLL name in Game Overrides renaming Display Commander's file to "--------" (and changing Display Commander's name doing the same to ReShade) when the other dropdown was left on its default. Games this already happened to are put right the next time you open them in RHI, keeping the name you picked.

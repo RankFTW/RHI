@@ -475,7 +475,8 @@ internal sealed partial class DetailLayoutHost
             _name.Text = Name(r);
             var status = (r.Status.Text ?? "").Replace("\r", "").Replace('\n', ' ').Trim();
             var tone = TabsTheme.ToneOf(r.Status.Foreground);
-            bool notInstalled = status.Length == 0 || string.Equals(status, "Ready", StringComparison.OrdinalIgnoreCase);
+            bool notInstalled = status.Length == 0 || status == "—"
+                || string.Equals(status, "Ready", StringComparison.OrdinalIgnoreCase);
             _status.Text = notInstalled ? "Not installed"
                 : tone != TabsTheme.Tone.Purple ? status
                 : status.StartsWith("Update", StringComparison.OrdinalIgnoreCase) ? "Update available"

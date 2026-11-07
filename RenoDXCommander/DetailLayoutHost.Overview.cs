@@ -279,8 +279,9 @@ internal sealed partial class DetailLayoutHost
                 return card.RequiresVulkanInstall ? line + " · Vulkan layer" : line;
             }
             case "Rdx":
-                return !string.IsNullOrEmpty(card.InstalledAddonFileName)
-                    ? card.InstalledAddonFileName
+                return !string.IsNullOrEmpty(card.InstalledAddonFileName) ? card.InstalledAddonFileName
+                    : card.IsRtxHdrEnabled  ? "NVIDIA RTX HDR is on for this game"
+                    : card.IsAutoHdrEnabled ? "Windows Auto HDR is on for this game"
                     : "HDR mod for this game";
             case "Luma":
             {

@@ -41,6 +41,7 @@ public sealed partial class MainWindow
     private Border? _segmentHost;
     private Grid? _countsGrid;
     private Button? _filtersBtn;
+    private Button? _shelfPositionBtn;
     private bool _filtersOpen;
 
     // Footer
@@ -150,10 +151,18 @@ public sealed partial class MainWindow
         _filtersBtn.Click += (s, e) => { _filtersOpen = !_filtersOpen; RefreshTabsChrome(); };
         ToolTipService.SetToolTip(_filtersBtn, "Engine and mod filters, and your saved searches");
         _countsGrid.Children.Add(_filtersBtn);
+        // Spotlight only: puts the search / filters / cover shelf above or below the game page
+        _countsGrid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = GridLength.Auto });
+        _shelfPositionBtn = new Button { Padding = new Thickness(10, 0, 10, 0), Visibility = Visibility.Collapsed };
+        TabsTheme.Apply(_shelfPositionBtn, TabsTheme.IconButton, height: 30, fontSize: 12);
+        _shelfPositionBtn.CornerRadius = new CornerRadius(6);
+        _shelfPositionBtn.Click += ShelfPositionBtn_Click;
+        Grid.SetColumn(_shelfPositionBtn, 1);
+        _countsGrid.Children.Add(_shelfPositionBtn);
         if (countsContent != null)
         {
             countsContent.HorizontalAlignment = HorizontalAlignment.Left;
-            Grid.SetColumn(countsContent, 1);
+            Grid.SetColumn(countsContent, 2);
             _countsGrid.Children.Add(countsContent);
         }
         _countsRow.Child = _countsGrid;

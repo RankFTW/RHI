@@ -321,6 +321,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic NR Cost Scaler check failed — {ex.Message}"); }
 
+                await RefreshUpliftInstallsAsync("MainViewModel.Periodic");
+
                 try
                 {
                     if (ShouldAutoStageRtx40Mfg("PeriodicRefresh"))

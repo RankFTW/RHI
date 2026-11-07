@@ -118,19 +118,27 @@ public sealed partial class MainWindow
                     _searchRowStack.HorizontalAlignment = HorizontalAlignment.Left;
                 }
                 if (_segmentHost != null) _segmentHost.Width = 340;
-                _searchRow.Padding = new Thickness(24, 14, 24, 6);
-                Grid.SetRow(_countsRow, 0);
                 _countsRow.HorizontalAlignment = HorizontalAlignment.Right;
                 _countsRow.VerticalAlignment = VerticalAlignment.Center;
-                _countsRow.Padding = new Thickness(0, 8, 24, 0);
 
                 GameList.Visibility = Visibility.Collapsed;
                 EnsureShelf(list);
                 _shelf!.Visibility = Visibility.Visible;
+                // Above or below the page (rows, borders, paddings)
+                ApplySpotlightShelfPosition();
                 SyncShelfFromList();
             }
             else
             {
+                // Back to the normal sidebar: undo the bottom placement
+                if (gv.RowDefinitions.Count == 2)
+                {
+                    gv.RowDefinitions[0].Height = GridLength.Auto;
+                    gv.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+                }
+                Grid.SetRow(_searchRow, 0);
+                if (_chipsRow != null) Grid.SetRow(_chipsRow, 1);
+                if (_shelfPositionBtn != null) _shelfPositionBtn.Visibility = Visibility.Collapsed;
                 Grid.SetRow(_sidebar, 0); Grid.SetRowSpan(_sidebar, 2); Grid.SetColumn(_sidebar, 0); Grid.SetColumnSpan(_sidebar, 1);
                 Grid.SetRow(_contentColumn, 0); Grid.SetRowSpan(_contentColumn, 2); Grid.SetColumn(_contentColumn, 1); Grid.SetColumnSpan(_contentColumn, 1);
                 _sidebar.BorderThickness = new Thickness(0, 0, 1, 0);
@@ -156,6 +164,76 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             CrashReporter.Log($"[MainWindow.ApplySpotlightChrome] Failed — {ex.Message}");
+        }
+    }
+
+    // ── Shelf above / below the page ──────────────────────────────────────────
+
+    /// <summary>
+    /// Spotlight: puts the strip (search, filters, covers) above the game page, or below it when
+    /// <c>SpotlightShelfAtBottom</c> is on. At the bottom the strip is mirrored: covers next to the
+    /// page, search and filters on the outside, so controller Up / Down still go page → covers →
+    /// filters in one direction.
+    /// </summary>
+    private void ApplySpotlightShelfPosition()
+    {
+        if (!_spotlightOn || _sidebar == null || _searchRow == null || _countsRow == null || _contentColumn == null) return;
+        bool bottom = ViewModel.Settings.SpotlightShelfAtBottom;
+        var gv = GameViewPanel;
+        if (gv.RowDefinitions.Count == 2)
+        {
+            gv.RowDefinitions[0].Height = bottom ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
+            gv.RowDefinitions[1].Height = bottom ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        }
+        Grid.SetRow(_sidebar, bottom ? 1 : 0);
+        Grid.SetRow(_contentColumn, bottom ? 0 : 1);
+        _sidebar.BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1);
+
+        // Strip rows (the list grid: 0 search, 1 filter chips, 2 counts, 3 covers)
+        int searchRow = bottom ? 1 : 0;
+        Grid.SetRow(_searchRow, searchRow);
+        Grid.SetRow(_countsRow, searchRow); // Filters + counts sit at the right of the search row
+        if (_chipsRow != null) Grid.SetRow(_chipsRow, searchRow + 1);
+        if (_shelf != null)
+        {
+            Grid.SetRow(_shelf, bottom ? 0 : 3);
+            // Keep the side padding (UpdateShelfCentering widens it to centre a short Favourites row)
+            _shelf.Padding = bottom ? new Thickness(_shelf.Padding.Left, 12, _shelf.Padding.Right, 2)
+                                    : new Thickness(_shelf.Padding.Left, 4, _shelf.Padding.Right, 10);
+        }
+        _searchRow.Padding = bottom ? new Thickness(24, 6, 24, 14) : new Thickness(24, 14, 24, 6);
+        _countsRow.Padding = bottom ? new Thickness(0, 0, 24, 8) : new Thickness(0, 8, 24, 0);
+
+        if (_shelfPositionBtn != null)
+        {
+            _shelfPositionBtn.Visibility = Visibility.Visible;
+            _shelfPositionBtn.Content = bottom ? "Covers at top" : "Covers at bottom";
+            ToolTipService.SetToolTip(_shelfPositionBtn, bottom
+                ? "Move the search, filters and game covers back above the game page"
+                : "Move the search, filters and game covers below the game page");
+        }
+    }
+
+    private void ShelfPositionBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ViewModel.Settings.SpotlightShelfAtBottom = !ViewModel.Settings.SpotlightShelfAtBottom;
+            ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[MainWindow.ShelfPosition] Covers {(ViewModel.Settings.SpotlightShelfAtBottom ? "at bottom" : "at top")}");
+            ApplySpotlightShelfPosition();
+            UpdateShelfCentering();
+            // Keep the button focused (it moved) so a controller or keyboard user stays on it
+            AfterLayout(() =>
+            {
+                if (_shelfPositionBtn == null) return;
+                if (_padHints?.Visibility == Visibility.Visible) PadFocus(_shelfPositionBtn);
+                else _shelfPositionBtn.Focus(FocusState.Programmatic);
+            });
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.ShelfPositionBtn_Click] Failed — {ex.Message}");
         }
     }
 
@@ -231,7 +309,7 @@ public sealed partial class MainWindow
                 if (items > 0 && items + 40 <= width) side = Math.Floor((width - items) / 2);
             }
             if (Math.Abs(_shelf.Padding.Left - side) > 0.5)
-                _shelf.Padding = new Thickness(side, 4, side, 10);
+                _shelf.Padding = new Thickness(side, _shelf.Padding.Top, side, _shelf.Padding.Bottom);
         }
         catch (Exception ex)
         {

@@ -17,8 +17,9 @@ public sealed partial class MainWindow
 {
     /// <summary>
     /// A place focus can go. <c>Bounds</c> is on screen (for left / right distances); rows are built
-    /// from <c>Zone</c> + <c>Top</c>: zone 0 is fixed (top bar, filters, covers, a panel's title),
-    /// zone 1 is the scrolling content, measured inside it so scrolling doesn't reorder the rows.
+    /// from <c>Zone</c> + <c>Top</c>: zone 0 is fixed above the scrolling content (top bar, filters,
+    /// covers, a panel's title), zone 1 is the scrolling content, measured inside it so scrolling
+    /// doesn't reorder the rows, zone 2 is fixed below it (Spotlight covers at the bottom).
     /// </summary>
     private sealed record PadTarget(Control Element, Rect Bounds, int Zone, double Top, bool IsShelf);
 
@@ -94,6 +95,8 @@ public sealed partial class MainWindow
     {
         var list = new List<PadTarget>();
         var scrollContent = scroller?.Content as UIElement;
+        // Fixed controls below the scrolling area (Spotlight covers at the bottom) come after it: zone 2
+        double scrollerBottom = scroller != null && BoundsIn(root, scroller) is { } sb ? sb.Bottom : double.MaxValue;
         void Walk(DependencyObject node, bool inScroll)
         {
             if (node is UIElement u && (u.Visibility != Visibility.Visible || u.Opacity <= 0.01 || !u.IsHitTestVisible)) return;
@@ -118,7 +121,8 @@ public sealed partial class MainWindow
             if (BoundsIn(root, measure) is not { } screen) return null;
             double top = screen.Y;
             if (inScroll && BoundsIn(scrollContent!, measure) is { } inside) top = inside.Y;
-            return new PadTarget(element, screen, inScroll ? 1 : 0, top, false);
+            int zone = inScroll ? 1 : screen.Y >= scrollerBottom - 1 ? 2 : 0;
+            return new PadTarget(element, screen, zone, top, false);
         }
         Walk(root, false);
         return list;

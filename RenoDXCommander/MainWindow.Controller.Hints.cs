@@ -1,6 +1,8 @@
-// MainWindow.Controller.Hints.cs -- the controller's button hint bar (bottom centre) and its short
-// messages ("Launching …"). The bar lists only the buttons that do something where focus is now, and
-// hides when the mouse moves. Both sit over the game page and Settings, and never take clicks.
+// MainWindow.Controller.Hints.cs -- the controller's button hints and its short messages
+// ("Launching …"). The hints take the anti-cheat line's place in the middle of the footer while the
+// controller is in use (so they never cover the page, whether Spotlight's covers are at the top or
+// the bottom), list only the buttons that do something where focus is now, and go back to the
+// warning when the mouse moves. The message floats above the footer. Neither takes clicks.
 
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -29,14 +31,14 @@ public sealed partial class MainWindow
             if (!show)
             {
                 if (_padHints != null) _padHints.Visibility = Visibility.Collapsed;
-                SetPadHintRoom(false);
+                if (_footerWarning != null) _footerWarning.Visibility = Visibility.Visible;
                 RestorePadPointer();
                 return;
             }
             if (!EnsurePadOverlay()) return;
             UpdatePadHints();
             _padHints!.Visibility = Visibility.Visible;
-            SetPadHintRoom(true);
+            if (_footerWarning != null) _footerWarning.Visibility = Visibility.Collapsed;
             HidePadPointer();
         }
         catch (Exception ex)
@@ -54,44 +56,22 @@ public sealed partial class MainWindow
         if (key == _padHintKey) return;
         _padHintKey = key;
         _padHintRow.Children.Clear();
+        // Compact, to fit the footer's one line without making it taller
         foreach (var (button, label) in hints)
         {
-            var pair = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+            var pair = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
             pair.Children.Add(new Border
             {
                 Background = TabsTheme.B("#1E2738"),
                 BorderBrush = TabsTheme.B("#33405A"),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(5),
-                Padding = new Thickness(7, 1, 7, 2),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(5, 0, 5, 1),
                 VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock { Text = button, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = TabsTheme.B(TabsTheme.TextPrimary) },
+                Child = new TextBlock { Text = button, FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = TabsTheme.B(TabsTheme.TextPrimary) },
             });
-            pair.Children.Add(new TextBlock { Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = TabsTheme.B(TabsTheme.TextSecondary) });
+            pair.Children.Add(new TextBlock { Text = label, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Foreground = TabsTheme.B(TabsTheme.TextSecondary) });
             _padHintRow.Children.Add(pair);
-        }
-    }
-
-    private double? _padSavedBottomPadding;
-
-    /// <summary>
-    /// While the bar shows, the game page gets extra room at the bottom so its last row of tiles can
-    /// scroll clear of the bar (and focus never sits underneath it).
-    /// </summary>
-    private void SetPadHintRoom(bool on)
-    {
-        var sv = DetailScrollViewer;
-        if (sv == null) return;
-        var p = sv.Padding;
-        if (on && _padSavedBottomPadding == null)
-        {
-            _padSavedBottomPadding = p.Bottom;
-            sv.Padding = new Thickness(p.Left, p.Top, p.Right, p.Bottom + 64);
-        }
-        else if (!on && _padSavedBottomPadding is { } saved)
-        {
-            _padSavedBottomPadding = null;
-            sv.Padding = new Thickness(p.Left, p.Top, p.Right, saved);
         }
     }
 
@@ -168,7 +148,7 @@ public sealed partial class MainWindow
         return hints;
     }
 
-    /// <summary>A short message above the hint bar, e.g. "Launching Witcher 3…".</summary>
+    /// <summary>A short message just above the footer, e.g. "Launching Witcher 3…".</summary>
     private void ShowPadToast(string text, int ms = 3500)
     {
         try
@@ -192,30 +172,32 @@ public sealed partial class MainWindow
         }
     }
 
+    // The footer's centre line (the anti-cheat warning), swapped with the hints
+    private TextBlock? _footerWarning;
+
     /// <summary>
-    /// Builds the hint bar and message once, in the grid that holds both the game page and Settings
-    /// (so they show on either), and hides the bar when the mouse moves.
+    /// Builds the hints (in the footer's centre cell, beside the warning they replace) and the
+    /// message (in the grid that holds both the game page and Settings, so it shows on either)
+    /// once, and hides the hints when the mouse moves.
     /// </summary>
     private bool EnsurePadOverlay()
     {
         if (_padHints != null) return true;
         if (VisualTreeHelper.GetParent(GameViewPanel) is not Grid host) return false;
+        if (_footer?.Child is not Grid footerGrid) return false;
+        _footerWarning = footerGrid.Children.OfType<TextBlock>().FirstOrDefault(t => Grid.GetColumn(t) == 1);
 
-        _padHintRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 18 };
+        _padHintRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         _padHints = new Border
         {
-            Background = TabsTheme.B("#E6101520"),
-            BorderBrush = TabsTheme.B(TabsTheme.CardBorder),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(16, 8, 16, 8),
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 0, 14),
+            VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
             Child = _padHintRow,
             Visibility = Visibility.Collapsed,
         };
+        Grid.SetColumn(_padHints, 1);
+        footerGrid.Children.Add(_padHints);
         _padToastText = new TextBlock { FontSize = 14, Foreground = TabsTheme.B(TabsTheme.TextPrimary) };
         _padToast = new Border
         {
@@ -226,18 +208,15 @@ public sealed partial class MainWindow
             Padding = new Thickness(18, 10, 18, 10),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 0, 66), // just above the hint bar
+            Margin = new Thickness(0, 0, 0, 14), // just above the footer
             IsHitTestVisible = false,
             Child = _padToastText,
             Visibility = Visibility.Collapsed,
         };
-        foreach (var el in new FrameworkElement[] { _padHints, _padToast })
-        {
-            Canvas.SetZIndex(el, 60);
-            Grid.SetRowSpan(el, Math.Max(1, host.RowDefinitions.Count));
-            Grid.SetColumnSpan(el, Math.Max(1, host.ColumnDefinitions.Count));
-            host.Children.Add(el);
-        }
+        Canvas.SetZIndex(_padToast, 60);
+        Grid.SetRowSpan(_padToast, Math.Max(1, host.RowDefinitions.Count));
+        Grid.SetColumnSpan(_padToast, Math.Max(1, host.ColumnDefinitions.Count));
+        host.Children.Add(_padToast);
 
         if (!_padPointerHooked && Content is UIElement root)
         {

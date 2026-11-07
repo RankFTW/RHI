@@ -635,6 +635,9 @@ public partial class MainViewModel
         _gameApiCache[installPath] = (primary, all);
     }
 
+    /// <summary>Drops a game's cached API result so the next detection scans its folder again.</summary>
+    internal static void ForgetGameApi(string installPath) => _gameApiCache.TryRemove(installPath, out _);
+
     /// <summary>
     /// Scans all .exe files in a directory and adds their detected APIs to the result set.
     /// </summary>
@@ -649,6 +652,7 @@ public partial class MainViewModel
 
             foreach (var exeFile in Directory.GetFiles(dirPath, "*.exe"))
             {
+                if (PeHeaderService.IsRhiToolExe(exeFile)) continue; // RHI's own helpers (Uplift's is DX12)
                 var apis = GraphicsApiDetector.DetectAllApis(exeFile);
                 result.UnionWith(apis);
             }
@@ -697,6 +701,18 @@ public partial class MainViewModel
             || name.StartsWith("scripthook") || name.StartsWith("bink")
             || name.StartsWith("oo2core") || name.StartsWith("amd_ags")
             || name.StartsWith("nvlowlatency"))
+            return true;
+
+        // General-purpose libraries that delay-load D3D11/D3D12 for video decoding, UI or windowing
+        // whatever the game renders with: FFmpeg, Qt, SDL, Chromium/CEF and ANGLE. OpenMW (OpenGL)
+        // ships avutil, Qt6Gui and SDL2 and was detected as DX12 through them.
+        if (name.StartsWith("avutil") || name.StartsWith("avcodec") || name.StartsWith("avformat")
+            || name.StartsWith("avfilter") || name.StartsWith("avdevice") || name.StartsWith("swscale")
+            || name.StartsWith("swresample") || name.StartsWith("postproc")
+            || name.StartsWith("qt5") || name.StartsWith("qt6")
+            || name.StartsWith("sdl2") || name.StartsWith("sdl3") || name == "sdl.dll"
+            || name.StartsWith("libcef") || name.StartsWith("libegl") || name.StartsWith("libglesv2")
+            || name.StartsWith("d3dcompiler"))
             return true;
 
         return false;

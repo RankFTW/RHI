@@ -463,6 +463,9 @@ public partial class DetailPanelBuilder
                     : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxLabel.TextDecorations = rdxStrike;
                 _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
+                // RTX HDR / Auto HDR give the game its HDR when no RenoDX mod is installed: name the row after it
+                bool rdxModInstalled = card.Status is GameStatus.Installed or GameStatus.UpdateAvailable;
+                _window.DetailRdxLabel.Text = !rdxModInstalled && card.HdrToggleName is { } hdrName ? hdrName : "RenoDX HDR";
 
                 _window.DetailRdxStatus.Text = card.RdxStatusText;
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush(card.RdxStatusColor);

@@ -639,6 +639,7 @@ internal sealed partial class DetailLayoutHost
         "DLSS5 Tool"               => "For DX12 games with native DLSS.",
         "DLSS5 Tool + DX11 Bridge" => "For DX11 and Vulkan games with native DLSS.",
         "DLSS5 Feeder"             => "For games without DLSS, including OpenGL, DX9 and 32-bit games.",
+        "GITC Uplift"              => "For any game, no DLSS needed. Easy to set up in the ReShade menu and light on performance.",
         _                          => "",
     };
 

@@ -33,7 +33,7 @@ public sealed partial class MainWindow
     private bool _padActive;
     private bool _padUnavailable;
     private bool _padPointerHooked;
-    private Border? _padHints;
+    private Border? _padHints; // in the footer's centre cell (MainWindow.Controller.Hints.cs)
     private IntPtr _padHwnd;
 
     private const int PadFastMs = 16, PadSlowMs = 250, PadScanMs = 2000, PsScanMs = 4000;
@@ -378,14 +378,16 @@ public sealed partial class MainWindow
 
         if (ViewModel.CurrentPage == AppPage.GameView && _shelf != null && Content is UIElement root)
         {
-            // On the covers: left / right change the game, Down goes to Launch
+            // On the covers: left / right change the game, towards the page goes to Launch
+            // (Down with the covers on top, Up with them at the bottom)
             if (IsWithin(focused, _shelf))
             {
+                var towardsPage = ViewModel.Settings.SpotlightShelfAtBottom ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
                 switch (dir)
                 {
                     case FocusNavigationDirection.Left: StepGame(-1, focused); return;
                     case FocusNavigationDirection.Right: StepGame(1, focused); return;
-                    case FocusNavigationDirection.Down:
+                    case var d when d == towardsPage:
                         if (layout.LaunchButton is { IsLoaded: true } launch) { PadFocus(launch); return; }
                         break;
                 }
