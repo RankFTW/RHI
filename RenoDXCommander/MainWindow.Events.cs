@@ -270,6 +270,12 @@ public sealed partial class MainWindow
 
     // ── Donate dialog ─────────────────────────────────────────────────────────
 
+    /// <summary>Button text for a donation link: Ko-fi, Patreon, or Donate for any other page.</summary>
+    private static string DonationLinkLabel(string url) =>
+        url.Contains("ko-fi.com", StringComparison.OrdinalIgnoreCase) ? "Ko-fi"
+        : url.Contains("patreon.com", StringComparison.OrdinalIgnoreCase) ? "Patreon"
+        : "Donate";
+
     private async void DonateButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -339,7 +345,7 @@ public sealed partial class MainWindow
                 // Ko-fi (donationUrls; may hold a Patreon link for older entries) and Patreon (patreonUrls)
                 var links = new List<(string Label, string Url)>();
                 if (donationUrls.TryGetValue(name, out var url) && !string.IsNullOrWhiteSpace(url))
-                    links.Add((url.Contains("patreon.com", StringComparison.OrdinalIgnoreCase) ? "Patreon" : "Ko-fi", url));
+                    links.Add((DonationLinkLabel(url), url));
                 if (patreonUrls.TryGetValue(name, out var patreonUrl) && !string.IsNullOrWhiteSpace(patreonUrl)
                     && !links.Any(l => l.Label == "Patreon"))
                     links.Add(("Patreon", patreonUrl));
