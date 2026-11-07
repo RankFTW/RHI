@@ -179,6 +179,13 @@ public class RemoteManifest
     public Dictionary<string, string>? DonationUrls { get; set; }
 
     /// <summary>
+    /// Author Patreon URLs keyed by display name, shown beside the Ko-fi link from
+    /// <see cref="DonationUrls"/> (a separate field so older versions still read donationUrls).
+    /// </summary>
+    [JsonPropertyName("patreonUrls")]
+    public Dictionary<string, string>? PatreonUrls { get; set; }
+
+    /// <summary>
     /// What each author is known for, keyed by display name.
     /// Shown in the Donate dialog alongside the author name and Ko-fi link.
     /// Can be updated from the manifest without a new build.

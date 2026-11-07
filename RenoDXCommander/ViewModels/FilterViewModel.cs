@@ -49,6 +49,15 @@ public partial class FilterViewModel : ObservableObject
     [ObservableProperty] private int _hiddenCount;
     [ObservableProperty] private int _favouriteCount;
 
+    /// <summary>
+    /// The game collection shown in the list (its games, minus hidden ones), or null. Replaces the
+    /// main filter while set: picking All / Installed / Favourites / Hidden or an engine chip clears it.
+    /// </summary>
+    [ObservableProperty] private string? _activeCollectionName;
+
+    /// <summary>A collection's member keys ("GameName|Store") by name, null when it doesn't exist. Set by MainViewModel.</summary>
+    public Func<string, IReadOnlySet<string>?>? CollectionMembers { get; set; }
+
     partial void OnSearchQueryChanged(string value)
     {
         ApplyFilter();
@@ -85,6 +94,8 @@ public partial class FilterViewModel : ObservableObject
     [RelayCommand]
     public void SetFilter(string filter)
     {
+        // Any main or engine filter replaces an active collection
+        ActiveCollectionName = null;
         if (ExclusiveFilters.Contains(filter))
         {
             // Exclusive filter: clear everything, set just this one
@@ -173,6 +184,25 @@ public partial class FilterViewModel : ObservableObject
         FilterMode = string.Join(",", _activeFilters);
         ApplyFilter();
     }
+
+    /// <summary>
+    /// Shows a collection's games (null = back to All). The main filter goes back to All underneath,
+    /// so clearing the collection shows every game; the search box and a custom filter still narrow it.
+    /// </summary>
+    public void ActivateCollection(string? name)
+    {
+        if (name != null && CollectionMembers?.Invoke(name) == null) name = null;
+        _activeFilters.Clear();
+        _activeFilters.Add("Detected");
+        FilterMode = "Detected";
+        ActiveCollectionName = name;
+        ApplyFilter();
+        FilterModeChanged?.Invoke();
+    }
+
+    /// <summary>A game shown while a collection is active: in it and not hidden (hidden games stay hidden).</summary>
+    internal static bool MatchesCollection(GameCardViewModel card, IReadOnlySet<string> members)
+        => !card.IsHidden && members.Contains(GameKey.FromCard(card.GameName, card.Source).ToKey());
 
     private void RestoreDefault()
     {
@@ -305,6 +335,10 @@ public partial class FilterViewModel : ObservableObject
             customQuery = active?.Query?.Trim();
         }
 
+        // An active collection: its games only (looked up once, by "GameName|Store")
+        IReadOnlySet<string>? collection = ActiveCollectionName is { } collectionName
+            ? CollectionMembers?.Invoke(collectionName) : null;
+
         var filtered = _allCards.Where(c =>
         {
             // Search box match
@@ -317,6 +351,8 @@ public partial class FilterViewModel : ObservableObject
             {
                 if (!MatchesUniversalSearch(c, customQuery)) return false;
             }
+
+            if (collection != null) return MatchesCollection(c, collection);
 
             // Hidden tab always shows hidden games regardless of the ShowHidden toggle
             if (filters.Contains("Hidden")) return c.IsHidden;

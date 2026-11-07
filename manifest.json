@@ -1265,6 +1265,7 @@
     "HDR Den": "https://ko-fi.com/hdrden",
     "Izueh": "https://ko-fi.com/izueh",
     "Jon": "https://ko-fi.com/kickfister",
+    "Kronir": "https://ko-fi.com/kronir",
     "Lazorr": "https://ko-fi.com/lazorr",
     "Lego Liam Neeson": "https://ko-fi.com/legoliamneeson",
     "Lilium": "https://ko-fi.com/endlesslyflowering",
@@ -1282,8 +1283,13 @@
     "speedlemur": "https://ko-fi.com/speedlemur87816",
     "souperman9": "https://ko-fi.com/souperman9",
     "spiwar": "https://ko-fi.com/spiwar",
+    "Vaxis": "https://ko-fi.com/vaxistaa",
     "vietnick": "https://ko-fi.com/vietnick",
     "Voosh": "https://ko-fi.com/notvoosh"
+  },
+  "patreonUrls": {
+    "Lazorr": "https://patreon.com/Lazorr",
+    "SammiLucia": "https://www.patreon.com/SammiLucia"
   },
   "authorRoles": {
     "Bit Viper": "RenoDX mods",
@@ -1293,6 +1299,7 @@
     "HDR Den": "The HDR Den",
     "Izueh": "Luma mods",
     "Jon": "RenoDX mods, Luma mods",
+    "Kronir": "Ultra+",
     "Lazorr": "Ultra+",
     "Lego Liam Neeson": "RenoDX mods",
     "Lilium": "Lilium HDR Shaders",
@@ -1310,6 +1317,7 @@
     "speedlemur": "RenoDX mods",
     "souperman9": "Switch emulator RenoDX mods",
     "spiwar": "RenoDX mods",
+    "Vaxis": "Ultra+",
     "vietnick": "RenoDX mods",
     "Voosh": "RenoDX mods"
   },

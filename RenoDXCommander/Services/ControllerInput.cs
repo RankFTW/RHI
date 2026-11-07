@@ -21,7 +21,7 @@ public enum PadAction
     PageBack,   // LT: 10 games back
     PageForward,// RT: 10 games on
     CycleFilter,// left stick click: All / Installed / Favourites
-    Home,       // right stick click: back to the selected game's cover
+    Home,       // right stick click: next collection, or back to the selected game's cover
 }
 
 /// <summary>

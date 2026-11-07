@@ -32,6 +32,7 @@ paths:
 | `forceExternalOnly` | Redirects install to external URL (Nexus, Discord) |
 | `authorOverrides` | Forces mod author display name |
 | `donationUrls` | Maps author names → Ko-fi links |
+| `patreonUrls` | Maps author names → Patreon links (Donate dialog shows Ko-fi and Patreon buttons). Never put a list into `donationUrls`: older versions would fail to read the manifest |
 | `pcgwUrlOverrides` | Game name → direct PCGW wiki URL |
 | `componentUrls` | Base URL overrides (`ueExtended`, `ueDofFix`) |
 | `dlssPresets` | SR/RR/FG preset arrays for manifest-driven presets |

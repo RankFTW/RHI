@@ -275,6 +275,7 @@ public sealed partial class MainWindow
         try
         {
             var donationUrls = GameCardViewModel.GetAllDonationUrls();
+            var patreonUrls = GameCardViewModel.GetAllPatreonUrls();
             // Always prefer live manifest roles (most up to date after a fetch).
             // Fall back to the merged static dict if manifest hasn't loaded yet.
             var manifestRoles = ViewModel.Manifest?.AuthorRoles;
@@ -282,7 +283,8 @@ public sealed partial class MainWindow
                 ? (IReadOnlyDictionary<string, string>)manifestRoles
                 : GameCardViewModel.AuthorRoles;
 
-            var entries = donationUrls.Keys
+            var entries = donationUrls.Keys.Concat(patreonUrls.Keys)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -334,10 +336,17 @@ public sealed partial class MainWindow
 
             foreach (var name in entries)
             {
-                if (!donationUrls.TryGetValue(name, out var url)) continue;
+                // Ko-fi (donationUrls; may hold a Patreon link for older entries) and Patreon (patreonUrls)
+                var links = new List<(string Label, string Url)>();
+                if (donationUrls.TryGetValue(name, out var url) && !string.IsNullOrWhiteSpace(url))
+                    links.Add((url.Contains("patreon.com", StringComparison.OrdinalIgnoreCase) ? "Patreon" : "Ko-fi", url));
+                if (patreonUrls.TryGetValue(name, out var patreonUrl) && !string.IsNullOrWhiteSpace(patreonUrl)
+                    && !links.Any(l => l.Label == "Patreon"))
+                    links.Add(("Patreon", patreonUrl));
+                if (links.Count == 0) continue;
                 roles.TryGetValue(name, out var role);
 
-                // [Name / role] [Ko-fi or Patreon]
+                // [Name / role] [Ko-fi] [Patreon]
                 var row = new Grid { ColumnSpacing = 12 };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -365,18 +374,19 @@ public sealed partial class MainWindow
                 }
                 row.Children.Add(text);
 
-                var kofiBtn = new Button
+                var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+                foreach (var (label, linkUrl) in links)
                 {
-                    Content = url.Contains("patreon.com", StringComparison.OrdinalIgnoreCase) ? "Patreon" : "Ko-fi",
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                TabsTheme.Apply(kofiBtn, new TabsTheme.Look("#2A1418", "#5A2A30", "#FF8A88", "#351A1F", true), height: 32, fontSize: 12);
-                kofiBtn.Padding = new Thickness(12, 0, 12, 0);
-                var capturedUrl = url;
-                kofiBtn.Click += (s, ev) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(capturedUrl));
-                ToolTipService.SetToolTip(kofiBtn, capturedUrl);
-                Grid.SetColumn(kofiBtn, 1);
-                row.Children.Add(kofiBtn);
+                    if (!Uri.TryCreate(linkUrl, UriKind.Absolute, out var uri)) continue;
+                    var linkBtn = new Button { Content = label, VerticalAlignment = VerticalAlignment.Center };
+                    TabsTheme.Apply(linkBtn, new TabsTheme.Look("#2A1418", "#5A2A30", "#FF8A88", "#351A1F", true), height: 32, fontSize: 12);
+                    linkBtn.Padding = new Thickness(12, 0, 12, 0);
+                    linkBtn.Click += (s, ev) => _ = Windows.System.Launcher.LaunchUriAsync(uri);
+                    ToolTipService.SetToolTip(linkBtn, linkUrl);
+                    buttons.Children.Add(linkBtn);
+                }
+                Grid.SetColumn(buttons, 1);
+                row.Children.Add(buttons);
 
                 var card = TabsTheme.MakeCard(row, 0);
                 card.Padding = new Thickness(12, 10, 10, 10);
@@ -674,6 +684,9 @@ public sealed partial class MainWindow
         };
         hideItem.Click += (s, ev) => ViewModel.ToggleHideGameCommand.Execute(card);
         menu.Items.Add(hideItem);
+
+        // ── Add to collection (tick per collection, New collection…) ──
+        menu.Items.Add(BuildCollectionsMenu(card));
 
         // ── Artwork (Spotlight: custom cover and banner) ──
         if (_detailPanelBuilder.Layout.IsSpotlight)

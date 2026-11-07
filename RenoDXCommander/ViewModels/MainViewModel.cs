@@ -861,6 +861,7 @@ public partial class MainViewModel : ObservableObject
         _filterViewModel.CustomFiltersChanged = () => SaveNameMappings();
         // Initialize FilterViewModel with the DisplayedGames collection
         _filterViewModel.Initialize(DisplayedGames);
+        InitCollections();
         // Forward FilterViewModel property changes so UI bindings on MainViewModel still work
         _filterViewModel.PropertyChanged += (s, e) =>
         {

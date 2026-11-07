@@ -173,12 +173,14 @@ public sealed partial class MainWindow
         ViewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName is null or nameof(ViewModel.AnyUpdateAvailable) or nameof(ViewModel.CurrentPage)
-                or nameof(ViewModel.FilterMode) or nameof(ViewModel.NewWikiModsButtonVisibility))
+                or nameof(ViewModel.FilterMode) or nameof(ViewModel.NewWikiModsButtonVisibility)
+                or nameof(ViewModel.ActiveCollectionName))
             {
                 if (e.PropertyName is null or nameof(ViewModel.AnyUpdateAvailable)) _updateCountDirty = true;
                 RefreshTabsChromeSoon();
             }
         };
+        EnsureCollectionsRow();
         _tabsChromeBuilt = true;
     }
 
@@ -485,6 +487,8 @@ public sealed partial class MainWindow
         var active = ViewModel.ActiveFilters;
         int sel = Array.FindIndex(MainFilters, f => active.Contains(f.Tag));
         if (sel < 0) sel = 0;
+        // A collection replaces the main filter: no segment is selected while one is shown
+        if (ViewModel.ActiveCollectionName != null) sel = -1;
         var key = string.Join(",", active.OrderBy(x => x)) + "|" + sel;
         if (_segmentHost.Tag as string != key)
         {

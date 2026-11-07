@@ -158,6 +158,7 @@ public sealed partial class MainWindow
                 RefreshSidebar();
                 GameList.Visibility = Visibility.Visible;
                 if (_shelf != null) _shelf.Visibility = Visibility.Collapsed;
+                PlaceCollectionsHost();
                 if (GameList.SelectedItem != null) GameList.ScrollIntoView(GameList.SelectedItem);
             }
         }
@@ -189,11 +190,14 @@ public sealed partial class MainWindow
         Grid.SetRow(_contentColumn, bottom ? 0 : 1);
         _sidebar.BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1);
 
-        // Strip rows (the list grid: 0 search, 1 filter chips, 2 counts, 3 covers)
-        int searchRow = bottom ? 1 : 0;
+        // Strip rows (the list grid: 0 search, 1 filter chips, 2 counts, 3 covers). On top: search + counts 0,
+        // filter chips 1, covers 3; at the bottom: covers 0, search + counts 2, chips 3. The collection chips sit
+        // in the counts grid, left of the Filters button (PlaceCollectionsHost)
+        int searchRow = bottom ? 2 : 0;
         Grid.SetRow(_searchRow, searchRow);
         Grid.SetRow(_countsRow, searchRow); // Filters + counts sit at the right of the search row
         if (_chipsRow != null) Grid.SetRow(_chipsRow, searchRow + 1);
+        PlaceCollectionsHost();
         if (_shelf != null)
         {
             Grid.SetRow(_shelf, bottom ? 0 : 3);
@@ -293,7 +297,7 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// With the Favourites filter on, centres the covers when they all fit on screen (extra side
+    /// With the Favourites filter or a collection on, centres the covers when they all fit on screen (extra side
     /// padding); otherwise they start at the left as usual.
     /// </summary>
     private void UpdateShelfCentering()
@@ -303,7 +307,7 @@ public sealed partial class MainWindow
         {
             double side = 20;
             double width = _shelf.ActualWidth;
-            if (width > 0 && ViewModel.ActiveFilters.Contains("Favourites"))
+            if (width > 0 && (ViewModel.ActiveFilters.Contains("Favourites") || ViewModel.ActiveCollectionName != null))
             {
                 double items = ViewModel.DisplayedGames.Count * (TileWidth + 8); // tile + item margin 4,0,4,0
                 if (items > 0 && items + 40 <= width) side = Math.Floor((width - items) / 2);

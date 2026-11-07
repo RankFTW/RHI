@@ -69,9 +69,11 @@ public sealed partial class MainWindow
     private PadTarget PickInRow(List<PadTarget> row, PadTarget from)
     {
         var launch = _detailPanelBuilder.Layout.LaunchButton;
-        var segment = SelectedSegment();
+        // While a collection is shown no segment is selected (SelectedSegment falls back to the first): use the active chip
+        var segment = SelectedSegment() is { Tag: TabsTheme.SegmentSelectedTag } selectedSegment ? selectedSegment : null;
+        var chip = ActiveCollectionChip();
         foreach (var t in row)
-            if (ReferenceEquals(t.Element, launch) || ReferenceEquals(t.Element, segment)) return t;
+            if (ReferenceEquals(t.Element, launch) || ReferenceEquals(t.Element, segment) || ReferenceEquals(t.Element, chip)) return t;
 
         double x = from.Bounds.X + from.Bounds.Width / 2;
         static double Gap(Rect r, double x) => x < r.Left ? r.Left - x : x > r.Right ? x - r.Right : 0;

@@ -267,7 +267,10 @@ public sealed partial class MainWindow
                 break;
 
             case PadAction.GameMenu:
-                if (popup == null && onGames) layout.PadGameMenu();
+                // On a collection chip: that collection's menu (rename, move, delete); else the game's menu
+                if (popup == null && onGames && IsCollectionChip(focused, out var chipName) && focused is FrameworkElement chipElement)
+                    ShowCollectionMenu(chipElement, chipName);
+                else if (popup == null && onGames) layout.PadGameMenu();
                 break;
 
             case PadAction.PrevGame:
@@ -300,8 +303,10 @@ public sealed partial class MainWindow
                 break;
 
             case PadAction.Home:
-                // From anywhere back to the selected game's cover (closes the panel, leaves Settings)
                 if (popup != null) break;
+                // On the game list with collections: the next collection (after the last one, All games)
+                if (onGames && !layout.IsPanelOpen && ViewModel.CollectionNames.Count > 0) { CycleCollection(focused); break; }
+                // Otherwise from anywhere back to the selected game's cover (closes the panel, leaves Settings)
                 if (!onGames) ViewModel.NavigateToGameView();
                 if (layout.IsPanelOpen) layout.ClosePanel();
                 AfterLayout(FocusShelf);
@@ -383,12 +388,18 @@ public sealed partial class MainWindow
             if (IsWithin(focused, _shelf))
             {
                 var towardsPage = ViewModel.Settings.SpotlightShelfAtBottom ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
+                var awayFromPage = towardsPage == FocusNavigationDirection.Down ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
                 switch (dir)
                 {
                     case FocusNavigationDirection.Left: StepGame(-1, focused); return;
                     case FocusNavigationDirection.Right: StepGame(1, focused); return;
                     case var d when d == towardsPage:
                         if (layout.LaunchButton is { IsLoaded: true } launch) { PadFocus(launch); return; }
+                        break;
+                    case var d when d == awayFromPage && !_filtersOpen:
+                        // Towards the filters: the active collection's chip, else the selected All / Installed / … segment
+                        // (the collection chips' row sits between the covers and the switch)
+                        if ((ActiveCollectionChip() ?? SelectedSegment()) is { IsLoaded: true } filter) { PadFocus(filter); return; }
                         break;
                 }
             }
@@ -443,6 +454,18 @@ public sealed partial class MainWindow
 
         bool panelWasOpen = layout.IsPanelOpen, cogWasOpen = layout.IsCogInPanel;
         string? panelKeyBefore = layout.PanelKey;
+
+        // A collection chip: picking one rebuilds the chips, so refocus the same chip ("+ Collection" opens a dialog: normal path)
+        if (popup == null && _collectionsWrap != null && focused is Button chipBtn && IsCollectionChip(chipBtn, out _))
+        {
+            int chipIndex = _collectionsWrap.Children.IndexOf(chipBtn);
+            Press(chipBtn);
+            AfterLayout(() =>
+            {
+                if (chipIndex >= 0 && chipIndex < _collectionsWrap.Children.Count) PadFocus(_collectionsWrap.Children[chipIndex]);
+            });
+            return;
+        }
 
         // All / Installed / Favourites / Hidden: picking one rebuilds the row, so refocus the same segment
         if (popup == null && _segmentHost != null && focused is Button segBtn && VisualTreeHelper.GetParent(segBtn) is Grid segGrid && IsWithin(focused, _segmentHost))
@@ -607,15 +630,54 @@ public sealed partial class MainWindow
 
     // ── Games ─────────────────────────────────────────────────────────────────
 
-    /// <summary>Left stick click: All → Installed → Favourites → All (from Hidden: All).</summary>
+    /// <summary>
+    /// Left stick click: All → Installed → Favourites → each collection in order → All (from Hidden
+    /// or an engine filter: All). A short message names the list and how many games it shows.
+    /// </summary>
+    /// <summary>Left stick click: All / Installed / Favourites (leaves a collection).</summary>
     private void CycleMainFilter(DependencyObject? focused)
     {
-        string[] cycle = { "Detected", "Installed", "Favourites" };
-        var active = ViewModel.ActiveFilters;
-        int current = Array.FindIndex(cycle, active.Contains);
-        string next = cycle[(current + 1) % cycle.Length];
+        var cycle = new[] { "Detected", "Installed", "Favourites" };
+        int current = -1;
+        if (ViewModel.ActiveCollectionName == null)
+        {
+            var active = ViewModel.ActiveFilters;
+            current = Array.FindIndex(cycle, f => active.Contains(f));
+        }
+        // From a collection the first press goes to All games
+        var next = cycle[(current + 1) % cycle.Length];
         CrashReporter.Log($"[MainWindow.CycleMainFilter] {next}");
         Filter_Click(MainFilterButton(next), new RoutedEventArgs());
+        AfterListSwitch(next == "Detected" ? "All games" : next, focused);
+    }
+
+    /// <summary>Right stick click: the next collection; after the last one back to All games.</summary>
+    private void CycleCollection(DependencyObject? focused)
+    {
+        var names = ViewModel.CollectionNames;
+        int current = -1;
+        if (ViewModel.ActiveCollectionName is { } active)
+            for (int i = 0; i < names.Count; i++)
+                if (string.Equals(names[i], active, StringComparison.OrdinalIgnoreCase)) { current = i; break; }
+        if (current + 1 < names.Count)
+        {
+            var next = names[current + 1];
+            CrashReporter.Log($"[MainWindow.CycleCollection] {next}");
+            ActivateCollectionFromUi(next);
+            AfterListSwitch(next, focused);
+        }
+        else
+        {
+            CrashReporter.Log("[MainWindow.CycleCollection] back to All games");
+            Filter_Click(MainFilterButton("Detected"), new RoutedEventArgs());
+            AfterListSwitch("All games", focused);
+        }
+    }
+
+    private void AfterListSwitch(string label, DependencyObject? focused)
+    {
+        int shown = ViewModel.DisplayedGames.Count;
+        ShowPadToast($"{label} · {shown} {(shown == 1 ? "game" : "games")}", 2500);
         // The shelf now shows another list: keep focus on its selected cover
         bool inShelf = focused != null && _shelf != null && IsWithin(focused, _shelf);
         if (inShelf) AfterLayout(FocusShelf);

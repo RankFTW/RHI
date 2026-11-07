@@ -139,10 +139,11 @@ public sealed partial class MainWindow
         bool onShelf = focused != null && _shelf != null && IsWithin(focused, _shelf);
         if (!onShelf) hints.Add(("B", "Covers"));
         hints.Add(("Y", "Launch"));
-        hints.Add(("X", "Game menu"));
+        hints.Add(("X", IsCollectionChip(focused, out _) ? "Collection menu" : "Game menu"));
         hints.Add(("LB / RB", "Game"));
         hints.Add(("LT / RT", "Skip 10"));
         hints.Add(("LS", "Filter"));
+        hints.Add(("RS", ViewModel.CollectionNames.Count > 0 ? "Collection" : "Covers"));
         hints.Add(("View", "Filters"));
         hints.Add(("Menu", "Settings"));
         return hints;

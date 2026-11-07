@@ -1855,6 +1855,7 @@ public partial class MainViewModel
                     foreach (var f in filters)
                         _filterViewModel.CustomFilters.Add(f);
                 });
+            RestoreActiveCollection();
             _crashReporter.Log("[MainViewModel.LoadNameMappings] Delegated to GameNameService");
         }
         finally

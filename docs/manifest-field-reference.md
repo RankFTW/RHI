@@ -233,6 +233,10 @@ Unlike `blacklist`, the card still appears — it just has no mod options.
 Donation page URLs keyed by author display name. Merged into the hardcoded dictionary; manifest entries take priority.
 - `MainViewModel.Init`, `BackgroundScan` → `GameCardViewModel.MergeManifestAuthorData(DonationUrls, AuthorDisplayNames)`
 
+### `patreonUrls` — `Dict<string,string>`
+Patreon page URLs keyed by author display name, shown as a Patreon button beside the Ko-fi one in Help › Donate. Separate from `donationUrls` (which older versions read as one string per author). The author badge uses the Ko-fi link, or Patreon when there is no Ko-fi.
+- `MainViewModel.Init`, `BackgroundScan` → `GameCardViewModel.MergeManifestAuthorData(..., PatreonUrls)`
+
 ### `authorDisplayNames` — `Dict<string,string>`
 Display-name overrides for wiki maintainer handles (e.g. `"oopydoopy": "Jon"`). Merged into hardcoded dict.
 - `GameCardViewModel.MergeManifestAuthorData()` → same call as `donationUrls`
