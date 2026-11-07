@@ -26,6 +26,28 @@ internal static class TabsTheme
 
     internal static SolidColorBrush B(string hex) => UIFactory.GetBrush(hex);
 
+    /// <summary>
+    /// Fixed dark-look colours for a MarkdownTextBlock. Its own heading/link colours follow the
+    /// Windows light/dark setting, not RequestedTheme, so on Light-mode PCs headings came out
+    /// near-black on the navy dialogs.
+    /// </summary>
+    internal static void StyleMarkdown(CommunityToolkit.WinUI.Controls.MarkdownTextBlock md)
+    {
+        var heading = B(TextPrimary);
+        md.Config = new CommunityToolkit.WinUI.Controls.MarkdownConfig
+        {
+            Themes = new CommunityToolkit.WinUI.Controls.MarkdownThemes
+            {
+                H1Foreground = heading, H2Foreground = heading, H3Foreground = heading,
+                H4Foreground = heading, H5Foreground = heading, H6Foreground = heading,
+                LinkForeground = B(Link),
+                QuoteForeground = B(TextSecondary),
+                InlineCodeForeground = B(TextPrimary),
+                CodeBlockForeground = B(TextPrimary),
+            },
+        };
+    }
+
     // ── Button / pill looks ───────────────────────────────────────────────────
 
     /// <summary>A colour set for a button or pill: background, border, text, and background on hover.</summary>

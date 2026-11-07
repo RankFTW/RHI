@@ -60,8 +60,9 @@ public partial class DetailPanelBuilder
             upliftSvc.EnsureTechniqueFor(installPath, card.GraphicsApi == GraphicsApiType.OpenGL);
         }).ConfigureAwait(false);
 
-        // Shaders come from the shader sync (UpliftService.ShaderFilesFor), so they survive later syncs
-        _window.DispatcherQueue?.TryEnqueue(() => _window.ViewModel.DeployShadersForCard(gameName));
+        // Shaders come from the shader sync (UpliftService.ShaderFilesFor), so they survive later syncs.
+        // Awaited so the status tags see Uplift.fx straight after the install.
+        await _window.ViewModel.DeployShadersForCardAsync(gameName).ConfigureAwait(false);
         CrashReporter.Log($"[NeuralRendering.Uplift] Installed {(pinned != null ? $"v{pinned} (pinned)" : "latest")} for '{gameName}'");
     }
 
@@ -75,7 +76,7 @@ public partial class DetailPanelBuilder
         var (sourceDir, pinned) = await upliftSvc.EnsureSourceAsync(wanted).ConfigureAwait(false);
         if (sourceDir == null) { CrashReporter.Log($"[NeuralRendering.Uplift] v{wanted ?? "latest"} not available — swap skipped"); return; }
         await Task.Run(() => upliftSvc.Install(installPath, card.Is32Bit, nrDllSource: null, sourceDir, pinned)).ConfigureAwait(false);
-        _window.DispatcherQueue?.TryEnqueue(() => _window.ViewModel.DeployShadersForCard(card.GameName));
+        await _window.ViewModel.DeployShadersForCardAsync(card.GameName).ConfigureAwait(false);
         CrashReporter.Log($"[NeuralRendering.Uplift] Swapped to {(pinned != null ? $"v{pinned} (pinned)" : "latest")} for '{card.GameName}'");
     }
 

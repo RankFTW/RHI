@@ -237,14 +237,14 @@ public partial class DialogService
         var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
         {
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
+            Foreground = TabsTheme.B(TabsTheme.TextControl),
             FontSize = 12,
             UseEmphasisExtras = true,
             UseListExtras = true,
             UseTaskLists = true,
         };
 
-        // Wrap in a Grid with explicit dark theme to force heading colors
+        TabsTheme.StyleMarkdown(markdown);
         var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
         markdownContainer.Children.Add(markdown);
 
@@ -525,6 +525,7 @@ public partial class DialogService
             UseAutoLinks = true,
         };
         markdown.Foreground = TabsTheme.B(TabsTheme.TextControl);
+        TabsTheme.StyleMarkdown(markdown);
         var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
         markdownContainer.Children.Add(markdown);
 

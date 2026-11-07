@@ -346,13 +346,17 @@ public partial class MainViewModel : ObservableObject
     /// Deploys shaders for a single game card (by name).
     /// Called when saving a per-game shader mode override so changes take effect immediately.
     /// </summary>
-    public void DeployShadersForCard(string gameName)
+    public void DeployShadersForCard(string gameName) => _ = DeployShadersForCardAsync(gameName);
+
+    /// <summary>Same as <see cref="DeployShadersForCard"/>, but awaitable so callers can refresh
+    /// their status once the files are in place.</summary>
+    public Task DeployShadersForCardAsync(string gameName)
     {
         var card = _allCards.FirstOrDefault(c =>
             c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return Task.CompletedTask;
 
-        _ = Task.Run(async () =>
+        return Task.Run(async () =>
         {
             try
             {
