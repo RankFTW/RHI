@@ -139,6 +139,7 @@ public partial class GameDetectionService
                 CrashReporter.Log($"[GameDetectionService.FindEpicV2Installs] Failed to read '{jsonl}' — {ex.Message}");
             }
 
+            Dictionary<string, (string Title, string? MainGameId)>? catalog = null;
             foreach (var (installId, e) in latest)
             {
                 var artifactId = GetString(e, "artifactId");
@@ -157,6 +158,22 @@ public partial class GameDetectionService
                 }
                 // Games migrated from the classic launcher keep their old .item file here.
                 name ??= ReadMigratedItemName(dataDir, installId);
+                // Some installs have neither (no uninstall entry), so use the launcher's catalog cache.
+                if (name == null)
+                {
+                    catalog ??= LoadEpicCatalogTitles(dataDir);
+                    var itemId = GetString(e, "itemId");
+                    if (itemId != null && catalog.TryGetValue(itemId, out var cat))
+                    {
+                        // An add-on (e.g. DLC) shares the game's folder: name it after its main game.
+                        if (cat.MainGameId != null && catalog.TryGetValue(cat.MainGameId, out var main))
+                            name = main.Title;
+                        else if (cat.MainGameId == null)
+                            name = cat.Title;
+                        if (name != null)
+                            CrashReporter.Log($"[GameDetectionService.FindEpicV2Installs] Named '{dir}' from catalog cache: '{name}'");
+                    }
+                }
 
                 if (name == null)
                 {
@@ -189,6 +206,43 @@ public partial class GameDetectionService
         var rest = cmd[(i + "://apps/".Length)..];
         int colon = rest.IndexOf(':');
         return colon > 0 ? rest[..colon] : null;
+    }
+
+    /// <summary>
+    /// itemId → (title, main game itemId for add-ons) from cache\prod\catalog-cache.json
+    /// ({"items":{"{itemId}":{"item":{"title":…,"mainGameItem":{"id":…}|null}}}}). Empty if missing or unreadable.
+    /// </summary>
+    private static Dictionary<string, (string Title, string? MainGameId)> LoadEpicCatalogTitles(string dataDir)
+    {
+        var map = new Dictionary<string, (string, string?)>(StringComparer.OrdinalIgnoreCase);
+        var file = Path.Combine(dataDir, "cache", "prod", "catalog-cache.json");
+        if (!File.Exists(file))
+        {
+            CrashReporter.Log($"[GameDetectionService.LoadEpicCatalogTitles] No catalog cache at '{file}'");
+            return map;
+        }
+        try
+        {
+            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var doc = JsonDocument.Parse(fs);
+            if (!doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Object)
+                return map;
+            foreach (var p in items.EnumerateObject())
+            {
+                if (!p.Value.TryGetProperty("item", out var item) || item.ValueKind != JsonValueKind.Object) continue;
+                var title = GetString(item, "title");
+                if (string.IsNullOrWhiteSpace(title)) continue;
+                string? mainId = item.TryGetProperty("mainGameItem", out var mg) && mg.ValueKind == JsonValueKind.Object
+                    ? GetString(mg, "id") : null;
+                map[p.Name] = (title.Trim(), mainId);
+            }
+            CrashReporter.Log($"[GameDetectionService.LoadEpicCatalogTitles] Loaded {map.Count} catalog title(s)");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            CrashReporter.Log($"[GameDetectionService.LoadEpicCatalogTitles] '{file}' — {ex.Message}");
+        }
+        return map;
     }
 
     private static string? ReadMigratedItemName(string dataDir, string installId)

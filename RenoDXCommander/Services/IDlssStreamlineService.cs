@@ -142,8 +142,10 @@ public interface IDlssStreamlineService
 
     /// <summary>
     /// Attempts fast detection using trusted cached paths. Returns null if full scan needed.
+    /// <paramref name="anyConfirmCount"/>: also use saved paths not yet confirmed enough times to be trusted
+    /// (every file is still checked).
     /// </summary>
-    DlssDetectionResult? TryFastDetect(string gameName, string installPath);
+    DlssDetectionResult? TryFastDetect(string gameName, string installPath, bool anyConfirmCount = false);
 
     /// <summary>
     /// Records a successful detection for trusted path confirmation.

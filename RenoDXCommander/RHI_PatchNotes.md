@@ -34,6 +34,9 @@
 - Fixed headings in What's New, the message of the day and mod release notes being hard to read (dark grey or black on the dark background) on PCs with Windows set to Light mode. Patch note text is also a little brighter.
 - Fixed the Luma filter chip being cut off at the edge of the game list when Filters is open. The engine and mod chips now move onto a second line when they don't fit.
 - Fixed the game header still showing the old install folder after Change install folder or Reset install folder until you moved to another game and back.
+- Fixed RE Framework not offering updates (stuck on an older build) once GitHub's hourly limit for checks was used up without a GitHub token. RHI now checks the latest RE Framework build without using that limit.
+- Fixed some games installed with the new Epic Games launcher not being detected (for example Cyberpunk 2077 and Alan Wake 2) when the launcher hadn't recorded their names where RHI looked. RHI now also reads the names from the launcher's game catalog.
+- Fixed DLSS / Streamline showing "No DLSS or Streamline files found" for Unreal Engine games whose install folder is outside the usual Binaries folder (for example Phantom Blade Zero set to platform\steam). RHI now also looks in the game's main folder, where the Engine plugins keep these files. Games that stopped showing their DLSS files after their install folder was changed show them again.
 
 ## v2.9.1
 

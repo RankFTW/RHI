@@ -1427,6 +1427,25 @@ public partial class MainViewModel
             LogPhase("DofFix+CardInit");
             bool dlssSkipped = _manifest?.DlssSkipGames?.Contains(game.Name, StringComparer.OrdinalIgnoreCase) == true
                 || _dlssStreamlineService.ShouldSkipScan(game.Name);
+            // A game can be on the skip list from scans of an old install folder while its saved DLSS
+            // paths are still valid (PBZ after moving to platform\steam). The saved paths cost ~1 ms.
+            if (dlssSkipped && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                try
+                {
+                    var trusted = _dlssStreamlineService.TryFastDetect(game.Name, installPath, anyConfirmCount: true);
+                    if (trusted != null && trusted.HasAny)
+                    {
+                        newCard.ApplyDlssDetection(trusted);
+                        _dlssStreamlineService.RecordDlssFound(game.Name);
+                        _crashReporter.Log($"[BuildCards] '{game.Name}' was on the DLSS skip list but its saved DLSS paths are valid — using them");
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _crashReporter.Log($"[BuildCards] Saved DLSS paths check failed for '{game.Name}' — {ex.Message}");
+                }
+            }
             if (!dlssSkipped && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
                 try

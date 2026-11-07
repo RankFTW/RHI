@@ -15,7 +15,8 @@ public class REFrameworkService : IREFrameworkService
 
     private const string DllFileName = "dinput8.dll";
     private const string DownloadBaseUrl = "https://github.com/praydog/REFramework-nightly/releases/latest/download/";
-    private const string ReleasesApiUrl = "https://api.github.com/repos/praydog/REFramework-nightly/releases";
+    private const string LatestReleasePageUrl = "https://github.com/praydog/REFramework-nightly/releases/latest";
+    private const string ReleasesApiUrl ="https://api.github.com/repos/praydog/REFramework-nightly/releases";
 
     /// <summary>
     /// Maps game names to their RE Framework nightly ZIP filename.
@@ -82,6 +83,8 @@ public class REFrameworkService : IREFrameworkService
             {
                 await response.Content.CopyToAsync(fs);
             }
+            var zipSize = new FileInfo(zipPath).Length;
+            CrashReporter.Log($"[REFrameworkService.InstallAsync] Downloaded {zipName} ({zipSize:N0} bytes)");
 
             progress?.Report(("Extracting dinput8.dll...", 50));
 
@@ -102,6 +105,7 @@ public class REFrameworkService : IREFrameworkService
 
             // ── Fetch version tag ─────────────────────────────────────────────
             var version = await GetLatestVersionAsync() ?? "unknown";
+            CrashReporter.Log($"[REFrameworkService.InstallAsync] Installed RE Framework build {version} ({zipName} {zipSize:N0} bytes, {DllFileName} {new FileInfo(destPath).Length:N0} bytes) for '{gameName}' in '{installPath}'");
 
             progress?.Report(("RE Framework installed!", 100));
 
@@ -175,6 +179,17 @@ public class REFrameworkService : IREFrameworkService
         if (_cachedLatestVersion != null)
             return _cachedLatestVersion;
 
+        // The web page redirect costs no API quota (60/hour without a token) and is the same
+        // release the zip downloads from. When rate limited, the API below only returns the
+        // stale cached list, which left users stuck on an old build.
+        var fromRedirect = await GetLatestVersionFromRedirectAsync().ConfigureAwait(false);
+        if (fromRedirect != null)
+        {
+            _cachedLatestVersion = fromRedirect;
+            CrashReporter.Log($"[REFrameworkService.GetLatestVersionAsync] Latest tag (web): {_cachedLatestVersion}");
+            return _cachedLatestVersion;
+        }
+
         try
         {
             CrashReporter.Log("[REFrameworkService.GetLatestVersionAsync] Fetching latest release tag");
@@ -206,6 +221,36 @@ public class REFrameworkService : IREFrameworkService
         catch (Exception ex)
         {
             CrashReporter.Log($"[REFrameworkService.GetLatestVersionAsync] Failed — {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Reads the latest tag from where github.com/.../releases/latest redirects
+    /// (…/releases/tag/nightly-01438-…). Returns null if that fails.
+    /// </summary>
+    private async Task<string?> GetLatestVersionFromRedirectAsync()
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var request = new HttpRequestMessage(HttpMethod.Head, LatestReleasePageUrl);
+            using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
+            var finalUrl = response.RequestMessage?.RequestUri?.AbsolutePath ?? "";
+            const string marker = "/releases/tag/";
+            var idx = finalUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (!response.IsSuccessStatusCode || idx < 0)
+            {
+                CrashReporter.Log($"[REFrameworkService.GetLatestVersionFromRedirectAsync] No tag in redirect (HTTP {(int)response.StatusCode}, '{finalUrl}')");
+                return null;
+            }
+            var tag = Uri.UnescapeDataString(finalUrl[(idx + marker.Length)..].Trim('/'));
+            var version = ExtractVersionNumber(tag);
+            return string.IsNullOrEmpty(version) || !version.All(char.IsDigit) ? null : version;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            CrashReporter.Log($"[REFrameworkService.GetLatestVersionFromRedirectAsync] Failed — {ex.Message}");
             return null;
         }
     }

@@ -291,7 +291,8 @@ public partial class MainViewModel
 
         ForgetGameApi(oldDir);
         ForgetGameApi(newDir);
-        if (outcome.MovedDlssFiles) _dlssStreamlineService.RecordDlssFound(gameName);
+        // New folder: scans of the old one mustn't keep it on the DLSS skip list.
+        _dlssStreamlineService.RecordDlssFound(gameName);
         _crashReporter.Log($"[MainViewModel.AfterFolderMigration] '{gameName}' moved to '{newDir}': {string.Join(", ", outcome.Components)}");
     }
 }

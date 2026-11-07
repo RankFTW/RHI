@@ -1204,6 +1204,8 @@ public partial class MainViewModel
             original = card?.DetectedGame?.InstallPath ?? card?.InstallPath ?? "";
         }
         _folderOverrides[key] = $"{folderPath}|{original}";
+        // Scans of the old folder mustn't keep the game on the DLSS skip list.
+        _dlssStreamlineService.RecordDlssFound(gameName);
         SaveNameMappings();
         SaveLibrary();
     }
@@ -1231,6 +1233,7 @@ public partial class MainViewModel
         }
 
         _folderOverrides.Remove(key);
+        _dlssStreamlineService.RecordDlssFound(card.GameName);
 
         if (!string.IsNullOrEmpty(originalPath))
         {

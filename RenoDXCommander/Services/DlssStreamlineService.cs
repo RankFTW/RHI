@@ -484,10 +484,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// Attempts a fast detection using trusted cached paths. Returns a valid result if all
     /// cached paths still exist and are within the game's install path, or null if a full scan is needed.
     /// </summary>
-    public DlssDetectionResult? TryFastDetect(string gameName, string installPath)
+    public DlssDetectionResult? TryFastDetect(string gameName, string installPath, bool anyConfirmCount = false)
     {
         EnsureTrustedCacheLoaded();
-        if (!_trustedPathCache!.TryGetValue(gameName, out var entry) || entry.ConfirmCount < SkipThreshold)
+        if (!_trustedPathCache!.TryGetValue(gameName, out var entry) || (!anyConfirmCount && entry.ConfirmCount < SkipThreshold))
             return null;
 
         // Validate cached paths are inside the game's install tree (not a sibling game)

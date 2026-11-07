@@ -28,6 +28,7 @@ paths:
 - DLLs can be anywhere in game install tree. Detection recursively searches.
 - WindowsApps: manual per-directory walk with try/catch (AllDirectories throws on first restricted folder).
 - `ResolveSearchRoot()`: `Binaries` → grandparent (UE), `Bin` → parent (CryEngine). Guard: don't go to grandparent if parent is known store folder.
+- No `Binaries`/`Bin` in the path → `FindUnrealGameRootAbove` climbs up to 2 levels to a folder with `Engine\Plugins` or `Engine\Binaries` (PBZ manual/override at `platform\steam`, DLLs in `{root}\Engine\Plugins`). Never climbs into a store library folder or a drive root.
 - OptiScaler detection: skip DLLs in directories containing `OptiScaler.ini`.
 
 ### Caching

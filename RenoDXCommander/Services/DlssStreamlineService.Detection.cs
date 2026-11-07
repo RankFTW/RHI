@@ -279,7 +279,37 @@ public partial class DlssStreamlineService
             current = up;
         }
 
-        return installPath;
+        return FindUnrealGameRootAbove(normalized) ?? installPath;
+    }
+
+    /// <summary>
+    /// Unreal games whose exe runs from a folder outside {ContentFolder}\Binaries (Phantom Blade Zero:
+    /// {GameRoot}\platform\steam) keep their DLSS/Streamline DLLs under {GameRoot}\Engine\Plugins.
+    /// Returns the nearest folder up to two levels above <paramref name="installPath"/> that has
+    /// Engine\Plugins or Engine\Binaries, or null. Never climbs into a store library folder.
+    /// </summary>
+    internal static string? FindUnrealGameRootAbove(string installPath)
+    {
+        try
+        {
+            if (Directory.Exists(Path.Combine(installPath, "Engine"))) return null; // already the game root
+            var current = Path.GetDirectoryName(installPath);
+            for (int i = 0; i < 2 && !string.IsNullOrEmpty(current); i++)
+            {
+                if (Path.GetPathRoot(current)?.TrimEnd('\\').Equals(current.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) == true
+                    || IsStoreLibraryFolder(current))
+                    return null;
+                var engine = Path.Combine(current, "Engine");
+                if (Directory.Exists(Path.Combine(engine, "Plugins")) || Directory.Exists(Path.Combine(engine, "Binaries")))
+                    return current;
+                current = Path.GetDirectoryName(current);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.FindUnrealGameRootAbove] '{installPath}' — {ex.Message}");
+        }
+        return null;
     }
 
     /// <summary>
