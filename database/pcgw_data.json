@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55999,
-  "generated": "2026-11-07T16:46:47Z",
+  "game_count": 56004,
+  "generated": "2026-11-07T23:08:08Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -21282,6 +21282,9 @@
     "Blood of the Killer": {
       "dx11": true,
       "engine": "Unity"
+    },
+    "Blood of the Lead Moon": {
+      "steam_appid": 4407900
     },
     "Blood of the Werewolf": {
       "steam_appid": 260250,
@@ -67705,6 +67708,10 @@
       "steam_appid": 2891310,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Alpherior\\Genome Guardian\\"
     },
+    "Genotype": {
+      "steam_appid": 2667980,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\BolverkGames\\GenotypeGame\\GameSettings.data"
+    },
     "Genshin Impact": {
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\miHoYo\\Genshin Impact",
@@ -77817,6 +77824,7 @@
     "High Fidelity": {
       "steam_appid": 390540
     },
+    "High Heat Baseball 2000": {},
     "High Heat Major League Baseball 2002": {},
     "High Heat Major League Baseball 2003": {
       "config_path": "<path-to-game>\\exPrefs.bin, <path-to-game>\\gfxopts.bin"
@@ -126856,6 +126864,10 @@
     "Prison Forever": {
       "steam_appid": 1219580
     },
+    "Prison of Husks": {
+      "steam_appid": 2975260,
+      "engine": "Unity"
+    },
     "PRISON OF SON": {
       "steam_appid": 1201730
     },
@@ -144627,7 +144639,7 @@
     "Shenmue III": {
       "steam_appid": 878670,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Shenmue3\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%\\Shenmue3\\Saved\\SaveGames\\Systemaa<user-id>.sav, %LOCALAPPDATA%\\Shenmue3\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "Shenmue III Enhanced": {
@@ -170274,6 +170286,9 @@
       "dx12": true,
       "vulkan": true,
       "config_path": "%LOCALAPPDATA%\\Zelda64Recompiled\\mod_config\\*.json, %LOCALAPPDATA%\\Zelda64Recompiled\\*.json"
+    },
+    "The Legend of Zelda: Ocarina of Time (Hookshot)": {
+      "vulkan": true
     },
     "The Legend of Zelda: Ocarina of Time (Ship of Harkinian)": {
       "dx11": true,
