@@ -18,6 +18,7 @@ Ideas, technical debt, and planned improvements. Categorised for easy reference.
 ### Features
 - **Custom ReShade auto-redeploy** — `CustomReShadeHashService` hashes the DLLs in the Custom folder (`custom_reshade_hashes.json`) and redeploys changed ones to every game on the Custom channel (Vulkan via the elevated global layer copy). Runs on launch, Refresh and the 4-hour background check.
 - **Selectable layouts (v2.9.0)** — Classic / Classic+ / Tabs / Spotlight, switched from the top bar. Spotlight uses Steam artwork, with custom artwork per game. Plan and decisions: [layouts-plan-2.9.0.md](layouts-plan-2.9.0.md).
+- **Steam achievements in Spotlight (v2.9.2)**: opt-in (Settings › Achievements). Read from Steam's local cache (`appcache\stats\UserGameStatsSchema_<appid>.bin` + `UserGameStats_<account>_<appid>.bin`, binary KeyValues) by `SteamAchievementService`; rarity from the keyless `GetGlobalAchievementPercentagesForApp` (cached a day); icons cached in `artwork\{appid}\ach\`. Hero strip under Launch / HDR / Resolution, full list in the side panel. Rejected: Steam Web API (per-user key), community XML (needs a public profile, fragile). Next: Xbox, EA and other stores as their own toggles in the same Settings section.
 
 ---
 
@@ -100,32 +101,6 @@ Show the user's complete Steam catalog (owned, family shared, not just installed
 - "Install" links to `steam://install/{appId}`
 
 **Source:** Discord user request. Similar to SteamDB/SteamDD.
-
-### Steam Achievements in Spotlight
-Show the selected Steam game's achievements on the Spotlight page: progress, recent unlocks, and the full list in the side panel. No API key, sign-in or public profile needed, because the data comes from Steam's local cache.
-
-**Data sources (verified on a real install):**
-- Achievement list: `<SteamPath>\appcache\stats\UserGameStatsSchema_<appid>.bin`. Binary KeyValues: `stats` → `<block>` → `bits` → `<bit>` → `name`, `display` → `name`/`desc` (per language), `hidden`, `icon`, `icon_gray`.
-- Unlock state: `<SteamPath>\appcache\stats\UserGameStats_<accountid>_<appid>.bin`. `cache` → `<block>` → `data` (unlocked bitfield) + `AchievementTimes` → `<bit>`: unix time.
-- Account id = SteamID64 − 76561197960265728, SteamID64 from `<SteamPath>\config\loginusers.vdf` (`MostRecent` user). SteamPath from `HKCU\Software\Valve\Steam\SteamPath`.
-- Binary KeyValues types: 0 subtree, 1 string, 2/4/6 int32, 3 float, 7 uint64, 8/11 end.
-- Icons: `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`.
-- Optional rarity: `ISteamUserStats/GetGlobalAchievementPercentagesForApp` (no key), cached for a day.
-
-**What needs building:**
-- `SteamAchievementService`: KeyValues binary reader, account lookup, maps block + bit to unlocked/time, picks the Steam display language with English fallback, caches results and re-reads only when a file changes.
-- Icons downloaded in the background into the artwork cache (`artwork\{appid}\ach\`), only while Spotlight is on, like covers.
-- Spotlight: an Achievements tile under "Tune this game" ("31 / 78 · 40%", progress bar, last few unlocked icons); clicking it opens the side panel with the full list (unlocked newest first, then locked greyed out; hidden locked ones masked as "Hidden achievement").
-- Refresh when the game exits (running-game tracking) and on selection.
-- AppID via `DetailPanelBuilder.ResolveCommunityAppId`; Steam games only.
-
-**Limitations:** only covers games run on this PC (or whose achievements were opened in Steam); undocumented format (hide the tile if a file doesn't parse); updates only when Steam writes the cache.
-
-**Rejected:** Steam Web API `GetPlayerAchievements` (needs a per-user key and a public game-details profile); scraping community XML (fragile); Steamworks SDK (not viable).
-
-**Open questions:** Spotlight only, or also an At a glance tile in Tabs? Include rarity? Mask hidden achievements until unlocked?
-
-**Size:** medium, about 600–800 lines, no new libraries.
 
 ### One-click updates (Velopack)
 Update like SCSKiller: download in the background, click **Restart to update**, done in seconds with no installer window or UAC prompt. Uses Velopack (per-user install in `%LocalAppData%\RHI.App\`, `Update.exe` swaps the app folder and restarts).

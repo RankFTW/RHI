@@ -139,6 +139,7 @@ internal sealed partial class DetailLayoutHost
         var right = new StackPanel { Spacing = 10, MinWidth = 260, VerticalAlignment = VerticalAlignment.Top };
         right.Children.Add(splitFrame);
         right.Children.Add(_hToggles);
+        right.Children.Add(MakeAchievementsSlot(_hToggles)); // Spotlight + Settings › Achievements only
 
         var grid = new Grid { ColumnSpacing = 20 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -335,6 +336,7 @@ internal sealed partial class DetailLayoutHost
         Grid.SetColumnSpan(_hHdr, resShown ? 1 : 2);
 
         if (IsSpotlight) RefreshHeroArt();
+        RefreshAchievements();
     }
 
     /// <summary>Hover colours are read when a button loads, so a toggle that changes look is replaced.</summary>

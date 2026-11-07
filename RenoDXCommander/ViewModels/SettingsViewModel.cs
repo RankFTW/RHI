@@ -91,6 +91,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _dropHelperEnabled = true;
     /// <summary>Controller support in the Spotlight layout (MainWindow.Controller.cs).</summary>
     [ObservableProperty] private bool _controllerSupport = true;
+    /// <summary>Spotlight: show the selected Steam game's achievements (opt-in, Settings › Achievements).</summary>
+    [ObservableProperty] private bool _steamAchievements;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
     [ObservableProperty] private bool _closeToTray;
@@ -377,6 +379,7 @@ public partial class SettingsViewModel : ObservableObject
         }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("ControllerSupport", out var csVal)) ControllerSupport = csVal != "false"; // default true
+        if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -543,6 +546,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
         s["ControllerSupport"] = ControllerSupport ? "true" : "false";
+        s["SteamAchievements"] = SteamAchievements ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";

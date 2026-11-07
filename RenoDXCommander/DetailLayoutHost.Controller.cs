@@ -64,6 +64,8 @@ internal sealed partial class DetailLayoutHost
     /// <summary>The page tile that opens <paramref name="key"/>: where B goes back to after closing the panel.</summary>
     internal Control? SpotTileFor(string? key)
     {
+        if (key == AchievementsKey && _achStrip is { Visibility: Visibility.Visible } strip && _achSlot?.Visibility == Visibility.Visible)
+            return strip;
         if (key == OverviewKey)
         {
             var status = _statusTiles.FirstOrDefault(t => t.Root.Visibility == Visibility.Visible)?.Root;

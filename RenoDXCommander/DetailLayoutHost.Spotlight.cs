@@ -78,6 +78,7 @@ internal sealed partial class DetailLayoutHost
             _hTitle.FontWeight = spotlight ? Microsoft.UI.Text.FontWeights.ExtraBold : Microsoft.UI.Text.FontWeights.Bold;
         }
         if (spotlight) RefreshSpotlight();
+        else RefreshAchievements(); // hides the strip outside Spotlight
     }
 
     private void EnsureSpotlightParts()
@@ -329,7 +330,9 @@ internal sealed partial class DetailLayoutHost
         ReturnPanelContent();
 
         FrameworkElement? content;
-        if (key == OverviewKey)
+        if (key == AchievementsKey)
+            content = BuildAchievementsPanel();
+        else if (key == OverviewKey)
         {
             if (_overview == null) BuildOverview();
             if (_overviewGlance != null) _overviewGlance.Visibility = Visibility.Collapsed;
@@ -346,7 +349,7 @@ internal sealed partial class DetailLayoutHost
         _panelHost!.Children.Add(content);
         content.Visibility = Visibility.Visible;
         _panelKey = key;
-        _panelTitle!.Text = key == OverviewKey ? "Components" : GetTitle(key);
+        _panelTitle!.Text = key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements" : GetTitle(key);
         if (key == OverviewKey) RefreshOverviewCards();
 
         // Re-adding the sheet replays its slide-in transition
@@ -373,6 +376,11 @@ internal sealed partial class DetailLayoutHost
         var key = _panelKey;
         _panelKey = null;
         _panelHost.Children.Clear();
+        if (key == AchievementsKey)
+        {
+            ReturnAchievementsPanel();
+            return;
+        }
         if (key == OverviewKey)
         {
             if (_overviewGlance != null) _overviewGlance.Visibility = Visibility.Visible;

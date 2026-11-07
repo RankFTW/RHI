@@ -295,6 +295,7 @@ public partial class SettingsHandler
         EnsureRemovedGamesButton();
         EnsureCustomFoldersCard();
         EnsureControllerSetting();
+        EnsureAchievementsSection(); // before the nav, so it gets a jump button
         EnsureSettingsNavigation();
         StartUpdateCountdown();
         if (wasAlreadyOpen || _settingsScroll == null) return; // keep the current position

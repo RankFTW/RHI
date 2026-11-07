@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.2 Beta
+## v2.9.2 Beta 2
 
 ### New
 
@@ -17,9 +17,14 @@
 
 **Game collections**
 - Make your own lists of games, like Racing or Souls-likes. Right-click a game (or press X on a controller) and choose Add to collection, then tick the collections it belongs in or pick New collection. A game can be in as many collections as you like.
-- Your collections appear as chips under All / Installed / Favourites in Classic and Tabs, and next to the Filters button in Spotlight. Click one to show only its games, and click it again to go back to all games. The search box and saved searches still narrow the list, and hidden games stay hidden.
+- Your collections appear as chips under All / Installed / Favourites in Classic and Tabs, and at the right of the search row in Spotlight. Click one to show only its games, and click it again to go back to all games. The search box and saved searches still narrow the list, and hidden games stay hidden.
 - On a controller, clicking the right stick switches to your next collection (after the last one it goes back to all games), with a short message showing which collection you're on and how many games it has. The left stick still switches between All, Installed and Favourites. With no collections, the side panel open or Settings showing, the right stick still takes you back to the game's cover.
 - Right-click a chip (or press X on it with a controller) to rename it, move it left or right, or delete it. Deleting a collection never removes the games. Collections follow a game when you rename it, and RHI remembers the collection you were viewing.
+
+**Steam achievements in Spotlight**
+- Turn it on in Settings › Achievements (it's off until you do). The Spotlight page then shows the selected Steam game's achievements under the Launch, HDR and Resolution buttons: how many you've unlocked, a progress bar, your latest unlock and a row of your other recent unlocks.
+- Click it for the full list in the side panel: unlocked achievements first, newest at the top, with the date and time you got each one, then the ones still locked underneath, greyed out. Every achievement shows its icon, description and how many players have it. Hidden achievements stay hidden until you unlock them, and the search box finds an achievement by name or description.
+- RHI reads your achievements from Steam's own files on this PC, so there's no sign-in, API key or public profile to set up. It updates by itself when Steam records a new unlock. Games you haven't played on this PC show nothing until you run them once.
 
 ### Changes
 
@@ -27,7 +32,8 @@
 - MFG Ada Unlock is now called MFG Unlock, matching the mod, and its descriptions say it brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental). Existing installs and settings carry over.
 - When a game's install folder changes, RHI now moves its installed mods with it. After Change install folder or Reset install folder, RHI asks whether to move the mods, their settings and presets to the new folder; when RHI itself corrects a game's folder, it moves them on its own and says so in the status bar. The game's own files that RHI had replaced are put back in the old folder, and nothing is moved while the game is running.
 - (WIP) Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
-- Spotlight has a new Covers at bottom button next to Filters. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.
+- In Spotlight, the Filters button is now a filter icon just left of All / Installed / Favourites / Hidden (it shows a number when filters are on). Classic and Tabs keep the Filters button where it was.
+- Spotlight has a new Covers at bottom button at the right of the search row. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: from the covers, the direction towards the game page goes to Launch.
 - The controller's button hints now sit in the middle of the bottom status bar, in place of the anti-cheat notice, instead of floating over the page. They no longer cover anything, wherever the covers are, and the notice comes back when you use the mouse.
 - Interface size (Settings › General, or Ctrl + mouse wheel) now goes in 5% steps and up to 200%, so each wheel notch is a small change and large screens can go bigger than 150%.
 
@@ -45,6 +51,10 @@
 - Fixed RE Framework not offering updates (stuck on an older build) once GitHub's hourly limit for checks was used up without a GitHub token. RHI now checks the latest RE Framework build without using that limit.
 - Fixed some games installed with the new Epic Games launcher not being detected (for example Cyberpunk 2077 and Alan Wake 2) when the launcher hadn't recorded their names where RHI looked. RHI now also reads the names from the launcher's game catalog.
 - Fixed DLSS / Streamline showing "No DLSS or Streamline files found" for Unreal Engine games whose install folder is outside the usual Binaries folder (for example Phantom Blade Zero set to platform\steam). RHI now also looks in the game's main folder, where the Engine plugins keep these files. Games that stopped showing their DLSS files after their install folder was changed show them again.
+
+### Manifest Updates
+
+- Support the Mod Authors: Ko-fi links for Kronir and Vaxis (Ultra+), and Patreon links for Lazorr and SammiLucia.
 
 ## v2.9.1
 

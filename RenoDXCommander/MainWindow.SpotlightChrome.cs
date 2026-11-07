@@ -20,6 +20,9 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
+    /// <summary>Settings › Achievements changed: show or hide the hero's achievements strip.</summary>
+    internal void AchievementsSettingChanged() => _detailPanelBuilder.Layout.AchievementsSettingChanged();
+
     private bool _spotlightOn;
     private ListView? _shelf;
     private bool _shelfSyncing;
@@ -118,6 +121,7 @@ public sealed partial class MainWindow
                     _searchRowStack.HorizontalAlignment = HorizontalAlignment.Left;
                 }
                 if (_segmentHost != null) _segmentHost.Width = 340;
+                PlaceFiltersButton(spotlight: true);
                 _countsRow.HorizontalAlignment = HorizontalAlignment.Right;
                 _countsRow.VerticalAlignment = VerticalAlignment.Center;
 
@@ -150,6 +154,7 @@ public sealed partial class MainWindow
                     _searchRowStack.HorizontalAlignment = HorizontalAlignment.Stretch;
                 }
                 if (_segmentHost != null) _segmentHost.Width = double.NaN;
+                PlaceFiltersButton(spotlight: false);
                 Grid.SetRow(_countsRow, 2);
                 _countsRow.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _countsRow.VerticalAlignment = VerticalAlignment.Stretch;
@@ -166,6 +171,39 @@ public sealed partial class MainWindow
         {
             CrashReporter.Log($"[MainWindow.ApplySpotlightChrome] Failed — {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Spotlight: the Filters button is an icon just left of the All / Installed / Favourites switch.
+    /// Other layouts: the labelled button by the counts, as before.
+    /// </summary>
+    private void PlaceFiltersButton(bool spotlight)
+    {
+        if (_filtersBtn == null || _searchRowStack == null || _countsGrid == null || _segmentHost == null) return;
+        if (VisualTreeHelper.GetParent(_filtersBtn) is Panel current) current.Children.Remove(_filtersBtn);
+        _searchRowStack.Children.Remove(_filtersBtn);
+        _countsGrid.Children.Remove(_filtersBtn);
+        if (spotlight)
+        {
+            int at = Math.Max(0, _searchRowStack.Children.IndexOf(_segmentHost));
+            _searchRowStack.Children.Insert(at, _filtersBtn);
+            _filtersBtn.Height = double.NaN;               // as tall as the switch next to it
+            _filtersBtn.VerticalAlignment = VerticalAlignment.Stretch;
+            _filtersBtn.MinWidth = 40;
+            _filtersBtn.Padding = new Thickness(10, 0, 10, 0);
+            _filtersBtn.CornerRadius = new CornerRadius(10);
+        }
+        else
+        {
+            // Column 0, or 1 while the Spotlight collections column is still there (removed and shifted later)
+            Grid.SetColumn(_filtersBtn, _countsHasCollectionsColumn ? 1 : 0);
+            _countsGrid.Children.Add(_filtersBtn);
+            _filtersBtn.Height = 30;
+            _filtersBtn.VerticalAlignment = VerticalAlignment.Center;
+            _filtersBtn.MinWidth = 0;
+            _filtersBtn.CornerRadius = new CornerRadius(6);
+        }
+        RefreshSidebar();
     }
 
     // ── Shelf above / below the page ──────────────────────────────────────────

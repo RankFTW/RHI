@@ -149,7 +149,6 @@ public sealed partial class MainWindow
         TabsTheme.Apply(_filtersBtn, TabsTheme.IconButton, height: 30, fontSize: 12);
         _filtersBtn.CornerRadius = new CornerRadius(6);
         _filtersBtn.Click += (s, e) => { _filtersOpen = !_filtersOpen; RefreshTabsChrome(); };
-        ToolTipService.SetToolTip(_filtersBtn, "Engine and mod filters, and your saved searches");
         _countsGrid.Children.Add(_filtersBtn);
         // Spotlight only: puts the search / filters / cover shelf above or below the game page
         _countsGrid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = GridLength.Auto });
@@ -498,15 +497,24 @@ public sealed partial class MainWindow
                 track: TabsTheme.Card);
         }
         int extra = active.Count(f => !MainFilters.Any(m => m.Tag == f));
-        _filtersBtn.Content = MakeFiltersLabel(extra);
+        _filtersBtn.Content = MakeFiltersLabel(extra, iconOnly: _spotlightOn);
+        ToolTipService.SetToolTip(_filtersBtn, extra > 0
+            ? $"Filters ({extra} on): engine and mod filters, and your saved searches"
+            : "Filters: engine and mod filters, and your saved searches");
         _chipsRow.Visibility = _filtersOpen ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private static StackPanel MakeFiltersLabel(int extra)
+    /// <summary>Filter icon + "Filters"; Spotlight shows the icon only (and the count when filters are on).</summary>
+    private static StackPanel MakeFiltersLabel(int extra, bool iconOnly)
     {
-        var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        sp.Children.Add(TabsTheme.Icon("", 12)); // filter
-        sp.Children.Add(new TextBlock { Text = extra > 0 ? $"Filters ({extra})" : "Filters", VerticalAlignment = VerticalAlignment.Center });
+        var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        sp.Children.Add(TabsTheme.Icon("", iconOnly ? 14 : 12)); // filter
+        if (!iconOnly || extra > 0)
+            sp.Children.Add(new TextBlock
+            {
+                Text = iconOnly ? extra.ToString() : extra > 0 ? $"Filters ({extra})" : "Filters",
+                VerticalAlignment = VerticalAlignment.Center,
+            });
         return sp;
     }
 
