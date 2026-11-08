@@ -834,6 +834,8 @@ public partial class MainViewModel : ObservableObject
         _optiScalerService = optiScalerService;
         // Old nightly builds are removed after a new one downloads when the setting is on
         _optiScalerService.NightlyCleanupKeepProvider = NightlyBuildsToKeep;
+        // OptiScaler installs / updates deploy the NR runtime picked in the game's ⚙
+        OptiScalerService.NrRuntimeProvider = c => GetOsNrRuntime(c.GameName, c.Source ?? "");
         _dxvkService = dxvkService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;

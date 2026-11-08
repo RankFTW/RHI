@@ -70,7 +70,21 @@ public partial class OptiScalerService
                 effectiveStagingDir = isDlssNrOrF5 ? (isF5 ? F5StagingDir : DlssNrStagingDir) : StagingDir;
             }
 
-            // ── 3. If updating, force re-download staging to get the latest version ──
+            // ── 3. Check for a newer release before using the staged copy ────
+            // The update flags are otherwise only set by the periodic check, which skips variants
+            // no installed game uses: a fresh install (or remove + reinstall) kept deploying an
+            // old staged build (issue #163). ETag-cached, so an unchanged release costs nothing.
+            // A pinned nightly build is installed as pinned.
+            if (!(isNightly && !string.IsNullOrEmpty(nightlyBuildHint)))
+            {
+                progress?.Report(("Checking for a newer OptiScaler release...", 6));
+                if (isF5) await CheckForF5UpdateAsync().ConfigureAwait(false);
+                else if (isDlssNr) await CheckForDlssNrUpdateAsync().ConfigureAwait(false);
+                else if (isNightly) await CheckForNightlyUpdateAsync().ConfigureAwait(false);
+                else await CheckForUpdateAsync().ConfigureAwait(false);
+            }
+
+            // ── 3b. If updating, force re-download staging to get the latest version ──
             bool hasUpdate = isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
             if (hasUpdate)
             {
@@ -381,8 +395,7 @@ public partial class OptiScalerService
                 progress?.Report(("Deploying DLSS NR runtime...", 72));
                 try
                 {
-                    var dlssStreamlineSvc = _dlssStreamlineServiceLazy.Value;
-                    var cachedNrDll = await dlssStreamlineSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    var cachedNrDll = await GetNrRuntimeForAsync(card).ConfigureAwait(false);
                     if (cachedNrDll != null)
                     {
                         var gameNrPath = Path.Combine(card.InstallPath, "nvngx_dlssnr.dll");
@@ -1053,6 +1066,26 @@ public partial class OptiScalerService
         }
     }
 
+    /// <summary>
+    /// The game's chosen DLSS NR runtime (OptiScaler ⚙ › NR Runtime), set by MainViewModel.
+    /// Returns "" for "newest". Without it, the newest runtime is used.
+    /// </summary>
+    public static Func<GameCardViewModel, string>? NrRuntimeProvider { get; set; }
+
+    /// <summary>The cached nvngx_dlssnr.dll to deploy for this game: its chosen runtime, else the newest.</summary>
+    private async Task<string?> GetNrRuntimeForAsync(GameCardViewModel card)
+    {
+        var svc = _dlssStreamlineServiceLazy.Value;
+        var chosen = NrRuntimeProvider?.Invoke(card);
+        if (!string.IsNullOrEmpty(chosen))
+        {
+            var specific = await svc.EnsureSpecificDlssnrCachedAsync(chosen).ConfigureAwait(false);
+            if (specific != null) return specific;
+            CrashReporter.Log($"[OptiScalerService.GetNrRuntimeForAsync] {card.GameName}: runtime {chosen} not available — using newest");
+        }
+        return await svc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+    }
+
     /// <inheritdoc />
     public async Task UpdateAsync(
         GameCardViewModel card,
@@ -1338,13 +1371,13 @@ public partial class OptiScalerService
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated {DlssgDllFileName} in game folder");
             }
 
-            // ── 4e. DlssNr variant: re-deploy nvngx_dlssnr.dll (always newest from manifest) ──
-            if (isDlssNr)
+            // ── 4e. DlssNr / F5: re-deploy nvngx_dlssnr.dll (the runtime picked in the ⚙, else newest).
+            // Left alone when the Neural Rendering section owns it (rhi_install.txt NrMethod).
+            if (isDlssNrOrF5 && string.IsNullOrEmpty(RhiInstallManifest.Read(gameDir)?.NrMethod))
             {
                 try
                 {
-                    var dlssStreamlineSvc = _dlssStreamlineServiceLazy.Value;
-                    var cachedNrDll = await dlssStreamlineSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    var cachedNrDll = await GetNrRuntimeForAsync(card).ConfigureAwait(false);
                     if (cachedNrDll != null)
                     {
                         var gameNrPath = Path.Combine(gameDir, "nvngx_dlssnr.dll");

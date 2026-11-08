@@ -41,6 +41,11 @@
 
 ### Bug Fixes
 
+- Fixed installing OptiScaler F5 DLSSNR, DLSS NR or Nightly using an old downloaded copy when a newer release was out (for example F5 0.1.29 instead of 0.1.37). RHI only checked for new releases every few hours, and only for versions a game already had installed, so removing and reinstalling didn't help. Install now checks for a newer release first.
+- Fixed OptiScaler F5 DLSSNR showing the Stable version number on some games.
+- Fixed a fresh OptiScaler F5 DLSSNR install skipping the Streamline, DLSS Enabler and frame generation settings you'd set in its ⚙ (Nightly and DLSS NR already did this).
+- Fixed updating OptiScaler F5 DLSSNR not refreshing the DLSS NR runtime, and updating DLSS NR replacing the NR Runtime you'd picked in the ⚙ with the newest one. Installs and updates now use your pick, and leave the file alone when the Neural Rendering section manages it.
+- Fixed OptiScaler F5 DLSSNR not being downloaded at startup like the other versions, so its first install had to wait for the download.
 - Fixed Reset install folder going back to the folder you picked with Change install folder instead of the folder RHI detected.
 - Fixed games using RTX HDR or Auto HDR (instead of a RenoDX mod) showing "—" on the RenoDX row, the Overview card and Spotlight's What's installed tile. They now show RTX HDR or Auto HDR, with "on" in green.
 - Fixed some games being detected as DirectX 12 because of video, UI or windowing libraries they ship (FFmpeg, Qt, SDL, Chromium) rather than what they render with. For example, OpenMW (OpenGL) showed as DX12, so the wrong ReShade setup and options were offered.

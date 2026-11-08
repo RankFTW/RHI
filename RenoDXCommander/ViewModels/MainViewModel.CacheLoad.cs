@@ -681,6 +681,7 @@ public partial class MainViewModel
                             ? osRec.OsNightlyBuild
                             : _optiScalerService.StagedVersionNightly,
                         "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
+                        "F5"      => _optiScalerService.StagedVersionF5,
                         _         => _optiScalerService.StagedVersion
                     };
             }
