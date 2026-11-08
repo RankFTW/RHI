@@ -134,6 +134,7 @@ Choose one per game. Both support 32-bit and 64-bit games, and installing either
 [size=5][b]Everyday Conveniences[/b][/size]
 
 [list]
+[*][b]RHI overlay[/b]: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game
 [*][b]Update All[/b]: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included. [b]Automatic Updates[/b] can install them in the background
 [*][b]Game launch[/b] from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game
 [*][b]HDR and resolution auto-toggle[/b]: Windows HDR and your target resolution switch on when a game starts and back when it closes, on the monitors you choose

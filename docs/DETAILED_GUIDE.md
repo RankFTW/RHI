@@ -31,15 +31,16 @@ This guide covers every feature in RHI (ReShade HDR Installer). For a short over
 21. [Game Overrides](#game-overrides)
 22. [Management](#management)
 23. [Launching Games](#launching-games)
-24. [Settings Page](#settings-page)
-25. [Updates](#updates)
-26. [Drag-and-Drop and Addon Detection](#drag-and-drop-and-addon-detection)
-27. [Vulkan Games and Ryubing](#vulkan-games-and-ryubing)
-28. [Links: Nexus, PCGamingWiki, UW Fix, Ultra+](#links-nexus-pcgamingwiki-uw-fix-ultra)
-29. [Remote Data](#remote-data)
-30. [Data Storage and Logs](#data-storage-and-logs)
-31. [Troubleshooting](#troubleshooting)
-32. [Third-Party Components](#third-party-components)
+24. [RHI Overlay](#rhi-overlay)
+25. [Settings Page](#settings-page)
+26. [Updates](#updates)
+27. [Drag-and-Drop and Addon Detection](#drag-and-drop-and-addon-detection)
+28. [Vulkan Games and Ryubing](#vulkan-games-and-ryubing)
+29. [Links: Nexus, PCGamingWiki, UW Fix, Ultra+](#links-nexus-pcgamingwiki-uw-fix-ultra)
+30. [Remote Data](#remote-data)
+31. [Data Storage and Logs](#data-storage-and-logs)
+32. [Troubleshooting](#troubleshooting)
+33. [Third-Party Components](#third-party-components)
 
 ---
 
@@ -116,7 +117,7 @@ Used by Classic+ and Tabs.
 - **Filters**: shows the **Unreal**, **Unity**, **Other**, **RenoDX** and **Luma** filters and your saved search chips, which narrow the view further and can be combined. Shows **Filters (N)** while any are on.
 - A count line: games shown, games with ReShade, and hidden games.
 - Each game row shows its store icon and name, a **green dot** when any of its components has an update (unless excluded from Update All), and turns **green** while a game launched through RHI is running.
-- **Double-click** a game to launch it. **Right-click** for Open Folder, Favourite, Hide/Show, **Add to collection**, Discussion / Instructions and View Notes (when available), and **Create Desktop Shortcut**.
+- **Double-click** a game to launch it. **Right-click** for Open Folder, Favourite, Hide/Show, **Add to collection**, **Game notes…**, Discussion / Instructions and View Notes (when available), and **Create Desktop Shortcut**.
 
 ### Detail panel
 
@@ -985,9 +986,40 @@ Starting RHI again while it's running brings the existing window to the front.
 
 ---
 
+## RHI Overlay
+
+The RHI overlay is a full-screen RHI page you open over a game, like the Steam overlay. Nothing is installed into the game: it's a window of RHI's own, so it works with any game and any graphics API, and carries no anti-cheat risk. RHI has to be running (the tray is fine).
+
+### Opening and closing
+
+- **Keyboard**: press **Alt + `** (the key left of 1) in the game. Press it again, or **Esc**, to go back to the game. Change the key in Settings → [RHI overlay](#rhi-overlay-settings).
+- **Controller**: hold **View + Menu** (Back + Start; Share + Options on PlayStation) for half a second. Inside the overlay: D-pad to move, **A** to select, **B** to go back, **LB / RB** to jump between columns, right stick to scroll the column you're in. Hold View + Menu again to close it.
+- It opens over the game in front, on that game's monitor. Games started from Steam, a shortcut or anywhere else are recognised by their folder. A program RHI doesn't know gets only the session and playtime.
+- It closes by itself if you Alt+Tab away or the game exits. **Back to game** (top right) closes it too.
+- It works in borderless and windowed games and in games using Windows' fullscreen optimisations. It can't show over true exclusive fullscreen; switch the game to borderless if nothing appears.
+- While it's open the game loses focus, so many games pause or go quiet.
+
+### What it shows
+
+Everything is on one screen, arranged to fit it. On wide and ultrawide screens there are three columns: your game info on the left (session, playtime, this game, notes and links), screenshots in the middle and achievements on the right. Narrower windows (a 4:3 screen, or a large Windows scaling) get two columns, with screenshots under the game info, and very narrow ones a single column. Each column scrolls on its own.
+
+| Section | What it shows |
+|---|---|
+| **Session and playtime** | How long you've been playing this session, your total playtime and, on handhelds and laptops, the battery. Total playtime is Steam's own count for Steam games (not including the session that's running). For other games RHI counts the minutes the game is the window in front, from the day you started using the overlay. |
+| **Achievements** | The same Steam or Xbox achievements as [Spotlight](#achievements), with search, unlock dates and rarity. Locked achievements come first, most-earned first when rarity is known, so the easiest next ones are at the top. Uses the switches in Settings → Achievements. |
+| **Screenshots** | The game's ReShade screenshots, newest first (24 at a time, **Show more** for the rest). Click one for a large view (it fills the overlay; **Back to screenshots** or Esc returns) with **Previous** / **Next** (or Left / Right), **Copy**, **Delete** (click twice; goes to the Recycle Bin), **Open** and **Show in folder**. New screenshots appear while the page is open. |
+| **This game** | What RHI has installed in the game, with versions and an **Update available** tag where Update All has something, plus the game's DLSS and Streamline DLL versions. |
+| **Info and links** | **Your notes** for the game (saved as you type), the RenoDX and Luma notes, and links to Nexus Mods, PCGamingWiki, the ultrawide fix, Ultra+, the notes pages and Discord. A link closes the overlay and opens your browser. |
+
+**Which screenshots**: RHI looks in the folder from the game's `reshade.ini` (`[SCREENSHOT] SavePath`), else the folder from Settings → ReShade & RenoDX → **Screenshot folder**, else the game folder. ReShade names screenshots after the game's exe, so in a folder shared by several games only this game's screenshots are shown. Turning on **Folder per game** keeps each game's screenshots apart. HDR `.jxr` screenshots may not show a preview; use **Open**.
+
+**Game notes** can also be edited in RHI: right-click a game → **Game notes…**. Notes and RHI's playtime count are saved in `%LOCALAPPDATA%\RHI\game_journal.json` and follow a game when it's renamed.
+
+---
+
 ## Settings Page
 
-The Settings page is one scrolling page with nine sections, in this order. Each section starts with a short line saying what it's for.
+The Settings page is one scrolling page with ten sections, in this order. Each section starts with a short line saying what it's for.
 
 The column on the left stays in view while you scroll. **Find a setting** searches every label, button and tooltip on the page as you type (for example `hotkey`, `HDR` or `ReBAR`); click a result to jump to it, or press Esc to clear the search. Below the search box, click a section name to jump to it. The section you're looking at is highlighted, and Settings reopens at the section you used last. In a narrow window the section list is hidden and the search box sits above the settings.
 
@@ -1078,7 +1110,13 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 ### Achievements settings
 
-**Steam** and **Xbox** (both Off by default) show the selected game's achievements in the Spotlight layout. See [Achievements](#achievements).
+**Steam** and **Xbox** (both Off by default) show the selected game's achievements in the Spotlight layout and the [RHI overlay](#rhi-overlay). See [Achievements](#achievements).
+
+### RHI overlay settings
+
+- **RHI overlay** (On by default): the overlay and its hotkey. See [RHI Overlay](#rhi-overlay).
+- **Controller (hold View + Menu)** (On by default): open and close the overlay with a controller.
+- **Hotkey**: click the box and press a key with Ctrl or Alt (or Shift with an F key). **Backspace** puts back Alt + `. The line under the card says when another program already uses the key.
 
 ### Tools & Maintenance
 

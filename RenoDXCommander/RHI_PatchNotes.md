@@ -5,6 +5,19 @@
 
 ## v2.9.3 Beta 1
 
+### New
+
+**RHI overlay**
+- Press Alt + ` (the key left of 1) in a game, or hold View + Menu on a controller, and RHI opens full screen over it, like the Steam overlay. Press it again, or Esc (B on a controller), to go back to the game. RHI must be running, but the tray is fine.
+- Everything is on one screen, laid out to fit it: three columns on wide and ultrawide screens (your game info, screenshots, achievements), two or one on narrower ones. Each column scrolls on its own.
+- Session and playtime: how long you've been playing, your total playtime (Steam's own count for Steam games; for other games RHI counts the time the game is in front) and, on handhelds and laptops, the battery.
+- Achievements: your Steam or Xbox achievements for the game, with search, unlock dates and rarity. Locked ones are sorted most-earned first, so the easiest next ones are at the top. Uses the switches in Settings › Achievements.
+- Screenshots: your ReShade screenshots of the game, newest first. Open one large and step through them, copy, delete (to the Recycle Bin) or open it. New screenshots show up straight away.
+- This game: what RHI has installed in the game, with versions and any updates waiting, plus its DLSS and Streamline versions.
+- Info and links: your own notes for the game (also under Game notes… when you right-click a game in RHI), the RenoDX and Luma notes, and the game's Nexus, PCGamingWiki, ultrawide fix, Ultra+ and Discord links.
+- Nothing is installed into the game, so it works with any game RHI knows, including games started from Steam or a shortcut. It works in borderless and windowed games and games using Windows' fullscreen optimisations, but can't show over true exclusive fullscreen.
+- Turn it off, change the key or turn off the controller shortcut in Settings › RHI overlay.
+
 ## v2.9.2
 
 ### New

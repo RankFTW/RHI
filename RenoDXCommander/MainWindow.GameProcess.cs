@@ -16,7 +16,7 @@ public sealed partial class MainWindow
         "bugsplat", "werfault", "start_protected_game", "easyanticheat", "unins",
     };
 
-    private static bool IsGameHelperProcess(string processName) =>
+    internal static bool IsGameHelperProcess(string processName) =>
         GameHelperProcessPrefixes.Any(p => processName.StartsWith(p, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
@@ -25,7 +25,7 @@ public sealed partial class MainWindow
     /// (Phantom Blade Zero: ProjectPBZ\Binaries\Win64 holds only crashpad_handler; the game is
     /// PBZ\steam\PBZ.exe). Each entry is a full lower-case path with a trailing backslash.
     /// </summary>
-    private static List<string> GameProcessSearchRoots(string installPath)
+    internal static List<string> GameProcessSearchRoots(string installPath)
     {
         var roots = new List<string>();
         void Add(string? p)
@@ -117,7 +117,7 @@ public sealed partial class MainWindow
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern bool QueryFullProcessImageNameW(IntPtr hProcess, uint flags, System.Text.StringBuilder exeName, ref uint size);
 
-    private static string? GetProcessImagePath(int pid)
+    internal static string? GetProcessImagePath(int pid)
     {
         var h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
         if (h == IntPtr.Zero) return null; // system / protected process: not a game we launched

@@ -15,6 +15,8 @@ public class AutoFitGrid : Panel
     public double ColumnSpacing { get; set; } = 12;
     public double RowSpacing { get; set; } = 12;
     public int MaxColumns { get; set; } = int.MaxValue;
+    /// <summary>False: keep the column count even with few items (CSS auto-fill), so a lone item isn't stretched.</summary>
+    public bool StretchFewItems { get; set; } = true;
 
     private (int Columns, double ColumnWidth) Columns(double width, int itemCount)
     {
@@ -22,7 +24,7 @@ public class AutoFitGrid : Panel
         int n = (int)Math.Floor((width + ColumnSpacing) / (MinColumnWidth + ColumnSpacing));
         n = Math.Clamp(n, 1, Math.Max(1, MaxColumns));
         // auto-fit (not auto-fill): with fewer items than columns, the items stretch to fill the row
-        if (itemCount > 0) n = Math.Min(n, itemCount);
+        if (itemCount > 0 && StretchFewItems) n = Math.Min(n, itemCount);
         double colW = Math.Max(0, (width - (n - 1) * ColumnSpacing) / n);
         return (n, colW);
     }

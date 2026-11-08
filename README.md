@@ -98,6 +98,7 @@ Written directly to the driver, so you don't need NVIDIA App or Profile Inspecto
 
 ## Everyday conveniences
 
+- **RHI overlay**: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game.
 - **Update All**: updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included, globally or per game. **Automatic Updates** can install them in the background.
 - **Game launch**: launch from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game.
 - **HDR and resolution auto-toggle**: turn Windows HDR on and switch resolution when a game starts, and switch both back when it closes. Global or per game, on the monitors you choose.

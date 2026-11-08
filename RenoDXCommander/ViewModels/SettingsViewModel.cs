@@ -97,6 +97,13 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _steamAchievements;
     /// <summary>Spotlight: show the selected Xbox game's achievements (opt-in, Settings › Achievements).</summary>
     [ObservableProperty] private bool _xboxAchievements;
+    /// <summary>RHI overlay: a full-screen RHI page over the game, opened with a hotkey (Settings › RHI overlay).</summary>
+    [ObservableProperty] private bool _rhiOverlayEnabled = true;
+    /// <summary>RHI overlay hotkey in ReShade's "vk,ctrl,shift,alt" format. Default Alt + ` (VK_OEM_3).</summary>
+    [ObservableProperty] private string _rhiOverlayHotkey = DefaultRhiOverlayHotkey;
+    public const string DefaultRhiOverlayHotkey = "192,0,0,1";
+    /// <summary>RHI overlay: hold View + Menu on a controller to open / close it.</summary>
+    [ObservableProperty] private bool _rhiOverlayController = true;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
     /// <summary>Spotlight banner height set by dragging its bottom edge; 0 = automatic (follows the window width).</summary>
@@ -395,6 +402,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("ControllerSupport", out var csVal)) ControllerSupport = csVal != "false"; // default true
         if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
         if (s.TryGetValue("XboxAchievements", out var xaVal)) XboxAchievements = xaVal == "true"; // default false (opt-in)
+        if (s.TryGetValue("RhiOverlayEnabled", out var roeVal)) RhiOverlayEnabled = roeVal != "false"; // default true
+        if (s.TryGetValue("RhiOverlayHotkey", out var rohVal) && !string.IsNullOrWhiteSpace(rohVal)) RhiOverlayHotkey = rohVal;
+        if (s.TryGetValue("RhiOverlayController", out var rocVal)) RhiOverlayController = rocVal != "false"; // default true
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
@@ -568,6 +578,9 @@ public partial class SettingsViewModel : ObservableObject
         s["ControllerSupport"] = ControllerSupport ? "true" : "false";
         s["SteamAchievements"] = SteamAchievements ? "true" : "false";
         s["XboxAchievements"] = XboxAchievements ? "true" : "false";
+        s["RhiOverlayEnabled"] = RhiOverlayEnabled ? "true" : "false";
+        s["RhiOverlayHotkey"] = RhiOverlayHotkey;
+        s["RhiOverlayController"] = RhiOverlayController ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
         s["SpotlightHeroHeight"] = SpotlightHeroHeight.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);

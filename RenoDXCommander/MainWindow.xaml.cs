@@ -339,6 +339,9 @@ public sealed partial class MainWindow : Window
         };
         _shutdownSignalTimer.Start();
 
+        // RHI overlay hotkey (works in the tray too)
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, InitRhiOverlay);
+
         // Tabs layout: mockup top bar, sidebar and footer (no-op in Classic)
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ApplyTabsChrome);
 
@@ -438,6 +441,7 @@ public sealed partial class MainWindow : Window
         }
 
         _foregroundTarget?.Dispose();
+        DisposeRhiOverlay();
         _lifetime.Cancel();
         _shutdownSignalTimer?.Stop();
         _launchTimer?.Stop();

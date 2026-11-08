@@ -1063,6 +1063,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_hiddenGames, oldName, newName);
         MigrateCompositeHashSet(_favouriteGames, oldName, newName);
         _collections.MigrateGameRename(oldName, newName);
+        GameJournalStore.MigrateGameRename(oldName, newName); // overlay notes and playtime
         MigrateCompositeHashSet(_removedGames, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedReShade, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedRenoDx, oldName, newName);

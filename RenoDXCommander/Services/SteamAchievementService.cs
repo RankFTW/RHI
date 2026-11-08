@@ -74,7 +74,7 @@ internal static class SteamAchievementService
     /// The signed-in Steam account id: the running Steam's ActiveUser, else the most recent user in
     /// loginusers.vdf (or the only one). Null when none can be found.
     /// </summary>
-    private static uint? AccountId(string steamPath)
+    internal static uint? AccountId(string steamPath)
     {
         try
         {

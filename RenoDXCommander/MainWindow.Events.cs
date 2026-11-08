@@ -702,6 +702,11 @@ public sealed partial class MainWindow
         // ── Add to collection (tick per collection, New collection…) ──
         menu.Items.Add(BuildCollectionsMenu(card));
 
+        // ── Game notes (also on the RHI overlay's Info and links page) ──
+        var gameNotesItem = new MenuFlyoutItem { Text = "Game notes…", Tag = card };
+        gameNotesItem.Click += async (s, ev) => await EditGameNotesAsync(card);
+        menu.Items.Add(gameNotesItem);
+
         // ── Artwork (Spotlight: custom cover and banner) ──
         if (_detailPanelBuilder.Layout.IsSpotlight)
             menu.Items.Add(BuildArtworkMenu(card));
