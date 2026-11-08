@@ -18,9 +18,11 @@ Switch layouts from the top bar at any time. Every setting is available in every
 
 - **Classic+** (default): your game list on the left and the game's page on the right, in collapsible sections you can reorder.
 - **Tabs**: the same game page, one tab at a time, with a card for each component and an At a glance summary of everything else.
-- **Spotlight**: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side.
-- **Controller support** in Spotlight: browse, install, tweak and launch with an Xbox or PlayStation controller (DualShock 4, DualSense, DualSense Edge over USB or Bluetooth, nothing extra to install). RHI comes back to the front when your game closes.
-- **Interface size** from 50% to 150% (or Ctrl + mouse wheel), for TVs and high-DPI screens.
+- **Spotlight**: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like.
+- **Steam and Xbox achievements** in Spotlight: progress, latest unlock and the full list with unlock dates, rarity and search. Read from your PC, so no sign-in is needed. Off until you turn it on in Settings.
+- **Game collections**: make your own lists of games (Racing, Souls-likes and so on) and show one with a click. A game can be in as many as you like.
+- **Controller support** in Spotlight: browse, install, tweak and launch with an Xbox, PlayStation or Steam controller (DualShock 4, DualSense and DualSense Edge over USB or Bluetooth; Steam Controllers by USB or wireless dongle; nothing extra to install). RHI comes back to the front when your game closes.
+- **Interface size** from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens.
 
 ## HDR for every game
 
@@ -57,18 +59,19 @@ RHI replaces the ReShade installer.
 
 ## Neural Rendering (DLSS 5)
 
-A Neural Rendering section on every game installs one of four methods, and recommends the right one for the game:
+A Neural Rendering section on every game installs one of five methods, and recommends the right one for the game:
 
+- **[GITC Uplift](https://github.com/ghostinthecamera/GITC-Uplift)**: DLSS Neural Rendering on almost any game on an RTX card, even games without DLSS (DX9 to DX12, Vulkan and OpenGL, 64-bit and 32-bit). Drop it in and switch it on, with a choice of Look, Keep faces, and a Resolution setting for more speed. The default for 64-bit DX11, DX12 and Vulkan games without DLSS.
 - **ShortFuse DLSS Tool**: for most games with native DLSS (DX9, DX11, DX12, Vulkan).
 - **DLSS5 Tool**: for DX12 games with native DLSS.
 - **DLSS5 Tool + DX11 Bridge**: for DX11 and Vulkan games with native DLSS.
-- **DLSS5 Feeder**: for games without DLSS, including OpenGL, DX9 and 32-bit games.
+- **DLSS5 Feeder**: for games without DLSS, recommended for OpenGL, DX9 and 32-bit games.
 
 Pin versions of each tool and of `nvngx_dlssnr.dll`, and optionally add the **NR Cost Scaler** to run the neural model at reduced cost.
 
 ## Frame generation and upscaling extras
 
-- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR variants, with a default variant of your choice for new installs. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
+- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. **Custom builds**: add any OptiScaler build from a link, an archive, a folder or a single DLL, and install it like the built-in versions. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
 - **Multi Frame Generation**: set Fixed or Dynamic MFG (2x–6x) and a target frame rate on RTX 50 Series.
 - **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
 - **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker. Frame generation unlocks and RTX Encore can run alongside ASI Loader under its Hooked name.
@@ -98,6 +101,7 @@ Written directly to the driver, so you don't need NVIDIA App or Profile Inspecto
 - **Update All**: updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included, globally or per game. **Automatic Updates** can install them in the background.
 - **Game launch**: launch from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game.
 - **HDR and resolution auto-toggle**: turn Windows HDR on and switch resolution when a game starts, and switch both back when it closes. Global or per game, on the monitors you choose.
+- **Moving games**: after you change a game's install folder, RHI offers to move its mods, settings and presets to the new folder.
 - **Custom game folders**: point RHI at the folders where you keep DRM-free or other non-store games. It finds the games in them and lets you pick which to add, with the right exe chosen for you.
 - **Remove from RHI**: take a game out of every list for good (optionally uninstalling its components), and restore it later from Settings if you change your mind.
 - **Drag and drop**: drop a game exe, addon, archive, Luma mod, ReShade preset or link onto the window.
@@ -140,10 +144,14 @@ RHI downloads these from their official sources. All credit goes to their author
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors |
 | [OptiScaler DLSS NR fork](https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass) | wilsjo2 |
 | [OptiScaler F5 DLSSNR fork](https://github.com/janblade/OptiScaler-F5-DLSSNR-Multipass) | janblade |
+| [OptiScaler Venom](https://github.com/LorenzoKy/Optiscaler-Venom) | LorenzoKy |
+| [OptiScaler NR PreSR MFG](https://github.com/ShyVortex/OptiScaler-NR-PreSR-MFG) | ShyVortex |
+| [OpenNR OptiScaler](https://github.com/MatheusFerreiraS/OpenNR-OptiScaler) | MatheusFerreiraS |
 | [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors |
 | [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) |
 | [dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2) | Dege |
 | [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) | ThirteenAG |
+| [GITC Uplift](https://github.com/ghostinthecamera/GITC-Uplift) | ghostinthecamera |
 | [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) | jlrouzies-fr |
 | [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge) | NIGos |
 | [Universal MFG Unlocker](https://github.com/dashdogy/MFG-Unlocker) | dashdogy |

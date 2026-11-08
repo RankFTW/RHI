@@ -3,6 +3,8 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.3 Beta 1
+
 ## v2.9.2
 
 ### New
