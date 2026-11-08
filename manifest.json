@@ -680,7 +680,8 @@
     "Watch_Dogs 2",
     "Watch_Dogs\u00AE 2",
     "Silly Polly Beast",
-    "Lords of the Fallen"
+    "Lords of the Fallen",
+    "Phoenix Point"
   ],
   "dlssSkipGames": [
     "Dragon Age Inquisition",
@@ -934,6 +935,10 @@
       "dc": ""
     },
     "The Town of Light": {
+      "reshade": "d3d11.dll",
+      "dc": ""
+    },
+    "Phoenix Point": {
       "reshade": "d3d11.dll",
       "dc": ""
     }
