@@ -20,12 +20,12 @@ internal sealed partial class OverlayWindow
     private TextBlock? _sessionText;
 
     // One box per section; ArrangeDashboard moves the boxes between the columns
-    private readonly StackPanel _homeBox = new() { Spacing = 16 };
-    private readonly StackPanel _gameBox = new() { Spacing = 16 };
-    private readonly StackPanel _infoBox = new() { Spacing = 16 };
+    private readonly StackPanel _homeBox = new() { Spacing = 12 };
+    private readonly StackPanel _gameBox = new() { Spacing = 12 };
+    private readonly StackPanel _infoBox = new() { Spacing = 12 };
     private readonly StackPanel _shotBox = new() { Spacing = 16 };
     private readonly StackPanel _achBox = new() { Spacing = 12 };
-    private readonly StackPanel[] _cols = { new() { Spacing = 16 }, new() { Spacing = 16 }, new() { Spacing = 16 } };
+    private readonly StackPanel[] _cols = { new() { Spacing = 12 }, new() { Spacing = 12 }, new() { Spacing = 12 } };
     private readonly ScrollViewer[] _colScrollers = new ScrollViewer[3];
     private readonly Grid _dash = new() { ColumnSpacing = 28 };
     private Grid _body = null!;
@@ -187,7 +187,7 @@ internal sealed partial class OverlayWindow
     private void BuildHomePanel()
     {
         // Equal tiles that fill the column (two side by side when there's room)
-        var tiles = new Controls.AutoFitGrid { MinColumnWidth = 200, ColumnSpacing = 16, RowSpacing = 16 };
+        var tiles = new Controls.AutoFitGrid { MinColumnWidth = 140, ColumnSpacing = 12, RowSpacing = 12 };
 
         _sessionText = BigText("");
         _sessionSince = SmallText("");
@@ -240,6 +240,8 @@ internal sealed partial class OverlayWindow
             body.Children.Add(SmallText(since));
             tiles.Children.Add(MakeCard("Total playtime", body, stretch: true));
         }
+
+        if (MakeHdrTile() is { } hdrTile) tiles.Children.Add(hdrTile);
 
         if (OverlayNative.Battery() is var (percent, charging))
             tiles.Children.Add(MakeCard("Battery", BigText($"{percent}%{(charging ? ", charging" : "")}"), stretch: true));
@@ -297,17 +299,14 @@ internal sealed partial class OverlayWindow
         var installed = rows.Count > 0
             ? MakeTable(rows)
             : (UIElement)SmallText("RHI hasn't installed anything in this game yet.");
-        _gameBox.Children.Add(MakeCard("Installed by RHI", installed, stretch: true));
-
-        var dlss = new List<(string Name, string Value, bool Update)>();
-        void AddDll(string name, string? version) { if (!string.IsNullOrEmpty(version)) dlss.Add((name, version, false)); }
-        AddDll("Super Resolution", card.DlssInstalledVersion);
-        AddDll("Ray Reconstruction", card.DlssdInstalledVersion);
-        AddDll("Frame Generation", card.DlssgInstalledVersion);
-        AddDll("Neural Rendering", card.DlssnrInstalledVersion);
-        AddDll("Streamline", card.StreamlineInstalledVersion);
-        if (dlss.Count > 0)
-            _gameBox.Children.Add(MakeCard("DLSS and Streamline", MakeTable(dlss), stretch: true));
+        var gameBody = new StackPanel { Spacing = 10 };
+        gameBody.Children.Add(installed);
+        if (MakeDlssSection(card) is { } dlss)
+        {
+            gameBody.Children.Add(SubHeading("DLSS and Streamline"));
+            gameBody.Children.Add(dlss);
+        }
+        _gameBox.Children.Add(MakeCard("This game", gameBody, stretch: true));
     }
 
     // ── Info and links ────────────────────────────────────────────────────────
@@ -321,13 +320,12 @@ internal sealed partial class OverlayWindow
             Text = GameJournalStore.GetNotes(_notesKey),
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
-            MinHeight = 120,
-            MaxHeight = 320,
+            MaxHeight = 140,
             FontSize = 16,
             PlaceholderText = "Codes, routes, settings to remember… Only you see these.",
         };
         TabsTheme.StyleInput(_notesBox);
-        _notesBox.MinHeight = 110; // StyleInput sets a one-line height and small text
+        _notesBox.MinHeight = 76; // StyleInput sets a one-line height and small text
         _notesBox.FontSize = 15;
         ScrollViewer.SetVerticalScrollBarVisibility(_notesBox, ScrollBarVisibility.Auto);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_notesBox, "Your notes for this game");
@@ -335,16 +333,18 @@ internal sealed partial class OverlayWindow
         _notesBox.LostFocus += (_, _) => SaveNotes();
         _infoBox.Children.Add(MakeCard("Your notes", _notesBox, stretch: true));
 
-        bool any = true;
+        // Mod notes and links share one card (kept short so the column fits without scrolling)
+        var info = new StackPanel { Spacing = 10 };
+        bool both = !string.IsNullOrWhiteSpace(card.Notes) && card.IsLumaMode && !string.IsNullOrWhiteSpace(card.LumaNotes);
         if (!string.IsNullOrWhiteSpace(card.Notes))
         {
-            _infoBox.Children.Add(MakeCard("RenoDX notes", NotesText(card.Notes!), stretch: true));
-            any = true;
+            if (both) info.Children.Add(SubHeading("RenoDX"));
+            info.Children.Add(NotesText(card.Notes!));
         }
         if (card.IsLumaMode && !string.IsNullOrWhiteSpace(card.LumaNotes))
         {
-            _infoBox.Children.Add(MakeCard("Luma notes", NotesText(card.LumaNotes!), stretch: true));
-            any = true;
+            if (both) info.Children.Add(SubHeading("Luma"));
+            info.Children.Add(NotesText(card.LumaNotes!));
         }
 
         var links = new List<(string Label, string Url)>();
@@ -358,18 +358,17 @@ internal sealed partial class OverlayWindow
         Link("PCGamingWiki", card.PcgwUrl);
         Link("Ultrawide fix", card.UwFixUrl);
         Link("Ultra+", card.UltraPlusUrl);
-        Link("RenoDX notes page", card.NotesUrl);
-        if (card.IsLumaMode) Link("Luma notes page", card.LumaNotesUrl);
+        Link(card.IsLumaMode ? "RenoDX notes" : "Mod notes", card.NotesUrl);
+        if (card.IsLumaMode) Link("Luma notes", card.LumaNotesUrl);
         Link("Discord", card.DiscordUrl);
-
         if (links.Count > 0)
         {
-            var body = new StackPanel { Spacing = 12 };
-            var wrap = new Controls.WrapPanel { HorizontalSpacing = 10, VerticalSpacing = 10 };
+            var wrap = new Controls.WrapPanel { HorizontalSpacing = 8, VerticalSpacing = 8 };
             foreach (var (label, url) in links)
             {
                 var btn = new Button { Content = label };
-                TabsTheme.Apply(btn, TabsTheme.BlueButton, height: 42, fontSize: 15);
+                TabsTheme.Apply(btn, TabsTheme.BlueButton, height: 36, fontSize: 14);
+                ToolTipService.SetToolTip(btn, "Opens in your browser, outside the game");
                 btn.Click += async (_, _) =>
                 {
                     Close(returnToGame: false); // the browser comes to the front
@@ -378,13 +377,10 @@ internal sealed partial class OverlayWindow
                 };
                 wrap.Children.Add(btn);
             }
-            body.Children.Add(wrap);
-            body.Children.Add(SmallText("Links open in your browser, outside the game."));
-            _infoBox.Children.Add(MakeCard("Links", body, stretch: true));
-            any = true;
+            info.Children.Add(wrap);
         }
-
-        if (!any) _infoBox.Children.Add(SmallText("No notes or links for this game."));
+        if (info.Children.Count > 0)
+            _infoBox.Children.Add(MakeCard(links.Count > 0 && info.Children.Count > 1 ? "Mod notes and links" : links.Count > 0 ? "Links" : "Mod notes", info, stretch: true));
     }
 
     private TextBox? _notesBox;
@@ -425,8 +421,8 @@ internal sealed partial class OverlayWindow
             BorderBrush = TabsTheme.B(TabsTheme.CardBorder),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(26, 20, 26, 22),
-            MinWidth = 190,
+            Padding = new Thickness(22, 16, 22, 18),
+            MinWidth = stretch ? 0 : 190, // stretched cards take the space they are given (three tiles share a row)
             HorizontalAlignment = stretch ? HorizontalAlignment.Stretch : HorizontalAlignment.Left,
             Child = inner,
         };
@@ -487,8 +483,17 @@ internal sealed partial class OverlayWindow
         TextWrapping = TextWrapping.Wrap,
     };
 
+    private static TextBlock SubHeading(string text) => new()
+    {
+        Text = text,
+        FontSize = 13,
+        Foreground = TabsTheme.B(TabsTheme.TextMuted),
+    };
+
     private static TextBlock NotesText(string text) => new()
     {
+        MaxLines = 4,
+        TextTrimming = TextTrimming.CharacterEllipsis,
         Text = text.Trim(),
         FontSize = 16,
         LineHeight = 24,

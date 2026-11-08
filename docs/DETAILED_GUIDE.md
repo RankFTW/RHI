@@ -992,12 +992,12 @@ The RHI overlay is a full-screen RHI page you open over a game, like the Steam o
 
 ### Opening and closing
 
-- **Keyboard**: press **Alt + `** (the key left of 1) in the game. Press it again, or **Esc**, to go back to the game. Change the key in Settings → [RHI overlay](#rhi-overlay-settings).
+- **Keyboard**: press **Alt + `** in the game. Press it again, or **Esc**, to go back to the game. Change the key in Settings → [RHI overlay](#rhi-overlay-settings).
 - **Controller**: hold **View + Menu** (Back + Start; Share + Options on PlayStation) for half a second. Inside the overlay: D-pad to move, **A** to select, **B** to go back, **LB / RB** to jump between columns, right stick to scroll the column you're in. Hold View + Menu again to close it.
 - It opens over the game in front, on that game's monitor. Games started from Steam, a shortcut or anywhere else are recognised by their folder. A program RHI doesn't know gets only the session and playtime.
 - It closes by itself if you Alt+Tab away or the game exits. **Back to game** (top right) closes it too.
 - It works in borderless and windowed games and in games using Windows' fullscreen optimisations. It can't show over true exclusive fullscreen; switch the game to borderless if nothing appears.
-- While it's open the game loses focus, so many games pause or go quiet.
+- While it's open the game loses focus, so many games pause or go quiet. Games can still read the controller in the background; turn on **Pause the game while open** (Settings → RHI overlay) to stop that.
 
 ### What it shows
 
@@ -1005,10 +1005,10 @@ Everything is on one screen, arranged to fit it. On wide and ultrawide screens t
 
 | Section | What it shows |
 |---|---|
-| **Session and playtime** | How long you've been playing this session, your total playtime and, on handhelds and laptops, the battery. Total playtime is Steam's own count for Steam games (not including the session that's running). For other games RHI counts the minutes the game is the window in front, from the day you started using the overlay. |
+| **Session and playtime** | How long you've been playing this session, your total playtime, whether Windows HDR is on for the game's monitor (with the display's peak brightness) and, on handhelds and laptops, the battery. Total playtime is Steam's own count for Steam games (not including the session that's running). For other games RHI counts the minutes the game is the window in front, from the day you started using the overlay. |
 | **Achievements** | The same Steam or Xbox achievements as [Spotlight](#achievements), with search, unlock dates and rarity. Locked achievements come first, most-earned first when rarity is known, so the easiest next ones are at the top. Uses the switches in Settings → Achievements. |
-| **Screenshots** | The game's ReShade screenshots, newest first (24 at a time, **Show more** for the rest). Click one for a large view (it fills the overlay; **Back to screenshots** or Esc returns) with **Previous** / **Next** (or Left / Right), **Copy**, **Delete** (click twice; goes to the Recycle Bin), **Open** and **Show in folder**. New screenshots appear while the page is open. |
-| **This game** | What RHI has installed in the game, with versions and an **Update available** tag where Update All has something, plus the game's DLSS and Streamline DLL versions. |
+| **Screenshots** | The game's ReShade screenshots, newest first (24 at a time, **Show more** for the rest). Click one for a large view (it fills the overlay; **Back to screenshots** or Esc returns) with **Previous** / **Next** (or Left / Right, or LB / RB on a controller), **Copy**, **Delete** (click twice; goes to the Recycle Bin), **Open** and **Show in folder**. New screenshots appear while the page is open. |
+| **This game** | What RHI has installed in the game, with versions and an **Update available** tag where Update All has something, plus the game's DLSS and Streamline DLL versions with the presets and render scale from its NVIDIA profile (NVIDIA cards; **Default preset** means the game picks). |
 | **Info and links** | **Your notes** for the game (saved as you type), the RenoDX and Luma notes, and links to Nexus Mods, PCGamingWiki, the ultrawide fix, Ultra+, the notes pages and Discord. A link closes the overlay and opens your browser. |
 
 **Which screenshots**: RHI looks in the folder from the game's `reshade.ini` (`[SCREENSHOT] SavePath`), else the folder from Settings → ReShade & RenoDX → **Screenshot folder**, else the game folder. ReShade names screenshots after the game's exe, so in a folder shared by several games only this game's screenshots are shown. Turning on **Folder per game** keeps each game's screenshots apart. HDR `.jxr` screenshots may not show a preview; use **Open**.
@@ -1116,6 +1116,7 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 - **RHI overlay** (On by default): the overlay and its hotkey. See [RHI Overlay](#rhi-overlay).
 - **Controller (hold View + Menu)** (On by default): open and close the overlay with a controller.
+- **Pause the game while open** (Off by default, experimental): freezes the game while the overlay is open and unfreezes it when you go back. Windows can't stop a game reading the controller in the background, so without this the game also reacts to the buttons you press in the overlay. Online games can lose their connection, anti-cheat may object and some games stutter for a moment when they resume, so use it with single-player games only. It doesn't work on a game running as administrator unless RHI is in Admin Mode.
 - **Hotkey**: click the box and press a key with Ctrl or Alt (or Shift with an F key). **Backspace** puts back Alt + `. The line under the card says when another program already uses the key.
 
 ### Tools & Maintenance

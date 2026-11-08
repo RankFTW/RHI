@@ -139,7 +139,9 @@ internal sealed partial class OverlayWindow
 
     // ── Large view ────────────────────────────────────────────────────────────
 
-    private void OpenViewer(int index)
+    /// <summary>Shows screenshot <paramref name="index"/> large. <paramref name="focus"/>: the button to keep focus on
+    /// (Previous / Next keep it, so the controller can press them again); the first button otherwise.</summary>
+    private void OpenViewer(int index, string? focus = null)
     {
         if (index < 0 || index >= _shots.Count) return;
         _viewerIndex = index;
@@ -168,8 +170,8 @@ internal sealed partial class OverlayWindow
             return b;
         }
         Make("Back to screenshots", CloseViewer, TabsTheme.BlueButton);
-        var prev = Make("Previous", () => OpenViewer(_viewerIndex - 1));
-        var next = Make("Next", () => OpenViewer(_viewerIndex + 1));
+        var prev = Make("Previous", () => OpenViewer(_viewerIndex - 1, "Previous"));
+        var next = Make("Next", () => OpenViewer(_viewerIndex + 1, "Next"));
         prev.IsEnabled = index > 0;
         next.IsEnabled = index < _shots.Count - 1;
         Make("Copy", () => _ = CopyShotAsync(file.FullName));
@@ -194,7 +196,15 @@ internal sealed partial class OverlayWindow
         _viewerBox.Children.Add(image);
         _viewerBox.Children.Add(failed);
         _viewerScroller.ChangeView(null, 0, null, disableAnimation: true);
-        if (bar.Children[0] is Button first) first.Focus(FocusState.Programmatic);
+        // Keep the controller where it was; at the first / last screenshot the other way is the one left
+        Button? target = focus switch
+        {
+            "Previous" => prev.IsEnabled ? prev : next.IsEnabled ? next : null,
+            "Next" => next.IsEnabled ? next : prev.IsEnabled ? prev : null,
+            _ => null,
+        };
+        target ??= bar.Children[0] as Button;
+        target?.Focus(_padUsed ? FocusState.Keyboard : FocusState.Programmatic);
     }
 
     private void CloseViewer()

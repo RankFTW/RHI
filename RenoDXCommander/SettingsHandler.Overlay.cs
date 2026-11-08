@@ -14,6 +14,7 @@ public partial class SettingsHandler
 {
     private ComboBox? _rhiOverlayCombo;
     private ComboBox? _rhiOverlayPadCombo;
+    private ComboBox? _rhiOverlayPauseCombo;
     private TextBox? _rhiOverlayHotkeyBox;
     private TextBlock? _rhiOverlayStatus;
     private bool _rhiOverlaySectionFailed;
@@ -24,6 +25,7 @@ public partial class SettingsHandler
         {
             _rhiOverlayCombo.SelectedIndex = ViewModel.Settings.RhiOverlayEnabled ? 1 : 0;
             if (_rhiOverlayPadCombo != null) _rhiOverlayPadCombo.SelectedIndex = ViewModel.Settings.RhiOverlayController ? 1 : 0;
+            if (_rhiOverlayPauseCombo != null) _rhiOverlayPauseCombo.SelectedIndex = ViewModel.Settings.RhiOverlayPauseGame ? 1 : 0;
             if (_rhiOverlayHotkeyBox != null) _rhiOverlayHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.RhiOverlayHotkey);
             UpdateRhiOverlayStatus();
             return;
@@ -145,6 +147,30 @@ public partial class SettingsHandler
             keyCell.Child = box;
             right.Children.Add(keyRow);
             _rhiOverlayHotkeyBox = box;
+
+            var pauseRow = MakeSettingRow("Pause the game while open", out var pauseCell);
+            var pauseCombo = new ComboBox { Style = FindStyle("SettingsComboStyle") };
+            pauseCombo.Items.Add(new ComboBoxItem { Content = "Off" });
+            pauseCombo.Items.Add(new ComboBoxItem { Content = "On" });
+            pauseCombo.SelectedIndex = ViewModel.Settings.RhiOverlayPauseGame ? 1 : 0;
+            ToolTipService.SetToolTip(pauseCombo,
+                "Freezes the game while the overlay is open and unfreezes it when you go back, so the game doesn't react to "
+              + "your controller while you use the overlay (Windows can't block a controller from a game any other way).\n"
+              + "Experimental: online games may lose their connection, anti-cheat may object, and some games stutter for a "
+              + "moment when they resume. Single-player games only.");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(pauseCombo, "Pause the game while the RHI overlay is open");
+            pauseCombo.SelectionChanged += (s, e) =>
+            {
+                if (pauseCombo.SelectedIndex < 0) return;
+                bool on = pauseCombo.SelectedIndex == 1;
+                if (on == ViewModel.Settings.RhiOverlayPauseGame) return;
+                ViewModel.Settings.RhiOverlayPauseGame = on;
+                ViewModel.SaveSettingsPublic();
+                CrashReporter.Log($"[SettingsHandler.RhiOverlayPauseGame] {(on ? "On" : "Off")}");
+            };
+            pauseCell.Child = pauseCombo;
+            right.Children.Add(pauseRow);
+            _rhiOverlayPauseCombo = pauseCombo;
 
             body.Children.Add(columns);
             _rhiOverlayStatus = new TextBlock { Style = FindStyle("SettingsHelpStyle"), TextWrapping = TextWrapping.Wrap };

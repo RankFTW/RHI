@@ -187,6 +187,8 @@ internal sealed partial class OverlayWindow : Window
         }
         _backButton.Focus(FocusState.Programmatic);
         _timer.Start();
+        // Optional: freeze the game so it doesn't react to the controller (Settings › RHI overlay, off by default)
+        if (_settings().RhiOverlayPauseGame && card != null) GamePauser.Pause(game.ProcessId);
         CrashReporter.Log($"[OverlayWindow.Open] Over '{_title.Text}' (PID {game.ProcessId}, known: {card != null}, notification state {OverlayNative.QueryNotificationState()})");
     }
 
@@ -202,6 +204,7 @@ internal sealed partial class OverlayWindow : Window
         _padUsed = false;
         try
         {
+            GamePauser.Resume(); // before the game gets the focus back
             AppWindow.Hide();
             if (returnToGame && _game != null && OverlayNative.IsWindow(_game.Hwnd))
                 OverlayNative.SetForegroundWindow(_game.Hwnd);
@@ -215,6 +218,7 @@ internal sealed partial class OverlayWindow : Window
     {
         _timer.Stop();
         _allowDestroy = true;
+        GamePauser.Resume();
         try { base.Close(); }
         catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException)
         {
@@ -248,7 +252,7 @@ internal sealed partial class OverlayWindow : Window
     private void UpdateHint()
     {
         _hint.Text = _padUsed
-            ? "D-pad: move    A: select    B: back    LB / RB: previous / next column    Right stick: scroll    Hold View + Menu: close"
+            ? "D-pad: move    A: select    B: back    LB / RB: previous / next column (screenshot when one is open)    Right stick: scroll    Hold View + Menu: close"
             : $"Press {_hotkeyText()} or Esc to go back to the game";
     }
 
@@ -292,10 +296,12 @@ internal sealed partial class OverlayWindow : Window
                 GoBack();
                 break;
             case PadAction.PrevGame:
-                StepColumn(focused, -1);
+                if (ViewerOpen) OpenViewer(_viewerIndex - 1, "Previous"); // a screenshot is open: previous one
+                else StepColumn(focused, -1);
                 break;
             case PadAction.NextGame:
-                StepColumn(focused, 1);
+                if (ViewerOpen) OpenViewer(_viewerIndex + 1, "Next");
+                else StepColumn(focused, 1);
                 break;
         }
     }

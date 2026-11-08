@@ -1,6 +1,6 @@
 # RHI Overlay — plan
 
-Status (8 Nov 2026): all six steps built in 2.9.3 Beta 1 (hotkey + controller, Home, Achievements, Screenshots, This game, Info and links with game notes, RHI's own playtime count). Code map in `.claude/rules/rhi-ui.md` (RHI overlay). Backdrop is thin acrylic + a light tint (`OverlayBackdrop.cs`). Not yet: Windows HDR status on Home (`HdrToggleService.IsHdrEnabled` gives false positives), DLSS presets on This game (NVAPI read), an Overlay size setting. A faint diagonal line shows through the acrylic on one game; unconfirmed whether it's the backdrop.
+Status (8 Nov 2026): all six steps built in 2.9.3 Beta 1 (hotkey + controller, Home, Achievements, Screenshots, This game, Info and links with game notes, RHI's own playtime count). Code map in `.claude/rules/rhi-ui.md` (RHI overlay). Backdrop is thin acrylic + a light tint (`OverlayBackdrop.cs`). HDR status (Windows' advanced-colour info for the overlay window) and DLSS presets (NVIDIA profile, read in the background) added the same day. Not yet: an Overlay size setting. A faint diagonal line shows through the acrylic on one game; unconfirmed whether it's the backdrop.
 
 ## Goal
 

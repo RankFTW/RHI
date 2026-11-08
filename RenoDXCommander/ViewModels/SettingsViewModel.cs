@@ -104,6 +104,8 @@ public partial class SettingsViewModel : ObservableObject
     public const string DefaultRhiOverlayHotkey = "192,0,0,1";
     /// <summary>RHI overlay: hold View + Menu on a controller to open / close it.</summary>
     [ObservableProperty] private bool _rhiOverlayController = true;
+    /// <summary>RHI overlay: freeze the game's process while the overlay is open (off by default; for testing).</summary>
+    [ObservableProperty] private bool _rhiOverlayPauseGame;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
     /// <summary>Spotlight banner height set by dragging its bottom edge; 0 = automatic (follows the window width).</summary>
@@ -405,6 +407,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("RhiOverlayEnabled", out var roeVal)) RhiOverlayEnabled = roeVal != "false"; // default true
         if (s.TryGetValue("RhiOverlayHotkey", out var rohVal) && !string.IsNullOrWhiteSpace(rohVal)) RhiOverlayHotkey = rohVal;
         if (s.TryGetValue("RhiOverlayController", out var rocVal)) RhiOverlayController = rocVal != "false"; // default true
+        if (s.TryGetValue("RhiOverlayPauseGame", out var ropVal)) RhiOverlayPauseGame = ropVal == "true"; // default false
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
@@ -581,6 +584,7 @@ public partial class SettingsViewModel : ObservableObject
         s["RhiOverlayEnabled"] = RhiOverlayEnabled ? "true" : "false";
         s["RhiOverlayHotkey"] = RhiOverlayHotkey;
         s["RhiOverlayController"] = RhiOverlayController ? "true" : "false";
+        s["RhiOverlayPauseGame"] = RhiOverlayPauseGame ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
         s["SpotlightHeroHeight"] = SpotlightHeroHeight.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);

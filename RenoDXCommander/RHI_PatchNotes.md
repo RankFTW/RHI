@@ -8,15 +8,16 @@
 ### New
 
 **RHI overlay**
-- Press Alt + ` (the key left of 1) in a game, or hold View + Menu on a controller, and RHI opens full screen over it, like the Steam overlay. Press it again, or Esc (B on a controller), to go back to the game. RHI must be running, but the tray is fine.
+- Press Alt + ` in a game, or hold View + Menu on a controller, and RHI opens full screen over it, like the Steam overlay. Press it again, or Esc (B on a controller), to go back to the game. RHI must be running, but the tray is fine.
 - Everything is on one screen, laid out to fit it: three columns on wide and ultrawide screens (your game info, screenshots, achievements), two or one on narrower ones. Each column scrolls on its own.
-- Session and playtime: how long you've been playing, your total playtime (Steam's own count for Steam games; for other games RHI counts the time the game is in front) and, on handhelds and laptops, the battery.
+- Session and playtime: how long you've been playing, your total playtime (Steam's own count for Steam games; for other games RHI counts the time the game is in front), whether Windows HDR is on for the game's monitor (with its peak brightness) and, on handhelds and laptops, the battery.
 - Achievements: your Steam or Xbox achievements for the game, with search, unlock dates and rarity. Locked ones are sorted most-earned first, so the easiest next ones are at the top. Uses the switches in Settings › Achievements.
 - Screenshots: your ReShade screenshots of the game, newest first. Open one large and step through them, copy, delete (to the Recycle Bin) or open it. New screenshots show up straight away.
-- This game: what RHI has installed in the game, with versions and any updates waiting, plus its DLSS and Streamline versions.
+- This game: what RHI has installed in the game, with versions and any updates waiting, plus its DLSS and Streamline versions and the DLSS presets and render scale set in its NVIDIA profile.
 - Info and links: your own notes for the game (also under Game notes… when you right-click a game in RHI), the RenoDX and Luma notes, and the game's Nexus, PCGamingWiki, ultrawide fix, Ultra+ and Discord links.
 - Nothing is installed into the game, so it works with any game RHI knows, including games started from Steam or a shortcut. It works in borderless and windowed games and games using Windows' fullscreen optimisations, but can't show over true exclusive fullscreen.
 - Turn it off, change the key or turn off the controller shortcut in Settings › RHI overlay.
+- Games can still see your controller while the overlay is open. To stop that, turn on Pause the game while open in Settings › RHI overlay: RHI freezes the game until you go back to it. It's experimental and off by default; single-player games only.
 
 ## v2.9.2
 
