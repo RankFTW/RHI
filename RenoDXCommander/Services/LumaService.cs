@@ -40,7 +40,7 @@ public class LumaService : ILumaService
     public async Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null)
     {
         progress?.Report("Fetching Luma wiki...");
-        var html = await _http.GetStringAsync(WikiUrl);
+        var html = await PageFetch.GetStringAsync(_http, WikiUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
@@ -190,7 +190,7 @@ public class LumaService : ILumaService
         try
         {
             // The UE table is on the main Luma wiki page (same page as completed mods)
-            var html = await _http.GetStringAsync(WikiUrl);
+            var html = await PageFetch.GetStringAsync(_http, WikiUrl);
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 

@@ -33,6 +33,9 @@ public sealed class GitHubTokenHandler : DelegatingHandler
         && GitHubHosts.Contains(uri.Host);
 
     /// <summary>True when a request to <paramref name="uri"/> will carry the token.</summary>
+    /// <summary>True when a GitHub token is set (5,000 API requests an hour instead of 60).</summary>
+    public static bool HasToken => _token != null;
+
     public static bool WillAuthorize(Uri? uri) => _token != null && IsGitHubHost(uri);
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

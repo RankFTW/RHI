@@ -101,7 +101,7 @@ public class OptiScalerWikiService : IOptiScalerWikiService
     {
         try
         {
-            return await _http.GetStringAsync(url).ConfigureAwait(false);
+            return await PageFetch.GetStringAsync(_http, url).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

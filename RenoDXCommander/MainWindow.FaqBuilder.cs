@@ -150,7 +150,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("◰", "AccentPurpleBrush",
             "System Tray",
             "RHI can keep running in the system tray when you close the window. Right-click the tray icon to launch recent games without opening RHI.",
-            "Turn on Close to Tray, Recent Games and Start with Windows in Settings → General → Windows.\nRecent Games also appear in the taskbar jump list.\nWhile running, RHI checks for updates every 4 hours."));
+            "Turn on Close to Tray, Recent Games and Start with Windows in Settings → General → Windows.\nRecent Games also appear in the taskbar jump list.\nWhile running, RHI checks for updates every hour with a GitHub token (Settings → Accounts & Data), or every 4 hours without one."));
 
         // Need More Help
         panel.Children.Add(BuildFaqLinksSection());

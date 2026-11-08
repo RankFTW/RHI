@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.2 Beta 2
+## v2.9.2 Beta 3
 
 ### New
 
@@ -57,6 +57,7 @@
 - Interface size (Settings › General, or Ctrl + mouse wheel) now changes in smaller 5% steps and goes up to 200%.
 
 **Other**
+- With a GitHub token (Settings › Accounts & Data), RHI now checks for updates every hour while it's open instead of every 4 hours. Without a token it stays at every 4 hours, because GitHub allows far fewer requests without one.
 - MFG Ada Unlock is now called MFG Unlock, to match the mod. It brings DLSS frame generation to RTX 20 and 30 Series cards (experimental). Your installs and settings carry over.
 - Support the Mod Authors (Help › Donate) can show both Ko-fi and Patreon buttons for an author.
 
@@ -86,6 +87,7 @@
 
 **Updates**
 - Fixed RE Framework getting stuck on an older version once GitHub's hourly limit was reached (without a GitHub token).
+- Fixed Check for updates spinning forever when GitHub's website was slow to respond. RHI now stops waiting for GitHub's pages after 30 seconds and carries on without them, and the check tells you when it's waiting for RHI's game scan to finish.
 
 **Game Overrides**
 - Fixed changing the ReShade DLL name renaming Display Commander's file to "--------" (or the other way round). Games this happened to are fixed the next time you open them.

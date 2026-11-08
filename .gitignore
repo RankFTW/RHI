@@ -43,3 +43,5 @@ OptiScaler-DLSSNR-v*/
 # Claude Code personal settings (shared .claude/settings.json is committed)
 .claude/settings.local.json
 __pycache__/
+reports/
+research_notes/

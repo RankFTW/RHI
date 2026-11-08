@@ -341,6 +341,7 @@ public partial class SettingsHandler
             DevUnlockService.ResetTokenCache();
             DevUnlockService.UpdateToken(pat);
             GitHubAuthService.ApplyTokenToHttpClient(http2, pat);
+            ViewModel.RestartPeriodicUpdateCheckTimer(); // checks every hour with a token, 4 h without
 
             _window.GitHubPatBox.Text = "";
             _window.GitHubPatStatusText.Text = username != null
@@ -380,6 +381,7 @@ public partial class SettingsHandler
         var http = App.Services.GetRequiredService<HttpClient>();
         var oauthToken = ViewModel.Settings.GitHubOAuthToken;
         GitHubAuthService.ApplyTokenToHttpClient(http, string.IsNullOrEmpty(oauthToken) ? null : oauthToken);
+        ViewModel.RestartPeriodicUpdateCheckTimer(); // checks every hour with a token, 4 h without
 
         _window.GitHubPatBox.Text = "";
         _window.GitHubPatStatusText.Text = "PAT cleared.";

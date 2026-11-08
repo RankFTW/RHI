@@ -90,8 +90,16 @@ public sealed partial class MainWindow
                 ViewModel.ForceNextUpdateCheck();
 
                 // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
-                DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
-                await ViewModel.RefreshAsync();
+                // A Refresh waits for a scan that's already running (e.g. the startup scan): say so
+                // instead of showing "Checking components..." with nothing happening.
+                if (ViewModel.IsLibraryOperationRunning)
+                {
+                    progressText.Text = "Waiting for RHI's game scan to finish...";
+                    _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] A scan is running — waiting for it to finish");
+                }
+                else progressText.Text = "Checking components...";
+                await ViewModel.RefreshAsync(() =>
+                    DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components..."));
 
                 // A manual check restarts the 4-hour background countdown (shown on the Settings page)
                 ViewModel.RestartPeriodicUpdateCheckTimer();

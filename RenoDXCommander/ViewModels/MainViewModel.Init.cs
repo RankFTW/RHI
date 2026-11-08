@@ -103,6 +103,12 @@ public partial class MainViewModel
 
     public Task RefreshAsync() => RunLibraryOperationAsync(RefreshCoreAsync);
 
+    /// <summary>True while a scan (startup, Refresh, Full Refresh) holds the library gate; a Refresh started now waits for it.</summary>
+    public bool IsLibraryOperationRunning => _libraryOperationGate.CurrentCount == 0;
+
+    /// <summary>Refresh; <paramref name="onStarted"/> runs once the gate is acquired (after any scan already running).</summary>
+    public Task RefreshAsync(Action onStarted) => RunLibraryOperationAsync(() => { onStarted(); return RefreshCoreAsync(); });
+
     private async Task RefreshCoreAsync()
     {
         // Re-check games in the DLSS skip cache before rebuilding cards.

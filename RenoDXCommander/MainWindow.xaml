@@ -1224,7 +1224,7 @@
                                         <StackPanel Grid.Column="0" Spacing="9" Margin="0,0,20,0" VerticalAlignment="Top">
                                             <TextBlock Text="Check for updates" Style="{StaticResource SettingsHeadStyle}"/>
                                             <TextBlock Style="{StaticResource SettingsNoteStyle}"
-                                                       Text="RHI checks every 4 hours while it's open. Check now to skip the wait."/>
+                                                       Text="RHI checks every hour while it's open (every 4 hours without a GitHub token). Check now to skip the wait."/>
                                             <Button x:Name="CheckForUpdatesBtn" Content="Check for updates"
                                                     Click="CheckForUpdatesButton_Click"
                                                     Style="{StaticResource SettingsPrimaryButtonStyle}" Foreground="{StaticResource SettingsButtonBlueBrush}"
@@ -1246,7 +1246,7 @@
                                                     <ToolTipService.ToolTip>
                                                         <ToolTip>
                                                             <TextBlock TextWrapping="Wrap" MaxWidth="280">
-                                                                <Run Text="On: all update checks run automatically on startup and every 4 hours, including ReShade, RenoDX, OptiScaler, Nexus Mods, and all other components."/><LineBreak/>
+                                                                <Run Text="On: all update checks run automatically on startup and every hour (every 4 hours without a GitHub token), including ReShade, RenoDX, OptiScaler, Nexus Mods, and all other components."/><LineBreak/>
                                                                 <Run Text="Minimal: only manifests, PCGW data, and DLSS versions update automatically. Component update checks only run when you click Refresh or Update All."/>
                                                             </TextBlock>
                                                         </ToolTip>

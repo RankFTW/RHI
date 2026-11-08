@@ -11,7 +11,8 @@ public partial class MainViewModel
     private async Task CheckForUpdatesAsync(List<GameCardViewModel> cards, List<InstalledModRecord> records, List<AuxInstalledRecord> auxRecords, bool userInitiated = false)
     {
         // ── Cooldown: skip update checks if last check was recent ──────────────
-        const int CooldownHours = 4;
+        // Same as the periodic interval: 1h with a GitHub token, 4h without
+        var cooldown = PeriodicUpdateCheckInterval;
         var forceCheck = _forceUpdateCheck;
         _forceUpdateCheck = false;
 
@@ -20,7 +21,7 @@ public partial class MainViewModel
             System.Globalization.DateTimeStyles.RoundtripKind, out var lastCheck))
         {
             var elapsed = DateTime.UtcNow - lastCheck;
-            if (elapsed < TimeSpan.FromHours(CooldownHours))
+            if (elapsed < cooldown)
             {
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Cooldown active — last check was {elapsed.TotalMinutes:F0}m ago, skipping API calls");
                 return;

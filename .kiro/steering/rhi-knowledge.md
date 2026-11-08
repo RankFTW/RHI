@@ -1116,6 +1116,11 @@ When RHI deploys a file to a game folder, it needs to distinguish three cases on
 - **GitHub API rate limit**: 60 req/hour unauthenticated. Add `github_api=ghp_yourtoken` to `%LocalAppData%\RHI\unlock.txt` for 5,000 req/hour. Read via `DevUnlockService.GitHubApiToken` at first access.
 - **Current `releaseApiUrl` addons**: `dlss5-dx11-bridge` (NIGos/dlss5-bridge), `dlss5-feed` (jlrouzies-fr/DLSS5-Feeder), `mfgunlock` (mavismmg/MFGAdaUnlock-RenoDx).
 
+## Page fetches need a time limit (Nov 2026)
+
+- The shared HttpClient's timeout is 10 minutes (big downloads). On 8 Nov 2026 github.com's UK servers returned 504s or hung for hours while api.github.com and raw.githubusercontent.com worked (GitHub status said all operational). A hung wiki fetch kept the startup background scan running, the scan holds `_libraryOperationGate`, and Check for updates (a Refresh) waited on the gate forever with a spinner.
+- Fix: github.com page fetches (RenoDX wiki `WikiService`, Luma wiki `LumaService` x2, OptiScaler wiki pages) go through `PageFetch.GetStringAsync` (30 s, throws `TimeoutException`, so the existing "fetch failed" path runs). Use it for any new page/text fetch on the startup path. `MainViewModel.IsLibraryOperationRunning` lets UI say it's waiting for a scan; `RefreshAsync(onStarted)` reports when the Refresh actually starts.
+
 ## DevUnlockService — GitHub API Token
 
 - `DevUnlockService.GitHubApiToken` — reads `github_api=KEY` line from `unlock.txt`. Cached after first read. Used in `AddonPackService.ResolveDownloadUrlFromApiAsync` to authenticate GitHub API calls.

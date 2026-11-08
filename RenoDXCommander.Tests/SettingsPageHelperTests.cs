@@ -74,6 +74,17 @@ public class SettingsPageHelperTests
     }
 
     [Fact]
+    public void FirstCheck_HourlyWithToken()
+    {
+        var hour = TimeSpan.FromHours(1);
+        Assert.Equal(TimeSpan.FromMinutes(20),
+            ViewModels.MainViewModel.ComputeFirstPeriodicCheckDelay(Now.AddMinutes(-40), Now, false, hour));
+        Assert.Equal(hour, ViewModels.MainViewModel.ComputeFirstPeriodicCheckDelay(Now, Now, false, hour));
+        Assert.Equal(TimeSpan.FromMinutes(5),
+            ViewModels.MainViewModel.ComputeFirstPeriodicCheckDelay(Now.AddHours(-3), Now, false, hour));
+    }
+
+    [Fact]
     public void FirstCheck_MinimalMode_FullInterval()
         => Assert.Equal(TimeSpan.FromHours(4),
             ViewModels.MainViewModel.ComputeFirstPeriodicCheckDelay(Now.AddHours(-3), Now, minimalMode: true));

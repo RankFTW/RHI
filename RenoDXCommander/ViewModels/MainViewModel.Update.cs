@@ -150,7 +150,7 @@ public partial class MainViewModel
             var firstDelay = ComputeFirstPeriodicCheckDelay(lastCheck, now, minimal);
             _updateCheckTimer = CreatePeriodicUpdateCheckTimer(firstDelay);
             SetNextUpdateCheck(now + firstDelay);
-            _crashReporter.Log($"[MainViewModel] Periodic update check timer started (first in {firstDelay.TotalMinutes:F0}m, then every 4h)");
+            _crashReporter.Log($"[MainViewModel] Periodic update check timer started (first in {firstDelay.TotalMinutes:F0}m, then every {PeriodicUpdateCheckInterval.TotalHours:0}h)");
         }
     }
 
@@ -158,26 +158,30 @@ public partial class MainViewModel
     internal static readonly TimeSpan MinFirstPeriodicCheckDelay = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// Delay before the first periodic check: "last full check + 4h", so a full check happens at least
-    /// every 4 hours across restarts (the launch check skips when the last one was under 4h ago).
-    /// Minimal mode, or no/future last check: a full 4h interval (Minimal never moves the last check).
+    /// Delay before the first periodic check: "last full check + interval", so a full check happens at least
+    /// once per interval across restarts (the launch check skips when the last one was more recent).
+    /// Minimal mode, or no/future last check: a full interval (Minimal never moves the last check).
     /// </summary>
-    internal static TimeSpan ComputeFirstPeriodicCheckDelay(DateTime? lastCheckUtc, DateTime nowUtc, bool minimalMode)
+    internal static TimeSpan ComputeFirstPeriodicCheckDelay(DateTime? lastCheckUtc, DateTime nowUtc, bool minimalMode, TimeSpan? intervalOverride = null)
     {
-        if (minimalMode || lastCheckUtc == null || lastCheckUtc.Value > nowUtc) return PeriodicUpdateCheckInterval;
-        var due = lastCheckUtc.Value + PeriodicUpdateCheckInterval - nowUtc;
+        var interval = intervalOverride ?? PeriodicUpdateCheckInterval;
+        if (minimalMode || lastCheckUtc == null || lastCheckUtc.Value > nowUtc) return interval;
+        var due = lastCheckUtc.Value + interval - nowUtc;
         if (due < MinFirstPeriodicCheckDelay) return MinFirstPeriodicCheckDelay;
-        return due > PeriodicUpdateCheckInterval ? PeriodicUpdateCheckInterval : due;
+        return due > interval ? interval : due;
     }
 
-    /// <summary>How often the periodic background check runs while RHI is open.</summary>
-    internal static readonly TimeSpan PeriodicUpdateCheckInterval = TimeSpan.FromHours(4);
+    /// <summary>
+    /// How often the periodic background check runs while RHI is open: every hour with a GitHub token,
+    /// every 4 hours without (a full check uses most of the 60 requests an hour GitHub allows without one).
+    /// </summary>
+    internal static TimeSpan PeriodicUpdateCheckInterval => GitHubTokenHandler.HasToken ? TimeSpan.FromHours(1) : TimeSpan.FromHours(4);
 
     /// <summary>UTC ticks of the next periodic check; 0 = timer not started yet (startup scan still running).</summary>
     private long _nextUpdateCheckTicks;
 
     /// <summary>
-    /// When the periodic 4-hour background check fires next, or null before the timer has started
+    /// When the periodic background check fires next, or null before the timer has started
     /// (startup scan still running) or after background work has stopped. Safe to read from any thread.
     /// </summary>
     public DateTime? NextUpdateCheckUtc
@@ -194,7 +198,7 @@ public partial class MainViewModel
         => System.Threading.Interlocked.Exchange(ref _nextUpdateCheckTicks, utc.Ticks);
 
     /// <summary>
-    /// Restarts the 4-hour countdown after a user-initiated "Check for updates", so the next
+    /// Restarts the periodic countdown after a user-initiated "Check for updates", so the next
     /// background check is a full interval away. Re-arms the existing timer (never creates a
     /// second one, never fires immediately). No-op before the timer has started or after shutdown.
     /// </summary>
@@ -205,9 +209,10 @@ public partial class MainViewModel
             if (_backgroundStopped || _updateCheckTimer == null) return;
             try
             {
-                _updateCheckTimer.Change(PeriodicUpdateCheckInterval, PeriodicUpdateCheckInterval);
-                SetNextUpdateCheck(DateTime.UtcNow + PeriodicUpdateCheckInterval);
-                _crashReporter.Log("[MainViewModel.RestartPeriodicUpdateCheckTimer] Periodic update check countdown restarted (4h)");
+                var interval = PeriodicUpdateCheckInterval;
+                _updateCheckTimer.Change(interval, interval);
+                SetNextUpdateCheck(DateTime.UtcNow + interval);
+                _crashReporter.Log($"[MainViewModel.RestartPeriodicUpdateCheckTimer] Periodic update check countdown restarted ({interval.TotalHours:0}h)");
             }
             catch (ObjectDisposedException ex)
             {
@@ -222,10 +227,21 @@ public partial class MainViewModel
         return new System.Threading.Timer(async _ =>
         {
             if (_backgroundStopped) return;
+            // Follow a token added or removed since the timer started (1h with a token, 4h without)
+            var current = PeriodicUpdateCheckInterval;
+            if (current != interval)
+            {
+                interval = current;
+                lock (_backgroundTimerLock)
+                {
+                    try { if (!_backgroundStopped) _updateCheckTimer?.Change(interval, interval); }
+                    catch (ObjectDisposedException) { return; }
+                }
+            }
             SetNextUpdateCheck(DateTime.UtcNow + interval);
             try
             {
-                _crashReporter.Log("[MainViewModel] Periodic update check triggered (4h timer)");
+                _crashReporter.Log($"[MainViewModel] Periodic update check triggered ({interval.TotalHours:0}h timer)");
                 using var activity = BeginActivity("Refreshing mod lists...");
 
                 // Re-fetch manifest (picks up new game entries, overrides, etc.)
@@ -392,7 +408,7 @@ public partial class MainViewModel
             // Also check for RHI app updates on the UI thread
             DispatcherQueue?.TryEnqueue(() =>
             {
-                CrashReporter.Log("[RefreshTrigger] 4h periodic timer — PeriodicAppUpdateCheck dispatched to UI thread");
+                CrashReporter.Log("[RefreshTrigger] Periodic timer — PeriodicAppUpdateCheck dispatched to UI thread");
                 PeriodicAppUpdateCheck?.Invoke();
             });
         }, null, firstDelay, interval);

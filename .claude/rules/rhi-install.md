@@ -177,7 +177,7 @@ paths:
   - **NR DLL** is 310.9.16 only (`NrManifestVersion` "310.9.16 (20/30/40/50)") and goes **beside the mod** (the mod checks its neighbour): `NrRelPath` gives `plugins\nvngx_dlssnr.dll` for the `.asi`, which is also the shared-file key. `MoveNrDllBesideMod` moves old game-folder copies; `UpgradeNrDllIfOlder` moves RHI's old 310.8.x copies when RtxEncore is the only shared-file owner.
 
 ### Periodic Timer
-- `System.Threading.Timer` every 4 hours after initial scan completes
+- `System.Threading.Timer` after the initial scan completes: every hour with a GitHub token, every 4 hours without (`MainViewModel.PeriodicUpdateCheckInterval`, from `GitHubTokenHandler.HasToken`; a full check uses most of the 60 requests an hour GitHub allows without a token). The launch-check cooldown uses the same interval; the timer re-arms itself if a token is added or removed, and saving / clearing the PAT in Settings restarts the countdown.
 - Re-fetches manifests, forces update check, triggers app version check
 
 ## Install Warnings

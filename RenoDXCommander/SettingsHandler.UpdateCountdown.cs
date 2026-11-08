@@ -74,10 +74,11 @@ public partial class SettingsHandler
                 Child = grid,
             };
             ToolTipService.SetToolTip(panel,
-                "On: every 4 hours RHI refreshes mod data and checks all components and RHI itself for updates. " +
-                "Minimal: every 4 hours RHI refreshes mod data, DLSS versions and checks RHI itself; component checks only run when you check now, Refresh or Update All.");
+                "RHI checks every hour with a GitHub token, every 4 hours without (GitHub allows far fewer requests without one). " +
+                "On: each check refreshes mod data and checks all components and RHI itself for updates. " +
+                "Minimal: each check refreshes mod data, DLSS versions and checks RHI itself; component checks only run when you check now, Refresh or Update All.");
 
-            // Above the "RHI checks every 4 hours" note when it sits right before the button
+            // Above the "RHI checks every hour..." note when it sits right before the button
             int index = column.Children.IndexOf(button);
             if (index > 0 && column.Children[index - 1] is TextBlock) index--;
             column.Children.Insert(index, panel);

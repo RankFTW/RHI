@@ -27,7 +27,7 @@ public class WikiService : IWikiService
         FetchAllAsync(IProgress<string>? progress = null)
     {
         progress?.Report("Fetching wiki...");
-        var html = await _http.GetStringAsync(WikiUrl).ConfigureAwait(false);
+        var html = await PageFetch.GetStringAsync(_http, WikiUrl).ConfigureAwait(false);
         var doc  = new HtmlDocument();
         doc.LoadHtml(html);
 
