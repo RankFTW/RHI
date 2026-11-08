@@ -3,19 +3,9 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.2 Beta 3
+## v2.9.2
 
 ### New
-
-**Custom OptiScaler builds**
-- Use any OptiScaler build you like. Add one in Settings › Components › Custom OptiScaler builds from a download link (GitHub, Discord or anywhere else), a zip, 7z or rar file, a folder, or just an OptiScaler.dll. You can also drag the file onto RHI.
-- Then pick it as the Version in a game's OptiScaler ⚙, or as your Default version. It installs and uninstalls like the built-in versions and keeps your OptiScaler settings.
-- RHI never updates custom builds. When a new version comes out, use Replace and RHI offers to update the games that use it.
-- Adding a Neural Rendering fork? Tick DLSS NR DLL on it so RHI adds NVIDIA's Neural Rendering file too.
-- Only add builds from people you trust.
-
-**More OptiScaler versions**
-- Popular OptiScaler forks now sit alongside Stable, Nightly, DLSS NR and F5 DLSSNR: Venom, NR PreSR MFG and OpenNR to start with. RHI downloads them and keeps them up to date like the others, and more can be added without an RHI update.
 
 **GITC Uplift**
 - New Neural Rendering method: GITC Uplift by ghostinthecamera. It brings NVIDIA's DLSS Neural Rendering to almost any game on an RTX card, even games that don't support DLSS at all: DirectX 9 to 12, Vulkan and OpenGL, 64-bit and 32-bit.
@@ -34,6 +24,16 @@
 - Make your own lists of games, like Racing or Souls-likes: right-click a game (X on a controller) and choose Add to collection. A game can be in as many collections as you like.
 - Your collections show as buttons above the game list (beside the search box in Spotlight). Click one to show only its games, and click it again to show everything. Right-click one to rename, move or delete it. Deleting a collection never removes any games.
 - On a controller, click the right stick to switch between your collections.
+
+**Custom OptiScaler builds**
+- Use any OptiScaler build you like. Add one in Settings › Components › Custom OptiScaler builds from a download link (GitHub, Discord or anywhere else), a zip, 7z or rar file, a folder, or just an OptiScaler.dll. You can also drag the file onto RHI.
+- Then pick it as the Version in a game's OptiScaler ⚙, or as your Default version. It installs and uninstalls like the built-in versions and keeps your OptiScaler settings.
+- RHI never updates custom builds. When a new version comes out, use Replace and RHI offers to update the games that use it.
+- Adding a Neural Rendering fork? Tick DLSS NR DLL on it so RHI adds NVIDIA's Neural Rendering file too.
+- Only add builds from people you trust.
+
+**More OptiScaler versions**
+- Popular OptiScaler forks now sit alongside Stable, Nightly, DLSS NR and F5 DLSSNR: Venom, NR PreSR MFG and OpenNR to start with. RHI downloads them and keeps them up to date like the others, and more can be added without an RHI update.
 
 ### Changes
 
@@ -100,6 +100,8 @@
 - Fixed games using RTX HDR or Auto HDR showing "—" instead of RTX HDR or Auto HDR on the RenoDX row, the Overview card and Spotlight.
 - Fixed hard-to-read headings in What's New, the message of the day and mod release notes when Windows is in Light mode.
 - Fixed the Luma filter chip being cut off when Filters is open.
+- Fixed dropping a ReShade preset onto RHI failing with "Storage Error ... being used by another process" when the preset came from RHI's own presets folder.
+- Fixed the version numbers on the Tabs and Spotlight component cards not opening the mod's page when clicked, and not showing the hand cursor.
 
 ### Manifest Updates
 

@@ -24,7 +24,8 @@ internal sealed record ComponentRowRef(
     RoutedEventHandler OnInfo,
     RoutedEventHandler OnInstall,
     RoutedEventHandler OnCog,
-    RoutedEventHandler OnDelete);
+    RoutedEventHandler OnDelete,
+    Microsoft.UI.Xaml.Input.PointerEventHandler OnStatus);
 
 public sealed partial class MainWindow
 {
@@ -35,25 +36,32 @@ public sealed partial class MainWindow
     {
         new ComponentRowRef("Ref", "Mod framework", "RE Framework", DetailRefRow, null, DetailRefStatus,
             DetailRefInfoBtn, DetailRefInstallBtn, DetailRefCogBtn, DetailRefDeleteBtn, DetailRefProgress, DetailRefMessage,
-            InfoButton_Click, InstallRefButton_Click, RefCogButton_Click, UninstallRefButton_Click),
+            InfoButton_Click, InstallRefButton_Click, RefCogButton_Click, UninstallRefButton_Click,
+            DetailRefStatus_PointerPressed),
         new ComponentRowRef("Rs", "Injector", "ReShade", DetailRsRow, null, DetailRsStatus,
             DetailRsInfoBtn, DetailRsInstallBtn, DetailRsIniBtn, DetailRsDeleteBtn, DetailRsProgress, DetailRsMessage,
-            InfoButton_Click, InstallRsButton_Click, RsCogButton_Click, UninstallRsButton_Click),
+            InfoButton_Click, InstallRsButton_Click, RsCogButton_Click, UninstallRsButton_Click,
+            DetailRsStatus_PointerPressed),
         new ComponentRowRef("Rdx", "HDR mod", "RenoDX", DetailRdxRow, DetailRdxLabel, DetailRdxStatus,
             DetailRdxInfoBtn, DetailRdxInstallBtn, DetailUeExtendedBtn, DetailRdxDeleteBtn, DetailRdxProgress, DetailRdxMessage,
-            InfoButton_Click, InstallButton_Click, RdxCogButton_Click, UninstallButton_Click),
+            InfoButton_Click, InstallButton_Click, RdxCogButton_Click, UninstallButton_Click,
+            DetailRdxStatus_PointerPressed),
         new ComponentRowRef("Luma", "HDR mod", "Luma", DetailLumaRow, DetailLumaLabel, DetailLumaStatus,
             DetailLumaInfoBtn, DetailLumaInstallBtn, DetailLumaIniBtn, DetailLumaDeleteBtn, DetailLumaProgress, DetailLumaMessage,
-            InfoButton_Click, InstallLumaButton_Click, LumaCogButton_Click, UninstallLumaButton_Click),
+            InfoButton_Click, InstallLumaButton_Click, LumaCogButton_Click, UninstallLumaButton_Click,
+            DetailLumaStatus_PointerPressed),
         new ComponentRowRef("DofFix", "Recommended", "DOF Fix", DetailDofFixRow, DetailDofFixLabel, DetailDofFixStatus,
             DetailDofFixInfoBtn, DetailDofFixInstallBtn, DetailDofFixCogBtn, DetailDofFixDeleteBtn, DetailDofFixProgress, DetailDofFixMessage,
-            DofFixInfoButton_Click, InstallDofFixButton_Click, DofFixCogButton_Click, UninstallDofFixButton_Click),
+            DofFixInfoButton_Click, InstallDofFixButton_Click, DofFixCogButton_Click, UninstallDofFixButton_Click,
+            DetailDofFixStatus_PointerPressed),
         new ComponentRowRef("Ul", "Frame limiter · choose one", "ReLimiter", DetailUlRow, DetailUlLabel, DetailUlStatus,
             DetailUlInfoBtn, DetailUlInstallBtn, DetailUlIniBtn, DetailUlDeleteBtn, DetailUlProgress, DetailUlMessage,
-            InfoButton_Click, InstallUlButton_Click, UlCogButton_Click, UninstallUlButton_Click),
+            InfoButton_Click, InstallUlButton_Click, UlCogButton_Click, UninstallUlButton_Click,
+            DetailUlStatus_PointerPressed),
         new ComponentRowRef("Dc", "Frame limiter · choose one", "Display Commander", DetailDcRow, DetailDcLabel, DetailDcStatus,
             DetailDcInfoBtn, DetailDcInstallBtn, DetailDcIniBtn, DetailDcDeleteBtn, DetailDcProgress, DetailDcMessage,
-            InfoButton_Click, InstallDcButton_Click, DcCogButton_Click, UninstallDcButton_Click),
+            InfoButton_Click, InstallDcButton_Click, DcCogButton_Click, UninstallDcButton_Click,
+            DetailDcStatus_PointerPressed),
     };
 
     /// <summary>"No RenoDX mod available" note under the rows (shown by UpdateDetailComponentRows).</summary>

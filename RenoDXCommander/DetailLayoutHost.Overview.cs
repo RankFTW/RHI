@@ -421,6 +421,14 @@ internal sealed partial class DetailLayoutHost
             titles.Children.Add(_name);
 
             _pill = TabsTheme.MakePill(out _pillText);
+            // The version pill opens the mod's page, like the Classic row's underlined status
+            _pill.PointerPressed += (s, e) =>
+            {
+                if (_shown is { } r && StatusIsLink(r)) r.OnStatus(r.Status, e);
+            };
+            _pill.PointerEntered += (s, e) => PillCursor();
+            _pill.PointerMoved += (s, e) => PillCursor(); // WinUI drops the cursor when the tooltip opens
+            _pill.PointerExited += (s, e) => DetailPanelBuilder.CursorProp?.SetValue(_pill, ArrowCursor);
 
             var top = new Grid { ColumnSpacing = 8 };
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -492,6 +500,19 @@ internal sealed partial class DetailLayoutHost
             Root.MinHeight = 172;
             Root.Visibility = Visibility.Collapsed;
         }
+
+        private static readonly Microsoft.UI.Input.InputCursor HandCursor =
+            Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        private static readonly Microsoft.UI.Input.InputCursor ArrowCursor =
+            Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+
+        /// <summary>The row's status is a link when it's underlined (installed / update available).</summary>
+        private static bool StatusIsLink(ComponentRowRef r)
+            => r.Status.TextDecorations == Windows.UI.Text.TextDecorations.Underline;
+
+        private void PillCursor()
+            => DetailPanelBuilder.CursorProp?.SetValue(_pill,
+                _shown is { } r && StatusIsLink(r) ? HandCursor : ArrowCursor);
 
         private Button MakeInstallButton(TabsTheme.Look look)
         {

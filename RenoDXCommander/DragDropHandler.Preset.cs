@@ -53,27 +53,27 @@ public partial class DragDropHandler
             return;
         }
 
-        // ── Step 2: Copy to presets folder ────────────────────────────────────
-        try
+        // ── Step 2: Keep a copy in the presets folder ─────────────────────────
+        // Only a convenience: the install below reads the dropped file. A preset dragged in from the
+        // presets folder itself is already there (copying a file onto itself fails as "in use").
+        var destPreset = Path.Combine(PresetPopupHelper.PresetsDir, fileName);
+        if (string.Equals(Path.GetFullPath(iniPath), Path.GetFullPath(destPreset), StringComparison.OrdinalIgnoreCase))
         {
-            Directory.CreateDirectory(PresetPopupHelper.PresetsDir);
-            var destPreset = Path.Combine(PresetPopupHelper.PresetsDir, fileName);
-            File.Copy(iniPath, destPreset, overwrite: true);
-            _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Stored '{fileName}' in presets folder");
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] '{fileName}' is already in the presets folder");
         }
-        catch (Exception ex)
+        else
         {
-            _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to copy to presets folder — {ex.Message}");
-            var errDialog = new ContentDialog
+            try
             {
-                Title = "❌ Storage Error",
-                Content = $"Failed to save preset to the presets folder: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(errDialog);
-            return;
+                Directory.CreateDirectory(PresetPopupHelper.PresetsDir);
+                File.Copy(iniPath, destPreset, overwrite: true);
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Stored '{fileName}' in presets folder");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Not fatal: carry on and install the dropped file
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Couldn't store '{fileName}' in presets folder, installing anyway — {ex.Message}");
+            }
         }
 
         // ── Step 3: Game selection dialog ─────────────────────────────────────
