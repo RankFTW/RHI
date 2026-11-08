@@ -1598,6 +1598,25 @@
   },
   "renodxExtraSettings": [
   ],
+  "_comment_os_forks": "Recommended OptiScaler forks: each shows as an OptiScaler version and updates from its GitHub releases. Keys are ids (lower-case, digits, dashes; never rename one games use). Fields: label, repo (owner/name), assetPattern (optional regex), includePrereleases (default true), needsNrDll (adds nvngx_dlssnr.dll), description, disabled.",
+  "osForks": {
+    "venom": {
+      "label": "Venom",
+      "repo": "LorenzoKy/Optiscaler-Venom",
+      "description": "Daily OptiScaler 10 builds by LorenzoKy with extra fixes on top of the official nightly."
+    },
+    "nr-presr-mfg": {
+      "label": "NR PreSR MFG",
+      "repo": "ShyVortex/OptiScaler-NR-PreSR-MFG",
+      "needsNrDll": true,
+      "description": "ShyVortex's Neural Rendering fork with pre-upscale NR, multi frame generation and an RTX 30 DLSS-FG backend."
+    },
+    "opennr": {
+      "label": "OpenNR",
+      "repo": "MatheusFerreiraS/OpenNR-OptiScaler",
+      "description": "Neural Rendering fork by MatheusFerreiraS that ships its own NR runtime."
+    }
+  },
   "dlssPresetsDev": {
     "sr": [
       {

@@ -10,14 +10,8 @@ public partial class SettingsHandler
 {
     private const string OsDefaultVariantRowTag = "OsDefaultVariantRow";
 
-    // Display label ↔ internal value (same names as the OptiScaler ⚙'s version dropdown)
-    private static readonly (string Label, string Value)[] OsDefaultVariants =
-    {
-        ("Stable", "Stable"),
-        ("Nightly", "Nightly"),
-        ("DLSS NR", "DlssNr"),
-        ("F5 DLSSNR", "F5"),
-    };
+    // The dropdown's internal values, in order (built-ins, then custom builds: OsVariants.All)
+    private List<string> _osDefaultVariantValues = new();
 
     private ComboBox? _osDefaultVariantCombo;
 
@@ -51,20 +45,29 @@ public partial class SettingsHandler
                 var combo = new ComboBox();
                 if (Application.Current.Resources.TryGetValue("SettingsComboStyle", out var cs) && cs is Style comboStyle)
                     combo.Style = comboStyle;
-                foreach (var (l, _) in OsDefaultVariants) combo.Items.Add(l);
+                _osDefaultVariantCombo = combo;
+                FillOsDefaultVariants();
                 ToolTipService.SetToolTip(combo,
                     "The OptiScaler version installed in games where you haven't picked one in the game's OptiScaler ⚙. " +
                     "Games that already have OptiScaler keep the version they have. " +
-                    "Stable is the official release, Nightly the daily build, DLSS NR and F5 DLSSNR the Neural Rendering forks.");
+                    "Stable is the official release, Nightly the daily build, DLSS NR and F5 DLSSNR the Neural Rendering forks. " +
+                    "Custom builds you add below are listed too.");
                 Grid.SetColumn(combo, 1);
                 row.Children.Add(combo);
                 list.Children.Insert(list.Children.IndexOf(gpuRow), row);
                 _osDefaultVariantCombo = combo;
                 SelectOsDefaultVariant();
                 combo.SelectionChanged += OsDefaultVariantCombo_SelectionChanged;
+                // Custom builds added / removed: refresh the list (the event can come from any thread)
+                OsCustomBuildService.Changed += () => _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    FillOsDefaultVariants();
+                    SelectOsDefaultVariant();
+                });
                 list.Children.Insert(list.Children.IndexOf(gpuRow), MakeOsNightlyCleanupRow());
                 return;
             }
+            FillOsDefaultVariants();
             SelectOsDefaultVariant();
             if (_osNightlyCleanupCombo != null) _osNightlyCleanupCombo.SelectedIndex = ViewModel.Settings.OsNightlyCleanup ? 1 : 0;
         }
@@ -138,13 +141,24 @@ public partial class SettingsHandler
         return row;
     }
 
+    private void FillOsDefaultVariants()
+    {
+        if (_osDefaultVariantCombo == null) return;
+        _osDefaultVariantSelecting = true;
+        var all = OsVariants.All();
+        _osDefaultVariantValues = all.Select(v => v.Value).ToList();
+        _osDefaultVariantCombo.Items.Clear();
+        foreach (var (_, label) in all) _osDefaultVariantCombo.Items.Add(label);
+        _osDefaultVariantSelecting = false;
+    }
+
     private bool _osDefaultVariantSelecting;
 
     private void SelectOsDefaultVariant()
     {
         if (_osDefaultVariantCombo == null) return;
         _osDefaultVariantSelecting = true;
-        int idx = Array.FindIndex(OsDefaultVariants, v => v.Value == ViewModel.Settings.OsDefaultVariant);
+        int idx = _osDefaultVariantValues.IndexOf(ViewModel.Settings.OsDefaultVariant);
         _osDefaultVariantCombo.SelectedIndex = idx >= 0 ? idx : 0;
         _osDefaultVariantSelecting = false;
     }
@@ -155,8 +169,8 @@ public partial class SettingsHandler
         try
         {
             int idx = _osDefaultVariantCombo.SelectedIndex;
-            if (idx < 0 || idx >= OsDefaultVariants.Length) return;
-            ViewModel.SetOsDefaultVariant(OsDefaultVariants[idx].Value);
+            if (idx < 0 || idx >= _osDefaultVariantValues.Count) return;
+            ViewModel.SetOsDefaultVariant(_osDefaultVariantValues[idx]);
         }
         catch (Exception ex)
         {

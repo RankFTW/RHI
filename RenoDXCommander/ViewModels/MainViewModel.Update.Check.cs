@@ -219,6 +219,14 @@ public partial class MainViewModel
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS F5 DLSSNR update result: {_optiScalerService.HasUpdateF5}");
             }
 
+            // Recommended forks (manifest osForks) that an installed game uses
+            foreach (var forkVariant in cards.Where(c => c.OsStatus == GameStatus.Installed)
+                         .Select(c => GetOsVariant(c.GameName, c.Source ?? "")).Where(OsVariants.IsFork).Distinct().ToList())
+            {
+                var forkUpdate = await OsForkService.CheckForUpdateAsync(forkVariant).ConfigureAwait(false);
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS fork {forkVariant} update result: {forkUpdate}");
+            }
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
@@ -228,6 +236,8 @@ public partial class MainViewModel
                         "Nightly" => _optiScalerService.HasUpdateNightly,
                         "DlssNr"  => _optiScalerService.HasUpdateDlssNr,
                         "F5"      => _optiScalerService.HasUpdateF5,
+                        _ when OsVariants.IsCustom(osVariant) => false, // custom builds are never updated
+                        _ when OsVariants.IsFork(osVariant)   => OsForkService.HasUpdate(osVariant),
                         _         => _optiScalerService.HasUpdate
                     };
                     if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;

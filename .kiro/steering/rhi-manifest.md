@@ -34,6 +34,7 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 | `dlssPresets` | SR/RR/FG preset arrays for manifest-driven presets |
 | `shaderPacks` | Dict keyed by pack ID — add/override/disable packs |
 | `addonPacks` | Dict keyed by SectionId — add/override/disable addons |
+| `osForks` | Dict keyed by fork id — recommended OptiScaler forks shown as versions, updated from GitHub releases (`OsForkService`); never rename an id games use |
 
 ## Per-Game Fields
 

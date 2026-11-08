@@ -294,6 +294,7 @@ public partial class SettingsHandler
         EnsureNvAppLimitsPanel();
         EnsureRemovedGamesButton();
         EnsureCustomFoldersCard();
+        EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureAchievementsSection(); // before the nav, so it gets a jump button
         EnsureSettingsNavigation();

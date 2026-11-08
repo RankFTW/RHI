@@ -82,6 +82,9 @@ Researched 7 Nov 2026 for issue #163 (a user wants to point RHI at any OptiScale
 ## Recommended design
 
 ### Phase 0: one "OptiScaler build source" model, and the F5 fixes
+
+> **Status (8 Nov 2026):** done in a lighter form. `Services/OsVariants.cs` is the one list of versions (built-ins + custom) that the dropdowns, labels, validation, OptiScaler 10 / NR-DLL checks and INI choice (`OptiScalerService.IniSuffix`) read. The four built-ins keep their own download code (it works and each has quirks); forks use their own generic GitHub source (`OsForkService`).
+
 Replace the per-version copies with one data-driven source definition. The four built-ins become entries, and custom builds become more entries of the same kind.
 
 ```
@@ -107,6 +110,9 @@ This is the large step: about 20 files. It changes no behaviour for users except
 
 ### Phase 1: custom builds (decided 7 Nov 2026)
 
+> **Status (8 Nov 2026):** built, including drag and drop (an archive or dropped link with an `OptiScaler.dll` and no RenoDX addon asks to add it, `DragDropHandler.OfferCustomOptiScalerBuildAsync`). Code: `Services/OsCustomBuildService.cs` (import, store, rename, remove), `SettingsHandler.OsCustomBuilds.cs` (Settings card), custom branches in `OptiScalerService.Install.cs`. Tests: `OsCustomBuildTests`. Differences from the text below: the list lives in the folders themselves (no `OsCustomBuilds` in settings.json), and a build that ships its own `OptiScaler.ini` still gets RHI's GPU-specific templates on install (its own ini is the base on update, as for the built-ins).
+
+
 **A custom build is a fixed copy the user brings, from anywhere.** RHI installs it like any other OptiScaler and never checks it for updates: making sure it's legit and keeping it current is up to the user. To change version they add the new one (or re-import over the same entry).
 
 - **Ways to add one** ("Custom builds" card in Settings › Components › OptiScaler, modelled on the Custom game folders card; drag and drop anywhere on RHI too):
@@ -124,7 +130,7 @@ This is the large step: about 20 files. It changes no behaviour for users except
 - **Updates**: none. Custom builds never show "update available" and are skipped by the periodic check, Update All and auto-update. Re-importing an entry offers to redeploy it to the games using it (like the Custom ReShade channel's hash check).
 - **Removing a build while games use it**: ask first; those games keep their files and show "Custom build removed": reinstall or pick another version.
 
-**Recommended forks (separate from custom builds)**: a manifest field `osForks` (live data) lists known-good GitHub forks (repo, label, asset pattern, NeedsNrDll). These are maintained by the developer and *do* get update checks, exactly like F5 today, through the Phase 0 source model. Adding one to the manifest makes it appear as a built-in-style version for everyone, without an RHI release.
+**Recommended forks (separate from custom builds)** (built 8 Nov 2026: `Services/OsForkService.cs`, manifest `osForks`, variant `Fork:<id>`; see `docs/manifest-field-reference.md`): a manifest field `osForks` (live data) lists known-good GitHub forks (repo, label, asset pattern, NeedsNrDll). These are maintained by the developer and *do* get update checks, exactly like F5 today, through the Phase 0 source model. Adding one to the manifest makes it appear as a built-in-style version for everyone, without an RHI release.
 
 ### Phase 2 (later, if wanted)
 - Pin a specific release per game for the GitHub-backed versions (generalising the Nightly build picker).

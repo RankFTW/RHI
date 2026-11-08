@@ -324,8 +324,12 @@ public sealed partial class MainWindow
         // OsVariant — change if preset has one
         if (p.OsVariant != null)
         {
-            var internalVariant = p.OsVariant switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", _ => p.OsVariant };
-            ViewModel.SetOsVariant(card.GameName, internalVariant, store);
+            var internalVariant = OsVariants.FromLabel(p.OsVariant);
+            // A preset saved with a custom build that has since been removed or renamed keeps the current version
+            if (OsVariants.IsKnown(internalVariant))
+                ViewModel.SetOsVariant(card.GameName, internalVariant, store);
+            else
+                CrashReporter.Log($"[OsPreset] Version '{p.OsVariant}' no longer exists — version left unchanged");
         }
 
         // NR runtime swap (outside InstallPath guard — needs async)

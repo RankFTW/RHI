@@ -326,6 +326,14 @@ Add, override, or disable addon entries without a client update. Keyed by `Secti
 - `AddonPackService.ApplyManifestOverrides()` → called at Init and BackgroundScan; also re-applied when the Addon Manager dialog opens
 - `disabled: true` removes the addon
 
+### `osForks` — `Dict<string,ManifestOsFork>`
+Recommended OptiScaler forks. Each appears as an OptiScaler version (`"Fork:<id>"`: the ⚙ Version list and Settings › Default version) and is updated from its GitHub releases like the built-in versions (`OsForkService`). Keyed by id: lower-case letters, digits, dashes, max 40; **never rename an id games use** (their install is recorded under it).
+- `label` (shown in the lists), `repo` (`owner/name`, required), `description`
+- `assetPattern` (optional regex for the release asset; default: the best `.7z` / `.zip` with "optiscaler" in the name, skipping `Optional-*`, forwarder, troubleshooting and source archives; ties go to the newest upload)
+- `includePrereleases` (default `true`: most forks only publish prereleases), `needsNrDll` (installs NVIDIA's `nvngx_dlssnr.dll` and shows the ⚙'s Neural Rendering section), `disabled` (hidden from the lists; games that have it keep working)
+- Releases are listed newest by publish date (not `/releases/latest`), drafts skipped. Staged in `%LocalAppData%\RHI\optiscaler-forks\<id>\` with `fork.json` (definition + staged tag), so a fork works offline and before the manifest loads.
+- Applied with `OsForkService.SetDefinitions` in the cache, Init and BackgroundScan paths and the 4 h refresh. A manifest without the field keeps the known list.
+
 ### `componentUrls` — `Dict<string,string>`
 Override base download URLs for components. Active keys:
 - `"ueExtended"` → UE-Extended addon download URL (`MainViewModel.Install.UeExtendedUrl`)

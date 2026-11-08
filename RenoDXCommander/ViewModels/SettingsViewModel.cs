@@ -273,7 +273,9 @@ public partial class SettingsViewModel : ObservableObject
 
         if (s.TryGetValue("OsGpuType", out var ogtVal))
             OsGpuType = ogtVal ?? "NVIDIA";
-        if (s.TryGetValue("OsDefaultVariant", out var odvVal) && odvVal is "Stable" or "Nightly" or "DlssNr" or "F5")
+        // Forks are only known once the manifest loads: keep the saved value (GetOsVariant falls back if it's gone)
+        if (s.TryGetValue("OsDefaultVariant", out var odvVal)
+            && (OsVariants.IsKnown(odvVal) || OsVariants.IsFork(odvVal) || OsVariants.IsCustom(odvVal)))
             OsDefaultVariant = odvVal;
         if (s.TryGetValue("OsNightlyCleanup", out var oncVal)) OsNightlyCleanup = oncVal == "true"; // default false
         if (s.TryGetValue("UiScale", out var uisVal) && int.TryParse(uisVal, out var uis))

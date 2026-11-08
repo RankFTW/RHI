@@ -193,7 +193,8 @@ public partial class MainViewModel
     // ── OptiScaler Variant Override ───────────────────────────────────────────
 
     /// <summary>
-    /// Returns the OptiScaler variant for a game: "Stable", "Nightly", "DlssNr" or "F5". A game
+    /// Returns the OptiScaler variant for a game: "Stable", "Nightly", "DlssNr", "F5" or a custom
+    /// build ("Custom:&lt;slug&gt;", see <see cref="OsVariants"/>). A game
     /// without its own choice uses the Settings default (<see cref="SettingsViewModel.OsDefaultVariant"/>).
     /// </summary>
     public string GetOsVariant(string gameName, string store = "")
@@ -202,7 +203,9 @@ public partial class MainViewModel
         if (_gameNameService.OsVariantOverrides.TryGetValue(key, out var v)) return v;
         // name-only fallback for legacy
         if (_gameNameService.OsVariantOverrides.TryGetValue(gameName, out var v2)) return v2;
-        return string.IsNullOrEmpty(Settings.OsDefaultVariant) ? "Stable" : Settings.OsDefaultVariant;
+        // A default that points at a custom build the user has since removed falls back to Stable
+        return string.IsNullOrEmpty(Settings.OsDefaultVariant) || !OsVariants.IsKnown(Settings.OsDefaultVariant)
+            ? "Stable" : Settings.OsDefaultVariant;
     }
 
     /// <summary>Sets the OptiScaler variant for a game ("Stable" is kept as an explicit choice). Null removes it, so the game follows the Settings default.</summary>
@@ -223,7 +226,7 @@ public partial class MainViewModel
     /// </summary>
     public void SetOsDefaultVariant(string value)
     {
-        if (value is not ("Stable" or "Nightly" or "DlssNr" or "F5") || value == Settings.OsDefaultVariant) return;
+        if (!OsVariants.IsKnown(value) || value == Settings.OsDefaultVariant) return;
         int pinned = 0;
         foreach (var card in _allCards.ToList())
         {

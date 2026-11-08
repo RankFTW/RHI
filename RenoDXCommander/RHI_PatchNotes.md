@@ -7,6 +7,15 @@
 
 ### New
 
+**Recommended OptiScaler forks**
+- Popular OptiScaler forks now appear in the OptiScaler version lists (a game's OptiScaler ⚙ and Settings › Default version) next to Stable, Nightly, DLSS NR and F5 DLSSNR: Venom, NR PreSR MFG and OpenNR to start with. RHI downloads the newest release when you install one and keeps it up to date like the built-in versions. The list comes from RHI's online data, so forks can be added without an RHI update.
+
+**Custom OptiScaler builds**
+- Add any OptiScaler build in Settings › Components › Custom OptiScaler builds: paste a download link (a GitHub release file, a Discord attachment or any other direct link), or pick a zip, 7z or rar, a folder, or an OptiScaler.dll on its own. RHI finds the OptiScaler.dll inside and asks you for a name.
+- Pick it in a game's OptiScaler ⚙ (Version) or as the Default version. It installs, uninstalls and keeps your OptiScaler.ini settings like the built-in versions. Builds with the OptiScaler 10 layout get the frame generation and Engine.ini settings, and ticking DLSS NR DLL adds NVIDIA's Neural Rendering DLL and its settings, for Neural Rendering forks.
+- Custom builds are never updated by RHI: when a new version comes out, use Replace on the build and RHI offers to put it into the games that use it. Rename and Remove are there too. Only add builds from people you trust.
+- You can also drag a zip or 7z with an OptiScaler build onto RHI (or drop its download link): RHI asks whether to add it as a custom build.
+
 **GITC Uplift**
 - New Neural Rendering method: GITC Uplift by ghostinthecamera, DLSS Neural Rendering through a ReShade addon, built for ease of use, stability and performance (it also works well for virtual photography). It works with any game, no DLSS needed, and is now the default method for 64-bit DX11, DX12 and Vulkan games (games where you've already picked or installed a method keep it). Pick it in the Neural Rendering section's Method list and click Install.
 - Uplift Version picks the release: Latest installs the newest and keeps it up to date, a picked version stays as it is. Changing it while installed swaps it in place.

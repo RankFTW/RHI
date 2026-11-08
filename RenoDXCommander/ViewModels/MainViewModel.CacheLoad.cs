@@ -423,6 +423,7 @@ public partial class MainViewModel
         // Apply manifest DLSS preset overrides from cache so dropdowns are correct during Phase 1
         DlssPresetService.ApplyManifestPresets(cachedManifest);
         FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
+        OsForkService.SetDefinitions(cachedManifest?.OsForks); // recommended OptiScaler forks
 
         // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder
         // (e.g. Witcher 2 → bin\, Cyberpunk → bin\x64). Without this, games added to the manifest
@@ -682,6 +683,8 @@ public partial class MainViewModel
                             : _optiScalerService.StagedVersionNightly,
                         "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
                         "F5"      => _optiScalerService.StagedVersionF5,
+                        _ when OsVariants.IsCustom(osRec.OsVariant) => OsCustomBuildService.Get(osRec.OsVariant)?.Name ?? "Custom build",
+                        _ when OsVariants.IsFork(osRec.OsVariant) => OsForkService.Get(osRec.OsVariant)?.StagedTag ?? "Fork",
                         _         => _optiScalerService.StagedVersion
                     };
             }

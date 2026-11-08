@@ -22,7 +22,8 @@ public partial class DragDropHandler
     /// Handles a dropped archive file (.zip, .7z, .rar, etc.) — extracts it using 7-Zip,
     /// looks for .addon64/.addon32 files inside, and passes them to ProcessDroppedAddon.
     /// </summary>
-    public async Task<bool> ProcessDroppedArchive(string archivePath)
+    /// <param name="sourceUrl">The link it was downloaded from, when it was a dropped link.</param>
+    public async Task<bool> ProcessDroppedArchive(string archivePath, string? sourceUrl = null)
     {
         var archiveName = Path.GetFileName(archivePath);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] Received '{archiveName}'");
@@ -110,6 +111,13 @@ public partial class DragDropHandler
                 .Where(f => Path.GetFileName(f).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
                          || Path.GetFileName(f).Contains("Luma", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            // No RenoDX addon but an OptiScaler build: offer to add it as a custom OptiScaler build
+            if (addonFiles.Count == 0 && OsCustomBuildService.FindOptiScalerDll(tempDir) != null)
+            {
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] '{archiveName}' holds an OptiScaler build — offering to add it");
+                return await OfferCustomOptiScalerBuildAsync(archivePath, archiveName, sourceUrl);
+            }
 
             if (addonFiles.Count == 0)
             {
@@ -651,6 +659,39 @@ public partial class DragDropHandler
     /// Processes a URL dropped onto the window. Validates the URL, downloads the addon
     /// to the cache, PE-validates it, then routes to ProcessDroppedAddon.
     /// </summary>
+    /// <summary>
+    /// A dropped archive turned out to be an OptiScaler build: name it and add it as a custom build
+    /// (Settings › Components › Custom OptiScaler builds).
+    /// </summary>
+    private async Task<bool> OfferCustomOptiScalerBuildAsync(string archivePath, string archiveName, string? sourceUrl)
+    {
+        var name = await OsCustomBuildDialogs.AskNameAsync(_window.Content.XamlRoot, "Add custom OptiScaler build?",
+            OsCustomBuildService.SuggestName(sourceUrl ?? archivePath),
+            intro: $"{archiveName} contains an OptiScaler build. Add it to your custom OptiScaler builds? "
+                 + "You can then pick it in a game's OptiScaler settings. RHI never updates custom builds. Only add builds from people you trust.");
+        if (name == null) return false;
+        _window.ShowStatusBarMessage($"Adding custom OptiScaler build {name}...", TimeSpan.FromSeconds(30));
+        var result = await Task.Run(() => OsCustomBuildService.ImportAsync(archivePath, name, null, null, _window.LifetimeToken,
+            originLabel: sourceUrl != null ? new Uri(sourceUrl).GetLeftPart(UriPartial.Path) : archiveName));
+        var done = new ContentDialog
+        {
+            Title = result.Build != null ? "Custom OptiScaler build added" : "Couldn't add it",
+            Content = new TextBlock
+            {
+                Text = result.Build != null
+                    ? $"Added {result.Build.Label}. Pick it in a game's OptiScaler settings (Version), or as the Default version in Settings › Components."
+                      + (result.Note != null ? Environment.NewLine + Environment.NewLine + result.Note : "")
+                    : result.Error ?? "Something went wrong.",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+        };
+        _window.ShowStatusBarMessage(result.Build != null ? $"Added custom OptiScaler build {result.Build.Name}" : "Couldn't add the OptiScaler build", TimeSpan.FromSeconds(6));
+        await DialogService.ShowSafeAsync(done);
+        return result.Build != null;
+    }
+
     public async Task ProcessDroppedUrl(string url)
     {
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Received URL: {url}");
@@ -750,7 +791,7 @@ public partial class DragDropHandler
                 else
                 {
                     // Not a Luma archive — treat as a regular archive (extract for addons)
-                    await ProcessDroppedArchive(lumaTemp);
+                    await ProcessDroppedArchive(lumaTemp, sourceUrl: url);
                 }
             }
             catch (Exception ex)

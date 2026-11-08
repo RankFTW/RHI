@@ -229,6 +229,8 @@ public partial class MainViewModel
         foreach (var card in osCards)
         {
             var cardVariant = GetOsVariant(card.GameName, card.Source ?? "");
+            // Custom builds are never updated by RHI (the user brings new versions)
+            if (OsVariants.IsCustom(cardVariant)) continue;
             // For nightly: pass the pinned build date if set (exempt games are already filtered out above)
             var nightlyBuild = cardVariant == "Nightly" ? GetOsNightlyBuild(card.GameName, card.Source ?? "") : null;
             if (!string.IsNullOrEmpty(nightlyBuild))
@@ -241,7 +243,7 @@ public partial class MainViewModel
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Failed for '{card.GameName}': {ex.Message}"); continue; }
 
             // Re-deploy Streamline and DLSS Enabler if they were enabled — UpdateAsync doesn't handle this
-            if ((cardVariant == "Nightly" || cardVariant == "DlssNr" || cardVariant == "F5") && !string.IsNullOrEmpty(card.InstallPath))
+            if (OsVariants.IsOs10(cardVariant) && !string.IsNullOrEmpty(card.InstallPath))
             {
                 if (GetOsDeployStreamline(card.GameName, card.Source ?? ""))
                 {

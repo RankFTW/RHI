@@ -460,6 +460,13 @@ public class RemoteManifest
     public Dictionary<string, ManifestAddonPack>? AddonPacks { get; set; }
 
     /// <summary>
+    /// Recommended OptiScaler forks, keyed by id (lower-case letters, digits, dashes). Each appears as an
+    /// OptiScaler version ("Fork:&lt;id&gt;") with update checks from its GitHub releases (OsForkService).
+    /// </summary>
+    [JsonPropertyName("osForks")]
+    public Dictionary<string, ManifestOsFork>? OsForks { get; set; }
+
+    /// <summary>
     /// Component URL overrides — allows changing base download URLs for components
     /// without an app update (e.g. if a repo moves or a maintainer changes hosting).
     /// </summary>
@@ -578,6 +585,26 @@ public class ManifestShaderPack
     [JsonPropertyName("disabled")]
     public bool? Disabled { get; set; }
 }
+
+/// <summary>A recommended OptiScaler fork (manifest <c>osForks</c>). See OsForkService.</summary>
+public class ManifestOsFork
+{
+    /// <summary>Name shown in the version lists, e.g. "Venom".</summary>
+    [JsonPropertyName("label")] public string? Label { get; set; }
+    /// <summary>GitHub "owner/name".</summary>
+    [JsonPropertyName("repo")] public string? Repo { get; set; }
+    /// <summary>Optional regex for the release asset to use. Default: the best .7z / .zip with "optiscaler" in its name.</summary>
+    [JsonPropertyName("assetPattern")] public string? AssetPattern { get; set; }
+    /// <summary>Use prereleases too (most forks only publish prereleases). Default true.</summary>
+    [JsonPropertyName("includePrereleases")] public bool? IncludePrereleases { get; set; }
+    /// <summary>Install NVIDIA's nvngx_dlssnr.dll with it (Neural Rendering forks). Default false.</summary>
+    [JsonPropertyName("needsNrDll")] public bool? NeedsNrDll { get; set; }
+    /// <summary>One line for the version tooltip.</summary>
+    [JsonPropertyName("description")] public string? Description { get; set; }
+    /// <summary>Hide it from the lists (installed games keep working). Default false.</summary>
+    [JsonPropertyName("disabled")] public bool? Disabled { get; set; }
+}
+
 
 /// <summary>
 /// Manifest-driven addon pack override entry. Allows adding, modifying, or disabling

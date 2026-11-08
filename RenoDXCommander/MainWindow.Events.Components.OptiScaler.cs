@@ -343,19 +343,22 @@ public sealed partial class MainWindow
             cog.AddContent(BuildOsPresetsPanel(ctx));
 
             // ── Version ──────────────────────────────────────────────────────
-            var variantItems = new[] { "Stable", "Nightly", "DLSS NR", "F5 DLSSNR" };
-            var variantDisplay = variant switch { "DlssNr" => "DLSS NR", "F5" => "F5 DLSSNR", _ => variant };
+            // Built-ins, then custom builds (Settings › Components › OptiScaler › Custom builds)
+            var variantList = OsVariants.All();
+            if (!variantList.Any(v => v.Value == variant)) variantList.Add((variant, OsVariants.Label(variant))); // removed custom build
+            var variantItems = variantList.Select(v => v.Label).ToArray();
+            var variantDisplay = OsVariants.Label(variant);
             var variantCombo = CogDialog.MakeCombo(variantItems, OsIndexOf(variantItems, variantDisplay));
             ctx.VariantCombo = variantCombo;
             var variantCell = new OsCell("OptiScaler Version",
                 "Stable is the official release. Nightly is the daily build. DLSS NR is a fork with multi-pass Neural Rendering support. " +
-                "F5 DLSSNR is the F5 multi-pass NR fork with a bundled forwarder. Changing it uninstalls OptiScaler from this game; install it again afterwards.",
+                "F5 DLSSNR is the F5 multi-pass NR fork with a bundled forwarder. Custom builds are the ones you've added in Settings › Components › OptiScaler. " +
+                "Changing it uninstalls OptiScaler from this game; install it again afterwards.",
                 variantCombo, Ungated: true);
             variantCombo.SelectionChanged += (s, ev) =>
             {
-                var selected = variantCombo.SelectedItem as string ?? "Stable";
-                // Map display name to internal value
-                var internalValue = selected switch { "DLSS NR" => "DlssNr", "F5 DLSSNR" => "F5", _ => selected };
+                int idx = variantCombo.SelectedIndex;
+                var internalValue = idx >= 0 && idx < variantList.Count ? variantList[idx].Value : OsVariants.Stable;
                 ViewModel.SetOsVariant(card.GameName, internalValue, store);
                 if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
                 {
@@ -456,14 +459,14 @@ public sealed partial class MainWindow
             };
 
             // ── Variant-specific sections ────────────────────────────────────
-            bool hasAdvanced = isNightly || isDlssNr || isF5;
+            bool hasAdvanced = OsVariants.IsOs10(variant);
             if (hasAdvanced)
             {
                 BuildOsFrameGenSection(ctx);
                 BuildOsAdditionalSection(ctx);
                 if (card.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true)
                     BuildOsEngineIniSection(ctx);
-                if (isDlssNr || isF5)
+                if (OsVariants.NeedsNrDll(variant))
                     BuildOsNeuralRenderingSection(ctx);
             }
 

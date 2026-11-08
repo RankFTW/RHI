@@ -1187,6 +1187,8 @@ public partial class MainViewModel
                                 : _optiScalerService.StagedVersionNightly,
                             "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
                             "F5"      => _optiScalerService.StagedVersionF5,
+                            _ when OsVariants.IsCustom(osRec.OsVariant) => OsCustomBuildService.Get(osRec.OsVariant)?.Name ?? "Custom build",
+                            _ when OsVariants.IsFork(osRec.OsVariant) => OsForkService.Get(osRec.OsVariant)?.StagedTag ?? "Fork",
                             _         => _optiScalerService.StagedVersion
                         };
                 }

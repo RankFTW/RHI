@@ -14,12 +14,7 @@ public partial class OptiScalerService
     /// </summary>
     public static string GetBundledIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
     {
-        var suffix = variant switch {
-            "Nightly" => "_nightly",
-            "DlssNr"  => "_dlssnr",
-            "F5"      => "_f5",
-            _         => ""
-        };
+        var suffix = IniSuffix(variant);
         var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
             ? $"OptiScaler{suffix}.nvidia.ini"
             : dlssInputs
@@ -55,6 +50,27 @@ public partial class OptiScalerService
             bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
             bool isF5      = variant.Equals("F5",      StringComparison.OrdinalIgnoreCase);
             bool isDlssNrOrF5 = isDlssNr || isF5;
+            // Custom build (OsCustomBuildService): a fixed copy, never updated, staged in its own folder
+            bool isCustom = OsVariants.IsCustom(variant);
+            var customBuild = isCustom ? OsCustomBuildService.Get(variant) : null;
+            if (isCustom && customBuild == null)
+            {
+                CrashReporter.Log($"[OptiScalerService] {card.GameName}: custom build {variant} no longer exists — aborting");
+                progress?.Report(("This custom OptiScaler build was removed. Pick another version in the OptiScaler settings.", 0));
+                return null;
+            }
+            // Recommended fork (manifest osForks, OsForkService): downloaded / updated from its GitHub releases
+            bool isFork = OsVariants.IsFork(variant);
+            var fork = isFork ? OsForkService.Get(variant) : null;
+            if (isFork && fork == null)
+            {
+                CrashReporter.Log($"[OptiScalerService] {card.GameName}: fork {variant} is no longer listed — aborting");
+                progress?.Report(("This OptiScaler fork is no longer available. Pick another version in the OptiScaler settings.", 0));
+                return null;
+            }
+            bool isFixedDir = isCustom || isFork; // staged in its own folder, no built-in update flags
+            bool isOs10Build = isNightly || isDlssNrOrF5 || customBuild?.IsOs10 == true || fork?.IsOs10 == true;
+            bool needsNrDll  = isDlssNrOrF5 || customBuild?.NeedsNrDll == true || fork?.NeedsNrDll == true;
             string? effectiveNightlyBuild = null;
             string effectiveStagingDir;
             if (isNightly)
@@ -64,6 +80,17 @@ public partial class OptiScalerService
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir;
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Nightly: hint={nightlyBuildHint ?? "(null)"}, effective={effectiveNightlyBuild ?? "(null)"}, stagingDir={effectiveStagingDir}");
+            }
+            else if (customBuild != null)
+            {
+                effectiveStagingDir = customBuild.Dir;
+            }
+            else if (fork != null)
+            {
+                // Downloads the fork's newest release when it isn't staged or is out of date
+                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None).ConfigureAwait(false) ?? fork.Dir;
+                fork = OsForkService.Get(variant) ?? fork;
+                isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
             }
             else
             {
@@ -75,7 +102,7 @@ public partial class OptiScalerService
             // no installed game uses: a fresh install (or remove + reinstall) kept deploying an
             // old staged build (issue #163). ETag-cached, so an unchanged release costs nothing.
             // A pinned nightly build is installed as pinned.
-            if (!(isNightly && !string.IsNullOrEmpty(nightlyBuildHint)))
+            if (!isFixedDir && !(isNightly && !string.IsNullOrEmpty(nightlyBuildHint)))
             {
                 progress?.Report(("Checking for a newer OptiScaler release...", 6));
                 if (isF5) await CheckForF5UpdateAsync().ConfigureAwait(false);
@@ -85,7 +112,7 @@ public partial class OptiScalerService
             }
 
             // ── 3b. If updating, force re-download staging to get the latest version ──
-            bool hasUpdate = isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
+            bool hasUpdate = !isFixedDir && (isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate);
             if (hasUpdate)
             {
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Update available ({variant}) — clearing staging for fresh download");
@@ -99,7 +126,16 @@ public partial class OptiScalerService
             // For nightly with an update, always re-ensure staging (ClearNightlyStaging
             // preserves versioned dirs so IsStagingReadyNightly stays true, but the
             // latest build may not be staged yet).
-            bool stagingReady = isF5 ? IsStagingReadyF5 : isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
+            bool stagingReady = isFixedDir ? File.Exists(Path.Combine(effectiveStagingDir, "OptiScaler.dll"))
+                : isF5 ? IsStagingReadyF5 : isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
+            if (isFixedDir && !stagingReady)
+            {
+                CrashReporter.Log($"[OptiScalerService.InstallAsync] {variant} has no OptiScaler.dll — aborting");
+                progress?.Report((isFork
+                    ? "This OptiScaler fork couldn't be downloaded. Check your connection (or GitHub token) and try again."
+                    : "This custom OptiScaler build is missing its files. Re-import it in Settings.", 0));
+                return null;
+            }
             if (!stagingReady || (isNightly && hasUpdate))
             {
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] {variant} staging not ready — attempting download");
@@ -214,7 +250,7 @@ public partial class OptiScalerService
 
             // ── 4c. Components that belong in OptiScaler\plugins on OptiScaler 10 builds ──
             // (Universal MFG Unlocker) move there before OptiScaler's files are copied.
-            if (isNightly || isDlssNrOrF5)
+            if (isOs10Build)
             {
                 ranV10Hook = true;
                 try { BeforeV10DeployHook?.Invoke(card); }
@@ -390,7 +426,7 @@ public partial class OptiScalerService
             }
 
             // ── 5b. DlssNr/F5 variant: deploy forwarder + nvngx_dlssnr.dll ─────
-            if (isDlssNrOrF5)
+            if (needsNrDll)
             {
                 progress?.Report(("Deploying DLSS NR runtime...", 72));
                 try
@@ -473,9 +509,10 @@ public partial class OptiScalerService
 
             // ── 8. Update card VM properties ─────────────────────────────────
             card.OsInstalledFile = effectiveDllName;
-            card.OsInstalledVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            card.OsInstalledVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             card.OsStatus = GameStatus.Installed;
-            if (isF5) HasUpdateF5 = false;
+            if (isFixedDir) { /* custom builds have no update flag; forks clear theirs when staged */ }
+            else if (isF5) HasUpdateF5 = false;
             else if (isDlssNr) HasUpdateDlssNr = false;
             else if (isNightly) HasUpdateNightly = false;
             else HasUpdate = false;
@@ -528,7 +565,7 @@ public partial class OptiScalerService
             // and always knows which files to clean up on uninstall, regardless of whether
             // the staging folder still exists or has been updated since.
             {
-                var installedVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+                var installedVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
                 var manifestFiles = new List<string>();
                 var manifestFolders = new List<string>();
 
@@ -559,7 +596,7 @@ public partial class OptiScalerService
                 if (GetStagedDlssPath()  != null) manifestFiles.Add(DlssDllFileName);
                 if (GetStagedDlssdPath() != null) manifestFiles.Add(DlssdDllFileName);
                 if (GetStagedDlssgPath() != null) manifestFiles.Add(DlssgDllFileName);
-                if (isDlssNrOrF5) manifestFiles.Add("nvngx_dlssnr.dll");
+                if (needsNrDll) manifestFiles.Add("nvngx_dlssnr.dll");
                 if (isF5 && File.Exists(Path.Combine(effectiveStagingDir, DlssNrForwarderName)))
                     manifestFiles.Add(DlssNrForwarderName);
 
@@ -794,7 +831,10 @@ public partial class OptiScalerService
             // deployed by OptiScaler and may belong to the NR section (ShortFuse/DLSS5 Tool).
             // Also skip if NR section currently owns the file (nrMethod set in manifest).
             bool isDlssNrOrF5Uninstall = installedVariant.Equals("DlssNr", StringComparison.OrdinalIgnoreCase)
-                                       || installedVariant.Equals("F5", StringComparison.OrdinalIgnoreCase);
+                                       || installedVariant.Equals("F5", StringComparison.OrdinalIgnoreCase)
+                                       // A custom build that needed the NR DLL lists it in rhi_install.txt
+                                       || ((OsVariants.IsCustom(installedVariant) || OsVariants.IsFork(installedVariant))
+                                           && gameManifest?.Files?.Contains("nvngx_dlssnr.dll", StringComparer.OrdinalIgnoreCase) == true);
             if (isDlssNrOrF5Uninstall && string.IsNullOrEmpty(gameManifest?.NrMethod))
             {
                 var gameNrPath = Path.Combine(gameDir, "nvngx_dlssnr.dll");
@@ -1105,6 +1145,27 @@ public partial class OptiScalerService
             bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
             bool isF5      = variant.Equals("F5",      StringComparison.OrdinalIgnoreCase);
             bool isDlssNrOrF5 = isDlssNr || isF5;
+            // Custom build (OsCustomBuildService): a fixed copy, never updated, staged in its own folder
+            bool isCustom = OsVariants.IsCustom(variant);
+            var customBuild = isCustom ? OsCustomBuildService.Get(variant) : null;
+            if (isCustom && customBuild == null)
+            {
+                CrashReporter.Log($"[OptiScalerService] {card.GameName}: custom build {variant} no longer exists — aborting");
+                progress?.Report(("This custom OptiScaler build was removed. Pick another version in the OptiScaler settings.", 0));
+                return;
+            }
+            // Recommended fork (manifest osForks, OsForkService): downloaded / updated from its GitHub releases
+            bool isFork = OsVariants.IsFork(variant);
+            var fork = isFork ? OsForkService.Get(variant) : null;
+            if (isFork && fork == null)
+            {
+                CrashReporter.Log($"[OptiScalerService] {card.GameName}: fork {variant} is no longer listed — aborting");
+                progress?.Report(("This OptiScaler fork is no longer available. Pick another version in the OptiScaler settings.", 0));
+                return;
+            }
+            bool isFixedDir = isCustom || isFork; // staged in its own folder, no built-in update flags
+            bool isOs10Build = isNightly || isDlssNrOrF5 || customBuild?.IsOs10 == true || fork?.IsOs10 == true;
+            bool needsNrDll  = isDlssNrOrF5 || customBuild?.NeedsNrDll == true || fork?.NeedsNrDll == true;
 
             // For nightly: use the pinned build dir if specified, otherwise the latest staged build
             string effectiveStagingDir;
@@ -1116,13 +1177,24 @@ public partial class OptiScalerService
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir; // fallback (triggers re-download below)
             }
+            else if (customBuild != null)
+            {
+                effectiveStagingDir = customBuild.Dir;
+            }
+            else if (fork != null)
+            {
+                // Downloads the fork's newest release when it isn't staged or is out of date
+                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None).ConfigureAwait(false) ?? fork.Dir;
+                fork = OsForkService.Get(variant) ?? fork;
+                isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
+            }
             else
             {
                 effectiveStagingDir = isDlssNrOrF5 ? (isF5 ? F5StagingDir : DlssNrStagingDir) : StagingDir;
             }
 
             // ── 1. Force re-download staging to get the latest version ────
-            bool hasUpdate = isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
+            bool hasUpdate = !isFixedDir && (isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate);
             if (hasUpdate && isNightly && effectiveNightlyBuild == null)
             {
                 // No pinned build — update to latest
@@ -1136,10 +1208,19 @@ public partial class OptiScalerService
                 else ClearStaging();
             }
 
-            bool stagingReady = isF5 ? IsStagingReadyF5
+            bool stagingReady = isFixedDir ? File.Exists(Path.Combine(effectiveStagingDir, "OptiScaler.dll"))
+                : isF5 ? IsStagingReadyF5
                 : isDlssNr ? IsStagingReadyDlssNr
                 : isNightly ? (effectiveNightlyBuild != null ? IsNightlyBuildStaged(effectiveNightlyBuild) : IsStagingReadyNightly)
                 : IsStagingReady;
+            if (isFixedDir && !stagingReady)
+            {
+                CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} has no OptiScaler.dll — aborting");
+                progress?.Report((isFork
+                    ? "This OptiScaler fork couldn't be downloaded. Check your connection (or GitHub token) and try again."
+                    : "This custom OptiScaler build is missing its files. Re-import it in Settings.", 0));
+                return;
+            }
             if (!stagingReady)
             {
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} staging not ready — downloading");
@@ -1373,7 +1454,7 @@ public partial class OptiScalerService
 
             // ── 4e. DlssNr / F5: re-deploy nvngx_dlssnr.dll (the runtime picked in the ⚙, else newest).
             // Left alone when the Neural Rendering section owns it (rhi_install.txt NrMethod).
-            if (isDlssNrOrF5 && string.IsNullOrEmpty(RhiInstallManifest.Read(gameDir)?.NrMethod))
+            if (needsNrDll && string.IsNullOrEmpty(RhiInstallManifest.Read(gameDir)?.NrMethod))
             {
                 try
                 {
@@ -1409,13 +1490,14 @@ public partial class OptiScalerService
             // The silent auto-updater runs this off the UI thread; card properties are bound to the
             // UI, so set them on the UI thread (a wrong-thread COMException here used to abort the
             // update before rhi_install.txt was rewritten, leaving the old version shown).
-            var newOsVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            var newOsVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             RunOnCardThread(card, () =>
             {
                 card.OsInstalledVersion = newOsVersion;
                 card.OsStatus = GameStatus.Installed;
             }, "UpdateAsync");
-            if (isF5) HasUpdateF5 = false;
+            if (isFixedDir) { /* custom builds have no update flag; forks clear theirs when staged */ }
+            else if (isF5) HasUpdateF5 = false;
             else if (isDlssNr) HasUpdateDlssNr = false;
             else if (isNightly) HasUpdateNightly = false;
             else HasUpdate = false;
@@ -1423,7 +1505,7 @@ public partial class OptiScalerService
             // ── 7. Rewrite rhi_install.txt with the new version ───────────────
             // Manifest is rebuilt from the new staging dir so the file list is current.
             {
-                var updatedVersion = isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+                var updatedVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
                 var manifestFiles = new List<string>();
                 var manifestFolders = new List<string>();
 
@@ -1452,7 +1534,7 @@ public partial class OptiScalerService
                 if (GetStagedDlssPath()  != null) manifestFiles.Add(DlssDllFileName);
                 if (GetStagedDlssdPath() != null) manifestFiles.Add(DlssdDllFileName);
                 if (GetStagedDlssgPath() != null) manifestFiles.Add(DlssgDllFileName);
-                if (isDlssNrOrF5) manifestFiles.Add("nvngx_dlssnr.dll");
+                if (needsNrDll) manifestFiles.Add("nvngx_dlssnr.dll");
                 if (isF5 && File.Exists(Path.Combine(effectiveStagingDir, DlssNrForwarderName)))
                     manifestFiles.Add(DlssNrForwarderName);
 
