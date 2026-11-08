@@ -68,7 +68,12 @@ public partial class OptiScalerService
                 progress?.Report(("This OptiScaler fork is no longer available. Pick another version in the OptiScaler settings.", 0));
                 return null;
             }
-            bool isFixedDir = isCustom || isFork; // staged in its own folder, no built-in update flags
+            // A game pinned to a release of Stable / DLSS NR / F5 / a fork (OptiScaler ⚙ › Release). The pin
+            // shares the per-game OsNightlyBuild value; an 8-digit nightly date left from an old Nightly pin isn't one.
+            bool isPinned = !isNightly && !string.IsNullOrEmpty(nightlyBuildHint)
+                && !(nightlyBuildHint!.Length == 8 && nightlyBuildHint.All(char.IsDigit))
+                && OsReleaseService.SupportsPinning(variant);
+            bool isFixedDir = isCustom || isFork || isPinned; // staged in its own folder, no built-in update flags
             bool isOs10Build = isNightly || isDlssNrOrF5 || customBuild?.IsOs10 == true || fork?.IsOs10 == true;
             bool needsNrDll  = isDlssNrOrF5 || customBuild?.NeedsNrDll == true || fork?.NeedsNrDll == true;
             string? effectiveNightlyBuild = null;
@@ -80,6 +85,17 @@ public partial class OptiScalerService
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir;
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Nightly: hint={nightlyBuildHint ?? "(null)"}, effective={effectiveNightlyBuild ?? "(null)"}, stagingDir={effectiveStagingDir}");
+            }
+            else if (isPinned)
+            {
+                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None).ConfigureAwait(false) ?? "";
+                if (effectiveStagingDir.Length == 0)
+                {
+                    CrashReporter.Log($"[OptiScalerService] {card.GameName}: pinned release {nightlyBuildHint} of {variant} unavailable — aborting");
+                    progress?.Report(($"Release {nightlyBuildHint} couldn't be downloaded. Pick another in the OptiScaler settings (Release), or Latest.", 0));
+                    return null;
+                }
+                isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
             }
             else if (customBuild != null)
             {
@@ -465,7 +481,7 @@ public partial class OptiScalerService
                 RemoteFileSize = null,
                 InstalledAt    = DateTime.UtcNow,
                 OsVariant      = variant.Equals("Stable", StringComparison.OrdinalIgnoreCase) ? null : variant,
-                OsNightlyBuild = isNightly ? effectiveNightlyBuild : null,
+                OsNightlyBuild = isNightly ? effectiveNightlyBuild : isPinned ? nightlyBuildHint : null,
             };
             _auxInstaller.SaveAuxRecord(record);
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Saved tracking record for {card.GameName}");
@@ -509,7 +525,7 @@ public partial class OptiScalerService
 
             // ── 8. Update card VM properties ─────────────────────────────────
             card.OsInstalledFile = effectiveDllName;
-            card.OsInstalledVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            card.OsInstalledVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             card.OsStatus = GameStatus.Installed;
             if (isFixedDir) { /* custom builds have no update flag; forks clear theirs when staged */ }
             else if (isF5) HasUpdateF5 = false;
@@ -565,7 +581,7 @@ public partial class OptiScalerService
             // and always knows which files to clean up on uninstall, regardless of whether
             // the staging folder still exists or has been updated since.
             {
-                var installedVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+                var installedVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
                 var manifestFiles = new List<string>();
                 var manifestFolders = new List<string>();
 
@@ -1163,7 +1179,12 @@ public partial class OptiScalerService
                 progress?.Report(("This OptiScaler fork is no longer available. Pick another version in the OptiScaler settings.", 0));
                 return;
             }
-            bool isFixedDir = isCustom || isFork; // staged in its own folder, no built-in update flags
+            // A game pinned to a release of Stable / DLSS NR / F5 / a fork (OptiScaler ⚙ › Release). The pin
+            // shares the per-game OsNightlyBuild value; an 8-digit nightly date left from an old Nightly pin isn't one.
+            bool isPinned = !isNightly && !string.IsNullOrEmpty(nightlyBuildHint)
+                && !(nightlyBuildHint!.Length == 8 && nightlyBuildHint.All(char.IsDigit))
+                && OsReleaseService.SupportsPinning(variant);
+            bool isFixedDir = isCustom || isFork || isPinned; // staged in its own folder, no built-in update flags
             bool isOs10Build = isNightly || isDlssNrOrF5 || customBuild?.IsOs10 == true || fork?.IsOs10 == true;
             bool needsNrDll  = isDlssNrOrF5 || customBuild?.NeedsNrDll == true || fork?.NeedsNrDll == true;
 
@@ -1176,6 +1197,17 @@ public partial class OptiScalerService
                 effectiveStagingDir = effectiveNightlyBuild != null
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir; // fallback (triggers re-download below)
+            }
+            else if (isPinned)
+            {
+                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None).ConfigureAwait(false) ?? "";
+                if (effectiveStagingDir.Length == 0)
+                {
+                    CrashReporter.Log($"[OptiScalerService] {card.GameName}: pinned release {nightlyBuildHint} of {variant} unavailable — aborting");
+                    progress?.Report(($"Release {nightlyBuildHint} couldn't be downloaded. Pick another in the OptiScaler settings (Release), or Latest.", 0));
+                    return;
+                }
+                isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
             }
             else if (customBuild != null)
             {
@@ -1481,7 +1513,7 @@ public partial class OptiScalerService
                 record.InstalledAt = DateTime.UtcNow;
                 // Same rule as InstallAsync: Stable is stored as null, every other variant by name
                 record.OsVariant = variant.Equals("Stable", StringComparison.OrdinalIgnoreCase) ? null : variant;
-                record.OsNightlyBuild = isNightly ? effectiveNightlyBuild : null;
+                record.OsNightlyBuild = isNightly ? effectiveNightlyBuild : isPinned ? nightlyBuildHint : null;
                 _auxInstaller.SaveAuxRecord(record);
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated tracking record for {card.GameName}");
             }
@@ -1490,7 +1522,7 @@ public partial class OptiScalerService
             // The silent auto-updater runs this off the UI thread; card properties are bound to the
             // UI, so set them on the UI thread (a wrong-thread COMException here used to abort the
             // update before rhi_install.txt was rewritten, leaving the old version shown).
-            var newOsVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            var newOsVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             RunOnCardThread(card, () =>
             {
                 card.OsInstalledVersion = newOsVersion;
@@ -1505,7 +1537,7 @@ public partial class OptiScalerService
             // ── 7. Rewrite rhi_install.txt with the new version ───────────────
             // Manifest is rebuilt from the new staging dir so the file list is current.
             {
-                var updatedVersion = customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+                var updatedVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
                 var manifestFiles = new List<string>();
                 var manifestFolders = new List<string>();
 

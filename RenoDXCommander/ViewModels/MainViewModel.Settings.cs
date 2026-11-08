@@ -286,6 +286,19 @@ public partial class MainViewModel
         return ""; // absent = Latest
     }
 
+    /// <summary>
+    /// The release a game is pinned to for a Stable / DLSS NR / F5 / fork install (OptiScaler ⚙ › Release),
+    /// or null. Shares the per-game pin value with Nightly; an 8-digit nightly date isn't a release pin.
+    /// </summary>
+    public string? GetOsPinnedRelease(string gameName, string store = "")
+    {
+        var variant = GetOsVariant(gameName, store);
+        if (!OsReleaseService.SupportsPinning(variant)) return null;
+        var pin = GetOsNightlyBuild(gameName, store);
+        if (string.IsNullOrEmpty(pin) || (pin.Length == 8 && pin.All(char.IsDigit))) return null;
+        return pin;
+    }
+
     /// <summary>Sets the pinned nightly build date for a game. Null or empty = Latest (removes pin and auto-update exemption).</summary>
     public void SetOsNightlyBuild(string gameName, string? buildDate, string store = "")
     {

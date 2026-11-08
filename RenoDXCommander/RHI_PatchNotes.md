@@ -38,6 +38,8 @@
 
 ### Changes
 
+- The OptiScaler ⚙ now shows the installed and latest version at the top ("Installed: 0.1.29 · Latest: 0.1.37 (update available)"), with Check now to ask for the newest release straight away instead of waiting for the next automatic check, and Update to install it.
+- New Release setting in the OptiScaler ⚙ for Stable, DLSS NR, F5 DLSSNR and the recommended forks: pin a game to an older release (like Nightly's build picker). Pinned games aren't updated; Latest keeps following the newest release.
 - New option in Settings › Components › OptiScaler: Remove old Nightly builds. RHI keeps a copy of every OptiScaler Nightly build it downloads (about 200-300 MB each), and they pile up. With it on, older builds are deleted when a new one arrives, and the ones already stored are cleared straight away. The newest build and any build a game is pinned to in its OptiScaler ⚙ are always kept. Off by default.
 - Support the Mod Authors (Help › Donate) can show both a Ko-fi and a Patreon button for an author.
 - MFG Ada Unlock is now called MFG Unlock, matching the mod, and its descriptions say it brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental). Existing installs and settings carry over.

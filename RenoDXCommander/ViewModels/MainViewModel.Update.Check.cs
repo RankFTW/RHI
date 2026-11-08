@@ -240,6 +240,8 @@ public partial class MainViewModel
                         _ when OsVariants.IsFork(osVariant)   => OsForkService.HasUpdate(osVariant),
                         _         => _optiScalerService.HasUpdate
                     };
+                    // A game pinned to a release stays on it
+                    if (osHasUpdate && GetOsPinnedRelease(card.GameName, card.Source ?? "") != null) osHasUpdate = false;
                     if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;
                 }
 

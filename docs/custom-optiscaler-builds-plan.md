@@ -133,6 +133,8 @@ This is the large step: about 20 files. It changes no behaviour for users except
 **Recommended forks (separate from custom builds)** (built 8 Nov 2026: `Services/OsForkService.cs`, manifest `osForks`, variant `Fork:<id>`; see `docs/manifest-field-reference.md`): a manifest field `osForks` (live data) lists known-good GitHub forks (repo, label, asset pattern, NeedsNrDll). These are maintained by the developer and *do* get update checks, exactly like F5 today, through the Phase 0 source model. Adding one to the manifest makes it appear as a built-in-style version for everyone, without an RHI release.
 
 ### Phase 2 (later, if wanted)
+
+> **Done 8 Nov 2026:** per-game Release picker for Stable / DLSS NR / F5 / forks (`OsReleaseService`, pins in `optiscaler-pinned\<version>\<tag>\`, sharing the per-game `OsNightlyBuild` value), and the ⚙'s installed-vs-latest line with Check now / Update (`MainWindow.Events.Components.OptiScaler.Release.cs`). Still open: opt-in companion archives.
 - Pin a specific release per game for the GitHub-backed versions (generalising the Nightly build picker).
 - Opt-in companion archives (F5's `Optional-*.zip` overlays).
 

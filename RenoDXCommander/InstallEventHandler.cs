@@ -256,7 +256,7 @@ public class InstallEventHandler
                     useDlssInputs,
                     ViewModel.Settings.OsHotkey,
                     osVariant,
-                    nightlyBuildHint: osVariant == "Nightly" ? (ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "") is { Length: > 0 } b ? b : null) : null);
+                    nightlyBuildHint: osVariant == "Nightly" || OsReleaseService.SupportsPinning(osVariant) ? (ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "") is { Length: > 0 } b ? b : null) : null);
 
                 if (osRecord == null)
                 {

@@ -339,6 +339,9 @@ public sealed partial class MainWindow
                     ? "Install OptiScaler on this game to change these settings. The version and nightly build can be chosen before installing."
                     : "Install OptiScaler on this game to change these settings. The version can be chosen before installing."));
 
+            // ── Installed vs latest, Check now, Update (issue #163) ──────────
+            cog.AddContent(BuildOsVersionLine(ctx, variant, isInstalled));
+
             // ── Presets (all versions) ───────────────────────────────────────
             cog.AddContent(BuildOsPresetsPanel(ctx));
 
@@ -359,6 +362,9 @@ public sealed partial class MainWindow
             {
                 int idx = variantCombo.SelectedIndex;
                 var internalValue = idx >= 0 && idx < variantList.Count ? variantList[idx].Value : OsVariants.Stable;
+                if (internalValue == variant) return;
+                // A pinned build / release belongs to the old version
+                ViewModel.SetOsNightlyBuild(card.GameName, null, store);
                 ViewModel.SetOsVariant(card.GameName, internalValue, store);
                 if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
                 {
@@ -438,6 +444,8 @@ public sealed partial class MainWindow
             // Nightly: version and build share a row (both usable before installing), framerate limit goes last.
             if (isNightly)
                 AddOsGrid(ctx, variantCell, BuildOsNightlyBuildCell(ctx, isInstalled), apiCell, upscalerCell, fpsCell, dxgiCell);
+            else if (OsReleaseService.SupportsPinning(variant))
+                AddOsGrid(ctx, variantCell, BuildOsReleaseCell(ctx, variant, isInstalled), apiCell, upscalerCell, fpsCell, dxgiCell);
             else
                 AddOsGrid(ctx, variantCell, fpsCell, apiCell, upscalerCell, dxgiCell, null);
 
