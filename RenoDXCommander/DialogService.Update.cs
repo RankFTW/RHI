@@ -229,22 +229,37 @@ public partial class DialogService
         }
     }
 
+    private const double PatchNotesFontMin = 10, PatchNotesFontMax = 20;
+
     public async Task ShowPatchNotesDialogAsync()
     {
         var (preamble, sections) = MainViewModel.GetPatchNoteSections();
-        const double bodyHeight = 480;
+        // The search box sits in the left column (not a row across the top), so the notes get its height
+        const double bodyHeight = 530;
+        const double cardWidth = 640, navWidth = 160, layoutGap = 14; // strip 30 + gaps + nav + card must fit the dialog's ~870 px
+        var settings = ViewModel.Settings;
 
         var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
         {
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             Foreground = TabsTheme.B(TabsTheme.TextControl),
-            FontSize = 12,
+            FontSize = Math.Clamp(settings.PatchNotesFontSize, PatchNotesFontMin, PatchNotesFontMax),
             UseEmphasisExtras = true,
             UseListExtras = true,
             UseTaskLists = true,
         };
 
         TabsTheme.StyleMarkdown(markdown);
+        // Heading sizes follow the text size (+ / - buttons); the defaults are for 12 px text
+        var themes = markdown.Config.Themes;
+        double[] baseHeadings = { themes.H1FontSize, themes.H2FontSize, themes.H3FontSize, themes.H4FontSize, themes.H5FontSize, themes.H6FontSize };
+        void ScaleHeadings(double size)
+        {
+            double f = size / 12.0;
+            themes.H1FontSize = baseHeadings[0] * f; themes.H2FontSize = baseHeadings[1] * f; themes.H3FontSize = baseHeadings[2] * f;
+            themes.H4FontSize = baseHeadings[3] * f; themes.H5FontSize = baseHeadings[4] * f; themes.H6FontSize = baseHeadings[5] * f;
+        }
+        ScaleHeadings(markdown.FontSize);
         var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
         markdownContainer.Children.Add(markdown);
 
@@ -257,7 +272,7 @@ public partial class DialogService
         };
         var card = TabsTheme.MakeCard(scrollViewer, 0);
         card.Padding = new Thickness(20, 16, 4, 16);
-        card.Width = 680;
+        card.Width = cardWidth;
 
         // Version list down the left: click one to show its notes. One version at a time keeps
         // the Markdown small (the file has dozens of versions). The search box above narrows the
@@ -402,25 +417,10 @@ public partial class DialogService
             navList.Children.Add(button);
         }
 
-        var navHeading = TabsTheme.SectionHeading("Versions");
-        navHeading.FontSize = 11;
-        navHeading.Margin = new Thickness(12, 2, 0, 8);
-        var navPanel = new Grid { Width = 150, Height = bodyHeight + 34 };
-        navPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        navPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        navPanel.Children.Add(navHeading);
-        var navScroll = new ScrollViewer
-        {
-            Content = navList,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Padding = new Thickness(0, 0, 10, 0),
-        };
-        Grid.SetRow(navScroll, 1);
-        navPanel.Children.Add(navScroll);
-
-        // Search box over both columns: 250 ms after typing stops, Esc clears
-        var search = new TextBox { PlaceholderText = "Search patch notes (e.g. OptiScaler, crash, Vulkan)" };
+        // Search box (compact, top of the left column): 250 ms after typing stops, Esc clears
+        var search = new TextBox { PlaceholderText = "Search notes", Margin = new Thickness(0, 0, 10, 10) };
         TabsTheme.StyleInput(search);
+        ToolTipService.SetToolTip(search, "Search every version's notes (e.g. OptiScaler, crash, Vulkan)");
         var searchTimer = search.DispatcherQueue.CreateTimer();
         searchTimer.Interval = TimeSpan.FromMilliseconds(250);
         searchTimer.IsRepeating = false;
@@ -441,18 +441,86 @@ public partial class DialogService
             }
         };
 
-        var layout = new Grid { ColumnSpacing = 14, RowSpacing = 12 };
+        var navHeading = TabsTheme.SectionHeading("Versions");
+        navHeading.FontSize = 11;
+        navHeading.Margin = new Thickness(12, 2, 0, 8);
+        var navPanel = new Grid { Width = navWidth, Height = bodyHeight + 32 };
+        navPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        navPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        navPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        navPanel.Children.Add(search);
+        Grid.SetRow(navHeading, 1);
+        navPanel.Children.Add(navHeading);
+        var navScroll = new ScrollViewer
+        {
+            Content = navList,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 10, 0),
+        };
+        Grid.SetRow(navScroll, 2);
+        navPanel.Children.Add(navScroll);
+
+        // Thin strip on the far left: hide / show the versions + search, and the text size (all saved)
+        Button StripButton(object content, string tip)
+        {
+            var b = new Button { Width = 30, Padding = new Thickness(0), Content = content };
+            TabsTheme.Apply(b, TabsTheme.IconButton, height: 30, fontSize: 15);
+            ToolTipService.SetToolTip(b, tip);
+            return b;
+        }
+        var toggleIcon = new FontIcon { Glyph = "", FontSize = 12 };
+        var toggleNav = StripButton(toggleIcon, "Hide the versions and search");
+        var bigger = StripButton("+", "Bigger text");
+        var smaller = StripButton("−", "Smaller text");
+        var strip = new StackPanel { Spacing = 6 };
+        strip.Children.Add(toggleNav);
+        strip.Children.Add(bigger);
+        strip.Children.Add(smaller);
+
+        void ApplyNavHidden(bool hidden)
+        {
+            navPanel.Visibility = hidden ? Visibility.Collapsed : Visibility.Visible;
+            card.Width = hidden ? cardWidth + navWidth + layoutGap : cardWidth;
+            toggleIcon.Glyph = hidden ? "" : "";
+            ToolTipService.SetToolTip(toggleNav, hidden ? "Show the versions and search" : "Hide the versions and search");
+        }
+        toggleNav.Click += (s, e) =>
+        {
+            settings.PatchNotesNavHidden = !settings.PatchNotesNavHidden;
+            ApplyNavHidden(settings.PatchNotesNavHidden);
+            ViewModel.SaveSettingsPublic();
+        };
+
+        void SetTextSize(double size)
+        {
+            size = Math.Clamp(size, PatchNotesFontMin, PatchNotesFontMax);
+            bigger.IsEnabled = size < PatchNotesFontMax;
+            smaller.IsEnabled = size > PatchNotesFontMin;
+            if (Math.Abs(size - markdown.FontSize) < 0.01) return;
+            markdown.FontSize = size;
+            ScaleHeadings(size);
+            // The Markdown is rendered when its text is set, so set it again to apply the new size
+            var text = markdown.Text;
+            markdown.Text = "";
+            markdown.Text = text;
+            settings.PatchNotesFontSize = size;
+            ViewModel.SaveSettingsPublic();
+        }
+        bigger.Click += (s, e) => SetTextSize(markdown.FontSize + 1);
+        smaller.Click += (s, e) => SetTextSize(markdown.FontSize - 1);
+        bigger.IsEnabled = markdown.FontSize < PatchNotesFontMax;
+        smaller.IsEnabled = markdown.FontSize > PatchNotesFontMin;
+
+        var layout = new Grid { ColumnSpacing = layoutGap };
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        layout.Children.Add(search);
-        Grid.SetColumnSpan(search, 2);
-        Grid.SetRow(navPanel, 1);
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        layout.Children.Add(strip);
+        Grid.SetColumn(navPanel, 1);
         layout.Children.Add(navPanel);
-        Grid.SetRow(card, 1);
-        Grid.SetColumn(card, 1);
+        Grid.SetColumn(card, 2);
         layout.Children.Add(card);
+        ApplyNavHidden(settings.PatchNotesNavHidden);
 
         if (sections.Count > 0) ShowVersion(0);
         else markdown.Text = "No patch notes available.";

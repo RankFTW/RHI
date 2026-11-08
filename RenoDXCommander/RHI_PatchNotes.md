@@ -60,6 +60,7 @@
 - Interface size (Settings › General, or Ctrl + mouse wheel) now changes in smaller 5% steps and goes up to 200%.
 
 **Other**
+- What's New: the search box is now a small box above the version list, so the notes are taller. The arrow on the left hides the versions and search to widen the notes, and + and − change the text size. RHI remembers both.
 - With a GitHub token (Settings › Accounts & Data), RHI now checks for updates every hour while it's open instead of every 4 hours. Without a token it stays at every 4 hours, because GitHub allows far fewer requests without one.
 - MFG Ada Unlock is now called MFG Unlock, to match the mod. It brings DLSS frame generation to RTX 20 and 30 Series cards (experimental). Your installs and settings carry over.
 - Support the Mod Authors (Help › Donate) can show both Ko-fi and Patreon buttons for an author.
