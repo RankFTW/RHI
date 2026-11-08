@@ -11,6 +11,9 @@ public class DetectedGame
     /// <summary>Epic Games Store catalog namespace (for protocol launch).</summary>
     public string? EpicCatalogNamespace { get; set; }
 
+    /// <summary>Epic Games Store catalog item id (for protocol launch; the new launcher needs namespace:item:app).</summary>
+    public string? EpicCatalogItemId { get; set; }
+
     /// <summary>Epic Games Store app name (for protocol launch).</summary>
     public string? EpicAppName { get; set; }
 

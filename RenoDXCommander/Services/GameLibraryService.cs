@@ -92,6 +92,7 @@ public class GameLibraryService : IGameLibraryService
             {
                 Name = g.Name, InstallPath = g.InstallPath, Source = g.Source,
                 SteamAppId = g.SteamAppId, EpicCatalogNamespace = g.EpicCatalogNamespace,
+                EpicCatalogItemId = g.EpicCatalogItemId,
                 EpicAppName = g.EpicAppName, XboxAumid = g.XboxAumid,
             }).ToList(),
             ManualGames = manualGames.Select(g => new SavedGame
@@ -123,6 +124,7 @@ public class GameLibraryService : IGameLibraryService
         {
             Name = g.Name, InstallPath = g.InstallPath, Source = g.Source,
             SteamAppId = g.SteamAppId, EpicCatalogNamespace = g.EpicCatalogNamespace,
+            EpicCatalogItemId = g.EpicCatalogItemId,
             EpicAppName = g.EpicAppName, XboxAumid = g.XboxAumid,
         }).ToList();
 

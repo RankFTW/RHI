@@ -48,6 +48,7 @@ public partial class MainViewModel
                                 Source = game.Source,
                                 SteamAppId = game.SteamAppId,
                                 EpicCatalogNamespace = game.EpicCatalogNamespace,
+                                EpicCatalogItemId = game.EpicCatalogItemId,
                                 EpicAppName = game.EpicAppName,
                             });
                         }

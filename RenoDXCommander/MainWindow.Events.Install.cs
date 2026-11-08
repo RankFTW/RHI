@@ -798,7 +798,8 @@ public sealed partial class MainWindow
             // 4. Epic Games Store protocol (skip if args set — protocol doesn't support game args)
             if (!string.IsNullOrEmpty(card.DetectedGame?.EpicAppName) && string.IsNullOrEmpty(launchArgs))
             {
-                var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
+                var dg = card.DetectedGame;
+                var epicUri = Services.GameDetectionService.EpicLaunchUri(dg.EpicCatalogNamespace, dg.EpicCatalogItemId, dg.EpicAppName!);
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);

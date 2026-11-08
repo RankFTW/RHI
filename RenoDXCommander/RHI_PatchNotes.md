@@ -7,68 +7,93 @@
 
 ### New
 
-**Recommended OptiScaler forks**
-- Popular OptiScaler forks now appear in the OptiScaler version lists (a game's OptiScaler ⚙ and Settings › Default version) next to Stable, Nightly, DLSS NR and F5 DLSSNR: Venom, NR PreSR MFG and OpenNR to start with. RHI downloads the newest release when you install one and keeps it up to date like the built-in versions. The list comes from RHI's online data, so forks can be added without an RHI update.
-
 **Custom OptiScaler builds**
-- Add any OptiScaler build in Settings › Components › Custom OptiScaler builds: paste a download link (a GitHub release file, a Discord attachment or any other direct link), or pick a zip, 7z or rar, a folder, or an OptiScaler.dll on its own. RHI finds the OptiScaler.dll inside and asks you for a name.
-- Pick it in a game's OptiScaler ⚙ (Version) or as the Default version. It installs, uninstalls and keeps your OptiScaler.ini settings like the built-in versions. Builds with the OptiScaler 10 layout get the frame generation and Engine.ini settings, and ticking DLSS NR DLL adds NVIDIA's Neural Rendering DLL and its settings, for Neural Rendering forks.
-- Custom builds are never updated by RHI: when a new version comes out, use Replace on the build and RHI offers to put it into the games that use it. Rename and Remove are there too. Only add builds from people you trust.
-- You can also drag a zip or 7z with an OptiScaler build onto RHI (or drop its download link): RHI asks whether to add it as a custom build.
+- Use any OptiScaler build you like. Add one in Settings › Components › Custom OptiScaler builds from a download link (GitHub, Discord or anywhere else), a zip, 7z or rar file, a folder, or just an OptiScaler.dll. You can also drag the file onto RHI.
+- Then pick it as the Version in a game's OptiScaler ⚙, or as your Default version. It installs and uninstalls like the built-in versions and keeps your OptiScaler settings.
+- RHI never updates custom builds. When a new version comes out, use Replace and RHI offers to update the games that use it.
+- Adding a Neural Rendering fork? Tick DLSS NR DLL on it so RHI adds NVIDIA's Neural Rendering file too.
+- Only add builds from people you trust.
+
+**More OptiScaler versions**
+- Popular OptiScaler forks now sit alongside Stable, Nightly, DLSS NR and F5 DLSSNR: Venom, NR PreSR MFG and OpenNR to start with. RHI downloads them and keeps them up to date like the others, and more can be added without an RHI update.
 
 **GITC Uplift**
-- New Neural Rendering method: GITC Uplift by ghostinthecamera, DLSS Neural Rendering through a ReShade addon, built for ease of use, stability and performance (it also works well for virtual photography). It works with any game, no DLSS needed, and is now the default method for 64-bit DX11, DX12 and Vulkan games (games where you've already picked or installed a method keep it). Pick it in the Neural Rendering section's Method list and click Install.
-- Uplift Version picks the release: Latest installs the newest and keeps it up to date, a picked version stays as it is. Changing it while installed swaps it in place.
-- RHI installs the addon (32- or 64-bit to match the game), its 64-bit helper, the NR DLL you pick in NR DLL Version (in the GITC-Uplift folder, where Uplift looks for it) and its shaders. If you already put your own nvngx_dlssnr.dll there, RHI leaves it alone.
-- Turn it on in the game: open ReShade (Home), go to the GITC Uplift tab and tick Enable. Its DLSS-based options need a 64-bit DX11, DX12 or Vulkan game.
-- OpenGL games (OpenMW and others) get Uplift's own ReShade technique switched on first in the effect list. Without it, Uplift can't run on games that use anti-aliasing (MSAA). RHI does this once per install, so if you turn it off in ReShade it stays off, and removing Uplift takes it back out.
-- RHI downloads it only once a game uses it, checks the download against the release's checksums, and keeps it up to date in every game it's installed in. Removing it, or switching to another method, takes out only the files RHI put there.
+- New Neural Rendering method: GITC Uplift by ghostinthecamera. It brings NVIDIA's DLSS Neural Rendering to almost any game on an RTX card, even games that don't support DLSS at all: DirectX 9 to 12, Vulkan and OpenGL, 64-bit and 32-bit.
+- Built for performance and ease of use: drop it in, switch it on. Choose a Look, keep characters' faces true to the original with Keep faces, and lower the Resolution to trade a little detail for more speed and less video memory. A status card in ReShade tells you whether it's working and, if not, what to fix.
+- It now replaces DLSS5 Feeder as the default method for 64-bit DX11, DX12 and Vulkan games without DLSS. Games that already have a method keep theirs.
+- Install it from the Neural Rendering section, then in game open ReShade (Home), go to the GITC Uplift tab and tick Enable. For single-player games only.
+- Uplift Version lets you follow the latest release or stay on one. RHI keeps it up to date, and only removes its own files when you uninstall or switch method.
+- OpenGL games such as OpenMW are set up for it automatically, so it works with anti-aliasing on.
+
+**Steam and Xbox achievements (Spotlight)**
+- Turn them on in Settings › Achievements. The Spotlight page then shows your progress, latest unlock and recent unlocks under the Launch button. Click it for the full list with unlock dates, rarity and search. Hidden achievements stay hidden until you unlock them.
+- Steam: read from Steam's files on your PC, so no sign-in or public profile is needed. A game shows its achievements once you've run it on this PC.
+- Xbox and Game Pass: read from the Xbox app, with Gamerscore and progress too. If a game shows nothing or misses recent unlocks, open its page in the Xbox app once.
 
 **Game collections**
-- Make your own lists of games, like Racing or Souls-likes. Right-click a game (or press X on a controller) and choose Add to collection, then tick the collections it belongs in or pick New collection. A game can be in as many collections as you like.
-- Your collections appear as chips under All / Installed / Favourites in Classic and Tabs, and at the right of the search row in Spotlight. Click one to show only its games, and click it again to go back to all games. The search box and saved searches still narrow the list, and hidden games stay hidden.
-- On a controller, clicking the right stick switches to your next collection (after the last one it goes back to all games), with a short message showing which collection you're on and how many games it has. The left stick still switches between All, Installed and Favourites. With no collections, the side panel open or Settings showing, the right stick still takes you back to the game's cover.
-- Right-click a chip (or press X on it with a controller) to rename it, move it left or right, or delete it. Deleting a collection never removes the games. Collections follow a game when you rename it, and RHI remembers the collection you were viewing.
-
-**Steam and Xbox achievements in Spotlight**
-- Turn it on in Settings › Achievements (it's off until you do). The Spotlight page then shows the selected Steam game's achievements under the Launch, HDR and Resolution buttons: how many you've unlocked, a progress bar, your latest unlock and a row of your other recent unlocks.
-- Click it for the full list in the side panel: unlocked achievements first, newest at the top, with the date and time you got each one, then the ones still locked underneath, greyed out. Every achievement shows its icon, description and how many players have it. Hidden achievements stay hidden until you unlock them, and the search box finds an achievement by name or description.
-- RHI reads your achievements from Steam's own files on this PC, so there's no sign-in, API key or public profile to set up. It updates by itself when Steam records a new unlock. Games you haven't played on this PC show nothing until you run them once.
-- Xbox and Game Pass games have their own switch in the same section. RHI reads their achievements from the Xbox app's data on this PC (no sign-in in RHI), with unlock dates, rarity, Gamerscore and progress on achievements you're partway through. If a game shows nothing or is missing new unlocks, open its page in the Xbox app once.
+- Make your own lists of games, like Racing or Souls-likes: right-click a game (X on a controller) and choose Add to collection. A game can be in as many collections as you like.
+- Your collections show as buttons above the game list (beside the search box in Spotlight). Click one to show only its games, and click it again to show everything. Right-click one to rename, move or delete it. Deleting a collection never removes any games.
+- On a controller, click the right stick to switch between your collections.
 
 ### Changes
 
-- The OptiScaler ⚙ now shows the installed and latest version at the top ("Installed: 0.1.29 · Latest: 0.1.37 (update available)"), with Check now to ask for the newest release straight away instead of waiting for the next automatic check, and Update to install it.
-- New Release setting in the OptiScaler ⚙ for Stable, DLSS NR, F5 DLSSNR and the recommended forks: pin a game to an older release (like Nightly's build picker). Pinned games aren't updated; Latest keeps following the newest release.
-- New option in Settings › Components › OptiScaler: Remove old Nightly builds. RHI keeps a copy of every OptiScaler Nightly build it downloads (about 200-300 MB each), and they pile up. With it on, older builds are deleted when a new one arrives, and the ones already stored are cleared straight away. The newest build and any build a game is pinned to in its OptiScaler ⚙ are always kept. Off by default.
-- Support the Mod Authors (Help › Donate) can show both a Ko-fi and a Patreon button for an author.
-- MFG Ada Unlock is now called MFG Unlock, matching the mod, and its descriptions say it brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental). Existing installs and settings carry over.
-- When a game's install folder changes, RHI now moves its installed mods with it. After Change install folder or Reset install folder, RHI asks whether to move the mods, their settings and presets to the new folder; when RHI itself corrects a game's folder, it moves them on its own and says so in the status bar. The game's own files that RHI had replaced are put back in the old folder, and nothing is moved while the game is running.
-- (WIP) Steam Controllers now work in the Spotlight layout's controller support, with nothing to set up. Both the new Steam Controller (USB, Bluetooth or its wireless dongle) and the original Steam Controller (USB or its wireless dongle) are supported. RHI only reads the controller, so Steam keeps working as normal.
-- In Spotlight, the Filters button is now a filter icon just left of All / Installed / Favourites / Hidden (it shows a number when filters are on). Classic and Tabs keep the Filters button where it was.
-- Spotlight has a new Covers at bottom button at the right of the search row. It moves the search box, filters and the row of game covers below the game page, with the covers right under the game and the search and filters at the very bottom. Click Covers at top to put them back. RHI remembers your choice, and the controller follows it: with the covers on top, Down goes to Launch; with them at the bottom, Up goes to the Tune this game tiles just above.
-- The controller's button hints now sit in the middle of the bottom status bar, in place of the anti-cheat notice, instead of floating over the page. They no longer cover anything, wherever the covers are, and the notice comes back when you use the mouse.
-- Interface size (Settings › General, or Ctrl + mouse wheel) now goes in 5% steps and up to 200%, so each wheel notch is a small change and large screens can go bigger than 150%.
+**OptiScaler**
+- The OptiScaler ⚙ shows the version you have and the latest one, with Check now to look for an update straight away and Update to install it.
+- New Release setting in the OptiScaler ⚙: keep a game on an older release of Stable, DLSS NR, F5 DLSSNR or a fork. Pinned games aren't updated.
+- New Remove old Nightly builds option (Settings › Components › OptiScaler, off by default). Every Nightly build RHI downloads takes 200-300 MB, so turn this on to delete old ones automatically. The newest build and any build a game is pinned to are kept.
+
+**Moving games**
+- After Change install folder or Reset install folder, RHI offers to move the game's mods, settings and presets to the new folder. When RHI corrects a folder itself, it moves them automatically. Nothing is moved while the game is running.
+
+**Spotlight**
+- New Covers at bottom button (right of the search box) moves the game covers, search and filters below the game page. Click Covers at top to undo. The controller follows the layout.
+- The Filters button is now a small filter icon to the left of All / Installed / Favourites / Hidden.
+
+**Controller**
+- Steam Controllers now work with no setup: the new one and the original, by USB or wireless dongle. This is still a work in progress.
+- Button hints now sit in the bottom bar instead of floating over the page.
+
+**Interface size**
+- Interface size (Settings › General, or Ctrl + mouse wheel) now changes in smaller 5% steps and goes up to 200%.
+
+**Other**
+- MFG Ada Unlock is now called MFG Unlock, to match the mod. It brings DLSS frame generation to RTX 20 and 30 Series cards (experimental). Your installs and settings carry over.
+- Support the Mod Authors (Help › Donate) can show both Ko-fi and Patreon buttons for an author.
 
 ### Bug Fixes
 
-- Fixed installing OptiScaler F5 DLSSNR, DLSS NR or Nightly using an old downloaded copy when a newer release was out (for example F5 0.1.29 instead of 0.1.37). RHI only checked for new releases every few hours, and only for versions a game already had installed, so removing and reinstalling didn't help. Install now checks for a newer release first.
-- Fixed OptiScaler F5 DLSSNR showing the Stable version number on some games.
-- Fixed a fresh OptiScaler F5 DLSSNR install skipping the Streamline, DLSS Enabler and frame generation settings you'd set in its ⚙ (Nightly and DLSS NR already did this).
-- Fixed updating OptiScaler F5 DLSSNR not refreshing the DLSS NR runtime, and updating DLSS NR replacing the NR Runtime you'd picked in the ⚙ with the newest one. Installs and updates now use your pick, and leave the file alone when the Neural Rendering section manages it.
-- Fixed OptiScaler F5 DLSSNR not being downloaded at startup like the other versions, so its first install had to wait for the download.
-- Fixed Reset install folder going back to the folder you picked with Change install folder instead of the folder RHI detected.
-- Fixed games using RTX HDR or Auto HDR (instead of a RenoDX mod) showing "—" on the RenoDX row, the Overview card and Spotlight's What's installed tile. They now show RTX HDR or Auto HDR, with "on" in green.
-- Fixed some games being detected as DirectX 12 because of video, UI or windowing libraries they ship (FFmpeg, Qt, SDL, Chromium) rather than what they render with. For example, OpenMW (OpenGL) showed as DX12, so the wrong ReShade setup and options were offered.
-- Fixed RHI showing "Not Responding" for a minute or more, and sometimes restarting itself, while a game that uses a lot of memory was running. When Windows is short of memory it moves RHI out of RAM to make room for the game, and RHI then treated the slow response as a freeze and ran heavy checks that made it worse. RHI now waits it out while a game launched from RHI is running or memory is low, and never restarts itself mid-game.
-- Fixed RHI watching a game's crash reporter instead of the game itself (for example Phantom Blade Zero, and other Unreal Engine games started through Steam or Epic). The game could show as running after it closed, or stop showing as running while it was still open, and HDR and resolution could switch back at the wrong time. RHI now also finds games whose exe runs from another folder inside the game's install, and waits for all of the game's processes to close.
-- Fixed changing the ReShade DLL name in Game Overrides renaming Display Commander's file to "--------" (and changing Display Commander's name doing the same to ReShade) when the other dropdown was left on its default. Games this already happened to are put right the next time you open them in RHI, keeping the name you picked.
-- Fixed headings in What's New, the message of the day and mod release notes being hard to read (dark grey or black on the dark background) on PCs with Windows set to Light mode. Patch note text is also a little brighter.
-- Fixed the Luma filter chip being cut off at the edge of the game list when Filters is open. The engine and mod chips now move onto a second line when they don't fit.
-- Fixed the game header still showing the old install folder after Change install folder or Reset install folder until you moved to another game and back.
-- Fixed RE Framework not offering updates (stuck on an older build) once GitHub's hourly limit for checks was used up without a GitHub token. RHI now checks the latest RE Framework build without using that limit.
-- Fixed some games installed with the new Epic Games launcher not being detected (for example Cyberpunk 2077 and Alan Wake 2) when the launcher hadn't recorded their names where RHI looked. RHI now also reads the names from the launcher's game catalog.
-- Fixed DLSS / Streamline showing "No DLSS or Streamline files found" for Unreal Engine games whose install folder is outside the usual Binaries folder (for example Phantom Blade Zero set to platform\steam). RHI now also looks in the game's main folder, where the Engine plugins keep these files. Games that stopped showing their DLSS files after their install folder was changed show them again.
+**Performance**
+- Fixed RHI showing "Not Responding" for a minute or more, and sometimes restarting itself, while a demanding game was running.
+
+**OptiScaler**
+- Fixed F5 DLSSNR, DLSS NR and Nightly installing an old downloaded copy when a newer release was out (for example F5 0.1.29 instead of 0.1.37), even after reinstalling.
+- Fixed a fresh F5 DLSSNR install skipping your Streamline, DLSS Enabler and frame generation settings.
+- Fixed updating F5 DLSSNR not updating its Neural Rendering file, and updating DLSS NR replacing the NR Runtime you picked.
+- Fixed F5 DLSSNR showing the Stable version number on some games, and not being downloaded at startup like the other versions.
+
+**Running games**
+- Fixed RHI tracking a game's crash reporter instead of the game itself (Phantom Blade Zero and other Unreal Engine games from Steam or Epic). The game could show as running after it closed, and HDR and resolution could switch back at the wrong time.
+
+**Game detection**
+- Fixed some games from the new Epic Games launcher not being found (for example Cyberpunk 2077 and Alan Wake 2).
+- Fixed Launch doing nothing for some Epic games (for example Alan Wake 2): RHI now starts them the same way Epic's own desktop shortcuts do.
+- Fixed some games being detected as DirectX 12 when they aren't (for example OpenMW, which uses OpenGL), so the wrong ReShade setup was offered.
+
+**Install folders and DLSS**
+- Fixed Reset install folder going back to the folder you picked instead of the one RHI found.
+- Fixed the game header still showing the old folder after you changed it.
+- Fixed DLSS / Streamline finding no files for some Unreal Engine games (for example Phantom Blade Zero), including after their install folder was changed.
+
+**Updates**
+- Fixed RE Framework getting stuck on an older version once GitHub's hourly limit was reached (without a GitHub token).
+
+**Game Overrides**
+- Fixed changing the ReShade DLL name renaming Display Commander's file to "--------" (or the other way round). Games this happened to are fixed the next time you open them.
+
+**Display**
+- Fixed games using RTX HDR or Auto HDR showing "—" instead of RTX HDR or Auto HDR on the RenoDX row, the Overview card and Spotlight.
+- Fixed hard-to-read headings in What's New, the message of the day and mod release notes when Windows is in Light mode.
+- Fixed the Luma filter chip being cut off when Filters is open.
 
 ### Manifest Updates
 

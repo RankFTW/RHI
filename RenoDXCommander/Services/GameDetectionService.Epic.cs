@@ -13,7 +13,7 @@ public partial class GameDetectionService
         var games = new List<DetectedGame>();
         var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        void Add(string name, string path, string? catalogNamespace, string? appName)
+        void Add(string name, string path, string? catalogNamespace, string? catalogItemId, string? appName)
         {
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(path)) return;
             if (!Directory.Exists(path)) return;
@@ -24,6 +24,7 @@ public partial class GameDetectionService
                 InstallPath = path,
                 Source = "Epic",
                 EpicCatalogNamespace = catalogNamespace,
+                EpicCatalogItemId = catalogItemId,
                 EpicAppName = appName,
             });
         }
@@ -42,7 +43,7 @@ public partial class GameDetectionService
                     var name = ExtractJsonString(json, "DisplayName");
                     var path = ExtractJsonString(json, "InstallLocation");
                     if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(path))
-                        Add(name, path, ExtractJsonString(json, "CatalogNamespace"), ExtractJsonString(json, "AppName"));
+                        Add(name, path, ExtractJsonString(json, "CatalogNamespace"), ExtractJsonString(json, "CatalogItemId"), ExtractJsonString(json, "AppName"));
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
@@ -54,7 +55,7 @@ public partial class GameDetectionService
         // New launcher (eglv2). Migrating to it removes the ProgramData manifests above.
         int before = games.Count;
         foreach (var g in FindEpicV2Installs())
-            Add(g.Name, g.Path, g.Namespace, g.AppName);
+            Add(g.Name, g.Path, g.Namespace, g.ItemId, g.AppName);
         if (games.Count > before)
             CrashReporter.Log($"[GameDetectionService.FindEpicGames] New Epic launcher: {games.Count - before} game(s)");
 
@@ -62,7 +63,7 @@ public partial class GameDetectionService
         return games;
     }
 
-    private record EpicV2Install(string Name, string Path, string? Namespace, string? AppName);
+    private record EpicV2Install(string Name, string Path, string? Namespace, string? ItemId, string? AppName);
 
     /// <summary>
     /// The new Epic launcher keeps installs in %LOCALAPPDATA%\com.epicgames.eglv2\installations.jsonl
@@ -74,8 +75,8 @@ public partial class GameDetectionService
     {
         var result = new List<EpicV2Install>();
 
-        // artifactId → (name, path, namespace) from the uninstall entries.
-        var uninstall = new Dictionary<string, (string Name, string? Path, string? Namespace)>(StringComparer.OrdinalIgnoreCase);
+        // artifactId → (name, path, namespace, item id) from the uninstall entries.
+        var uninstall = new Dictionary<string, (string Name, string? Path, string? Namespace, string? ItemId)>(StringComparer.OrdinalIgnoreCase);
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall");
@@ -89,7 +90,8 @@ public partial class GameDetectionService
                     if (string.IsNullOrWhiteSpace(name)) continue;
                     var path = gameKey!.GetValue("InstallLocation") as string;
                     var uninstallCmd = gameKey.GetValue("UninstallString") as string;
-                    uninstall[sub["EpicGames-".Length..]] = (name.Trim(), path, ParseEpicUriNamespace(uninstallCmd));
+                    var (uNs, uItem) = ParseEpicUriIds(uninstallCmd);
+                    uninstall[sub["EpicGames-".Length..]] = (name.Trim(), path, uNs, uItem);
                 }
             }
         }
@@ -151,10 +153,12 @@ public partial class GameDetectionService
 
                 string? name = null;
                 string? ns = GetString(e, "namespace");
+                string? itemId = GetString(e, "itemId");
                 if (artifactId != null && uninstall.TryGetValue(artifactId, out var u))
                 {
                     name = u.Name;
                     ns ??= u.Namespace;
+                    itemId ??= u.ItemId;
                 }
                 // Games migrated from the classic launcher keep their old .item file here.
                 name ??= ReadMigratedItemName(dataDir, installId);
@@ -162,7 +166,6 @@ public partial class GameDetectionService
                 if (name == null)
                 {
                     catalog ??= LoadEpicCatalogTitles(dataDir);
-                    var itemId = GetString(e, "itemId");
                     if (itemId != null && catalog.TryGetValue(itemId, out var cat))
                     {
                         // An add-on (e.g. DLC) shares the game's folder: name it after its main game.
@@ -180,7 +183,7 @@ public partial class GameDetectionService
                     CrashReporter.Log($"[GameDetectionService.FindEpicV2Installs] No name for install '{dir}' (artifact {artifactId}) — skipped");
                     continue;
                 }
-                result.Add(new EpicV2Install(name, dir, ns, artifactId));
+                result.Add(new EpicV2Install(name, dir, ns, itemId, artifactId));
             }
         }
 
@@ -188,7 +191,7 @@ public partial class GameDetectionService
         foreach (var (artifactId, u) in uninstall)
         {
             if (listedArtifacts.Contains(artifactId) || string.IsNullOrEmpty(u.Path)) continue;
-            result.Add(new EpicV2Install(u.Name, u.Path, u.Namespace, artifactId));
+            result.Add(new EpicV2Install(u.Name, u.Path, u.Namespace, u.ItemId, artifactId));
         }
 
         return result;
@@ -197,15 +200,30 @@ public partial class GameDetectionService
     private static string? GetString(JsonElement e, string prop) =>
         e.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
-    /// <summary>Namespace from "com.epicgames.launcher://apps/{namespace}:{itemId}:{artifactId}?action=…".</summary>
-    private static string? ParseEpicUriNamespace(string? cmd)
+    /// <summary>Namespace and item id from "com.epicgames.launcher://apps/{namespace}:{itemId}:{artifactId}?action=…" (":" may be "%3A").</summary>
+    internal static (string? Namespace, string? ItemId) ParseEpicUriIds(string? cmd)
     {
-        if (string.IsNullOrEmpty(cmd)) return null;
+        if (string.IsNullOrEmpty(cmd)) return (null, null);
         int i = cmd.IndexOf("://apps/", StringComparison.OrdinalIgnoreCase);
-        if (i < 0) return null;
+        if (i < 0) return (null, null);
         var rest = cmd[(i + "://apps/".Length)..];
-        int colon = rest.IndexOf(':');
-        return colon > 0 ? rest[..colon] : null;
+        int end = rest.IndexOfAny(new[] { '?', '"', ' ' });
+        if (end >= 0) rest = rest[..end];
+        var parts = Uri.UnescapeDataString(rest).Split(':');
+        if (parts.Length < 2 || parts[0].Length == 0) return (null, null);
+        return (parts[0], parts.Length >= 3 && parts[1].Length > 0 ? parts[1] : null);
+    }
+
+    /// <summary>
+    /// Launch link for an Epic game. Uses namespace:item:app (what Epic's own desktop shortcuts use; the new
+    /// launcher ignores a bare app name for some games) and falls back to the app name alone.
+    /// </summary>
+    public static string EpicLaunchUri(string? catalogNamespace, string? catalogItemId, string appName)
+    {
+        string id = !string.IsNullOrEmpty(catalogNamespace) && !string.IsNullOrEmpty(catalogItemId)
+            ? $"{Uri.EscapeDataString(catalogNamespace)}%3A{Uri.EscapeDataString(catalogItemId)}%3A{Uri.EscapeDataString(appName)}"
+            : Uri.EscapeDataString(appName);
+        return $"com.epicgames.launcher://apps/{id}?action=launch&silent=true";
     }
 
     /// <summary>

@@ -66,13 +66,13 @@ public partial class DetailPanelBuilder
         }
 
         // ── Auto-select best method if nothing stored/inferred ────────────────
-        // GITC Uplift where all of it works (64-bit DX11 / DX12 / Vulkan), else the older rules
+        // GITC Uplift replaces the DLSS5 Feeder default where all of Uplift works (64-bit DX11 / DX12 /
+        // Vulkan games without DLSS). DLSS games keep ShortFuse / the DX11 Bridge; 32-bit and OpenGL keep Feeder.
         bool upliftApplicable = !is32Bit && (isDx11 || isDx12 || isVulkan);
         string effectiveMethod = storedMethod ?? (
-            upliftApplicable                                 ? NrMethodUplift :
             is32Bit                                          ? NrMethodFeeder :
             card.GraphicsApi == GraphicsApiType.OpenGL       ? NrMethodFeeder :
-            !hasDlss                                         ? NrMethodFeeder :
+            !hasDlss                                         ? (upliftApplicable ? NrMethodUplift : NrMethodFeeder) :
             (isDx11 || isVulkan)                             ? NrMethodDlss5ToolBridge :
                                                                NrMethodShortFuse);
 
