@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56004,
-  "generated": "2026-11-07T23:08:08Z",
+  "game_count": 56016,
+  "generated": "2026-11-08T21:13:58Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -6872,6 +6872,7 @@
     },
     "Alien Syndrome": {},
     "Alien Tequila": {},
+    "Alien Terminator": {},
     "Alien Trilogy": {},
     "Alien Virus": {},
     "Alien vs Predator Jaguar Remake": {
@@ -30789,6 +30790,9 @@
     "Chrono Project": {
       "steam_appid": 893810
     },
+    "Chrono Punk": {
+      "steam_appid": 5081550
+    },
     "Chrono Trigger": {
       "steam_appid": 613830,
       "opengl": true,
@@ -46173,6 +46177,7 @@
       "steam_appid": 2439220,
       "engine": "Unity"
     },
+    "Disney's Activity Center: Aladdin": {},
     "Disney's Activity Center: Toy Story": {},
     "Disney's Adventures in Typing with Timon and Pumbaa": {},
     "Disney's Aladdin": {
@@ -50947,7 +50952,7 @@
     "Dungeons & Dragons: Dark Alliance": {
       "steam_appid": 623280,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\CotH\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\CotH\\Saved\\Config\\WindowsNoEditor",
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\WizardsoftheCoastLLC.DarkAlliance_egzvkhb86xsmw\\LocalCache\\Local\\CotH\\Saved\\Config\\WinGDK\\",
       "engine": "Unreal Engine 4"
     },
@@ -83968,6 +83973,7 @@
     "Ino": {
       "steam_appid": 398140
     },
+    "Inordinate Desire": {},
     "Inori's House": {
       "steam_appid": 1073370
     },
@@ -105925,6 +105931,10 @@
     "MOLOCH (Zero)": {
       "steam_appid": 944630
     },
+    "Molokaust": {
+      "steam_appid": 4503570,
+      "engine": "Unity"
+    },
     "Molten Armor": {
       "steam_appid": 693670
     },
@@ -123830,6 +123840,7 @@
     "PixZomb": {
       "steam_appid": 884930
     },
+    "Pizza Commander": {},
     "Pizza Connection 3": {
       "steam_appid": 588160,
       "dx11": true,
@@ -134459,7 +134470,7 @@
     },
     "Retro Rewind": {
       "steam_appid": 3552140,
-      "config_path": "%LOCALAPPDATA%\\RetroRewind\\Saved\\Config\\",
+      "config_path": "%LOCALAPPDATA%\\RetroRewind\\Saved\\Config",
       "engine": "Unreal Engine 5"
     },
     "Retro Rocket Robot": {
@@ -154110,6 +154121,7 @@
       "config_path": "In-game settings:<br><path-to-game>\\default.sav<br>Decomp settings:<br><path-to-game>\\starship.cfg.json",
       "engine": "libultraship"
     },
+    "Star Fox Adventures": {},
     "Star Garden": {
       "steam_appid": 3370970,
       "engine": "Unity"
@@ -155868,7 +155880,10 @@
     "Steel Ocean": {
       "steam_appid": 390670
     },
+    "Steel Panthers": {},
+    "Steel Panthers II: Modern Battles": {},
     "Steel Panthers III: Brigade Command": {},
+    "Steel Panthers: World at War": {},
     "Steel Punk Ball": {
       "steam_appid": 679510
     },
@@ -184504,6 +184519,7 @@
     },
     "Unreal Tournament": {
       "steam_appid": 13240,
+      "vulkan": true,
       "opengl": true,
       "config_path": "<path-to-game>\\System\\User.ini, <path-to-game>\\System\\UnrealTournament.ini",
       "engine": "Unreal Engine 1"
@@ -187927,6 +187943,11 @@
     "VR Baseball": {
       "steam_appid": 458370
     },
+    "VR Baseball 2000": {
+      "opengl": true,
+      "engine": "Messiah (Shiny Entertainment)"
+    },
+    "VR Baseball: Hardware Accelerated": {},
     "VR Batting": {
       "steam_appid": 606850
     },
