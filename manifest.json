@@ -259,7 +259,8 @@
     "METAL GEAR SOLID: Peace Walker - Master Collection Version": "mgspw",
     "The Witcher 3: Wild Hunt - Complete Edition": "bin\\x64_dx12",
     "Outlast": "Binaries\\Win64",
-    "Portal": "bin"
+    "Portal": "bin",
+    "Watch_Dogs": "bin"
   },
   "splitGames": {
     "Diablo": [
