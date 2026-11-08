@@ -14,6 +14,9 @@ public sealed partial class MainWindow
     private FrameworkElement? _uiScaledRoot;
     private double _uiScale = 1.0;
 
+    /// <summary>The window's root Grid (inside the interface scaling): drag distances measured against it are in layout units.</summary>
+    internal UIElement? LayoutRoot => _uiScaledRoot ?? Content;
+
     /// <summary>
     /// Interface sizes offered in Settings and stepped through by Ctrl + mouse wheel, in percent:
     /// every 5% from 50 to 200 (the range <see cref="ApplyUiScale"/> accepts).

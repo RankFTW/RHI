@@ -48,6 +48,9 @@
 **Spotlight**
 - New Covers at bottom button (right of the search box) moves the game covers, search and filters below the game page. Click Covers at top to undo. The controller follows the layout.
 - The Filters button is now a small filter icon to the left of All / Installed / Favourites / Hidden.
+- The game banner gets taller on wide windows (ultrawide screens, or a small interface size), so its artwork is no longer cropped to a thin, zoomed-in strip.
+- Resize the banner and the game covers with the mouse: drag the banner's bottom edge, or the edge of the cover strip facing the game page, and they change size as you drag. RHI remembers the sizes. Double-click an edge to reset it.
+- Hold the left mouse button on the game covers and drag left or right to scroll through them. A click still selects a game.
 
 **Controller**
 - Steam Controllers now work with no setup: the new one and the original, by USB or wireless dongle. This is still a work in progress.

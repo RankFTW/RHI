@@ -99,6 +99,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _xboxAchievements;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
+    /// <summary>Spotlight banner height set by dragging its bottom edge; 0 = automatic (follows the window width).</summary>
+    [ObservableProperty] private double _spotlightHeroHeight;
+    /// <summary>Spotlight cover size set by dragging the cover strip's edge (1 = 120 x 180).</summary>
+    [ObservableProperty] private double _spotlightCoverScale = 1.0;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
     [ObservableProperty] private bool _startWithWindows;
@@ -389,6 +393,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
         if (s.TryGetValue("XboxAchievements", out var xaVal)) XboxAchievements = xaVal == "true"; // default false (opt-in)
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
+        if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
+        if (s.TryGetValue("SpotlightCoverScale", out var scsVal) && double.TryParse(scsVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scs) && scs > 0) SpotlightCoverScale = scs;
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
         if (s.TryGetValue("StartWithWindows", out var swwVal)) StartWithWindows = swwVal == "true";
@@ -558,6 +564,8 @@ public partial class SettingsViewModel : ObservableObject
         s["SteamAchievements"] = SteamAchievements ? "true" : "false";
         s["XboxAchievements"] = XboxAchievements ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
+        s["SpotlightHeroHeight"] = SpotlightHeroHeight.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+        s["SpotlightCoverScale"] = SpotlightCoverScale.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
         s["StartWithWindows"] = StartWithWindows ? "true" : "false";

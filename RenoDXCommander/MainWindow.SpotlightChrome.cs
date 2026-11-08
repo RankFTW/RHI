@@ -33,7 +33,7 @@ public sealed partial class MainWindow
     private readonly Dictionary<string, BitmapImage> _coverCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int?> _appIdCache = new(StringComparer.OrdinalIgnoreCase);
 
-    private const double TileWidth = 120, CoverHeight = 180;
+    // Tile size: TileWidth / CoverHeight in MainWindow.SpotlightCoverSize.cs (resizable)
 
     private sealed class ShelfTile
     {
@@ -128,6 +128,7 @@ public sealed partial class MainWindow
                 GameList.Visibility = Visibility.Collapsed;
                 EnsureShelf(list);
                 _shelf!.Visibility = Visibility.Visible;
+                if (_coverGrip != null) _coverGrip.Visibility = Visibility.Visible;
                 // Above or below the page (rows, borders, paddings)
                 ApplySpotlightShelfPosition();
                 SyncShelfFromList();
@@ -163,6 +164,7 @@ public sealed partial class MainWindow
                 RefreshSidebar();
                 GameList.Visibility = Visibility.Visible;
                 if (_shelf != null) _shelf.Visibility = Visibility.Collapsed;
+                if (_coverGrip != null) _coverGrip.Visibility = Visibility.Collapsed;
                 PlaceCollectionsHost();
                 if (GameList.SelectedItem != null) GameList.ScrollIntoView(GameList.SelectedItem);
             }
@@ -242,6 +244,7 @@ public sealed partial class MainWindow
             // Keep the side padding (UpdateShelfCentering widens it to centre a short Favourites row)
             _shelf.Padding = bottom ? new Thickness(_shelf.Padding.Left, 12, _shelf.Padding.Right, 2)
                                     : new Thickness(_shelf.Padding.Left, 4, _shelf.Padding.Right, 10);
+            PlaceCoverGrip(bottom);
         }
         _searchRow.Padding = bottom ? new Thickness(24, 6, 24, 14) : new Thickness(24, 14, 24, 6);
         _countsRow.Padding = bottom ? new Thickness(0, 0, 24, 8) : new Thickness(0, 8, 24, 0);
@@ -332,6 +335,9 @@ public sealed partial class MainWindow
 
         Grid.SetRow(_shelf, 3);
         parent.Children.Add(_shelf);
+        EnsureCoverGrip(parent);
+        HookShelfDrag();
+        PlaceCoverGrip(ViewModel.Settings.SpotlightShelfAtBottom);
     }
 
     /// <summary>
@@ -561,7 +567,8 @@ public sealed partial class MainWindow
     {
         if (_coverCache.TryGetValue(path, out var img)) return img;
         // Decoded at tile size: a full 600x900 cover per tile would waste memory
-        img = new BitmapImage { DecodePixelWidth = (int)(TileWidth * 2), UriSource = new Uri(path) };
+        _coverDecodeWidth = CoverDecodeWidth;
+        img = new BitmapImage { DecodePixelWidth = _coverDecodeWidth, UriSource = new Uri(path) };
         _coverCache[path] = img;
         return img;
     }

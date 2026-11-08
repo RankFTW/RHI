@@ -20,10 +20,19 @@ internal sealed partial class DetailLayoutHost
 {
     // Hero
     private Border? _hero;
-    private Image? _heroImage;
+    // The artwork is an ImageBrush on a Border, not an Image: an Image that crops (UniformToFill) keeps its
+    // left side when the banner is tall, while the brush can be centred (AlignmentX).
+    private Border? _heroImage;
+    private ImageBrush? _heroBrush;
     private Border? _heroContent;
     private string? _heroGame;
     private const double HeroMinHeight = 340;
+    // The banner keeps roughly the shape of Steam hero art (3840x1240) as it widens, so wide windows
+    // (ultrawide, low interface scaling) don't crop the art to a thin zoomed-in strip.
+    private const double HeroArtAspect = 3840.0 / 1240.0;
+    private const double HeroMaxHeight = 500;
+    // Range for a height set by dragging the banner's bottom edge (it never gets shorter than its text and buttons)
+    private const double HeroDragMin = 200, HeroDragMax = 900;
 
     // Page body
     private StackPanel? _spotBody;
@@ -85,9 +94,10 @@ internal sealed partial class DetailLayoutHost
     {
         if (_hero != null) return;
 
-        _heroImage = new Image
+        _heroBrush = new ImageBrush { Stretch = Stretch.UniformToFill, AlignmentX = AlignmentX.Center, AlignmentY = AlignmentY.Top };
+        _heroImage = new Border
         {
-            Stretch = Stretch.UniformToFill,
+            Background = _heroBrush,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Top,
             Height = HeroMinHeight,
@@ -99,13 +109,55 @@ internal sealed partial class DetailLayoutHost
         var sideFade = new Border { Background = Fade(vertical: false, ("#B30B0F17", 0), ("#400B0F17", 0.65), ("#000B0F17", 1)) };
         _heroContent = new Border { Padding = new Thickness(28), VerticalAlignment = VerticalAlignment.Bottom };
         // The artwork fills the banner and is cropped to it; it never sets the banner's height
-        _heroContent.SizeChanged += (s, e) => _heroImage.Height = Math.Max(HeroMinHeight, e.NewSize.Height);
-
         var layers = new Grid { MinHeight = HeroMinHeight };
+        var settings = _window.ViewModel.Settings;
+        void FitImage() => _heroImage!.Height = Math.Max(layers.MinHeight, _heroContent!.ActualHeight);
+        // Height: the user's (dragged) height, else it follows the width (art shape) between the minimum and
+        // HeroMaxHeight. Depends on width only, so no layout loop.
+        void ApplyHeight(double width)
+        {
+            double wanted = settings.SpotlightHeroHeight > 0
+                ? Math.Clamp(settings.SpotlightHeroHeight, HeroDragMin, HeroDragMax)
+                : Math.Clamp(Math.Round(width / HeroArtAspect), HeroMinHeight, HeroMaxHeight);
+            if (Math.Abs(layers.MinHeight - wanted) < 1) return;
+            layers.MinHeight = wanted;
+            FitImage();
+        }
+        _heroContent.SizeChanged += (s, e) => FitImage();
+        layers.SizeChanged += (s, e) =>
+        {
+            if (e.NewSize.Width == e.PreviousSize.Width) return;
+            ApplyHeight(e.NewSize.Width);
+        };
+
+        // Drag the bottom edge to set the height (saved); double-click goes back to automatic
+        var grip = new Controls.ResizeGrip { VerticalAlignment = VerticalAlignment.Bottom, Reference = () => _window.LayoutRoot };
+        ToolTipService.SetToolTip(grip, "Drag to resize the banner. Double-click to reset.");
+        double dragStart = 0;
+        grip.DragStarted += () => dragStart = layers.ActualHeight;
+        grip.DragDelta += dy =>
+        {
+            settings.SpotlightHeroHeight = Math.Round(Math.Clamp(dragStart + dy, HeroDragMin, HeroDragMax));
+            ApplyHeight(layers.ActualWidth);
+        };
+        grip.DragCompleted += () =>
+        {
+            _window.ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[Spotlight.Hero] Banner height set to {settings.SpotlightHeroHeight:0}");
+        };
+        grip.Reset += () =>
+        {
+            settings.SpotlightHeroHeight = 0;
+            ApplyHeight(layers.ActualWidth);
+            _window.ViewModel.SaveSettingsPublic();
+            CrashReporter.Log("[Spotlight.Hero] Banner height back to automatic");
+        };
+
         layers.Children.Add(_heroImage);
         layers.Children.Add(bottomFade);
         layers.Children.Add(sideFade);
         layers.Children.Add(_heroContent);
+        layers.Children.Add(grip);
         _hero = new Border
         {
             CornerRadius = new CornerRadius(16),
@@ -215,7 +267,7 @@ internal sealed partial class DetailLayoutHost
         if (string.Equals(name, _heroGame, StringComparison.OrdinalIgnoreCase)) return;
         _heroGame = name;
         _heroImage.Opacity = 0;
-        _heroImage.Source = null;
+        _heroBrush!.ImageSource = null;
         if (card == null) return;
 
         if (SteamArtworkService.TryGetCustom(MainWindow.ArtKey(card), SteamArtworkService.Kind.Hero) is { } custom)
@@ -254,7 +306,7 @@ internal sealed partial class DetailLayoutHost
         if (_heroImage == null) return;
         try
         {
-            _heroImage.Source = new BitmapImage(new Uri(path)) { DecodePixelWidth = 1920 };
+            _heroBrush!.ImageSource = new BitmapImage(new Uri(path)) { DecodePixelWidth = 1920 };
             _heroImage.Opacity = 1;
         }
         catch (UriFormatException ex) { CrashReporter.Log($"[DetailLayoutHost.SetHero] {ex.Message}"); }
