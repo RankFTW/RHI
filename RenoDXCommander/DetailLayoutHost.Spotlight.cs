@@ -174,7 +174,7 @@ internal sealed partial class DetailLayoutHost
             _window.CardMoreMenu_Click(_hero, e);
         };
 
-        // What's installed: one tile per component, then "Manage components"
+        // What's installed: one tile per component; each opens the component cards
         _statusGrid = new AutoFitGrid { MinColumnWidth = 200, ColumnSpacing = 10, RowSpacing = 10 };
         var rows = _window.ComponentRows;
         var ul = rows.First(r => r.Key == "Ul");
@@ -186,19 +186,6 @@ internal sealed partial class DetailLayoutHost
             _statusTiles.Add(tile);
             _statusGrid.Children.Add(tile.Root);
         }
-        var manage = new Button
-        {
-            Content = "Manage components",
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-        };
-        TabsTheme.Apply(manage, TabsTheme.BlueButton, height: double.NaN, fontSize: 14);
-        manage.MinHeight = 60;
-        manage.CornerRadius = new CornerRadius(12);
-        manage.Click += (s, e) => OpenPanel(OverviewKey);
-        _manageBtn = manage;
-        ToolTipService.SetToolTip(manage, "Install, update and configure this game's components");
-        _statusGrid.Children.Add(manage);
 
         // Six tiles: three per row (two when narrow), so each summary has room
         _tuneGrid = new AutoFitGrid { MinColumnWidth = 260, MaxColumns = 3, ColumnSpacing = 10, RowSpacing = 10 };

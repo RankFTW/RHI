@@ -105,6 +105,12 @@ public partial class InstallFolderMigrationService
                 File.Exists(Path.Combine(ctx.NewDir, SourceEngineSetup.ProxyDllName + SourceEngineSetup.SentinelSuffix)));
             b.File(g, SourceEngineSetup.ProxyDllName, requireBackup: false);
             b.File(g, SourceEngineSetup.ProxyDllName + SourceEngineSetup.SentinelSuffix, suffix: null, requireBackup: false);
+            // ReShade2.ini RHI made for the proxy's runtime (its own sentinel)
+            if (File.Exists(Path.Combine(oldDir, SourceEngineSetup.SecondRuntimeIni + SourceEngineSetup.SentinelSuffix)))
+            {
+                b.File(g, SourceEngineSetup.SecondRuntimeIni, requireBackup: false);
+                b.File(g, SourceEngineSetup.SecondRuntimeIni + SourceEngineSetup.SentinelSuffix, suffix: null, requireBackup: false);
+            }
         }
 
         // ── Display Commander ────────────────────────────────────────────────

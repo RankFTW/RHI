@@ -47,8 +47,8 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Both init paths, after the manifest and before the folder moves: 32-bit Source games install into bin\
-    /// (ReShade, the addon and the DXVK proxy go beside the engine), so they get an install-folder override like
+    /// Both init paths, after the manifest and before the folder moves: 32-bit Source games install into bin\,
+    /// Garry's Mod into bin\win64\ (ReShade, the addon and the DXVK proxy go beside the engine), so they get an install-folder override like
     /// the manifest's. A manifest entry or a folder the user picked wins. The existing folder-move pass then moves
     /// anything RHI already installed in the main folder. File-system work: background thread.
     /// </summary>
@@ -64,7 +64,7 @@ public partial class MainViewModel
             var sub = SourceEngineSetup.PrimarySubfolder(game.InstallPath);
             if (sub == null) continue;
             _installPathOverrides[game.Name] = sub;
-            _crashReporter.Log($"[MainViewModel.ApplySourceEngineFolders] '{game.Name}': Source engine 32-bit — install folder '{sub}'");
+            _crashReporter.Log($"[MainViewModel.ApplySourceEngineFolders] '{game.Name}': Source engine — install folder '{sub}'");
         }
     }
 
@@ -157,6 +157,7 @@ public partial class MainViewModel
         {
             SourceEngineSetup.DeployOwnedFile(installDir, SourceEngineSetup.ProxyDllName, StagedD3d9(!is32));
             SourceEngineSetup.ApplyReShadeIni(installDir);
+            SourceEngineSetup.EnsureSecondRuntimeIni(installDir); // before the proxy makes its own copy
 
             foreach (var t in extraTargets)
             {
@@ -167,6 +168,8 @@ public partial class MainViewModel
                 if (!File.Exists(Path.Combine(t.Dir, "reshade.ini")) && File.Exists(mainIni))
                     SourceEngineSetup.DeployOwnedFile(t.Dir, "reshade.ini", mainIni);
                 SourceEngineSetup.ApplyReShadeIni(t.Dir);
+                SourceEngineSetup.EnsureSecondRuntimeIni(t.Dir);
+                SourceEngineSetup.ShareShaderPaths(t.Dir, installDir); // shaders live in the main install only
                 SourceEngineSetup.DeployOwnedFile(t.Dir, SourceEngineSetup.ProxyDllName, StagedD3d9(t.Is64Bit));
                 SourceEngineSetup.DeployOwnedFile(t.Dir, t.Is64Bit ? SourceEngineSetup.AddonName64 : SourceEngineSetup.AddonName32, extraAddons[t.Is64Bit]);
             }
@@ -240,11 +243,16 @@ public partial class MainViewModel
                 if (!SourceEngineSetup.IsOwned(dir, SourceEngineSetup.ProxyDllName)) continue;
                 SourceEngineSetup.RemoveOwnedFile(dir, SourceEngineSetup.ProxyDllName);
                 SourceEngineSetup.RemoveReShadeIni(dir);
+                SourceEngineSetup.RemoveOwnedFile(dir, SourceEngineSetup.SecondRuntimeIni); // only when RHI made it
                 if (!InstallFolderMover.SamePath(dir, installDir))
                 {
                     SourceEngineSetup.RemoveOwnedFile(dir, SourceEngineSetup.AddonName64);
                     SourceEngineSetup.RemoveOwnedFile(dir, SourceEngineSetup.AddonName32);
                     SourceEngineSetup.RemoveOwnedFile(dir, "reshade.ini");
+                    // ReShade2.ini etc.: ReShade made them for RHI's ReShade here, which goes too
+                    var rsSentinel = new FileInfo(Path.Combine(dir, SourceEngineSetup.ReShadeDll + SourceEngineSetup.SentinelSuffix));
+                    if (rsSentinel.Exists && rsSentinel.Length == 0) // the folder had no d3d9.dll before RHI's
+                        foreach (var extra in SourceEngineSetup.ExtraRuntimeConfigs(dir).ToList()) File.Delete(extra);
                     SourceEngineSetup.RemoveOwnedFile(dir, SourceEngineSetup.ReShadeDll);
                 }
                 removedAny = true;

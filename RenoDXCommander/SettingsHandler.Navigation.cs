@@ -156,7 +156,15 @@ public partial class SettingsHandler
                 Margin = new Thickness(4, 0, 4, 0),
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             });
-            _searchPanel.Children.Add(_settingsSearchBox);
+            // The box, then the "Tabs" toggle beside it (SettingsHandler.Tabs.cs)
+            var searchRow = new Grid { ColumnSpacing = 6 };
+            searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            searchRow.Children.Add(_settingsSearchBox);
+            _tabsToggle = MakeTabsToggle();
+            Grid.SetColumn(_tabsToggle, 1);
+            searchRow.Children.Add(_tabsToggle);
+            _searchPanel.Children.Add(searchRow);
 
             // 3. Nav column: search on top, then the jump list. Fixed width, right-aligned in its
             //    column so it stays next to the sections when the window is wider than the block.
@@ -179,12 +187,18 @@ public partial class SettingsHandler
             Grid.SetRow(_navBorder, 0);
             Grid.SetRowSpan(_navBorder, 2);
 
-            // Narrow-window host for the search box (above the sections, outside the ScrollViewer)
+            // Above the sections, outside the ScrollViewer: the search box (narrow window or tabs), then the
+            // tab strip (tabs only)
+            _searchSlot = new Border();
+            var topStack = new StackPanel { Spacing = 12 };
+            topStack.Children.Add(_searchSlot);
+            topStack.Children.Add(BuildSettingsTabStrip());
             _narrowSearchHost = new Border
             {
                 Padding = new Thickness(24, 16, 24, 0),
                 MaxWidth = SettingsContentMaxWidth,
                 Visibility = Visibility.Collapsed,
+                Child = topStack,
             };
             Grid.SetColumn(_narrowSearchHost, 1);
             Grid.SetRow(_narrowSearchHost, 0);
@@ -311,6 +325,7 @@ public partial class SettingsHandler
         if (string.IsNullOrEmpty(_restoreKey) || FindSection(_restoreKey) == null)
             _restoreKey = _sections.Count > 0 ? _sections[0].Key : null;
         SetHighlightedSection(_restoreKey);
+        ShowSettingsTab(_restoreKey); // tabs: open on the last section's tab (no-op for the list)
         ScheduleRestoreScroll(0);
     }
 
@@ -424,9 +439,11 @@ public partial class SettingsHandler
 
     private void UpdateSettingsNarrowLayout(double width)
     {
-        if (_navColumn == null || _navBorder == null || _narrowSearchHost == null
+        if (_navColumn == null || _navBorder == null || _narrowSearchHost == null || _searchSlot == null
             || _searchPanel == null || _navList == null || width <= 0) return;
-        bool narrow = width < NavColumnWidth + MinSettingsContentWidth;
+        _lastSettingsWidth = width;
+        // Search on top, no jump list: a narrow window, or tabs (the tab strip replaces the jump list)
+        bool narrow = width < NavColumnWidth + MinSettingsContentWidth || SettingsTabbed;
 
         // Wide window: widen the nav column by half the spare width so nav + sections are centred
         var cardsPanel = _window.SettingsCardsPanel;
@@ -435,6 +452,10 @@ public partial class SettingsHandler
             double spare = Math.Max(0, width - NavColumnWidth - SettingsContentMaxWidth);
             _navColumn.Width = new GridLength(NavColumnWidth + Math.Floor(spare / 2));
         }
+        // Search on top: an exact width (the column, up to MaxWidth), centred. Center alone sized it to the widest
+        // card on show (one narrow tab came out squished), and Stretch + MaxWidth inside the ScrollViewer was placed
+        // by that narrow width, so some tabs sat off to the right of the tabs above them.
+        cardsPanel.Width = narrow ? Math.Max(0, Math.Min(SettingsContentMaxWidth, width)) : double.NaN;
         cardsPanel.HorizontalAlignment = narrow ? HorizontalAlignment.Center : HorizontalAlignment.Left;
         cardsPanel.Padding = narrow ? new Thickness(24, 16, 24, 40) : new Thickness(28, 24, 24, 40);
 
@@ -446,7 +467,7 @@ public partial class SettingsHandler
         if (narrow)
         {
             _searchPanel.Margin = new Thickness(0);
-            _narrowSearchHost.Child = _searchPanel;
+            _searchSlot.Child = _searchPanel;
             _narrowSearchHost.Visibility = Visibility.Visible;
             _navBorder.Visibility = Visibility.Collapsed;
             _navColumn.Width = new GridLength(0);
@@ -500,6 +521,7 @@ public partial class SettingsHandler
     /// </summary>
     internal Button? PadStartButton()
     {
+        if (SettingsTabbed && !IsSettingsSearchActive) return SelectedSettingsTab();
         var visible = _sections.Where(s => s.Panel.Visibility == Visibility.Visible).ToList();
         var section = visible.FirstOrDefault(s => string.Equals(s.Key, _highlightedSectionKey, StringComparison.Ordinal))
                       ?? visible.FirstOrDefault();
@@ -512,7 +534,10 @@ public partial class SettingsHandler
     /// </summary>
     internal FrameworkElement? PadJumpSection(int delta)
     {
-        var visible = _sections.Where(s => s.Panel.Visibility == Visibility.Visible).ToList();
+        // Tabs: LB / RB move between tabs (only one section is visible)
+        var visible = SettingsTabbed && !IsSettingsSearchActive
+            ? TabbableSections()
+            : _sections.Where(s => s.Panel.Visibility == Visibility.Visible).ToList();
         if (visible.Count == 0) return null;
         int index = visible.FindIndex(s => string.Equals(s.Key, _highlightedSectionKey, StringComparison.Ordinal));
         int next = Math.Clamp(index < 0 ? 0 : index + delta, 0, visible.Count - 1);
@@ -529,6 +554,12 @@ public partial class SettingsHandler
         if (IsSettingsSearchActive || (_settingsSearchBox?.Text.Length ?? 0) > 0)
         {
             ExitSettingsSearch(clearBox: true, restoreScroll: false);
+            _window.SettingsCardsPanel.UpdateLayout();
+        }
+        if (SettingsTabbed)
+        {
+            // Tabs: open the section's tab; it's then the only (so first) visible section → top
+            ShowSettingsTab(section.Key);
             _window.SettingsCardsPanel.UpdateLayout();
         }
         if (saveAsLast)
@@ -610,6 +641,7 @@ public partial class SettingsHandler
         _highlightedSectionKey = key;
         foreach (var s in _sections)
             ApplyNavButtonStyle(s.Button, key != null && string.Equals(s.Key, key, StringComparison.Ordinal));
+        RebuildSettingsTabs();
     }
 
     // ── Search ────────────────────────────────────────────────────────────────
@@ -639,15 +671,6 @@ public partial class SettingsHandler
         }
     }
 
-    /// <summary>Called by the dev Freeze Diagnostics card code after it appends its card, so a search
-    /// that is already running keeps it hidden.</summary>
-    private void HideNewCardWhileSearching(UIElement card)
-    {
-        if (!IsSettingsSearchActive || _searchHiddenElements.ContainsKey(card)) return;
-        _searchHiddenElements[card] = card.Visibility;
-        card.Visibility = Visibility.Collapsed;
-    }
-
     private void ApplySettingsSearch(string rawQuery)
     {
         try
@@ -672,7 +695,7 @@ public partial class SettingsHandler
             var entries = BuildSettingsSearchIndex();
             _appliedSearchQuery = q;
 
-            // Hide every section (and Freeze Diagnostics / the hidden vestigial panel) — remember originals
+            // Hide every section (and the hidden vestigial panel) — remember originals
             foreach (var child in _window.SettingsCardsPanel.Children)
             {
                 if (ReferenceEquals(child, _searchResultsPanel) || _searchHiddenElements.ContainsKey(child)) continue;
@@ -704,6 +727,7 @@ public partial class SettingsHandler
             _searchResultsPanel.Children.Clear();
         }
         SetHighlightedSection(_preSearchHighlightKey);
+        ShowSettingsTab(_preSearchHighlightKey); // tabs turned on during the search: one section again
         if (restoreScroll && _settingsScroll != null)
         {
             _window.SettingsCardsPanel.UpdateLayout();
@@ -715,8 +739,10 @@ public partial class SettingsHandler
     private List<SearchEntry> BuildSettingsSearchIndex()
     {
         var list = new List<SearchEntry>();
+        // Sections hidden only because another tab is open are still searched
         bool WasHidden(UIElement el)
-            => (_searchHiddenElements.TryGetValue(el, out var v) ? v : el.Visibility) == Visibility.Collapsed;
+            => !_tabHidden.Contains(el)
+               && (_searchHiddenElements.TryGetValue(el, out var v) ? v : el.Visibility) == Visibility.Collapsed;
 
         foreach (var s in _sections)
         {
@@ -725,7 +751,7 @@ public partial class SettingsHandler
                 IndexSettingsNode(s.Panel.Children[i], new IndexContext(s), list);
         }
 
-        // Cards appended in C# outside the sections (dev-only Freeze Diagnostics) count as the last section
+        // Cards appended in C# outside the sections (none today) count as the last section
         var last = _sections[^1];
         foreach (var child in _window.SettingsCardsPanel.Children)
         {
@@ -947,6 +973,7 @@ public partial class SettingsHandler
         // Park focus on the search box first: the clicked row is about to be removed
         _settingsSearchBox?.Focus(FocusState.Programmatic);
         ExitSettingsSearch(clearBox: true, restoreScroll: false);
+        ShowSettingsTab(entry.SectionKey); // tabs: the result's section may be on another tab
         _window.SettingsCardsPanel.UpdateLayout();
 
         // Centre the setting (its row when there is one) vertically in the window

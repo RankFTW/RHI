@@ -2668,7 +2668,7 @@
 
                         <!-- ══════════════════════════════════════════════════════════
                              SECTION 8: TOOLS & MAINTENANCE
-                             (Freeze Diagnostics, dev unlock only, is appended after this in SettingsHandler)
+                             (nothing is appended after this section)
                              ══════════════════════════════════════════════════════════ -->
                         <StackPanel Tag="Section:Tools" Spacing="12">
                             <StackPanel Spacing="3">

@@ -61,7 +61,14 @@ internal sealed partial class OverlayWindow
         _ovAchSearch.TextChanged += (_, _) => RenderAchievementList();
         _ovAchList = new StackPanel { Spacing = 8 };
         _achBox.Children.Add(_ovAchSummary);
-        _achBox.Children.Add(_ovAchSearch);
+        var searchRow = new Grid { ColumnSpacing = 10 };
+        searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        searchRow.Children.Add(_ovAchSearch);
+        var toggle = MakeHiddenAchToggle(searchRow);
+        Grid.SetColumn(toggle, 1);
+        searchRow.Children.Add(toggle);
+        _achBox.Children.Add(searchRow);
         _achBox.Children.Add(_ovAchList);
 
         var key = card.GameName + "|" + card.Source;
@@ -88,6 +95,30 @@ internal sealed partial class OverlayWindow
             }
             catch (Exception ex) { CrashReporter.Log($"[OverlayWindow.Achievements] {key}: {ex.Message}"); }
         });
+    }
+
+    /// <summary>"Show hidden" toggle (same setting as Spotlight's): names and descriptions of locked hidden achievements.</summary>
+    private Button MakeHiddenAchToggle(Grid row)
+    {
+        bool on = _settings().ShowHiddenAchievements;
+        var b = new Button { Content = "Show hidden", Padding = new Thickness(16, 0, 16, 0), VerticalAlignment = VerticalAlignment.Stretch };
+        TabsTheme.Apply(b, DetailLayoutHost.ToggleLook(on), height: double.NaN, fontSize: 15);
+        ToolTipService.SetToolTip(b, on
+            ? "Hidden achievements show their name and description. Click to hide them again."
+            : "Show the name and description of hidden achievements (may spoil the story).");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(b, on ? "Show hidden achievements: on" : "Show hidden achievements: off");
+        b.Click += (_, _) =>
+        {
+            _settings().ShowHiddenAchievements = !on;
+            _saveSettings();
+            int i = row.Children.IndexOf(b);
+            var next = MakeHiddenAchToggle(row);
+            Grid.SetColumn(next, 1);
+            if (i >= 0) row.Children[i] = next;
+            next.Focus(FocusState.Programmatic);
+            RenderAchievementList();
+        };
+        return b;
     }
 
     private void ApplyOverlayAchievements(int openCount, string key, AchievementSet? set)
@@ -129,10 +160,11 @@ internal sealed partial class OverlayWindow
     {
         if (_ovAchSet is not { } set || _ovAchList == null) return;
         var query = _ovAchSearch?.Text?.Trim() ?? "";
+        bool showHidden = _settings().ShowHiddenAchievements;
         bool Matches(Achievement a)
         {
             if (query.Length == 0) return true;
-            bool masked = a.Hidden && !a.Unlocked;
+            bool masked = a.IsMasked(showHidden);
             return (masked ? "Hidden achievement" : a.Name).Contains(query, StringComparison.OrdinalIgnoreCase)
                 || (!masked && a.Description.Contains(query, StringComparison.OrdinalIgnoreCase));
         }
@@ -190,7 +222,7 @@ internal sealed partial class OverlayWindow
 
     private Border AchievementRow(AchievementSet set, Achievement a)
     {
-        bool masked = a.Hidden && !a.Unlocked;
+        bool masked = a.IsMasked(_settings().ShowHiddenAchievements);
         var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
         text.Children.Add(new TextBlock
         {

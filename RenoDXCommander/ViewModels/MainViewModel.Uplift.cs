@@ -29,7 +29,11 @@ public partial class MainViewModel
                 ForgetGameApi(path);
                 var api = DetectGraphicsApi(path, Models.EngineType.Unknown, c.GameName, c.Source);
                 var all = _DetectAllApisForCard(path, c.GameName, c.Source);
-                if (api != c.GraphicsApi || !all.SetEquals(c.DetectedApis))
+                // Can't tell (Game Pass exes can't be read, and the engine isn't known here): keep what the
+                // card has. Replacing it turned Valor Mortis from DirectX 12 into Unknown on every launch.
+                if (api == Models.GraphicsApiType.Unknown && c.GraphicsApi != Models.GraphicsApiType.Unknown)
+                    CacheGameApi(path, c.GraphicsApi, new HashSet<Models.GraphicsApiType>(c.DetectedApis));
+                else if (api != c.GraphicsApi || !all.SetEquals(c.DetectedApis))
                 {
                     _crashReporter.Log($"[{caller}] '{c.GameName}' API {c.GraphicsApi} → {api} (without Uplift's helper)");
                     CacheGameApi(path, api, all);

@@ -25,6 +25,12 @@ internal sealed record Achievement(
 
     /// <summary>Progress towards a locked achievement (1-99), or null when there's none to show.</summary>
     public int? ProgressPercent { get; init; }
+
+    /// <summary>
+    /// Shown as "Hidden achievement" without details: a locked hidden one, unless the user chose to see hidden
+    /// details (Spotlight / overlay toggle). Still masked when the store gave no name for it.
+    /// </summary>
+    public bool IsMasked(bool showHidden) => Hidden && !Unlocked && (!showHidden || string.IsNullOrWhiteSpace(Name));
 }
 
 /// <summary>

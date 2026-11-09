@@ -35,9 +35,14 @@ public static class SourceEngineSetup
     private static readonly string[] IgnoredExeParts = { "unins", "crash", "setup", "redist", "vconsole", "launcher" };
 
     /// <summary>
-    /// Where ReShade and the DXVK proxy go for a Source game, given its main folder. A 64-bit game exe in
-    /// the main folder → the main folder (64-bit); otherwise a 32-bit game exe → bin\ (32-bit), when bin\
-    /// holds the engine. A 64-bit build in bin\win64\ (Garry's Mod) is added as a second target.
+    /// Where ReShade and the DXVK proxy go for a Source game, given its main folder (renodx wiki, Source Engine):
+    /// <list type="bullet">
+    /// <item>Garry's Mod: gmod_win64.exe and gmod.exe both in the main folder, engines in bin\win64\ (64-bit) and
+    /// bin\ (32-bit) → bin\win64\ first (the game's detected build), then bin\.</item>
+    /// <item>Other 64-bit games (64-bit exe in the main folder, engine in e.g. bin\x64\) → the main folder.</item>
+    /// <item>32-bit games → bin\ when it holds the engine (else the main folder), plus bin\win64\ when that
+    /// holds a 64-bit build.</item>
+    /// </list>
     /// Empty when nothing matches. File-system work: call from a background thread.
     /// </summary>
     public static List<Target> DetectTargets(string root)
@@ -46,17 +51,24 @@ public static class SourceEngineSetup
         if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return list;
 
         var rootMachines = GameExes(root).Select(ReadMachine).ToList();
+        bool has64 = rootMachines.Contains(MachineAmd64), has32 = rootMachines.Contains(MachineI386);
         var bin = Path.Combine(root, "bin");
-        if (rootMachines.Contains(MachineAmd64))
-            list.Add(new Target(root, true));
-        else if (rootMachines.Contains(MachineI386))
-            list.Add(new Target(IsEngineFolder(bin) ? bin : root, false));
-
         var win64 = Path.Combine(bin, "win64");
-        if (IsEngineFolder(win64)
-            && GameExes(win64).Any(e => ReadMachine(e) == MachineAmd64)
-            && !list.Any(t => SameDir(t.Dir, win64)))
+
+        if (has64 && IsEngineFolder(win64))
+        {
+            // The exe in the main folder runs the engine in bin\win64\: the DLLs load from there, not the main folder
             list.Add(new Target(win64, true));
+            if (has32 && IsEngineFolder(bin)) list.Add(new Target(bin, false));
+        }
+        else if (has64)
+            list.Add(new Target(root, true));
+        else if (has32)
+        {
+            list.Add(new Target(IsEngineFolder(bin) ? bin : root, false));
+            if (IsEngineFolder(win64) && GameExes(win64).Any(e => ReadMachine(e) == MachineAmd64))
+                list.Add(new Target(win64, true));
+        }
         return list;
     }
 
@@ -169,6 +181,83 @@ public static class SourceEngineSetup
         bool changed = RemoveIniSection(lines, "PROXY");
         changed |= RemoveIniValue(lines, "GENERAL", "Disable", "1");
         if (changed) File.WriteAllLines(path, lines);
+    }
+
+    /// <summary>
+    /// ReShade's configs in a folder: reshade.ini, plus ReShade2.ini, ReShade3.ini ... which ReShade creates (as a
+    /// copy of reshade.ini) for extra runtimes. The Source mod's DXVK proxy makes a second runtime, and that one
+    /// draws the overlay and loads the shaders, so it reads ReShade2.ini.
+    /// </summary>
+    public static IEnumerable<string> ReShadeConfigs(string dir)
+    {
+        if (!Directory.Exists(dir)) yield break;
+        foreach (var f in Directory.EnumerateFiles(dir, "reshade*.ini"))
+        {
+            var n = Path.GetFileNameWithoutExtension(f);
+            if (n.Length == "reshade".Length || n["reshade".Length..].All(char.IsDigit)) yield return f;
+        }
+    }
+
+    /// <summary>Config of the DXVK proxy's runtime (ReShade's second one), which draws the overlay and runs the shaders.</summary>
+    public const string SecondRuntimeIni = "ReShade2.ini";
+
+    /// <summary>
+    /// Creates dir\ReShade2.ini from dir\reshade.ini before the game first runs, so the proxy's runtime starts
+    /// with RHI's settings (shader paths, screenshot folder, keys, RenoDX presets) instead of a copy ReShade
+    /// makes later. Without [PROXY] and [GENERAL] Disable=1: those are for the first runtime only, and
+    /// Disable=1 here would turn the shaders off. An existing ReShade2.ini is kept. RHI-owned (empty sentinel).
+    /// </summary>
+    public static void EnsureSecondRuntimeIni(string dir)
+    {
+        var dest = Path.Combine(dir, SecondRuntimeIni);
+        if (File.Exists(dest)) return;
+        var source = Path.Combine(dir, "reshade.ini");
+        var lines = File.Exists(source) ? File.ReadAllLines(source).ToList() : new List<string>();
+        RemoveIniSection(lines, "PROXY");
+        RemoveIniValue(lines, "GENERAL", "Disable", "1");
+        File.WriteAllLines(dest, lines);
+        var sentinel = dest + SentinelSuffix;
+        if (!File.Exists(sentinel)) File.WriteAllBytes(sentinel, Array.Empty<byte>());
+    }
+
+    /// <summary>The extra runtime configs (ReShade2.ini ...), not reshade.ini.</summary>
+    public static IEnumerable<string> ExtraRuntimeConfigs(string dir)
+        => ReShadeConfigs(dir).Where(f => Path.GetFileNameWithoutExtension(f).Length > "reshade".Length);
+
+    /// <summary>
+    /// Points the shader / texture paths of every ReShade config in <paramref name="dir"/> at
+    /// <paramref name="mainDir"/>'s reshade-shaders, so a second install (Garry's Mod's 32-bit bin\) shares the
+    /// shaders RHI keeps in the main one (bin\win64\). Only the default paths change; paths a user set are kept.
+    /// </summary>
+    public static void ShareShaderPaths(string dir, string mainDir)
+    {
+        var rel = Path.GetRelativePath(dir, mainDir);
+        foreach (var path in ReShadeConfigs(dir).ToList())
+        {
+            var lines = File.ReadAllLines(path).ToList();
+            bool changed = false;
+            foreach (var (key, sub) in new[] { ("EffectSearchPaths", "Shaders"), ("TextureSearchPaths", "Textures") })
+            {
+                var current = GetIniValue(lines, "GENERAL", key);
+                if (current != null && !current.Equals($@".\reshade-shaders\{sub}\**", StringComparison.OrdinalIgnoreCase)) continue;
+                SetIniValue(lines, "GENERAL", key, $@".\{rel}\reshade-shaders\{sub}\**");
+                changed = true;
+            }
+            if (changed) File.WriteAllLines(path, lines);
+        }
+    }
+
+    internal static string? GetIniValue(List<string> lines, string section, string key)
+    {
+        bool inSection = false;
+        foreach (var line in lines)
+        {
+            var t = line.Trim();
+            if (t.StartsWith('[')) { inSection = t.Equals($"[{section}]", StringComparison.OrdinalIgnoreCase); continue; }
+            if (inSection && KeyOf(t) is { } k && k.Equals(key, StringComparison.OrdinalIgnoreCase))
+                return t[(t.IndexOf('=') + 1)..].Trim();
+        }
+        return null;
     }
 
     internal static void SetIniValue(List<string> lines, string section, string key, string value)

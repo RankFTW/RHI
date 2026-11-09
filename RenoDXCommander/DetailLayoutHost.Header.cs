@@ -154,7 +154,7 @@ internal sealed partial class DetailLayoutHost
         ? new TabsTheme.Look("#221C10", "#4F4123", "#F0C35A", "#2A2214", false)
         : new TabsTheme.Look("#141A26", "#263042", TabsTheme.TextMuted, "#1E2738", false);
 
-    private static TabsTheme.Look ToggleLook(bool on) => on
+    internal static TabsTheme.Look ToggleLook(bool on) => on
         ? new TabsTheme.Look("#221A40", "#4A3A7A", "#D9C8FF", "#2A2050", true)
         : new TabsTheme.Look("#141A26", "#263042", TabsTheme.TextSecondary, "#1E2738", false);
 

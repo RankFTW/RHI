@@ -57,11 +57,81 @@ public class SourceEngineSetupTests : IDisposable
     }
 
     [Fact]
-    public void GarrysMod_GetsBothBuilds()
+    public void GarrysMod_GetsBothBuilds_NothingInTheMainFolder()
     {
+        // The real layout: both exes in the main folder, each build's engine in its own bin folder
         WriteExe(Path.Combine(_root, "gmod.exe"), 0x014C);
+        WriteExe(Path.Combine(_root, "gmod_win64.exe"), 0x8664);
         Touch(@"bin\engine.dll");
-        WriteExe(Path.Combine(_root, @"bin\win64\gmod.exe"), 0x8664);
+        Touch(@"bin\shaderapidx9.dll");
+        Touch(@"bin\win64\engine.dll");
+        Touch(@"bin\win64\shaderapidx9.dll");
+        var targets = SourceEngineSetup.DetectTargets(_root);
+        Assert.Equal(2, targets.Count);
+        Assert.Equal(new SourceEngineSetup.Target(Path.Combine(_root, @"bin\win64"), true), targets[0]);
+        Assert.Equal(new SourceEngineSetup.Target(Path.Combine(_root, "bin"), false), targets[1]);
+        Assert.Equal(@"bin\win64", SourceEngineSetup.PrimarySubfolder(_root));
+    }
+
+    [Fact]
+    public void SecondInstall_SharesTheMainInstallsShaders_KeepsUserPaths()
+    {
+        var bin = Path.Combine(_root, "bin");
+        Directory.CreateDirectory(bin);
+        File.WriteAllLines(Path.Combine(bin, "reshade.ini"), new[]
+        {
+            "[GENERAL]", @"EffectSearchPaths=.\reshade-shaders\Shaders\**", @"TextureSearchPaths=D:\MyTextures\**",
+        });
+        // The DXVK proxy's second runtime reads ReShade2.ini (a copy ReShade made before the paths were shared)
+        File.WriteAllLines(Path.Combine(bin, "ReShade2.ini"), new[]
+        {
+            "[GENERAL]", @"EffectSearchPaths=.\reshade-shaders\Shaders\**", @"TextureSearchPaths=.\reshade-shaders\Textures\**",
+        });
+        File.WriteAllLines(Path.Combine(bin, "ReShadePreset.ini"), new[] { "Techniques=" });
+
+        SourceEngineSetup.ShareShaderPaths(bin, Path.Combine(bin, "win64"));
+        SourceEngineSetup.ShareShaderPaths(bin, Path.Combine(bin, "win64")); // runs again on update: no change
+        var lines = File.ReadAllLines(Path.Combine(bin, "reshade.ini"));
+        Assert.Contains(@"EffectSearchPaths=.\win64\reshade-shaders\Shaders\**", lines);
+        Assert.Contains(@"TextureSearchPaths=D:\MyTextures\**", lines);
+        var second = File.ReadAllLines(Path.Combine(bin, "ReShade2.ini"));
+        Assert.Contains(@"EffectSearchPaths=.\win64\reshade-shaders\Shaders\**", second);
+        Assert.Contains(@"TextureSearchPaths=.\win64\reshade-shaders\Textures\**", second);
+        Assert.Equal(new[] { "Techniques=" }, File.ReadAllLines(Path.Combine(bin, "ReShadePreset.ini")));
+    }
+
+    [Fact]
+    public void SecondRuntimeIni_MadeFromReShadeIni_WithoutProxyLines_NeverOverwritten()
+    {
+        File.WriteAllLines(Path.Combine(_root, "reshade.ini"), new[]
+        {
+            "[GENERAL]", @"EffectSearchPaths=.\reshade-shaders\Shaders\**", "Disable=1", "",
+            "[SCREENSHOT]", @"SavePath=C:\Shots", "",
+            "[PROXY]", "EnableProxyLibrary=1", "ProxyLibrary=dxgi_dxvk.dll",
+        });
+        SourceEngineSetup.EnsureSecondRuntimeIni(_root);
+        var path = Path.Combine(_root, SourceEngineSetup.SecondRuntimeIni);
+        var text = File.ReadAllText(path);
+        Assert.Contains(@"SavePath=C:\Shots", text);
+        Assert.Contains(@"EffectSearchPaths=.\reshade-shaders\Shaders\**", text);
+        Assert.DoesNotContain("Disable=1", text);
+        Assert.DoesNotContain("[PROXY]", text);
+        Assert.True(SourceEngineSetup.IsOwned(_root, SourceEngineSetup.SecondRuntimeIni));
+
+        File.WriteAllText(path, "user edits");
+        SourceEngineSetup.EnsureSecondRuntimeIni(_root);
+        Assert.Equal("user edits", File.ReadAllText(path));
+
+        SourceEngineSetup.RemoveOwnedFile(_root, SourceEngineSetup.SecondRuntimeIni);
+        Assert.False(File.Exists(path));
+    }
+
+    [Fact]
+    public void ThirtyTwoBitGame_WithA64BitBuildInBinWin64_GetsBoth()
+    {
+        WriteExe(Path.Combine(_root, "game.exe"), 0x014C);
+        Touch(@"bin\engine.dll");
+        WriteExe(Path.Combine(_root, @"bin\win64\game.exe"), 0x8664);
         Touch(@"bin\win64\shaderapidx9.dll");
         var targets = SourceEngineSetup.DetectTargets(_root);
         Assert.Equal(2, targets.Count);

@@ -44,6 +44,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _mfgWarningDismissed;
     [ObservableProperty] private bool _engineBadgeWarningDismissed;
     [ObservableProperty] private bool _umfgReShadeWarningDismissed;
+    /// <summary>"Don't show this again" on the Source engine mod install dialog.</summary>
+    [ObservableProperty] private bool _sourceEngineNoticeDismissed;
+    /// <summary>Achievements (Spotlight panel and overlay): show the name and description of locked hidden ones.</summary>
+    [ObservableProperty] private bool _showHiddenAchievements;
+    /// <summary>Settings page: one tab per section instead of the long list.</summary>
+    [ObservableProperty] private bool _settingsTabbed;
     [ObservableProperty] private bool _lumaRenodxCombinedWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
     [ObservableProperty] private bool _firstLaunchSetupDone;
@@ -331,6 +337,13 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("UmfgReShadeWarningDismissed", out var urwdVal))
             UmfgReShadeWarningDismissed = urwdVal == "true";
 
+        if (s.TryGetValue("SourceEngineNoticeDismissed", out var sendVal))
+            SourceEngineNoticeDismissed = sendVal == "true";
+        if (s.TryGetValue("ShowHiddenAchievements", out var shaVal))
+            ShowHiddenAchievements = shaVal == "true";
+        if (s.TryGetValue("SettingsTabbed", out var stVal))
+            SettingsTabbed = stVal == "true";
+
         if (s.TryGetValue("EnabledGlobalAddons", out var egaVal))
         {
             try
@@ -547,6 +560,9 @@ public partial class SettingsViewModel : ObservableObject
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EngineBadgeWarningDismissed"] = EngineBadgeWarningDismissed ? "true" : "false";
         s["UmfgReShadeWarningDismissed"] = UmfgReShadeWarningDismissed ? "true" : "false";
+        s["SourceEngineNoticeDismissed"] = SourceEngineNoticeDismissed ? "true" : "false";
+        s["ShowHiddenAchievements"] = ShowHiddenAchievements ? "true" : "false";
+        s["SettingsTabbed"] = SettingsTabbed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
         s["FirstLaunchSetupDone"] = FirstLaunchSetupDone ? "true" : "false";
         s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";

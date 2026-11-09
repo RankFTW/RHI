@@ -11,7 +11,6 @@ namespace RenoDXCommander;
 internal sealed partial class DetailLayoutHost
 {
     private Button? _hLaunchBtn;
-    private Button? _manageBtn;
 
     internal bool IsPanelOpen => _panelOverlay?.Visibility == Visibility.Visible;
     internal string? PanelKey => _panelKey;
@@ -69,7 +68,7 @@ internal sealed partial class DetailLayoutHost
         if (key == OverviewKey)
         {
             var status = _statusTiles.FirstOrDefault(t => t.Root.Visibility == Visibility.Visible)?.Root;
-            return status ?? _manageBtn;
+            if (status != null) return status;
         }
         if (_tuneGrid != null)
             foreach (var child in _tuneGrid.Children)

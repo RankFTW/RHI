@@ -25,7 +25,9 @@ internal static class SteamAchievementService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "artwork");
 
     private static readonly TimeSpan RarityMaxAge = TimeSpan.FromDays(1);
-    private static readonly Regex IconName = new(@"^[0-9a-fA-F]{40}\.(jpg|png)$", RegexOptions.Compiled);
+    // Newer games use 40-character hash names; older Valve games (Half-Life 2, Portal) use readable ones
+    // like "hl2_hit_cancop_withcan.jpg". Plain names only: no slashes or extra dots (used in a path and a URL).
+    private static readonly Regex IconName = new(@"^[A-Za-z0-9_-]{1,100}\.(jpg|jpeg|png)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly SemaphoreSlim Gate = new(4); // parallel icon downloads
     private static readonly ConcurrentDictionary<string, Task<string?>> IconsInFlight = new(StringComparer.OrdinalIgnoreCase);
@@ -245,7 +247,7 @@ internal static class SteamAchievementService
             .Select(kv => kv.Value).OfType<string>().FirstOrDefault(x => x.Length > 0);
     }
 
-    /// <summary>An icon file name, only when it's a plain Steam hash name (it's used in a path and a URL).</summary>
+    /// <summary>An icon file name, only when it's a plain file name (it's used in a path and a URL).</summary>
     private static string? IconFile(Dictionary<string, object>? display, string field) =>
         display != null && display.TryGetValue(field, out var v) && v is string s && IconName.IsMatch(s) ? s : null;
 

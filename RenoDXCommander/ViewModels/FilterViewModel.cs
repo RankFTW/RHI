@@ -290,9 +290,31 @@ public partial class FilterViewModel : ObservableObject
         return CustomFilters.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// Letters and digits only, lower case: "F.E.A.R. 3" → "fear3", "Half-Life 2" → "halflife2".
+    /// </summary>
+    internal static string LettersAndDigits(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (var ch in s)
+            if (char.IsLetterOrDigit(ch)) sb.Append(char.ToLowerInvariant(ch));
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// The game name contains the query once punctuation and spaces are ignored, like Steam's search:
+    /// "fear" finds F.E.A.R., "half life" finds Half-Life 2.
+    /// </summary>
+    internal static bool NameMatchesLoosely(string gameName, string query)
+    {
+        var q = LettersAndDigits(query);
+        return q.Length >= 2 && LettersAndDigits(gameName).Contains(q, StringComparison.Ordinal);
+    }
+
     internal static bool MatchesUniversalSearch(GameCardViewModel card, string query)
     {
         return card.GameName.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || NameMatchesLoosely(card.GameName, query)
             || card.Maintainer.Contains(query, StringComparison.OrdinalIgnoreCase)
             || card.Source.Contains(query, StringComparison.OrdinalIgnoreCase)
             || card.EngineHint.Contains(query, StringComparison.OrdinalIgnoreCase)

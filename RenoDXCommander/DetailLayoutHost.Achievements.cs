@@ -434,10 +434,47 @@ internal sealed partial class DetailLayoutHost
         _achList = new StackPanel { Spacing = 6 };
         _achSummary = new Border(); // filled by RenderPanel
         root.Children.Add(_achSummary);
-        root.Children.Add(_achSearch);
+
+        // Search, then the hidden-details toggle beside it
+        var searchRow = new Grid { ColumnSpacing = 8 };
+        searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        searchRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        searchRow.Children.Add(_achSearch);
+        var toggle = MakeHiddenAchToggle(searchRow);
+        Grid.SetColumn(toggle, 1);
+        searchRow.Children.Add(toggle);
+        root.Children.Add(searchRow);
+
         root.Children.Add(_achList);
         RenderPanel(keepScroll: false);
         return root;
+    }
+
+    private bool ShowHiddenAch => _window.ViewModel.Settings.ShowHiddenAchievements;
+
+    /// <summary>"Show hidden" toggle: reveals the name and description of locked hidden achievements (spoilers).</summary>
+    private Button MakeHiddenAchToggle(Grid row)
+    {
+        bool on = ShowHiddenAch;
+        var b = new Button { Content = "Show hidden", Padding = new Thickness(14, 0, 14, 0), VerticalAlignment = VerticalAlignment.Stretch };
+        TabsTheme.Apply(b, ToggleLook(on), height: double.NaN, fontSize: 12);
+        ToolTipService.SetToolTip(b, on
+            ? "Hidden achievements show their name and description. Click to hide them again."
+            : "Show the name and description of hidden achievements (may spoil the story).");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(b, on ? "Show hidden achievements: on" : "Show hidden achievements: off");
+        b.Click += (s, e) =>
+        {
+            _window.ViewModel.Settings.ShowHiddenAchievements = !on;
+            _window.ViewModel.SaveSettingsPublic();
+            // Rebuilt with the new look (pill styles are set once)
+            int i = row.Children.IndexOf(b);
+            var next = MakeHiddenAchToggle(row);
+            Grid.SetColumn(next, 1);
+            if (i >= 0) row.Children[i] = next;
+            next.Focus(FocusState.Programmatic);
+            RenderPanel(keepScroll: true);
+        };
+        return b;
     }
 
     private void RenderPanel(bool keepScroll)
@@ -447,10 +484,11 @@ internal sealed partial class DetailLayoutHost
 
         double? offset = keepScroll ? _panelScroll?.VerticalOffset : null;
         var query = _achSearch?.Text?.Trim() ?? "";
+        bool showHidden = ShowHiddenAch;
         bool Matches(Achievement a)
         {
             if (query.Length == 0) return true;
-            bool masked = a.Hidden && !a.Unlocked;
+            bool masked = a.IsMasked(showHidden);
             return (masked ? "Hidden achievement" : a.Name).Contains(query, StringComparison.OrdinalIgnoreCase)
                 || (!masked && a.Description.Contains(query, StringComparison.OrdinalIgnoreCase));
         }
@@ -551,7 +589,7 @@ internal sealed partial class DetailLayoutHost
 
     private Border MakeAchRow(AchievementSet set, Achievement a)
     {
-        bool masked = a.Hidden && !a.Unlocked;
+        bool masked = a.IsMasked(ShowHiddenAch);
         var icon = MakeAchIcon(set, a.Unlocked ? a.Icon : a.IconGray ?? a.Icon, AchIconRow, dim: !a.Unlocked);
 
         var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };

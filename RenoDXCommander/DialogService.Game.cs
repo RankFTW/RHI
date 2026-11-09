@@ -51,6 +51,9 @@ public partial class DialogService
     /// </summary>
     public async Task<bool> ShowSourceEngineInstallDialogAsync(GameCardViewModel card)
     {
+        var settings = _window.ViewModel.Settings;
+        if (settings.SourceEngineNoticeDismissed) return true;
+
         var panel = new StackPanel { Spacing = 10, MaxWidth = 520 };
         panel.Children.Add(new TextBlock
         {
@@ -77,6 +80,8 @@ public partial class DialogService
             FontSize     = 13,
             Text         = "In the game, set High Dynamic Range to Full in the advanced video settings.",
         });
+        var dontShow = new CheckBox { Content = "Don't show this again", FontSize = 12 };
+        panel.Children.Add(dontShow);
 
         var dlg = new ContentDialog
         {
@@ -90,7 +95,14 @@ public partial class DialogService
             RequestedTheme      = ElementTheme.Dark,
         };
         var result = await DialogService.ShowSafeAsync(dlg);
-        return result == ContentDialogResult.Primary;
+        bool install = result == ContentDialogResult.Primary;
+        // Only remembered when installing: cancelling with it ticked shouldn't skip the dialog next time
+        if (install && dontShow.IsChecked == true)
+        {
+            settings.SourceEngineNoticeDismissed = true;
+            _window.ViewModel.SaveSettingsPublic();
+        }
+        return install;
     }
 
     // ── UE Extended Warning Dialog ──────────────────────────────────────────────
