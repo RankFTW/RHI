@@ -25,6 +25,14 @@
 - -insecure is added to the game's launch options in RHI. It turns VAC off, so don't join VAC-secured servers while the mod is installed. If you start the game from Steam, add -insecure to its launch options there too.
 - In the game, set High Dynamic Range to Full in the advanced video settings.
 - If RHI already installed ReShade in a 32-bit Source game's main folder, it's moved to bin.
+
+### Changes
+
+**Top bar and game list sizes**
+- Resize the top bar in every layout: drag its bottom edge, or pick a size in Settings › General › Top bar size. It changes size on its own, on top of the interface size.
+- Resize the game list in Classic+ and Tabs: drag its right edge, or pick a size in Settings › General › Game list size. Its text, rows and width change together.
+- RHI remembers the sizes. Double-click an edge to reset it.
+
 ### Bug Fixes
 
 - Fixed a RenoDX addon saved as a second download (for example renodx-ue-extended (1).addon64) not being recognised, so the game showed Download from Discord. Installing or updating now also removes such copies, so the game no longer loads the mod twice, and dropping one onto RHI installs it under its proper name.

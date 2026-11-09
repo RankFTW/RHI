@@ -112,6 +112,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private double _spotlightHeroHeight;
     /// <summary>Spotlight cover size set by dragging the cover strip's edge (1 = 120 x 180).</summary>
     [ObservableProperty] private double _spotlightCoverScale = 1.0;
+    /// <summary>Top bar size in percent (every layout), on top of the interface size. Drag its bottom edge or Settings › General.</summary>
+    [ObservableProperty] private int _topBarScale = 100;
+    /// <summary>Game list size in percent (Classic+ and Tabs), on top of the interface size; its width follows. Drag its right edge or Settings › General.</summary>
+    [ObservableProperty] private int _gameListScale = 100;
     /// <summary>What's New: text size (+ / - buttons) and whether the version list + search are hidden.</summary>
     [ObservableProperty] private double _patchNotesFontSize = 12;
     [ObservableProperty] private bool _patchNotesNavHidden;
@@ -412,6 +416,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
         if (s.TryGetValue("PatchNotesNavHidden", out var pnhVal)) PatchNotesNavHidden = pnhVal == "true";
+        if (s.TryGetValue("TopBarScale", out var tbsVal) && int.TryParse(tbsVal, out var tbs)) TopBarScale = Math.Clamp(tbs, 50, 200);
+        if (s.TryGetValue("GameListScale", out var glsVal) && int.TryParse(glsVal, out var gls)) GameListScale = Math.Clamp(gls, 50, 200);
         if (s.TryGetValue("SpotlightCoverScale", out var scsVal) && double.TryParse(scsVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scs) && scs > 0) SpotlightCoverScale = scs;
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -590,6 +596,8 @@ public partial class SettingsViewModel : ObservableObject
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesNavHidden"] = PatchNotesNavHidden ? "true" : "false";
         s["SpotlightCoverScale"] = SpotlightCoverScale.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        s["TopBarScale"] = TopBarScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        s["GameListScale"] = GameListScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
         s["StartWithWindows"] = StartWithWindows ? "true" : "false";

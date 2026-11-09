@@ -56,6 +56,7 @@ public sealed partial class MainWindow
     {
         ApplyTabsChromeCore();
         ApplySpotlightChrome();
+        ApplyChromeSizes(); // top bar / game list sizes (the list ones don't apply in Spotlight)
         UpdateControllerTimer(); // controller support is Spotlight only
     }
 
@@ -180,6 +181,7 @@ public sealed partial class MainWindow
             }
         };
         EnsureCollectionsRow();
+        SetUpChromeSizing();
         _tabsChromeBuilt = true;
     }
 
@@ -399,12 +401,12 @@ public sealed partial class MainWindow
         {
             _xamlTopBar.Background = TabsTheme.B(TabsTheme.PanelBg);
             _xamlTopBar.BorderBrush = TabsTheme.B(TabsTheme.CardBorder);
-            _xamlTopBar.Padding = new Thickness(20, 12, 20, 12);
+            SetTopBarPadding(new Thickness(20, 12, 20, 12));
         }
         else if (_topBarClassic is { } c)
         {
             _xamlTopBar.Background = c.Bg;
-            _xamlTopBar.Padding = c.Pad;
+            SetTopBarPadding(c.Pad);
             _xamlTopBar.BorderBrush = c.Border;
         }
     }

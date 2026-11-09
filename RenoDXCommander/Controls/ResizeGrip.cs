@@ -8,7 +8,8 @@ namespace RenoDXCommander.Controls;
 
 /// <summary>
 /// A thin horizontal strip that shows the up/down resize cursor and reports vertical drags
-/// (Spotlight banner height, cover size). Distances are measured against <see cref="Reference"/>, an element
+/// (Spotlight banner height, cover size, top bar size), or with <c>horizontal: true</c> a thin vertical
+/// strip with the left/right cursor that reports sideways drags (game list width). Distances are measured against <see cref="Reference"/>, an element
 /// that doesn't move while dragging and sits inside RHI's interface scaling, so they're in layout units and
 /// the edge follows the pointer at any interface size. Double-click raises <see cref="Reset"/>.
 /// </summary>
@@ -18,29 +19,31 @@ public sealed class ResizeGrip : Grid
     private readonly Border _line;
     private uint? _pointerId;
     private double _startY;
+    private readonly bool _horizontal;
 
     /// <summary>The element distances are measured in (window root under the scaling). Null = this grip's parent.</summary>
     public Func<UIElement?>? Reference { get; set; }
 
     public event Action? DragStarted;
-    /// <summary>Total vertical distance from where the drag started (down = positive).</summary>
+    /// <summary>Total distance from where the drag started (down / right = positive).</summary>
     public event Action<double>? DragDelta;
     public event Action? DragCompleted;
     public event Action? Reset;
 
-    public ResizeGrip(double thickness = 10)
+    public ResizeGrip(double thickness = 10, bool horizontal = false)
     {
-        Height = thickness;
+        _horizontal = horizontal;
+        if (horizontal) { Width = thickness; VerticalAlignment = VerticalAlignment.Stretch; }
+        else { Height = thickness; HorizontalAlignment = HorizontalAlignment.Stretch; }
         Background = Clear; // hit-testable across the whole strip
-        HorizontalAlignment = HorizontalAlignment.Stretch;
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeNorthSouth);
+        ProtectedCursor = InputSystemCursor.Create(horizontal ? InputSystemCursorShape.SizeWestEast : InputSystemCursorShape.SizeNorthSouth);
         _line = new Border
         {
-            Height = 2,
+            Height = horizontal ? 64 : 2,
             CornerRadius = new CornerRadius(1),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Width = 64,
+            Width = horizontal ? 2 : 64,
             Background = TabsTheme.B(TabsTheme.Accent),
             Opacity = 0,
             IsHitTestVisible = false,
@@ -56,6 +59,8 @@ public sealed class ResizeGrip : Grid
         DoubleTapped += (s, e) => { e.Handled = true; Reset?.Invoke(); };
     }
 
+    private double Along(Windows.Foundation.Point p) => _horizontal ? p.X : p.Y;
+
     private UIElement RefElement => Reference?.Invoke() ?? (Parent as UIElement) ?? this;
 
     private void OnPressed(object sender, PointerRoutedEventArgs e)
@@ -64,7 +69,7 @@ public sealed class ResizeGrip : Grid
         if (pt.PointerDeviceType == Microsoft.UI.Input.PointerDeviceType.Mouse && !pt.Properties.IsLeftButtonPressed) return;
         if (!CapturePointer(e.Pointer)) return;
         _pointerId = e.Pointer.PointerId;
-        _startY = e.GetCurrentPoint(RefElement).Position.Y;
+        _startY = Along(e.GetCurrentPoint(RefElement).Position);
         _line.Opacity = 1;
         e.Handled = true;
         DragStarted?.Invoke();
@@ -74,7 +79,7 @@ public sealed class ResizeGrip : Grid
     {
         if (_pointerId != e.Pointer.PointerId) return;
         e.Handled = true;
-        DragDelta?.Invoke(e.GetCurrentPoint(RefElement).Position.Y - _startY);
+        DragDelta?.Invoke(Along(e.GetCurrentPoint(RefElement).Position) - _startY);
     }
 
     private void End(PointerRoutedEventArgs e)
