@@ -157,9 +157,7 @@ internal sealed partial class OverlayWindow : Window
 
         var card = game.Card;
         _title.Text = card?.GameName ?? (game.ExePath != null ? Path.GetFileNameWithoutExtension(game.ExePath) : "Unknown game");
-        _subtitle.Text = card != null
-            ? string.IsNullOrEmpty(card.Source) ? "" : card.Source
-            : "RHI doesn't know this game";
+        _subtitle.Text = card?.Source ?? "";
         // Cover the game's whole monitor (not just the work area); its shape sizes the screenshot thumbnails
         var info = new OverlayNative.MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<OverlayNative.MONITORINFO>() };
         var monitor = OverlayNative.MonitorFromWindow(game.Hwnd, OverlayNative.MONITOR_DEFAULTTONEAREST);

@@ -485,6 +485,22 @@ public partial class AuxInstallService
         }
     }
 
+    /// <summary>Drops records left in an old folder of a game that has the same component recorded in its current one (see StaleRecords).</summary>
+    public static void RemoveStaleDuplicateRecords()
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            if (!File.Exists(DbPath)) return;
+            var db = SafeJsonFile.ReadList<AuxInstalledRecord>(DbPath);
+            var kept = StaleRecords.WithoutStaleDuplicates(db, r => $"{r.GameName}|{r.Store}|{r.AddonType}", r => r.InstallPath,
+                Directory.Exists, out var removed);
+            if (removed.Count == 0) return;
+            foreach (var r in removed)
+                CrashReporter.Log($"[AuxInstallService.RemoveStaleDuplicateRecords] '{r.GameName}' {r.AddonType}: dropped old record for '{r.InstallPath}' (folder gone; current folder has one)");
+            SafeJsonFile.Write(DbPath, kept, "AuxInstallService.RemoveStaleDuplicateRecords", SafeJsonFile.Indented);
+        }
+    }
+
     // SafeJsonFile: atomic write + .bak, corrupt-file recovery, no save over an unreadable file.
     private List<AuxInstalledRecord> LoadDb() => SafeJsonFile.ReadList<AuxInstalledRecord>(DbPath);
 

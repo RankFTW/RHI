@@ -28,11 +28,18 @@ public sealed partial class MainWindow
     internal static List<string> GameProcessSearchRoots(string installPath)
     {
         var roots = new List<string>();
+        void AddOne(string p)
+        {
+            var n = Path.GetFullPath(p).TrimEnd('\\').ToLowerInvariant() + "\\";
+            if (n.Length > 3 && !roots.Contains(n)) roots.Add(n); // never a bare drive root
+        }
         void Add(string? p)
         {
             if (string.IsNullOrEmpty(p)) return;
-            var n = Path.GetFullPath(p).TrimEnd('\\').ToLowerInvariant() + "\\";
-            if (n.Length > 3 && !roots.Contains(n)) roots.Add(n); // never a bare drive root
+            AddOne(p);
+            // Running processes report their real folder. Game Pass games on another drive live in
+            // e.g. D:\xbox\<Game>\Content behind a WindowsApps junction, so add that folder too.
+            if (XboxPaths.IsWindowsApps(p) && XboxPaths.ResolveRealFolder(p) is { } real) AddOne(real);
         }
         Add(installPath);
 

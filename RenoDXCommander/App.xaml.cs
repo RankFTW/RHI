@@ -318,6 +318,12 @@ public partial class App : Application
             }
         }
 
+        // Before anything loads them: saved Game Pass paths → the game's real folder (see XboxPaths).
+        // After the Admin Mode relaunch, so it runs (and logs) in the instance that stays open.
+        XboxPaths.MigrateSavedPaths(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI"));
+        StaleRecords.CleanAll();
+
         CrashReporter.Log("[App.OnLaunched] Creating MainWindow");
         GraphicsApiDetector.LoadCache();
         MainViewModel.LoadGameApiCache();

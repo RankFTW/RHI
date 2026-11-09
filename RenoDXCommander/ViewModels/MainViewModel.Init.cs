@@ -880,6 +880,7 @@ public partial class MainViewModel
                 _crashReporter.Log($"[MainViewModel.InitializeAsync] Nightly migration complete — {migrated} games set to Nightly");
             }
 
+            MarkRunningGames();
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();

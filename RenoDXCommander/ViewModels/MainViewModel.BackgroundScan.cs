@@ -884,6 +884,8 @@ public partial class MainViewModel
             // Re-sort by game name
             _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
 
+            MarkRunningGames();
+
             // Push to FilterViewModel, apply filter
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();

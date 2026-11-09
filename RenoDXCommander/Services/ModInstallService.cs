@@ -671,6 +671,22 @@ public class ModInstallService : IModInstallService
         }
     }
 
+    /// <summary>Drops records left in an old folder of a game that has a record in its current one (see StaleRecords).</summary>
+    public static void RemoveStaleDuplicateRecords()
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            if (!File.Exists(DbPath)) return;
+            var db = SafeJsonFile.ReadList<InstalledModRecord>(DbPath);
+            var kept = StaleRecords.WithoutStaleDuplicates(db, r => $"{r.GameName}|{r.Store}", r => r.InstallPath,
+                Directory.Exists, out var removed);
+            if (removed.Count == 0) return;
+            foreach (var r in removed)
+                CrashReporter.Log($"[ModInstallService.RemoveStaleDuplicateRecords] '{r.GameName}': dropped old record for '{r.InstallPath}' (folder gone; current folder has one)");
+            SafeJsonFile.Write(DbPath, kept, "ModInstallService.RemoveStaleDuplicateRecords", SafeJsonFile.Indented);
+        }
+    }
+
     // SafeJsonFile: atomic write + .bak, corrupt-file recovery, no save over an unreadable file.
     private List<InstalledModRecord> LoadDb() => SafeJsonFile.ReadList<InstalledModRecord>(DbPath);
 

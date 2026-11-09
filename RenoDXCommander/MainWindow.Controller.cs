@@ -56,8 +56,11 @@ public sealed partial class MainWindow
     private bool _padReturnToCover;
     private const long PadRelaunchGuardMs = 8000;
 
-    private static readonly SolidColorBrush PadFocusBrush = TabsTheme.B(TabsTheme.Accent);
-    private static readonly SolidColorBrush PadClearBrush = new(Microsoft.UI.Colors.Transparent);
+    // Created on first use (UI thread). A static initializer would run on whichever thread first touches
+    // MainWindow (e.g. a launch watcher calling GameProcessSearchRoots) and WinUI brushes throw off the UI thread.
+    private static SolidColorBrush? _padFocusBrush, _padClearBrush;
+    private static SolidColorBrush PadFocusBrush => _padFocusBrush ??= TabsTheme.B(TabsTheme.Accent);
+    private static SolidColorBrush PadClearBrush => _padClearBrush ??= new(Microsoft.UI.Colors.Transparent);
 
     /// <summary>Starts or stops reading the controller: Spotlight layout and the setting on.</summary>
     internal void UpdateControllerTimer()

@@ -247,10 +247,6 @@ internal sealed partial class OverlayWindow
             tiles.Children.Add(MakeCard("Battery", BigText($"{percent}%{(charging ? ", charging" : "")}"), stretch: true));
 
         _homeBox.Children.Add(tiles);
-
-        if (card == null)
-            _homeBox.Children.Add(SmallText("RHI doesn't have this game in its library, so there's nothing else to show. "
-                + "Add it with the + next to RHI's search box if it's a game."));
     }
 
     /// <summary>RHI's own playtime count for the game and a "since" line, or null when there's none yet.</summary>

@@ -12,7 +12,7 @@ public partial class MainViewModel
     // 1 while an auto-restart is pending, so later failing ticks don't schedule more restarts.
     private int _restartPending;
 
-    // Games launched from RHI that are still running (MainWindow.MonitorProcessForHdr).
+    // Games launched from RHI that are still running (MainWindow.WatchLaunchAsync).
     private int _gamesRunningFromRhi;
     // System memory load (%) at or above which a stall is treated as RHI being paged out.
     private const uint PagedOutMemoryLoadPct = 90;
@@ -23,6 +23,20 @@ public partial class MainViewModel
         if (running) System.Threading.Interlocked.Increment(ref _gamesRunningFromRhi);
         else if (System.Threading.Interlocked.Decrement(ref _gamesRunningFromRhi) < 0)
             System.Threading.Interlocked.Exchange(ref _gamesRunningFromRhi, 0);
+    }
+
+    /// <summary>
+    /// Sets IsRunning on cards for games launched from RHI that are still running. Cards are new
+    /// objects after a Refresh / rebuild, so the flag is taken from the saved launches each time.
+    /// </summary>
+    private void MarkRunningGames()
+    {
+        var store = LaunchSessionStore.Default;
+        foreach (var card in _allCards)
+        {
+            var running = store.IsRunning(card.GameName, card.Source);
+            if (card.IsRunning != running) card.IsRunning = running;
+        }
     }
 
     private static uint SystemMemoryLoad()

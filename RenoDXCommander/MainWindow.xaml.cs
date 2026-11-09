@@ -280,6 +280,8 @@ public sealed partial class MainWindow : Window
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");
+        // Games launched from RHI before it was restarted: keep watching them / revert display changes
+        ResumeLaunchSessions();
         // Old single-file extraction folders in %TEMP%\.net\RHI (background, after startup)
         ExtractionCacheCleaner.RunAsync(LifetimeToken).SafeFireAndForget("MainWindow.ExtractionCacheCleaner");
         // Rebuild custom filter chips when the collection changes

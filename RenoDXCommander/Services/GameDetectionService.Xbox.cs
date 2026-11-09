@@ -51,7 +51,14 @@ public partial class GameDetectionService
                         continue; // Some packages throw on accessing InstalledLocation
                     }
 
-                    if (string.IsNullOrEmpty(installLocation) || !Directory.Exists(installLocation))
+                    if (string.IsNullOrEmpty(installLocation)) continue;
+
+                    // Games installed to an Xbox games folder: use the real folder (e.g. D:\xbox\<Game>\Content)
+                    // instead of the WindowsApps junction, whose name changes with every game update.
+                    if (XboxPaths.RealPackageFolder(installLocation) is { } realLocation)
+                        installLocation = realLocation;
+
+                    if (!Directory.Exists(installLocation))
                         continue;
 
                     // Filter: must be a game, not a regular app
@@ -252,7 +259,15 @@ public partial class GameDetectionService
                     catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
                     if (!hasExe) continue;
 
-                    games.Add(new DetectedGame { Name = gameName, InstallPath = installPath, Source = "Xbox" });
+                    // Same name and launch id as the package list gives (folder names drop ':' etc.)
+                    var (configName, aumid) = XboxPaths.ReadGameConfig(installPath);
+                    games.Add(new DetectedGame
+                    {
+                        Name        = configName ?? gameName,
+                        InstallPath = installPath,
+                        Source      = "Xbox",
+                        XboxAumid   = aumid,
+                    });
                 }
             }
             catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
@@ -310,15 +325,13 @@ public partial class GameDetectionService
     }
 
     /// <summary>
-    /// Resolves the actual game root from an Xbox game directory.
-    /// Handles the Content\InternalName subfolder structure used by GDK games.
+    /// The game root of an Xbox games folder entry (&lt;Game&gt;\Content for GDK games): the same folder the
+    /// package list reports, so both detection paths give the same install path. Not a subfolder of Content:
+    /// the first one is usually Engine.
     /// </summary>
-    private string ResolveXboxGameRoot(string gameDir)
+    private static string ResolveXboxGameRoot(string gameDir)
     {
         var contentDir = Path.Combine(gameDir, "Content");
-        if (!Directory.Exists(contentDir)) return gameDir;
-
-        var innerDirs = Directory.GetDirectories(contentDir);
-        return innerDirs.Length > 0 ? innerDirs[0] : contentDir;
+        return Directory.Exists(contentDir) ? contentDir : gameDir;
     }
 }

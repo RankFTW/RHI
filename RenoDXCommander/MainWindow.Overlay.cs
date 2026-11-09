@@ -87,6 +87,12 @@ public sealed partial class MainWindow
                 CrashReporter.Log("[MainWindow.ToggleRhiOverlay] RHI (or nothing) in front — not opened");
                 return;
             }
+            // Only over a game in RHI's library, never over other apps (Discord, Explorer, Afterburner...)
+            if (game.Card == null)
+            {
+                CrashReporter.Log($"[MainWindow.ToggleRhiOverlay] '{(game.ExePath != null ? Path.GetFileName(game.ExePath) : $"PID {game.ProcessId}")}' in front isn't a game in RHI's library — not opened");
+                return;
+            }
             _overlayWindow ??= new OverlayWindow(RhiOverlayHotkeyText, () => ViewModel.Manifest,
                 () => ViewModel.Settings, BuildScreenshotSavePath);
             _overlayWindow.Open(game);
