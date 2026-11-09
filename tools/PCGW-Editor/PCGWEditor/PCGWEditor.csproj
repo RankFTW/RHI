@@ -3,6 +3,9 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- System tray icon (NotifyIcon). The WinForms / System.Drawing global usings are removed below so they
+         don't clash with WPF names (MessageBox, Brush, Button...). -->
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <SelfContained>true</SelfContained>
@@ -10,6 +13,10 @@
     <AssemblyName>PCGWEditor</AssemblyName>
     <ApplicationIcon>..\..\Shared\icons\pcgw-editor.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
   <!-- Shared Fluent dark theme (also used by the other WPF tool) -->
   <ItemGroup>
     <Page Include="..\..\Shared\Wpf\FluentDark.xaml" Link="Theme\FluentDark.xaml" />

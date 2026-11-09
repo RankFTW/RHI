@@ -50,6 +50,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _githubToken = PcgwDataService.LoadToken();
         RefreshToolbarState();
         Loaded += (_, _) => _ = AutoSyncAsync();
+        InitAutoFetch();
     }
 
     private async Task AutoSyncAsync()
@@ -202,19 +203,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (r == MessageBoxResult.Yes) SaveToPath(_currentFilePath!);
         }
 
+        var (success, error) = await PushCoreAsync();
+        FetchLog.Add(new FetchLogEntry
+        {
+            Trigger = "Manual push",
+            Outcome = success ? "Pushed" : "Failed",
+            Message = $"{_data.GameCount:N0} games",
+            Pushed  = success,
+            PushError = error,
+        });
+        if (!success)
+            MessageBox.Show($"Push failed:\n{error}", "Push Failed",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    /// <summary>Pushes the saved file to GitHub (manual Push and auto fetch). No dialogs.</summary>
+    private async Task<(bool Success, string? Error)> PushCoreAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_githubToken)) return (false, "No GitHub token set (Token button).");
+        if (_data == null || _currentFilePath == null) return (false, "No file open.");
         StatusBar.Text = "Pushing to GitHub…";
         PushBtn.IsEnabled = false;
         try
         {
-            var content = File.ReadAllText(_currentFilePath!);
+            var content = File.ReadAllText(_currentFilePath);
             var msg     = $"Update pcgw_data.json via PCGW-Editor ({_data.GameCount:N0} games)";
             var (success, error) = await PcgwDataService.PushAsync(content, _githubToken, msg);
             StatusBar.Text = success
                 ? $"✓ Pushed at {DateTime.Now:HH:mm:ss}"
                 : $"✗ Push failed: {error}";
-            if (!success)
-                MessageBox.Show($"Push failed:\n{error}", "Push Failed",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+            return (success, error);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusBar.Text = $"✗ Push failed: {ex.Message}";
+            return (false, ex.Message);
         }
         finally { PushBtn.IsEnabled = HasFile; }
     }
@@ -544,7 +567,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (_isDirty && !ConfirmDiscard()) e.Cancel = true;
+        if (HideInsteadOfClosing(e)) { base.OnClosing(e); return; }
+        if (_isDirty && !ConfirmDiscard()) { e.Cancel = true; _exiting = false; }
         base.OnClosing(e);
     }
 
@@ -573,33 +597,69 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _fetchCts?.Cancel();
     }
 
-    private async Task RunFetchAsync(bool fullRefresh)
+    /// <summary>
+    /// Fetch Updates / Full Refresh. <paramref name="autoTrigger"/> null = manual (dialogs as before);
+    /// "Automatic" / "Run now" = no dialogs, skipped while there are unsaved edits, and only when PCGW had something
+    /// new is the file saved and (if set) pushed. Every run is written to the fetch log.
+    /// </summary>
+    private async Task RunFetchAsync(bool fullRefresh, string? autoTrigger = null)
     {
+        bool auto  = autoTrigger != null;
+        var  entry = new FetchLogEntry { Trigger = autoTrigger ?? (fullRefresh ? "Manual (Full Refresh)" : "Manual") };
+
+        void Stop(string message, string title, string outcome = "Failed")
+        {
+            entry.Outcome = outcome;
+            entry.Message = message;
+            FetchLog.Add(entry);
+            if (auto) StatusBar.Text = $"Auto fetch: {message}";
+            else MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        if (_fetchRunning)
+        {
+            if (auto) Stop("A fetch was already running.", "", "Skipped");
+            return;
+        }
+        if (auto && _isDirty)
+        {
+            Stop("You have unsaved edits in the editor. Save or discard them and the next run goes ahead.", "", "Skipped");
+            return;
+        }
+
         // Check credentials
         var (username, password) = PcgwFetchService.LoadCredentials();
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            MessageBox.Show(
-                "No PCGW bot credentials set.\nClick 🔑 PCGW to configure them.",
-                "Credentials Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Stop("No PCGW bot credentials set. Click PCGW login to set them.", "Credentials Required");
             return;
         }
 
         // Ensure a file is open (load local cache if needed)
         if (!HasFile)
         {
-            if (System.IO.File.Exists(PcgwDataService.LocalPath))
+            if (File.Exists(PcgwDataService.LocalPath))
                 LoadFile(PcgwDataService.LocalPath);
             else
             {
-                MessageBox.Show(
-                    "No pcgw_data.json loaded. Click Sync first to download the current file.",
-                    "No File", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Stop("No pcgw_data.json loaded. Click Sync first to download the current file.", "No File");
+                return;
+            }
+        }
+
+        string? since = null;
+        if (!fullRefresh)
+        {
+            since = _data!.Generated;
+            if (string.IsNullOrEmpty(since))
+            {
+                Stop("The current file has no 'generated' timestamp, so it can't tell what's new. Run a Full Refresh instead.", "No Timestamp");
                 return;
             }
         }
 
         // Disable buttons, show cancel
+        _fetchRunning = true;
         SetFetchUiActive(true);
         _fetchCts = new CancellationTokenSource();
         var svc   = new PcgwFetchService(_fetchCts.Token);
@@ -610,42 +670,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         FetchResult result;
         try
         {
-            if (fullRefresh)
-            {
-                result = await Task.Run(() => svc.FetchAllAsync(
-                    username, password, _data!.Games, progress));
-            }
-            else
-            {
-                var since = _data!.Generated;
-                if (string.IsNullOrEmpty(since))
-                {
-                    MessageBox.Show(
-                        "The current file has no 'generated' timestamp — cannot determine what's new.\nRun a Full Refresh instead.",
-                        "No Timestamp", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    SetFetchUiActive(false);
-                    return;
-                }
-                result = await Task.Run(() => svc.FetchUpdatesAsync(
-                    username, password, _data!.Games, since, progress));
-            }
+            result = fullRefresh
+                ? await Task.Run(() => svc.FetchAllAsync(username, password, _data!.Games, progress))
+                : await Task.Run(() => svc.FetchUpdatesAsync(username, password, _data!.Games, since!, progress));
         }
         finally
         {
             SetFetchUiActive(false);
+            _fetchRunning = false;
         }
 
         if (!result.Success)
         {
-            if (result.Error != "Cancelled")
+            bool cancelled = result.Error == "Cancelled";
+            StatusBar.Text = $"Fetch {(cancelled ? "cancelled" : "failed")}.";
+            entry.Outcome  = cancelled ? "Skipped" : "Failed";
+            entry.Message  = cancelled ? "Cancelled." : $"Fetch failed: {result.Error}";
+            FetchLog.Add(entry);
+            if (!auto && !cancelled)
                 MessageBox.Show($"Fetch failed:\n{result.Error}", "Fetch Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
-            StatusBar.Text = $"Fetch {(result.Error == "Cancelled" ? "cancelled" : "failed")}.";
             return;
         }
 
+        bool changed = fullRefresh || result.Added + result.Updated > 0;
+        entry.Added   = result.AddedNames   ?? new();
+        entry.Updated = result.UpdatedNames ?? new();
+
         // Update timestamp
         _data!.Generated = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        if (auto && !changed)
+        {
+            // Nothing new: only the in-memory "since" moves on; no save or push for a timestamp alone
+            entry.Outcome  = "NoChanges";
+            entry.Message  = $"Checked PCGW: nothing new ({result.Total:N0} games).";
+            StatusBar.Text = $"Auto fetch at {DateTime.Now:HH:mm}: nothing new.";
+            FetchLog.Add(entry);
+            return;
+        }
 
         // Reload the view models from the updated _data.Games
         _allGames = new System.Collections.ObjectModel.ObservableCollection<PcgwEntryVm>(
@@ -663,9 +726,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? $"Full refresh complete — {result.Total:N0} games."
             : $"Fetch updates complete — {result.Added} new, {result.Updated} updated ({result.Total:N0} total).";
         StatusBar.Text = summary;
+        entry.Outcome  = changed ? "Updated" : "NoChanges";
+        entry.Message  = summary;
 
         // Show detailed results dialog for incremental fetch
-        if (!fullRefresh)
+        if (!auto && !fullRefresh)
         {
             var dlg = new FetchSummaryWindow(
                 result.AddedNames   ?? new(),
@@ -676,6 +741,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Auto-save to local path
         SaveToPath(_currentFilePath ?? PcgwDataService.LocalPath);
+
+        if (auto && _autoSettings.PushWhenChanged)
+        {
+            if (_isDirty)
+            {
+                entry.Pushed    = false;
+                entry.PushError = "The file couldn't be saved, so it wasn't pushed.";
+            }
+            else
+            {
+                var (ok, error) = await PushCoreAsync();
+                entry.Pushed    = ok;
+                entry.PushError = error;
+            }
+        }
+        FetchLog.Add(entry);
     }
 
     private void SetFetchUiActive(bool active)

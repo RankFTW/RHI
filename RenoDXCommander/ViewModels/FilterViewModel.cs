@@ -302,13 +302,77 @@ public partial class FilterViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The game name contains the query once punctuation and spaces are ignored, like Steam's search:
-    /// "fear" finds F.E.A.R., "half life" finds Half-Life 2.
+    /// Looser name matching, on top of the plain "contains" search:
+    /// <list type="bullet">
+    /// <item>punctuation and spaces ignored: "fear" finds F.E.A.R., "half life" finds Half-Life 2;</item>
+    /// <item>Roman numerals as numbers: "gta 3" / "grand theft auto 3" find Grand Theft Auto III;</item>
+    /// <item>initials, from the start: "gta" finds Grand Theft Auto, "ff7" Final Fantasy VII, "hl2" Half-Life 2.</item>
+    /// </list>
     /// </summary>
     internal static bool NameMatchesLoosely(string gameName, string query)
     {
         var q = LettersAndDigits(query);
-        return q.Length >= 2 && LettersAndDigits(gameName).Contains(q, StringComparison.Ordinal);
+        if (q.Length < 2) return false;
+        var f = s_searchForms.GetOrAdd(gameName, SearchForms);
+        return f.Plain.Contains(q, StringComparison.Ordinal)
+            || f.Numbered.Contains(q, StringComparison.Ordinal)
+            || f.Initials.StartsWith(q, StringComparison.Ordinal)
+            || f.RawInitials.StartsWith(q, StringComparison.Ordinal);
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Plain, string Numbered, string Initials, string RawInitials)> s_searchForms = new();
+
+    private static readonly System.Text.RegularExpressions.Regex RomanNumeral =
+        new(@"^(X{0,3})(IX|IV|V?I{0,3})$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A name's search forms (cached per name): letters + digits; the same with Roman numerals as numbers; initials
+    /// with numbers ("gta3", "ff7"); initials with numerals as written ("gtaiii", "ffx").
+    /// </summary>
+    internal static (string Plain, string Numbered, string Initials, string RawInitials) SearchForms(string name)
+    {
+        // Apostrophes join a word ("Marvel's"); every other non-letter / digit separates words
+        var words = new List<string>();
+        var current = new System.Text.StringBuilder();
+        foreach (var ch in name)
+        {
+            if (char.IsLetterOrDigit(ch)) current.Append(ch);
+            else if (ch is '\'' or '’') continue;
+            else if (current.Length > 0) { words.Add(current.ToString()); current.Clear(); }
+        }
+        if (current.Length > 0) words.Add(current.ToString());
+
+        var numbered = new System.Text.StringBuilder();
+        var initials = new System.Text.StringBuilder();
+        var rawInitials = new System.Text.StringBuilder();
+        for (int i = 0; i < words.Count; i++)
+        {
+            var w = words[i];
+            bool digits = w.All(char.IsDigit);
+            var number = digits ? w : RomanValue(w, isLast: i == words.Count - 1);
+            numbered.Append(number ?? w.ToLowerInvariant());
+            initials.Append(number ?? char.ToLowerInvariant(w[0]).ToString());
+            rawInitials.Append(number != null ? w.ToLowerInvariant() : char.ToLowerInvariant(w[0]).ToString());
+        }
+        return (LettersAndDigits(name), numbered.ToString(), initials.ToString(), rawInitials.ToString());
+    }
+
+    /// <summary>
+    /// "III" → "3" for a word written as a capital Roman numeral (I to XXXIX). A lone "I" only at the end of the
+    /// name ("I Am Bread" isn't "1 Am Bread").
+    /// </summary>
+    private static string? RomanValue(string word, bool isLast)
+    {
+        if (word.Length == 0 || word != word.ToUpperInvariant() || !RomanNumeral.IsMatch(word)) return null;
+        if (word == "I" && !isLast) return null;
+        int total = 0;
+        for (int i = 0; i < word.Length; i++)
+        {
+            int v = word[i] switch { 'I' => 1, 'V' => 5, 'X' => 10, _ => 0 };
+            int next = i + 1 < word.Length ? word[i + 1] switch { 'I' => 1, 'V' => 5, 'X' => 10, _ => 0 } : 0;
+            total += v < next ? -v : v;
+        }
+        return total > 0 ? total.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
     }
 
     internal static bool MatchesUniversalSearch(GameCardViewModel card, string query)

@@ -1,0 +1,100 @@
+<Window x:Class="PCGWEditor.FetchLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fetch log" Height="620" Width="760" MinWidth="520" MinHeight="360"
+        Style="{StaticResource ThemedWindow}"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="24,20,24,12">
+            <TextBlock Text="Fetch log" Style="{StaticResource DialogTitle}" Margin="0,0,0,6"/>
+            <TextBlock x:Name="SummaryText" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="24,0,12,0" Padding="0,0,12,0" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="EntryList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Card}" Padding="14,10" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Headline}" FontWeight="SemiBold" FontSize="14">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tone}" Value="good">
+                                                        <Setter Property="Foreground" Value="{StaticResource SuccessText}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Tone}" Value="bad">
+                                                        <Setter Property="Foreground" Value="{StaticResource CriticalText}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center">
+                                        <Run Text="{Binding When, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding Trigger, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </Grid>
+                                <TextBlock Text="{Binding Message}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                <TextBlock Text="{Binding PushText}" TextWrapping="Wrap" Margin="0,4,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessText}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PushText}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Pushed}" Value="False">
+                                                    <Setter Property="Foreground" Value="{StaticResource CriticalText}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding Games}" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="12"
+                                           Foreground="{StaticResource TextSecondary}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Games}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooter}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="Open log file" Click="OpenFile_Click" Padding="14,0"/>
+                <Button Grid.Column="2" Content="Clear log" Click="Clear_Click" Padding="14,0"/>
+                <Button Grid.Column="4" Content="Close" Click="Close_Click" IsCancel="True" MinWidth="120"
+                        Style="{StaticResource AccentButton}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

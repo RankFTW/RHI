@@ -56,6 +56,14 @@
                             Style="{StaticResource DangerButton}" t:Ui.Icon="&#xE711;"
                             Margin="4,0,0,0" Visibility="Collapsed"
                             ToolTip="Cancel the in-progress fetch"/>
+                    <Separator Style="{StaticResource ToolbarSeparator}"/>
+                    <Button x:Name="AutoFetchBtn" Content="Auto fetch" Click="AutoFetch_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE916;"
+                            ToolTip="Fetch updates on a timer and push new data to GitHub automatically; system tray"/>
+                    <Button x:Name="LogBtn" Content="Log" Click="Log_Click"
+                            Style="{StaticResource SubtleButton}" t:Ui.Icon="&#xE81C;"
+                            Margin="4,0,0,0"
+                            ToolTip="Every fetch and push: when it ran, what was fetched, whether the push worked"/>
                 </WrapPanel>
 
             </Grid>
