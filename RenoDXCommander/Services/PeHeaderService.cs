@@ -97,8 +97,10 @@ public class PeHeaderService : IPeHeaderService
 
     /// <summary>
     /// Searches the given directory (non-recursive) for .exe files and returns
-    /// the path of the largest one by file size (RHI's own helper exes don't count). Returns null if none found or
-    /// the directory is inaccessible.
+    /// the path of the largest one by file size. RHI's own helper exes and uninstallers / crash handlers /
+    /// redists don't count: GOG's 32-bit unins000.exe (~3 MB) is bigger than a Unity game's exe (~650 KB),
+    /// which flagged 64-bit Unity games such as Ghost Song as 32-bit. Returns null if none found or the
+    /// directory is inaccessible.
     /// </summary>
     public string? FindGameExe(string installPath)
     {
@@ -112,10 +114,10 @@ public class PeHeaderService : IPeHeaderService
             }
 
             var exeFiles = dir.GetFiles("*.exe", SearchOption.TopDirectoryOnly)
-                .Where(f => !IsRhiToolExe(f.Name)).ToArray();
+                .Where(f => !IsRhiToolExe(f.Name) && !CustomGameExeScorer.IsExcludedExeName(f.Name)).ToArray();
             if (exeFiles.Length == 0)
             {
-                CrashReporter.Log($"[PeHeaderService] No .exe files found in '{installPath}'");
+                CrashReporter.Log($"[PeHeaderService] No game .exe files found in '{installPath}'");
                 return null;
             }
 

@@ -19,6 +19,18 @@
 - Turn it off, change the key or turn off the controller shortcut in Settings › RHI overlay.
 - Games can still see your controller while the overlay is open. To stop that, turn on Pause the game while open in Settings › RHI overlay: RHI freezes the game until you go back to it. It's experimental and off by default; single-player games only.
 
+**Source engine games**
+- RenoDX's Source engine mod now installs from RHI in one click for the games in the Source list (Half-Life 2, Portal, Portal 2, Left 4 Dead 2, Team Fortress 2, Garry's Mod and more), with a Source Engine badge on the game.
+- RHI does the whole setup from the RenoDX instructions: ReShade as d3d9.dll in the right folder (bin for 32-bit games, the main folder for 64-bit ones, both for Garry's Mod), DXVK (stable) loaded through ReShade, the reshade.ini lines and dxvk.conf. Updating the mod keeps it all up to date and uninstalling removes it again.
+- -insecure is added to the game's launch options in RHI. It turns VAC off, so don't join VAC-secured servers while the mod is installed. If you start the game from Steam, add -insecure to its launch options there too.
+- In the game, set High Dynamic Range to Full in the advanced video settings.
+- If RHI already installed ReShade in a 32-bit Source game's main folder, it's moved to bin.
+### Bug Fixes
+
+- Fixed a RenoDX addon saved as a second download (for example renodx-ue-extended (1).addon64) not being recognised, so the game showed Download from Discord. Installing or updating now also removes such copies, so the game no longer loads the mod twice, and dropping one onto RHI installs it under its proper name.
+- Fixed Download from Discord staying on a game after uninstalling an unrecognised RenoDX addon until RHI was restarted.
+- Fixed some GOG games (Ghost Song and other Unity games) showing as 32-bit, so ReShade and RenoDX installed the 32-bit files. RHI was reading GOG's uninstaller instead of the game. Affected games correct themselves on the next launch.
+
 ## v2.9.2
 
 ### New

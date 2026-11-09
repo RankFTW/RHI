@@ -98,6 +98,15 @@ public partial class InstallFolderMigrationService
             }
         }
 
+        // ── RenoDX Source engine mod's DXVK proxy (RHI placed it: sentinel beside it) ──
+        if (File.Exists(Path.Combine(oldDir, SourceEngineSetup.ProxyDllName + SourceEngineSetup.SentinelSuffix)))
+        {
+            var g = b.Group("RenoDX Source DXVK",
+                File.Exists(Path.Combine(ctx.NewDir, SourceEngineSetup.ProxyDllName + SourceEngineSetup.SentinelSuffix)));
+            b.File(g, SourceEngineSetup.ProxyDllName, requireBackup: false);
+            b.File(g, SourceEngineSetup.ProxyDllName + SourceEngineSetup.SentinelSuffix, suffix: null, requireBackup: false);
+        }
+
         // ── Display Commander ────────────────────────────────────────────────
         var dcOld = AuxAt(true, "DisplayCommander");
         if (dcOld != null)

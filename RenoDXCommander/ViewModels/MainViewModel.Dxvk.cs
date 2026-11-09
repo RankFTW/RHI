@@ -285,6 +285,15 @@ public partial class MainViewModel
     /// </summary>
     public async Task HandleDxvkToggleAsync(GameCardViewModel card, bool enabled, Microsoft.UI.Xaml.XamlRoot? xamlRoot = null)
     {
+        // RenoDX's Source engine mod runs DXVK through ReShade's proxy; RHI's DXVK install would remove that
+        if (enabled && card.Mod?.IsGenericSource == true && card.InstalledRecord != null && card.DxvkRecord == null)
+        {
+            card.DxvkEnabled = false;
+            card.DxvkActionMessage = "The RenoDX Source mod already sets up DXVK for this game.";
+            _crashReporter.Log($"[MainViewModel.HandleDxvkToggleAsync] '{card.GameName}': skipped, Source mod's DXVK proxy is installed");
+            return;
+        }
+
         card.DxvkEnabled = enabled;
 
         if (enabled)

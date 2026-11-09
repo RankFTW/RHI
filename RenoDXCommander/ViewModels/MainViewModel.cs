@@ -447,7 +447,7 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Unity entries from the last DB fetch. Empty when source is WikiOnly or dev-locked.</summary>
     private Dictionary<string, RenoDXDbUnityEntry> _dbUnityEntries =
         new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>Source engine entries from the last DB fetch. Only listed in Available Mods for now.</summary>
+    /// <summary>Source engine entries from the last DB fetch (the shared Source addon; see MainViewModel.SourceEngine.cs).</summary>
     private Dictionary<string, RenoDXDbSourceEntry> _dbSourceEntries =
         new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
@@ -525,6 +525,9 @@ public partial class MainViewModel : ObservableObject
             if (!string.IsNullOrEmpty(entry.Comments))
                 _genericNotes[name] = entry.Comments;
         foreach (var (name, entry) in _dbUnityEntries)
+            if (!string.IsNullOrEmpty(entry.Comments))
+                _genericNotes[name] = entry.Comments;
+        foreach (var (name, entry) in _dbSourceEntries)
             if (!string.IsNullOrEmpty(entry.Comments))
                 _genericNotes[name] = entry.Comments;
         // Publish Unity entries so UpdateOrchestrationService can access them

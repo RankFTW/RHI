@@ -14,6 +14,8 @@ public class GameMod
     public string? Notes { get; set; }
     public bool IsGenericUnreal { get; set; }
     public bool IsGenericUnity { get; set; }
+    /// <summary>The shared RenoDX Source engine addon (games in RenoDXdb-source.json); installs with the DXVK proxy setup.</summary>
+    public bool IsGenericSource { get; set; }
     // Optional URL found in the game name cell on the wiki (points to per-game instructions)
     public string? NameUrl { get; set; }
 

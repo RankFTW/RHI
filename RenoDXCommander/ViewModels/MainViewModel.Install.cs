@@ -62,85 +62,143 @@ public partial class MainViewModel
         else
         {
             // Un-exclude: re-run wiki match in-place and restore the card
-            var game = card.DetectedGame;
-            if (game == null)
+            if (!ReResolveCardMod(card, applyUeExtended: false))
             {
                 DispatcherQueue?.TryEnqueue(() => { _ = InitializeAsync(forceRescan: false); });
                 return;
             }
-            var (_, engine) = _gameDetectionService.DetectEngineAndPath(game.InstallPath);
-            // Apply manifest engine override (takes priority over auto-detection)
-            var engineOverrideLabel = ResolveEngineOverride(game.Name, out var engineOverride);
-            if (engineOverrideLabel != null) engine = engineOverride;
-            var mod         = _gameDetectionService.MatchGame(game, _allMods, _nameMappings);
-            // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
-            bool isWikiUnlinked1 = _manifestWikiUnlinks.Contains(game.Name);
-            if (isWikiUnlinked1) mod = null;
-            var fallback    = (mod == null && !isWikiUnlinked1) ? (engine == EngineType.Unreal ? MakeGenericUnreal()
-                                            : engine == EngineType.Unity  ? MakeGenericUnity()
-                                            : null) : null;
-
-            // Wiki mod matched but has no download URL — inject generic engine addon URL
-            if (mod != null && mod.SnapshotUrl == null && mod.NexusUrl == null && mod.DiscordUrl == null)
-            {
-                var engineFallback = engine == EngineType.Unreal ? MakeGenericUnreal()
-                                   : engine == EngineType.Unity  ? MakeGenericUnity() : null;
-                if (engineFallback != null)
-                {
-                    mod = new GameMod
-                    {
-                        Name            = mod.Name,
-                        Maintainer      = engineFallback.Maintainer,
-                        SnapshotUrl     = engineFallback.SnapshotUrl,
-                        SnapshotUrl32   = engineFallback.SnapshotUrl32,
-                        Status          = mod.Status,
-                        Notes           = mod.Notes,
-                        NameUrl         = mod.NameUrl,
-                        IsGenericUnreal = engineFallback.IsGenericUnreal,
-                        IsGenericUnity  = engineFallback.IsGenericUnity,
-                    };
-                    fallback = engineFallback;
-                }
-            }
-
-            var effectiveMod = mod ?? fallback;
-
-            // Apply manifest snapshot override
-            if (_manifest?.SnapshotOverrides != null
-                && _manifest.SnapshotOverrides.TryGetValue(game.Name, out var snapshotOvUrl)
-                && !string.IsNullOrEmpty(snapshotOvUrl))
-            {
-                if (effectiveMod != null)
-                    effectiveMod.SnapshotUrl = snapshotOvUrl;
-                else
-                    effectiveMod = new GameMod { Name = game.Name, SnapshotUrl = snapshotOvUrl, Status = "✅" };
-            }
-
-            card.Mod            = effectiveMod;
-            card.IsExternalOnly = effectiveMod?.SnapshotUrl == null &&
-                                  (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null);
-            card.ExternalUrl    = effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "";
-            card.ExternalLabel  = effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord";
-            card.NexusUrl       = effectiveMod?.NexusUrl;
-            card.DiscordUrl     = effectiveMod?.DiscordUrl;
-            card.WikiStatus     = (mod == null && fallback != null && !card.UseUeExtended && !card.IsNativeHdrGame)
-                                  ? "?"
-                                  : effectiveMod?.Status ?? "—";
-            card.Notes          = effectiveMod != null
-                                  ? BuildNotes(game.Name, effectiveMod, fallback, _genericNotes, card.IsNativeHdrGame)
-                                  : "";
-            card.IsGenericMod   = card.UseUeExtended || (fallback != null && mod == null);
-            if (card.Status != GameStatus.Installed)
-                card.Status = effectiveMod != null ? GameStatus.Available : GameStatus.Available;
         }
 
         card.NotifyAll();
     }
 
+    /// <summary>
+    /// The saved record names an addon that is gone, but the scan found a copy of it under another name
+    /// ("renodx-x (1).addon64"): point the record at the file on disk so the version, filename badge and
+    /// uninstall use the real file.
+    /// </summary>
+    private void FollowRenamedAddon(InstalledModRecord record, string addonOnDisk)
+    {
+        if (string.Equals(record.AddonFileName, addonOnDisk, StringComparison.OrdinalIgnoreCase)) return;
+        if (string.IsNullOrEmpty(record.AddonFileName) || !AddonFileNames.SameAddon(record.AddonFileName, addonOnDisk)) return;
+        if (!File.Exists(Path.Combine(record.InstallPath, addonOnDisk))) return;
+        _crashReporter.Log($"[MainViewModel.FollowRenamedAddon] '{record.GameName}': record '{record.AddonFileName}' → '{addonOnDisk}' (file on disk)");
+        record.AddonFileName = addonOnDisk;
+        _installer.SaveRecordPublic(record);
+    }
+
+    /// <summary>
+    /// Works out the card's mod again in place: wiki match, generic engine fallback, manifest snapshot override,
+    /// and with <paramref name="applyUeExtended"/> the UE-Extended choice. Used when the wiki exclusion is lifted and
+    /// after uninstalling an addon that made the card show "Download from Discord" (so it no longer needs a restart).
+    /// False when the card has no detected game to match.
+    /// </summary>
+    private bool ReResolveCardMod(GameCardViewModel card, bool applyUeExtended)
+    {
+        var game = card.DetectedGame;
+        if (game == null) return false;
+        var (_, engine) = _gameDetectionService.DetectEngineAndPath(game.InstallPath);
+        // Apply manifest engine override (takes priority over auto-detection)
+        var engineOverrideLabel = ResolveEngineOverride(game.Name, out var engineOverride);
+        if (engineOverrideLabel != null) engine = engineOverride;
+        var mod         = _gameDetectionService.MatchGame(game, _allMods, _nameMappings);
+        // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
+        bool isWikiUnlinked1 = _manifestWikiUnlinks.Contains(game.Name);
+        if (isWikiUnlinked1) mod = null;
+        if (mod == null && !isWikiUnlinked1) mod = MakeGenericSourceFor(game.Name);
+        var fallback    =(mod == null && !isWikiUnlinked1) ? (engine == EngineType.Unreal ? MakeGenericUnreal()
+                                        : engine == EngineType.Unity  ? MakeGenericUnity()
+                                        : null) : null;
+
+        // Wiki mod matched but has no download URL — inject generic engine addon URL
+        if (mod != null && mod.SnapshotUrl == null && mod.NexusUrl == null && mod.DiscordUrl == null)
+        {
+            var engineFallback = engine == EngineType.Unreal ? MakeGenericUnreal()
+                               : engine == EngineType.Unity  ? MakeGenericUnity() : null;
+            if (engineFallback != null)
+            {
+                mod = new GameMod
+                {
+                    Name            = mod.Name,
+                    Maintainer      = engineFallback.Maintainer,
+                    SnapshotUrl     = engineFallback.SnapshotUrl,
+                    SnapshotUrl32   = engineFallback.SnapshotUrl32,
+                    Status          = mod.Status,
+                    Notes           = mod.Notes,
+                    NameUrl         = mod.NameUrl,
+                    IsGenericUnreal = engineFallback.IsGenericUnreal,
+                    IsGenericUnity  = engineFallback.IsGenericUnity,
+                };
+                fallback = engineFallback;
+            }
+        }
+
+        var effectiveMod = mod ?? fallback;
+
+        // Apply manifest snapshot override
+        if (_manifest?.SnapshotOverrides != null
+            && _manifest.SnapshotOverrides.TryGetValue(game.Name, out var snapshotOvUrl)
+            && !string.IsNullOrEmpty(snapshotOvUrl))
+        {
+            if (effectiveMod != null)
+                effectiveMod.SnapshotUrl = snapshotOvUrl;
+            else
+                effectiveMod = new GameMod { Name = game.Name, SnapshotUrl = snapshotOvUrl, Status = "✅" };
+        }
+
+        // Same UE-Extended choice as BuildCards (no addon on disk any more): generic Unreal games use UE-Extended
+        if (applyUeExtended)
+        {
+            bool isNativeHdr = IsNativeHdrGameMatch(game.Name);
+            bool noUeExtended = _manifestNoUeExtendedGames.Contains(game.Name)
+                             || _gameNameService.UeExtendedOptOutGames.Contains(game.Name);
+            bool hasNamedMod = effectiveMod != null && !effectiveMod.IsGenericUnreal && !effectiveMod.IsGenericUnity
+                             && effectiveMod.SnapshotUrl != null;
+            bool userExplicitUeExt = IsUeExtendedGameMatch(game.Name);
+            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr || userExplicitUeExt)
+                         && (userExplicitUeExt || isNativeHdr || effectiveMod?.IsGenericUnreal == true);
+            if (useUeExt)
+            {
+                effectiveMod = new GameMod
+                {
+                    Name            = effectiveMod?.Name ?? "Generic Unreal Engine",
+                    Maintainer      = effectiveMod?.Maintainer ?? "ShortFuse",
+                    SnapshotUrl     = UeExtendedUrl,
+                    Status          = effectiveMod?.Status ?? "✅",
+                    Notes           = effectiveMod?.Notes,
+                    IsGenericUnreal = true,
+                };
+                fallback ??= effectiveMod;
+            }
+            card.UseUeExtended = useUeExt;
+        }
+
+        card.Mod            = effectiveMod;
+        card.IsExternalOnly = effectiveMod?.SnapshotUrl == null &&
+                              (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null);
+        card.ExternalUrl    = effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "";
+        card.ExternalLabel  = effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord";
+        card.NexusUrl       = effectiveMod?.NexusUrl;
+        card.DiscordUrl     = effectiveMod?.DiscordUrl;
+        card.WikiStatus     = (mod == null && fallback != null && !card.UseUeExtended && !card.IsNativeHdrGame)
+                              ? "?"
+                              : effectiveMod?.Status ?? "—";
+        card.Notes          = effectiveMod != null
+                              ? BuildNotes(game.Name, effectiveMod, fallback, _genericNotes, card.IsNativeHdrGame)
+                              : "";
+        card.IsGenericMod   = card.UseUeExtended || (fallback != null && mod == null);
+        if (card.Status != GameStatus.Installed)
+            card.Status = effectiveMod != null ? GameStatus.Available : GameStatus.Available;
+        return true;
+    }
+
+
     public const string DefaultUeExtendedUrl = "https://marat569.github.io/renodx/renodx-ue-extended.addon64";
     public string UeExtendedUrl => _manifest?.ComponentUrls?.TryGetValue("ueExtended", out var url) == true && !string.IsNullOrEmpty(url) ? url : DefaultUeExtendedUrl;
     public const string UeExtendedFile   = "renodx-ue-extended.addon64";
     public const string GenericUnrealFile = "renodx-unrealengine.addon64";
+    /// <summary>Discord link a card gets when an addon RHI doesn't know is on disk (no wiki mod for the game).</summary>
+    internal const string DiskAddonDiscordUrl = "https://discord.gg/gF4GRJWZ2A";
 
     /// <summary>
     /// Public method to remove a game from the UE-Extended set and persist the change.
@@ -447,6 +505,7 @@ public partial class MainViewModel
         // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
         bool isWikiUnlinked2 = _manifestWikiUnlinks.Contains(game.Name);
         if (isWikiUnlinked2) mod = null;
+        if (mod == null && !isWikiUnlinked2) mod = MakeGenericSourceFor(game.Name);
         var genericUnreal = MakeGenericUnreal();
         var genericUnity  = MakeGenericUnity();
         var fallback = (mod == null && !isWikiUnlinked2) ? (engine == EngineType.Unreal      ? genericUnreal
@@ -502,6 +561,8 @@ public partial class MainViewModel
         var addonOnDisk = game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase)
             ? null
             : ScanForInstalledAddon(scanPath, effectiveMod);
+        // The addon's real name ("renodx-x (1).addon64" is renodx-x.addon64); the record keeps the name on disk
+        string? addonName = addonOnDisk == null ? null : AddonFileNames.Canonical(addonOnDisk);
         if (addonOnDisk != null && record == null)
         {
             record = new InstalledModRecord
@@ -511,14 +572,16 @@ public partial class MainViewModel
                 Store         = game.Source ?? "",
                 AddonFileName = addonOnDisk,
                 InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
-                SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
+                SnapshotUrl   = ResolveAddonUrl(addonName!),
             };
             _installer.SaveRecordPublic(record);
         }
+        else if (addonOnDisk != null && record != null)
+            FollowRenamedAddon(record, addonOnDisk);
 
         // Patch effectiveMod SnapshotUrl if installed addon has an override URL
         if (addonOnDisk != null && effectiveMod?.SnapshotUrl != null
-            && _addonFileUrlOverrides.TryGetValue(addonOnDisk, out var addonOverrideUrlM))
+            && _addonFileUrlOverrides.TryGetValue(addonName!, out var addonOverrideUrlM))
         {
             effectiveMod = new GameMod
             {
@@ -532,6 +595,7 @@ public partial class MainViewModel
                 NameUrl     = effectiveMod.NameUrl,
                 IsGenericUnreal = effectiveMod.IsGenericUnreal,
                 IsGenericUnity  = effectiveMod.IsGenericUnity,
+                IsGenericSource = effectiveMod.IsGenericSource,
             };
         }
 
@@ -572,9 +636,9 @@ public partial class MainViewModel
                          || (_gameNameService.UeExtendedOptOutGames.Contains(game.Name));
         bool hasNamedModM = effectiveMod != null && !effectiveMod.IsGenericUnreal && !effectiveMod.IsGenericUnity
                           && effectiveMod.SnapshotUrl != null;
-        bool hasNamedAddonOnDiskM = addonOnDisk != null
-                                 && addonOnDisk != UeExtendedFile
-                                 && addonOnDisk != GenericUnrealFile;
+        bool hasNamedAddonOnDiskM = addonName != null
+                                 && !addonName.Equals(UeExtendedFile, StringComparison.OrdinalIgnoreCase)
+                                 && !addonName.Equals(GenericUnrealFile, StringComparison.OrdinalIgnoreCase);
         // When a named addon is on disk but no wiki mod exists, replace the generic
         // engine fallback with a Discord link so the button shows "Download from Discord"
         // instead of "Reinstall RenoDX/UE-Extended".
@@ -588,7 +652,7 @@ public partial class MainViewModel
             };
         }
         bool useUeExt = !noUeExtended && !hasNamedModM && !hasNamedAddonOnDiskM
-                     && ((addonOnDisk == UeExtendedFile)
+                     && ((UeExtendedFile.Equals(addonName, StringComparison.OrdinalIgnoreCase))
                          || IsUeExtendedGameMatch(game.Name)
                          || isNativeHdr
                          || (effectiveMod?.IsGenericUnreal == true));
@@ -603,7 +667,7 @@ public partial class MainViewModel
                 Notes           = effectiveMod?.Notes,
                 IsGenericUnreal = true,
             };
-            if (addonOnDisk == UeExtendedFile || isNativeHdr)
+            if (UeExtendedFile.Equals(addonName, StringComparison.OrdinalIgnoreCase) || isNativeHdr)
                 _ueExtendedGames.Add(game.Name);
         }
         else if (useUeExt && effectiveMod == null)
@@ -852,6 +916,13 @@ public partial class MainViewModel
             return;
         }
 
+        // Source engine mod: install dialog, no RHI DXVK, ReShade as d3d9.dll first
+        if (card.Mod.IsGenericSource && !await PrepareSourceInstallAsync(card))
+        {
+            if (swappedTo32 && originalSnapshotUrl != null) card.Mod.SnapshotUrl = originalSnapshotUrl;
+            return;
+        }
+
         // Bespoke pre-install dialog for Control Ultimate Edition
         if (string.Equals(card.GameName, ControlUePostInstallService.GameName, StringComparison.OrdinalIgnoreCase))
         {
@@ -876,6 +947,15 @@ public partial class MainViewModel
                 card.InstallProgress = p.pct;
             });
             var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName, card.Source);
+
+            // Source engine mod: DXVK proxy, reshade.ini lines, dxvk.conf, -insecure
+            bool isSourceInstall = card.Mod.IsGenericSource;
+            if (isSourceInstall)
+            {
+                card.ActionMessage = "Setting up DXVK...";
+                await ApplySourceSetupAsync(card);
+                AddSourceLaunchArg(card);
+            }
 
             // Preserve per-game Engine.ini toggle state from the previous record
             if (card.InstalledRecord != null)
@@ -1037,7 +1117,9 @@ public partial class MainViewModel
                 card.InstalledAddonFileName = record.AddonFileName;
                 card.RdxInstalledVersion    = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
                 card.Status                 = GameStatus.Installed;
-                card.FadeMessage(m => card.ActionMessage = m, "✅ Installed! Press Home in-game to open ReShade.");
+                card.FadeMessage(m => card.ActionMessage = m, isSourceInstall
+                    ? "✅ Installed! Set High Dynamic Range to Full in the game's video settings."
+                    : "✅ Installed! Press Home in-game to open ReShade.");
                 _crashReporter.Log($"[MainViewModel.InstallModAsync] Install complete: {card.GameName} — {record.AddonFileName}");
                 // Reset Nexus baseline so update indicator clears after install
                 _nexusUpdateService.ResetBaseline(card.GameName);
@@ -1085,6 +1167,15 @@ public partial class MainViewModel
 
         if (card?.InstalledRecord == null) return;
         _crashReporter.Log($"[MainViewModel.UninstallMod] Uninstalling: {card.GameName}");
+        // "Download from Discord" that only came from the addon on disk (no wiki mod): work the mod out again after
+        // removing it, instead of keeping the Discord button until RHI restarts
+        bool discordOnlyFromDisk = card.Mod is { SnapshotUrl: null, NexusUrl: null } m
+            && m.DiscordUrl == DiskAddonDiscordUrl && m.Status == "💬";
+        // Source engine mod: the DXVK proxy setup goes with it (before the record's folder is forgotten)
+        if (card.Mod?.IsGenericSource == true
+            || AddonFileNames.SameAddon(card.InstalledRecord.AddonFileName, SourceEngineSetup.AddonName64)
+            || AddonFileNames.SameAddon(card.InstalledRecord.AddonFileName, SourceEngineSetup.AddonName32))
+            RemoveSourceSetup(card);
         _installer.Uninstall(card.InstalledRecord);
         card.InstalledRecord        = null;
         card.InstalledAddonFileName = null;
@@ -1127,6 +1218,21 @@ public partial class MainViewModel
                  && (card.EngineHint?.Contains("Unreal") == true || card.EngineHint?.Contains("Unity") == true))
         {
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
+        }
+
+        if (discordOnlyFromDisk)
+        {
+            if (_wikiExclusions.Contains(card.GameName))
+            {
+                card.Mod            = null;
+                card.IsExternalOnly = false;
+                card.ExternalUrl    = "";
+                card.ExternalLabel  = "";
+                card.DiscordUrl     = null;
+            }
+            else ReResolveCardMod(card, applyUeExtended: true);
+            card.NotifyAll();
+            _crashReporter.Log($"[MainViewModel.UninstallMod] '{card.GameName}': worked out the mod again (was the Discord link for an unknown addon)");
         }
 
         SaveLibrary();

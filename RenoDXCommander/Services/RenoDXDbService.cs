@@ -13,7 +13,7 @@ namespace RenoDXCommander.Services;
 ///   RenoDXdb.json        — named mods (snapshotUrl, nexusUrl, author, notes, etc.)
 ///   RenoDXdb-unreal.json — UE-Extended games (Method → Set_Path / Engine.ini / Upgrades)
 ///   RenoDXdb-unity.json  — Unity games (Upgrades → per-game [renodx] INI overrides)
-///   RenoDXdb-source.json — Source engine games (listed in Available Mods only for now)
+///   RenoDXdb-source.json — Source engine games (shared Source addon, MainViewModel.SourceEngine.cs)
 ///
 /// All use ETag caching via GitHubETagCache — no re-download when files haven't changed.
 /// </summary>

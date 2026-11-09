@@ -128,9 +128,11 @@ public partial class MainViewModel
                         ? (GetDllOverride(card.GameName)?.ReShadeFileName)
                         : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
                             ? mRs
-                            : ResolveAutoReShadeFilename(card.DetectedApis)));
+                            : card.Mod?.IsGenericSource == true
+                                ? SourceEngineSetup.ReShadeDll // Source mod: ReShade proxies DXVK's d3d9.dll
+                                : ResolveAutoReShadeFilename(card.DetectedApis)));
             var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName, card.Source ?? "");
-            var filenameSource = forceFilename != null ? "DgVoodoo2Override"
+            var filenameSource = forceFilename != null ? "Forced"
                 : (card.DllOverrideEnabled ? "UserDllOverride"
                 : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect"));
             _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: " +

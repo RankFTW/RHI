@@ -195,9 +195,11 @@ public partial class MainViewModel
             }
 
             // Detect bitness: use cached value if available, otherwise run PE detection.
+            // Cached 32-bit results are re-checked (cheap, few games): older versions could read
+            // a 32-bit uninstaller (GOG unins000.exe) instead of the game's exe.
             MachineType machineType;
             var resolvedKey = installPath.ToLowerInvariant();
-            if (_bitnessCache.TryGetValue(resolvedKey, out var cachedMachine))
+            if (_bitnessCache.TryGetValue(resolvedKey, out var cachedMachine) && cachedMachine != MachineType.I386)
             {
                 machineType = cachedMachine;
             }
@@ -211,6 +213,8 @@ public partial class MainViewModel
             // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
             bool isWikiUnlinked = _manifestWikiUnlinks.Contains(game.Name);
             if (isWikiUnlinked) mod = null;
+            // Source engine games (RenoDXdb-source.json) share one addon
+            if (mod == null && !isWikiUnlinked) mod = MakeGenericSourceFor(game.Name);
             // UnrealLegacy (UE3 and below) cannot use the RenoDX addon system — no fallback mod offered.
             var fallback = (mod == null && !isWikiUnlinked)
                            ? (engine == EngineType.Unreal      ? genericUnreal
@@ -421,6 +425,9 @@ public partial class MainViewModel
             }
             newAddonFileCache[cacheKey] = addonOnDisk ?? "";
             LogPhase("AddonScan");
+            // The addon's real name: "renodx-x (1).addon64" (a second download) is renodx-x.addon64.
+            // Used for every "which addon is this" check; the record keeps the name on disk.
+            string? addonName = addonOnDisk == null ? null : AddonFileNames.Canonical(addonOnDisk);
 
             if (addonOnDisk != null && record == null)
             {
@@ -433,7 +440,7 @@ public partial class MainViewModel
                     Store         = game.Source ?? "",
                     AddonFileName = addonOnDisk,
                     InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(installPath, addonOnDisk)),
-                    SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
+                    SnapshotUrl   = ResolveAddonUrl(addonName!),
                 };
                 _installer.SaveRecordPublic(record);
             }
@@ -444,12 +451,14 @@ public partial class MainViewModel
                 _installer.RemoveRecord(record);
                 record = null;
             }
+            else if (addonOnDisk != null && record != null)
+                FollowRenamedAddon(record, addonOnDisk);
 
             // If the installed addon on disk has a different source URL than what the
             // wiki mod specifies (e.g. renodx-ue-extended.addon64 on a generic UE card),
             // patch effectiveMod so the install/update button uses the correct URL.
             if (addonOnDisk != null && effectiveMod?.SnapshotUrl != null
-                && _addonFileUrlOverrides.TryGetValue(addonOnDisk, out var addonOverrideUrl))
+                && _addonFileUrlOverrides.TryGetValue(addonName!, out var addonOverrideUrl))
             {
                 effectiveMod = new GameMod
                 {
@@ -463,6 +472,7 @@ public partial class MainViewModel
                     NameUrl     = effectiveMod.NameUrl,
                     IsGenericUnreal = effectiveMod.IsGenericUnreal,
                     IsGenericUnity  = effectiveMod.IsGenericUnity,
+                    IsGenericSource = effectiveMod.IsGenericSource,
                 };
             }
 
@@ -520,9 +530,9 @@ public partial class MainViewModel
                              && effectiveMod.SnapshotUrl != null;
             // Also block UE-Extended if a non-UE-Extended addon is already on disk
             // (e.g. a Discord mod that was drag-dropped — DiscordUrl set, SnapshotUrl null)
-            bool hasNamedAddonOnDisk = addonOnDisk != null
-                                    && addonOnDisk != UeExtendedFile
-                                    && addonOnDisk != GenericUnrealFile;
+            bool hasNamedAddonOnDisk = addonName != null
+                                    && !addonName.Equals(UeExtendedFile, StringComparison.OrdinalIgnoreCase)
+                                    && !addonName.Equals(GenericUnrealFile, StringComparison.OrdinalIgnoreCase);
             // When a named addon is on disk but no wiki mod exists, replace the generic
             // engine fallback with a Discord link so the button shows "Download from Discord"
             // instead of "Reinstall RenoDX/UE-Extended".
@@ -538,7 +548,7 @@ public partial class MainViewModel
             // User explicit opt-in bypasses the hasNamedMod gate
             bool userExplicitUeExt = IsUeExtendedGameMatch(game.Name);
             bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr || userExplicitUeExt) && !hasNamedAddonOnDisk
-                         && ((addonOnDisk == UeExtendedFile)
+                         && ((UeExtendedFile.Equals(addonName, StringComparison.OrdinalIgnoreCase))
                              || userExplicitUeExt
                              || isNativeHdr
                              || (effectiveMod?.IsGenericUnreal == true));
@@ -555,7 +565,7 @@ public partial class MainViewModel
                     IsGenericUnreal = true,
                 };
                 // Persist preference if it was detected from disk or the game is native HDR
-                if (addonOnDisk == UeExtendedFile || isNativeHdr)
+                if (UeExtendedFile.Equals(addonName, StringComparison.OrdinalIgnoreCase) || isNativeHdr)
                     _ueExtendedGames.Add(game.Name);
             }
             // UE-Extended whitelist games that have no engine detected — force them to use UE-Extended
@@ -867,6 +877,19 @@ public partial class MainViewModel
                     newCard.GraphicsApi = GraphicsApiType.DirectX9;
                 if (!string.IsNullOrEmpty(installPath))
                     CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+            }
+
+            // Source engine mod: the game runs its default DirectX 9 renderer (ReShade d3d9.dll loading DXVK).
+            // Valve's optional Vulkan renderer (bin\shaderapivk.dll, e.g. Portal 2) mustn't make RHI install
+            // the Vulkan ReShade layer instead.
+            if (newCard.Mod?.IsGenericSource == true
+                && !hasUserApiOverride
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
+                && (newCard.DetectedApis.Contains(GraphicsApiType.Vulkan) || newCard.GraphicsApi == GraphicsApiType.Vulkan))
+            {
+                newCard.DetectedApis = new HashSet<GraphicsApiType>(newCard.DetectedApis.Where(a => a != GraphicsApiType.Vulkan))
+                    { GraphicsApiType.DirectX9 };
+                newCard.GraphicsApi = GraphicsApiType.DirectX9;
             }
 
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
@@ -1414,6 +1437,10 @@ public partial class MainViewModel
                     _crashReporter.Log($"[BuildCards] '{game.Name}': EngineHint from PCGW = '{pcgwInfoForEngine.Engine}'");
                 }
             }
+            // Source engine mod games: a clear engine badge (PCGW only says "Source")
+            if (newCard.Mod?.IsGenericSource == true
+                && (string.IsNullOrEmpty(newCard.EngineHint) || newCard.EngineHint.Equals("Source", StringComparison.OrdinalIgnoreCase)))
+                newCard.EngineHint = SourceEngineHint;
 
             // ── DOF Fix detection ────────────────────────────────────────────────
             LogPhase("DXVK");

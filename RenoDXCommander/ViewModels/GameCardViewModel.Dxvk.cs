@@ -45,6 +45,8 @@ public partial class GameCardViewModel
         || DetectedApis.Contains(GraphicsApiType.Vulkan);
 
     public bool IsDxvkToggleVisible =>
+        // RenoDX's Source engine mod brings its own DXVK (ReShade proxy); RHI's DXVK would replace it
+        (Mod?.IsGenericSource != true || InstalledRecord == null || DxvkRecord != null) &&
         // DX8/DX9/DX10/DX11 games are eligible for DXVK.
         // HasHigherApiDetected blocks: games with DX12/Vulkan detected, or DX11 Unreal Engine titles
         // (which commonly support DX12 alongside DX11 and don't benefit from DXVK).

@@ -253,6 +253,11 @@ public class ModInstallService : IModInstallService
                 remoteSize = new FileInfo(cachePath).Length;
         }
 
+        // A second download of the same addon ("renodx-x (1).addon64") would be loaded as well: remove it
+        AddonFileNames.RemoveDuplicates(Path.GetDirectoryName(destPath)!, fileName);
+        if (!string.Equals(Path.GetDirectoryName(destPath), gameInstallPath.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
+            AddonFileNames.RemoveDuplicates(gameInstallPath, fileName);
+
         var hash = await ComputeHashAsync(destPath);
 
         var record = new InstalledModRecord
@@ -583,6 +588,19 @@ public class ModInstallService : IModInstallService
             // Fallback: file may have been installed before AddonPath was set
             var fallback = Path.Combine(record.InstallPath, record.AddonFileName);
             if (File.Exists(fallback)) File.Delete(fallback);
+        }
+        // Copies under a duplicate-download name ("renodx-x (1).addon64") are the same mod: remove them too
+        var realName = AddonFileNames.Canonical(record.AddonFileName);
+        foreach (var dir in new[] { addonDir, record.InstallPath }.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            AddonFileNames.RemoveDuplicates(dir, realName);
+            var real = Path.Combine(dir, realName);
+            if (!realName.Equals(record.AddonFileName, StringComparison.OrdinalIgnoreCase) && File.Exists(real))
+            {
+                try { File.Delete(real); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { CrashReporter.Log($"[ModInstallService.Uninstall] Couldn't delete '{realName}' — {ex.Message}"); }
+            }
         }
         // Cache copy intentionally kept for future reinstalls.
 

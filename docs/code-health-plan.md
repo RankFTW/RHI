@@ -186,6 +186,7 @@ These make future features cheaper to build. Do them in this order; each is safe
 
 - [ ] There are 209 `GetRequiredService` calls (service locator). Inject dependencies instead, starting with new code.
 - [ ] Register `AddonPackService` in DI.
+- [ ] Non-game exe names are hard-coded in about 7 places (`DlssPresetService`, `DlssPresetService.ProfileMatching` x2, `AutoHdrService`, `ShortcutService`, `MainWindow.Events.Install`, `DetailPanelBuilder.Overrides.ShadersAddons`). Point them at `CustomGameExeScorer.IsExcludedExeName` (already used by `PeHeaderService.FindGameExe`). Check each first: several skip `launcher` on purpose, the shared list doesn't.
 - [ ] `MainViewModel` is 16k lines with a 38-parameter constructor. It shrinks as 4.2–4.4 move logic out. Don't split it for its own sake.
 
 ### 4.8 `CardFactory` (last; highest risk)

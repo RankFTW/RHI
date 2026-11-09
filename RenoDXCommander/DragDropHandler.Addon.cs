@@ -467,7 +467,8 @@ public partial class DragDropHandler
         }
         } // end if (incomingIsRenodx)
 
-        var effectiveAddonFileName = addonFileName;
+        // A second download is named "renodx-x (1).addon64": install it as renodx-x.addon64 so RHI recognises it
+        var effectiveAddonFileName = AddonFileNames.Canonical(addonFileName);
         var destPath = Path.Combine(addonDeployPath, effectiveAddonFileName);
         try
         {

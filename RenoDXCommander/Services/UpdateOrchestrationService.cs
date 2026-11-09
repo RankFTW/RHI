@@ -59,6 +59,9 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         return false;
     }
 
+    /// <summary>Set by MainViewModel: re-applies the Source engine mod's DXVK proxy setup after its addon updates.</summary>
+    public static Func<GameCardViewModel, Task>? AfterSourceAddonUpdate { get; set; }
+
     public async Task UpdateAllRenoDxAsync(
         IReadOnlyList<GameCardViewModel> allCards,
         IDllOverrideService dllOverrideService,
@@ -92,6 +95,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                         card.InstallProgress = p.pct;
                     }));
                 var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
+
+                // Source engine mod: refresh its DXVK proxy setup (and Garry's Mod's second addon)
+                if (card.Mod?.IsGenericSource == true && AfterSourceAddonUpdate != null)
+                    await AfterSourceAddonUpdate(card).ConfigureAwait(false);
 
                 // Preserve per-game Engine.ini toggle state from the previous record
                 if (card.InstalledRecord != null)

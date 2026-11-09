@@ -256,6 +256,7 @@ public partial class MainViewModel
 
         // Wire up per-game "Load ReShade as ASI"
         AuxInstallService.RsAsiModeResolver = (gameName, store) => GetRsAsiMode(gameName, store);
+        UpdateOrchestrationService.AfterSourceAddonUpdate = ApplySourceSetupAsync;
 
         // Universal MFG Unlocker moves in and out of OptiScaler\plugins with OptiScaler 10 builds
         WireMfgPluginHooks();
@@ -742,6 +743,8 @@ public partial class MainViewModel
                 allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)
                     && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
+            // 32-bit Source engine games install into bin\ (moved there below like a manifest folder change)
+            { var sourceGames = allGames; await Task.Run(() => ApplySourceEngineFolders(sourceGames)); }
             // Move installs whose folder the manifest changed, before records are read (so they match)
             await RunManifestFolderMigrationsAsync(allGames);
 
