@@ -18,6 +18,13 @@ public partial class GameCardViewModel
     private string? _vulkanLayerInstalledVersion;
     public string? VulkanLayerInstalledVersion => _vulkanLayerInstalledVersion;
 
+    /// <summary>Updates the cached layer version after RHI replaced the layer DLL. UI thread.</summary>
+    public void SetVulkanLayerInstalledVersion(string? version)
+    {
+        _vulkanLayerInstalledVersion = version;
+        OnPropertyChanged(nameof(VulkanLayerInstalledVersion));
+    }
+
     /// <summary>
     /// Updates the cached Vulkan layer state and notifies dependents.
     /// Call from background threads after checking VulkanLayerService.IsLayerInstalled().

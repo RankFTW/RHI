@@ -15,6 +15,9 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - Share global layer in `C:\ProgramData\ReShade\` — requires `CopyFileWithElevation()`
 - Vulkan ReShade update exclusion is all-or-nothing (shared DLL)
 - `RequiresVulkanInstall` drives Vulkan-specific UI and install paths
+- **One layer, one channel**: `VulkanLayerService.SyncLayerToChannel` copies the staged build over `ReShade64.dll` (and `ReShade32.dll` if present) when the contents differ (SHA-256, never size: Stable and Nightly 6.8.0 are both 5,592,064 bytes). The channel comes from `MainViewModel.ResolveVulkanLayerChannel` / `VulkanLayerService.ResolveLayerChannel` (first non-Stable override among Vulkan games). Every channel change on a Vulkan game (Stable, Nightly, Legacy, Custom) is applied to ALL Vulkan games.
+- Both install paths (`InstallReShadeVulkanAsync`, layer present or not) call `SyncVulkanLayerAsync`: before Nov 2026 the light path only wrote reshade.ini, so the layer kept whatever version was first installed (users stuck on 6.7.3).
+- Update check: `CheckForUpdatesAsync` flags installed Vulkan cards `UpdateAvailable` when the layer differs from staged Stable/Nightly (`IsLayerOutdated`); legacy/Custom are never flagged. Vulkan cards count in `IsUpdateAllCandidate`.
 
 ## Nightly
 - Update detection uses Content-Length comparison (Last-Modified unreliable from nightly.link)

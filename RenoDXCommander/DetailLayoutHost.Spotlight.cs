@@ -373,6 +373,8 @@ internal sealed partial class DetailLayoutHost
             content = BuildAchievementsPanel();
         else if (key == ScreenshotsKey)
             content = BuildScreenshotsPanel();
+        else if (key == GameSettingsKey)
+            content = BuildGameSettingsPanel();
         else if (key == OverviewKey)
         {
             if (_overview == null) BuildOverview();
@@ -391,7 +393,7 @@ internal sealed partial class DetailLayoutHost
         content.Visibility = Visibility.Visible;
         _panelKey = key;
         _panelTitle!.Text = key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements"
-            : key == ScreenshotsKey ? "Screenshots" : GetTitle(key);
+            : key == ScreenshotsKey ? "Screenshots" : key == GameSettingsKey ? "Game settings" : GetTitle(key);
         if (key == OverviewKey) RefreshOverviewCards();
 
         // Re-adding the sheet replays its slide-in transition
@@ -428,6 +430,7 @@ internal sealed partial class DetailLayoutHost
             ReturnScreenshotsPanel();
             return;
         }
+        if (key == GameSettingsKey) return; // built panel: nothing to put back
         if (key == OverviewKey)
         {
             if (_overviewGlance != null) _overviewGlance.Visibility = Visibility.Visible;

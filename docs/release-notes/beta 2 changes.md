@@ -57,6 +57,10 @@ Search now works much like Steam's:
 - Resize the game list in Classic+ and Tabs: drag its right edge, or pick a size in Settings › General › Game list size. Its text, rows and width change together.
 - RHI remembers the sizes. Double-click an edge to reset it.
 
+**Game settings in Spotlight**
+- New cog button beside the game's name in Spotlight (next to the screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to that game only.
+- RHI overlay: turn the overlay off for one game. Alt + ` then goes to the game instead of opening the overlay, and the controller shortcut does nothing in it.
+
 **Other**
 - The ReShade Addon Manager (global and per game) is wider, so addon descriptions are easier to read.
 - Spotlight: removed the Manage components button from What's installed. Click any component tile to open the components.
@@ -80,6 +84,11 @@ Search now works much like Steam's:
 **RenoDX**
 - Fixed a RenoDX addon saved as a second download (for example renodx-ue-extended (1).addon64) not being recognised, so the game showed Download from Discord. Installing or updating now also removes such copies, so the game no longer loads the mod twice, and dropping one onto RHI installs it under its proper name.
 - Fixed Download from Discord staying on a game after uninstalling an unrecognised RenoDX addon, until RHI was restarted.
+
+**Vulkan ReShade**
+- Fixed Vulkan games keeping an old ReShade version (for example 6.7.3 after 6.8.0 came out). Installing ReShade on a Vulkan game now also brings the shared Vulkan ReShade up to the chosen channel, and Vulkan games now show when a ReShade update is available, so Update All updates them.
+- Fixed choosing Nightly or Stable on a Vulkan game sometimes not switching the ReShade build.
+- Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
 - Fixed some GOG games (Ghost Song and other Unity games) showing as 32-bit, so ReShade and RenoDX installed the 32-bit files. RHI was reading GOG's uninstaller instead of the game. Affected games correct themselves on the next launch.

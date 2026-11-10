@@ -20,6 +20,7 @@ internal sealed partial class DetailLayoutHost
     private FontIcon? _hFavIcon;
     private Button? _hHide;
     private Button? _hShots;
+    private Button? _hGameSettings;
     private WrapPanel? _hChips;
     private TextBlock? _hPath;
     private HyperlinkButton? _hConfig;
@@ -67,11 +68,19 @@ internal sealed partial class DetailLayoutHost
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_hShots, "Screenshots");
         _hShots.Click += (s, e) => OpenPanel(ScreenshotsKey);
 
+        // Game settings (Spotlight only): per-game versions of Settings-page options, in the side panel
+        _hGameSettings = new Button { Width = 36, Padding = new Thickness(0), Content = TabsTheme.Icon("", 16) }; // cog
+        TabsTheme.Apply(_hGameSettings, TabsTheme.IconButton with { Fg = TabsTheme.TextSecondary }, height: 36);
+        ToolTipService.SetToolTip(_hGameSettings, "Game settings");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_hGameSettings, "Game settings");
+        _hGameSettings.Click += (s, e) => OpenPanel(GameSettingsKey);
+
         var titleRow = new WrapPanel { HorizontalSpacing = 12, VerticalSpacing = 8 };
         titleRow.Children.Add(_hTitle);
         titleRow.Children.Add(_hFav);
         titleRow.Children.Add(_hHide);
         titleRow.Children.Add(_hShots);
+        titleRow.Children.Add(_hGameSettings);
 
         _hChips = new WrapPanel { HorizontalSpacing = 6, VerticalSpacing = 6 };
 
@@ -260,6 +269,7 @@ internal sealed partial class DetailLayoutHost
 
         _hTitle!.Text = w.HeaderGameName.Text;
         _hShots!.Visibility = IsSpotlight ? Visibility.Visible : Visibility.Collapsed; // the side panel is Spotlight's
+        _hGameSettings!.Visibility = _hShots.Visibility;
 
         // Favourite star (amber, filled) / outline
         bool fav = card?.IsFavourite == true;

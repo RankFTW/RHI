@@ -224,6 +224,8 @@ public interface IGameNameService
     HashSet<string> SfZzzMode { get; }
     /// <summary>Games set to the Foveated build of the DLSS5 Tool. Composite-keyed.</summary>
     HashSet<string> NrFoveated { get; }
+    /// <summary>Games with the RHI overlay switched off. Composite-keyed.</summary>
+    HashSet<string> OverlayDisabledGames { get; }
     /// <summary>Per-game RTX 40 MFG installed DLL name. Key = "GameName|Store", Value = DLL filename (e.g. "version.dll").</summary>
     Dictionary<string, string> Rtx40MfgInstalledAs { get; }
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>

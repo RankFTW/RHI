@@ -643,6 +643,13 @@ public partial class DetailPanelBuilder
                 }
             }
 
+            // Turn the RHI overlay back on (Spotlight's Game settings panel)
+            if (_window.ViewModel.IsOverlayDisabled(ctx.CapturedName, card.Source))
+            {
+                _window.ViewModel.SetOverlayDisabled(ctx.CapturedName, false, card.Source);
+                _window.RefreshOverlayPassthrough();
+            }
+
             CrashReporter.Log($"[DetailPanelBuilder.BuildOverridesPanel] Overrides reset for: {ctx.CapturedName}");
 
             // Only reselect if the game name actually changed

@@ -196,6 +196,8 @@ public partial class MainViewModel
             card.RsActionMessage = "Installing Vulkan ReShade...";
             try
             {
+                // The layer is shared: make sure it holds the chosen channel's build, not whatever was there before
+                await SyncVulkanLayerAsync(card);
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 var selVk1 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
@@ -268,6 +270,8 @@ public partial class MainViewModel
         {
             // 3. Install the global Vulkan layer (copies DLL, writes manifest, registers in registry)
             await Task.Run(() => InstallLayerAction());
+            // InstallLayer copies Stable; switch it to the chosen channel (Nightly / legacy)
+            await SyncVulkanLayerAsync(card);
 
             // 4. Deploy reshade.vulkan.ini (as reshade.ini) to game directory
             AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);

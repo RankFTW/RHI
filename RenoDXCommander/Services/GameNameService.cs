@@ -163,6 +163,8 @@ public partial class GameNameService : IGameNameService
     private HashSet<string> _sfZzzMode = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Games set to the Foveated build of the DLSS5 Tool (maximedgoulet/FoveatedDLSS5). Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _nrFoveated = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games with the RHI overlay switched off (Spotlight's Game settings panel). Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _overlayDisabledGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _rtx40MfgInstalledAs = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dlssg2030InstalledAs = new(StringComparer.OrdinalIgnoreCase);
 
@@ -299,6 +301,8 @@ public partial class GameNameService : IGameNameService
     public HashSet<string> SfZzzMode => _sfZzzMode;
     /// <summary>Games set to the Foveated build of the DLSS5 Tool. Composite-keyed "GameName|Store".</summary>
     public HashSet<string> NrFoveated => _nrFoveated;
+    /// <summary>Games with the RHI overlay switched off. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OverlayDisabledGames => _overlayDisabledGames;
     public Dictionary<string, string> Rtx40MfgInstalledAs => _rtx40MfgInstalledAs;
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>
     public Dictionary<string, string> Dlssg2030InstalledAs => _dlssg2030InstalledAs;
@@ -748,6 +752,8 @@ public partial class GameNameService : IGameNameService
             Load<List<string>>("SfZzzMode", new()), StringComparer.OrdinalIgnoreCase);
         _nrFoveated = new HashSet<string>(
             Load<List<string>>("NrFoveated", new()), StringComparer.OrdinalIgnoreCase);
+        _overlayDisabledGames = new HashSet<string>(
+            Load<List<string>>("OverlayDisabledGames", new()), StringComparer.OrdinalIgnoreCase);
         _rtx40MfgInstalledAs = new Dictionary<string, string>(
             Load<Dictionary<string, string>>("Rtx40MfgInstalledAs", new()),
             StringComparer.OrdinalIgnoreCase);
@@ -969,6 +975,8 @@ public partial class GameNameService : IGameNameService
                 else s.Remove("SfZzzMode");
                 if (_nrFoveated.Count > 0) s["NrFoveated"] = JsonSerializer.Serialize(_nrFoveated.ToList());
                 else s.Remove("NrFoveated");
+                if (_overlayDisabledGames.Count > 0) s["OverlayDisabledGames"] = JsonSerializer.Serialize(_overlayDisabledGames.ToList());
+                else s.Remove("OverlayDisabledGames");
                 if (_rtx40MfgInstalledAs.Count > 0) s["Rtx40MfgInstalledAs"] = JsonSerializer.Serialize(_rtx40MfgInstalledAs);
                 else s.Remove("Rtx40MfgInstalledAs");
                 if (_dlssg2030InstalledAs.Count > 0) s["Dlssg2030InstalledAs"] = JsonSerializer.Serialize(_dlssg2030InstalledAs);
@@ -1126,6 +1134,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_dlssNrCostScalerEnabled, oldName, newName);
         MigrateCompositeHashSet(_sfZzzMode, oldName, newName);
         MigrateCompositeHashSet(_nrFoveated, oldName, newName);
+        MigrateCompositeHashSet(_overlayDisabledGames, oldName, newName);
         MigrateCompositeDict(_rtx40MfgInstalledAs, oldName, newName);
         MigrateCompositeDict(_dlssg2030InstalledAs, oldName, newName);
         MigrateCompositeDict(_rtxEncoreInstalledAs, oldName, newName);

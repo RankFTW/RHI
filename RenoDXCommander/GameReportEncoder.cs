@@ -173,6 +173,7 @@ public static class GameReportEncoder
             if (ov["wikiNameOverride"] is string wnov && !string.IsNullOrEmpty(wnov)) ovLines.Add($"Wiki Name: {wnov}");
             if ((bool?)ov["wikiExcluded"] == true) ovLines.Add("Wiki Excluded: Yes");
             if (ov.TryGetValue("rsLoadAsAsi", out var rsAsi) && rsAsi is true) ovLines.Add("ReShade loaded as ASI: Yes");
+            if (ov.TryGetValue("rhiOverlayOff", out var ovOff) && ovOff is true) ovLines.Add("RHI overlay: Off");
             if (ov["shaderMode"] is string sm && !string.IsNullOrEmpty(sm)) ovLines.Add($"Shader Mode: {sm}");
             if (ov["addonMode"] is string am && !string.IsNullOrEmpty(am)) ovLines.Add($"Addon Mode: {am}");
             if (ov["launchExe"] is string le && !string.IsNullOrEmpty(le)) ovLines.Add($"Launch Exe: `{le}`");
@@ -393,6 +394,7 @@ public static class GameReportEncoder
             ["launchExe"] = gns.LaunchExeOverrides.TryGetValue(gameName, out var launchOv) ? launchOv : "",
             ["keepRsIniUpdated"] = vm.GetKeepRsIniUpdated(gameName, card.Source ?? ""),
             ["rsLoadAsAsi"] = vm.GetRsAsiMode(gameName, card.Source ?? ""),
+            ["rhiOverlayOff"] = vm.IsOverlayDisabled(gameName, card.Source ?? ""),
         };
 
         // Addons

@@ -889,6 +889,25 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── RHI overlay per game ──────────────────────────────────────────────────
+
+    /// <summary>True when the RHI overlay is switched off for this game (Spotlight's Game settings panel).</summary>
+    public bool IsOverlayDisabled(string gameName, string store = "") =>
+        _overlayDisabledGames.Contains(GameKey.From(gameName, store).ToKey());
+
+    /// <summary>True when any game has the RHI overlay switched off.</summary>
+    public bool AnyOverlayDisabled => _overlayDisabledGames.Count > 0;
+
+    /// <summary>Switches the RHI overlay off (or back on) for this game.</summary>
+    public void SetOverlayDisabled(string gameName, bool disabled, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        bool changed = disabled ? _overlayDisabledGames.Add(key) : _overlayDisabledGames.Remove(key);
+        if (!changed) return;
+        CrashReporter.Log($"[MainViewModel.SetOverlayDisabled] RHI overlay {(disabled ? "off" : "on")} for '{key}'");
+        SaveNameMappings();
+    }
+
     // ── RTX 40 MFG Unlock ─────────────────────────────────────────────────────
 
     public bool GetRtx40MfgInstalled(string gameName, string store = "")
@@ -1811,7 +1830,7 @@ public partial class MainViewModel
             && !string.IsNullOrEmpty(c.InstallPath)
             && Directory.Exists(c.InstallPath)
             && ((c.Status   == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx && !c.IsExternalOnly) ||
-                (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade && !c.RequiresVulkanInstall) ||
+                (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade) ||
                 (c.UlStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllUl) ||
                 (c.DcStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDc) ||
                 (c.OsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllOs) ||

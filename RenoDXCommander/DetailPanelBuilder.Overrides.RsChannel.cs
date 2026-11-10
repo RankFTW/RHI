@@ -143,6 +143,26 @@ public partial class DetailPanelBuilder
                     return;
                 }
 
+                bool legacyIsVulkan = ctx.Card.RequiresVulkanInstall;
+                if (legacyIsVulkan)
+                {
+                    var vLegacyDialog = new ContentDialog
+                    {
+                        Title = "Vulkan ReShade Channel Override",
+                        Content = "Vulkan games share a global ReShade layer.\n\n" +
+                            $"Switching to ReShade {pickedVersion} will change it for ALL Vulkan games.",
+                        PrimaryButtonText = "Apply to All Vulkan Games",
+                        CloseButtonText = "Cancel",
+                        XamlRoot = _window.Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    if (await DialogService.ShowSafeAsync(vLegacyDialog) != ContentDialogResult.Primary)
+                    {
+                        channelCombo.SelectedItem = defaultChannelSelection;
+                        return;
+                    }
+                }
+
                 if (!AuxInstallService.IsLegacyVersionCached(pickedVersion))
                 {
                     var success = await AuxInstallService.DownloadLegacyReShadeAsync(pickedVersion, _window.ViewModel.HttpClient);
@@ -154,6 +174,17 @@ public partial class DetailPanelBuilder
                 }
 
                 _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, pickedVersion, ctx.Card.Source);
+                CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → legacy {pickedVersion}{(legacyIsVulkan ? " (all Vulkan games)" : "")}");
+                if (legacyIsVulkan)
+                {
+                    foreach (var vCard in _window.ViewModel.AllCards.Where(c => c.RequiresVulkanInstall))
+                    {
+                        _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, pickedVersion, vCard.Source);
+                        if (vCard.UseNormalReShade)
+                            _window.ViewModel.SetUseNormalReShade(vCard, false);
+                        vCard.NotifyAll();
+                    }
+                }
 
                 // Clear No Addons mode if active (legacy is an addon build)
                 var targetCardLegacy = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -173,7 +204,12 @@ public partial class DetailPanelBuilder
                 var targetCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (targetCard2 != null)
-                    await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCard2);
+                {
+                    if (legacyIsVulkan && !targetCard2.IsRsInstalled)
+                        await _window.ViewModel.SyncVulkanLayerAsync(targetCard2);
+                    else
+                        await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCard2);
+                }
 
                 _window.ViewModel.NotifyUpdateButtonChanged();
 
@@ -473,27 +509,8 @@ public partial class DetailPanelBuilder
                     vCard.NotifyAll();
                 }
 
-                // Determine the effective channel for the Vulkan layer
-                var effectiveChannel = channelValue ?? _window.ViewModel.Settings.ReShadeChannel;
-
-                // Update the Vulkan layer DLLs
-                try
-                {
-                    var layerDir = VulkanLayerService.LayerDirectory;
-                    var stagedPath64 = AuxInstallService.GetStagedPathForChannel(effectiveChannel, false);
-                    var stagedPath32 = AuxInstallService.GetStagedPathForChannel(effectiveChannel, true);
-                    var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
-                    var layer32 = Path.Combine(layerDir, "ReShade32.dll");
-
-                    if (File.Exists(stagedPath64) && new FileInfo(stagedPath64).Length > AuxInstallService.MinReShadeSize && File.Exists(layer64))
-                        await Task.Run(() => AuxInstallService.CopyFileWithElevation(stagedPath64, layer64));
-                    if (File.Exists(stagedPath32) && new FileInfo(stagedPath32).Length > AuxInstallService.MinReShadeSize && File.Exists(layer32))
-                        await Task.Run(() => AuxInstallService.CopyFileWithElevation(stagedPath32, layer32));
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[DetailPanelBuilder] Failed to update Vulkan layer — {ex.Message}");
-                }
+                // Put the chosen channel's build into the shared layer (logs what it did)
+                await _window.ViewModel.SyncVulkanLayerAsync(targetCard);
 
                 // Mark all Vulkan games as installed (layer updated in-place)
                 foreach (var vCard in _window.ViewModel.AllCards.Where(c => c.RequiresVulkanInstall && c.IsRsInstalled))

@@ -67,5 +67,6 @@ public interface IUpdateOrchestrationService
         Action notifyUpdateState,
         bool skipRdx = false,
         bool skipRs = false,
-        bool skipRef = false);
+        bool skipRef = false,
+        Func<string, string?, string?>? vulkanChannelResolver = null);
 }

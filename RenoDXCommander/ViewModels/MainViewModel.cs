@@ -993,6 +993,8 @@ public partial class MainViewModel : ObservableObject
     private HashSet<string> _updateAllExcludedDc => _gameNameService.UpdateAllExcludedDc;
     private HashSet<string> _updateAllExcludedOs => _gameNameService.UpdateAllExcludedOs;
     private HashSet<string> _updateAllExcludedRef => _gameNameService.UpdateAllExcludedRef;
+    /// <summary>Games with the RHI overlay switched off. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _overlayDisabledGames => _gameNameService.OverlayDisabledGames;
     private Dictionary<string, string> _perGameShaderMode => _gameNameService.PerGameShaderMode;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
     private Dictionary<string, string> _vulkanRenderingPaths => _gameNameService.VulkanRenderingPaths;

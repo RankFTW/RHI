@@ -66,6 +66,7 @@ internal sealed partial class DetailLayoutHost
         if (key == AchievementsKey && _achStrip is { Visibility: Visibility.Visible } strip && _achSlot?.Visibility == Visibility.Visible)
             return strip;
         if (key == ScreenshotsKey && _hShots is { Visibility: Visibility.Visible } shots) return shots;
+        if (key == GameSettingsKey && _hGameSettings is { Visibility: Visibility.Visible } cog) return cog;
         if (key == OverviewKey)
         {
             var status = _statusTiles.FirstOrDefault(t => t.Root.Visibility == Visibility.Visible)?.Root;

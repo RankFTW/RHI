@@ -17,6 +17,7 @@
 - Info and links: your own notes for the game (also under Game notes… when you right-click a game in RHI), the RenoDX and Luma notes, and the game's Nexus, PCGamingWiki, ultrawide fix, Ultra+ and Discord links.
 - Nothing is installed into the game, so it works with any game RHI knows, including games started from Steam or a shortcut. It works in borderless and windowed games and games using Windows' fullscreen optimisations, but can't show over true exclusive fullscreen.
 - Turn it off, change the key or turn off the controller shortcut in Settings › RHI overlay.
+- Turn it off for one game with the new cog button beside the game's name in Spotlight (Game settings › RHI overlay). Its key then goes to that game instead.
 - Games can still see your controller while the overlay is open. To stop that, turn on Pause the game while open in Settings › RHI overlay: RHI freezes the game until you go back to it. It's experimental and off by default; single-player games only.
 
 **Source engine games**
@@ -91,6 +92,11 @@ Search now works much like Steam's:
 **RenoDX**
 - Fixed a RenoDX addon saved as a second download (for example renodx-ue-extended (1).addon64) not being recognised, so the game showed Download from Discord. Installing or updating now also removes such copies, so the game no longer loads the mod twice, and dropping one onto RHI installs it under its proper name.
 - Fixed Download from Discord staying on a game after uninstalling an unrecognised RenoDX addon, until RHI was restarted.
+
+**Vulkan ReShade**
+- Fixed Vulkan games keeping an old ReShade version (for example 6.7.3 after 6.8.0 came out). Installing ReShade on a Vulkan game now also brings the shared Vulkan ReShade up to the chosen channel, and Vulkan games now show when a ReShade update is available, so Update All updates them.
+- Fixed choosing Nightly or Stable on a Vulkan game sometimes not switching the ReShade build.
+- Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
 - Fixed some GOG games (Ghost Song and other Unity games) showing as 32-bit, so ReShade and RenoDX installed the 32-bit files. RHI was reading GOG's uninstaller instead of the game. Affected games correct themselves on the next launch.
