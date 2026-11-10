@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56036,
-  "generated": "2026-11-10T01:11:14Z",
+  "game_count": 56037,
+  "generated": "2026-11-10T05:11:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -155102,6 +155102,7 @@
     "Stargazer Program": {
       "steam_appid": 828250
     },
+    "Starglider": {},
     "Stargoose Warrior": {},
     "Stargunner": {
       "steam_appid": 358390
