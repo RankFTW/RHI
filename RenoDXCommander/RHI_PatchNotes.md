@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.3 Beta 2
+## v2.9.3 Beta 3
 
 ### New
 
@@ -20,16 +20,23 @@
 - Turn it off for one game with the new cog button beside the game's name in Spotlight (Game settings › RHI overlay). Its key then goes to that game instead.
 - Games can still see your controller while the overlay is open. To stop that, turn on Pause the game while open in Settings › RHI overlay: RHI freezes the game until you go back to it. It's experimental and off by default; single-player games only.
 
+**Display modes (Monitor / TV)**
+- Switch a game between your displays from its page. Each mode swaps only what you pick for that game: one game might swap peak brightness and its frame rate cap, another those plus its keys and DLSS settings.
+- Turn it on in Settings › Display › Display modes. The switch then appears beside the HDR and resolution buttons in Classic+, Tabs and Spotlight, and in the game menu (right-click a game).
+- It starts with Monitor and TV. Add up to 6 modes (e.g. Handheld), rename and reorder them, and give each mode default values.
+- What a mode can swap: RenoDX peak, game and UI brightness; RTX HDR peak brightness; ReLimiter, Display Commander and NVIDIA driver frame rate caps; DLSS frame generation (off, 2x to 6x or dynamic); DLSS preset and render scale; the ReShade preset; ReShade overlay and screenshot keys, ReShade controller navigation and the ReLimiter OSD key; and, when you launch from RHI, Windows HDR, which display gets HDR, the resolution and the launch arguments.
+- Each game remembers its own values per mode. When you switch away from a mode, what the game has then (including changes you made in game) is kept for that mode and put back next time.
+- Pick what games swap in Settings, or give a game its own list with the ⚙ beside its mode switch. That ⚙ also sets the game's values for each mode.
+- Values stored in the game's files are written as soon as you switch, so they also apply when you start the game from Steam or a shortcut. HDR, resolution and launch arguments apply when you launch from RHI.
+- Switch all games: put every game in one mode at once, e.g. for an evening on the TV.
+- ReShade and ReLimiter installs and updates, and the Settings buttons that write peak brightness, keys or ReLimiter settings to all games, keep a game's display mode values.
+
 **Source engine games**
 - RenoDX's Source engine mod now installs from RHI in one click for the games in the Source list (Half-Life 2, Portal, Portal 2, Left 4 Dead 2, Team Fortress 2, Garry's Mod and more), with a Source Engine badge on the game.
 - RHI does the whole setup from the RenoDX instructions: ReShade as d3d9.dll in the right folder, DXVK (stable) loaded through ReShade, and the reshade.ini and dxvk.conf settings. 32-bit games use the bin folder and 64-bit games the main folder. Garry's Mod gets both versions set up (bin for 32-bit, bin\win64 for 64-bit), sharing one set of shaders. Updating the mod keeps it all up to date, and uninstalling removes it again.
 - -insecure is added to the game's launch options in RHI. It turns VAC off, so don't join VAC-secured servers while the mod is installed. If you start the game from Steam, add -insecure to its launch options there too.
 - In the game, set High Dynamic Range to Full in the advanced video settings.
 - If RHI already installed ReShade in a 32-bit Source game's main folder, it's moved to bin.
-
-**Screenshots in Spotlight**
-- New picture button beside the game's name in Spotlight: opens your ReShade screenshots of the game in the side panel, newest first.
-- Click a screenshot to open it. Right-click it to set it as the game's banner, copy it, show it in its folder or delete it (to the Recycle Bin).
 
 **Foveated DLSS5 Tool**
 - New Foveated switch in Neural Rendering for the DLSS5 Tool and DLSS5 Tool + DX11 Bridge methods. It installs FoveatedDLSS5 (by maximedgoulet) instead of the stock add-on: Neural Rendering runs at full resolution in the centre of the screen, at lower resolution around it, and not at all at the edges. The author measured about 65% more fps, and the gain is biggest on ultrawide screens.
@@ -43,16 +50,9 @@
 - Applied changes are saved for that game and written again when OptiScaler is reinstalled, updated or switched to another version.
 - New Save ini and Load saved ini buttons at the bottom of the OptiScaler ⚙. Save a game's OptiScaler.ini under any name (as many as you like), or add one from a file, then load it into any game. The game keeps using it after a reinstall or update.
 
-**Display modes (Monitor / TV)**
-- Switch a game between your displays from its page. Each mode swaps only what you pick for that game: one game might swap peak brightness and its frame rate cap, another those plus its keys and DLSS settings.
-- Turn it on in Settings › Display › Display modes. The switch then appears beside the HDR and resolution buttons in Classic+, Tabs and Spotlight, and in the game menu (right-click a game).
-- It starts with Monitor and TV. Add up to 6 modes (e.g. Handheld), rename and reorder them, and give each mode default values.
-- What a mode can swap: RenoDX peak, game and UI brightness; RTX HDR peak brightness; ReLimiter, Display Commander and NVIDIA driver frame rate caps; DLSS frame generation (off, 2x to 6x or dynamic); DLSS preset and render scale; the ReShade preset; ReShade overlay and screenshot keys, ReShade controller navigation and the ReLimiter OSD key; and, when you launch from RHI, Windows HDR, which display gets HDR, the resolution and the launch arguments.
-- Each game remembers its own values per mode. When you switch away from a mode, what the game has then (including changes you made in game) is kept for that mode and put back next time.
-- Pick what games swap in Settings, or give a game its own list with the ⚙ beside its mode switch. That ⚙ also sets the game's values for each mode.
-- Values stored in the game's files are written as soon as you switch, so they also apply when you start the game from Steam or a shortcut. HDR, resolution and launch arguments apply when you launch from RHI.
-- Switch all games: put every game in one mode at once, e.g. for an evening on the TV.
-- ReShade and ReLimiter installs and updates, and the Settings buttons that write peak brightness, keys or ReLimiter settings to all games, keep a game's display mode values.
+**Screenshots in Spotlight**
+- New picture button beside the game's name in Spotlight: opens your ReShade screenshots of the game in the side panel, newest first.
+- Click a screenshot to open it. Right-click it to set it as the game's banner, copy it, show it in its folder or delete it (to the Recycle Bin).
 
 ### Changes
 
@@ -116,6 +116,7 @@ Search now works much like Steam's:
 ### Manifest Updates
 
 - Ghost Song is always treated as a 64-bit game.
+- Dead Space 2 and Dead Space 3 are no longer matched to a RenoDX mod from the wiki.
 
 ## v2.9.2
 

@@ -195,7 +195,9 @@ public static class DisplayModeItems
             Unit = "FPS", Min = 20, Max = 1000, AllowZero = true,
             Help = "target_fps in the game's relimiter.ini. 0 = off.",
             Unavailable = NeedReLimiter,
-            Read = c => Dlssg20_30Service.ReadIniValue(c.ReLimiterIni, "FrameLimiter", "target_fps") is { } v
+            // No relimiter.ini = no value (not "off"); a file without target_fps = off
+            Read = c => !File.Exists(c.ReLimiterIni) ? null
+                : Dlssg20_30Service.ReadIniValue(c.ReLimiterIni, "FrameLimiter", "target_fps") is { } v
                 && int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n.ToString(CultureInfo.InvariantCulture) : "0",
             Write = (c, v) =>
             {
@@ -211,7 +213,8 @@ public static class DisplayModeItems
             Unit = "FPS", Min = 20, Max = 1000, AllowZero = true,
             Help = "fps_limit in the game's DisplayCommander.ini. 0 = no limit. Decimals allowed (e.g. 117.5).",
             Unavailable = NeedDc,
-            Read = c => Dlssg20_30Service.ReadIniValue(c.DcIni, "DisplayCommander", "fps_limit") is { } v
+            Read = c => !File.Exists(c.DcIni) ? null
+                : Dlssg20_30Service.ReadIniValue(c.DcIni, "DisplayCommander", "fps_limit") is { } v
                 && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
                 ? Math.Round(d, 3).ToString("0.###", CultureInfo.InvariantCulture) : "0",
             Write = (c, v) => { Dlssg20_30Service.WriteIniValue(c.DcIni, "DisplayCommander", "fps_limit", v); return null; },
@@ -378,9 +381,10 @@ public static class DisplayModeItems
         Write = (c, v) => WriteRdx(c.ReShadeIni, iniKey, v),
     };
 
-    // RenoDX saves its settings with lower-case first letters (toneMapPeakNits). ReShade's ini is case-sensitive, and
-    // older RHI versions wrote "ToneMapPeakNits", so a section can hold both spellings: read RenoDX's own spelling first,
-    // and write every spelling (line by line, nothing else in the file is touched).
+    // The spelling depends on the mod: Unity / generic RenoDX mods save "toneMapPeakNits", others (e.g. UE-Extended)
+    // "ToneMapPeakNits". ReShade's ini is case-sensitive, and RHI's global peak brightness always wrote the capital-T
+    // spelling, so a section can hold both: then the lower-case one came from the mod and is read first. Writes go to
+    // every spelling present (line by line, nothing else in the file is touched); a section with neither gets both.
 
     /// <summary>The value from the first [renodx-preset*] section that has it (as a whole number). RenoDX's own spelling wins.</summary>
     internal static string? ReadRdx(string iniPath, string iniKey)
@@ -447,8 +451,8 @@ public static class DisplayModeItems
             }
             if (!found)
             {
-                lines.Insert(lastKey + 1, iniKey + "=" + value);
-                end++;
+                lines.InsertRange(lastKey + 1, Spellings(iniKey).Select(k => k + "=" + value));
+                end += Spellings(iniKey).Count;
             }
             i = end - 1;
         }
@@ -456,10 +460,18 @@ public static class DisplayModeItems
         {
             if (lines.Count > 0 && lines[^1].Trim().Length > 0) lines.Add("");
             lines.Add("[renodx-preset1]");
-            lines.Add(iniKey + "=" + value);
+            lines.AddRange(Spellings(iniKey).Select(k => k + "=" + value));
         }
         File.WriteAllText(iniPath, string.Join(eol, lines) + (endsWithNewline || presets == 0 ? eol : ""));
         return null;
+    }
+
+    /// <summary>Both spellings RenoDX mods use for a key: "toneMapPeakNits" and "ToneMapPeakNits".</summary>
+    private static IReadOnlyList<string> Spellings(string iniKey)
+    {
+        var lower = char.ToLowerInvariant(iniKey[0]) + iniKey[1..];
+        var upper = char.ToUpperInvariant(iniKey[0]) + iniKey[1..];
+        return lower == upper ? new[] { iniKey } : new[] { lower, upper };
     }
 
     /// <summary>Every reshade*.ini in the game folder (keys go in all of them, like the ReShade ⚙).</summary>

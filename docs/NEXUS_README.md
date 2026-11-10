@@ -19,11 +19,12 @@ Switch layouts from the top bar at any time. Every setting is available in every
 [list]
 [*][b]Classic+[/b] (default): your game list on the left and the game's page on the right, in collapsible sections you can reorder
 [*][b]Tabs[/b]: the same game page, one tab at a time, with a card for each component and an At a glance summary of everything else
-[*][b]Spotlight[/b]: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like
+[*][b]Spotlight[/b]: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like. Buttons beside the game's name open its ReShade screenshots and its own Game settings
 [*][b]Steam and Xbox achievements[/b] in Spotlight: progress, latest unlock and the full list with unlock dates, rarity and search. Read from your PC, so no sign-in is needed. Off until you turn it on in Settings
 [*][b]Game collections[/b]: make your own lists of games (Racing, Souls-likes and so on) and show one with a click. A game can be in as many as you like
 [*][b]Controller support[/b] in Spotlight: browse, install, tweak and launch with an Xbox, PlayStation or Steam controller (DualShock 4, DualSense and DualSense Edge over USB or Bluetooth; Steam Controllers by USB or wireless dongle; nothing extra to install). RHI comes back to the front when your game closes
-[*][b]Interface size[/b] from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens
+[*][b]Interface size[/b] from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens. Resize the top bar and the game list on their own too
+[*][b]Game search[/b] that works like Steam's: words in any order, initials (gta, rdr2, hl2), roman numerals as numbers, and small typos
 [/list]
 
 [line]
@@ -33,6 +34,8 @@ Switch layouts from the top bar at any time. Every setting is available in every
 [b]RenoDX[/b]: hundreds of game-specific HDR mods, matched and installed automatically and kept up to date.
 
 [b]Unreal Engine and Unity[/b]: games without a dedicated mod get a generic one. UE4/UE5 games get UE-Extended, with reshade.ini and Engine.ini configured for you. Unity games get the generic Unity addon, in 32-bit and 64-bit versions.
+
+[b]Source engine[/b] (Half-Life 2, Portal 2, Left 4 Dead 2, Garry's Mod and more): RenoDX's Source mod in one click, with ReShade, DXVK and the ini settings set up for you.
 
 [b]Luma Framework[/b]: named Luma mods, plus generic Luma for DX11 Unreal Engine games. Engine.ini keys, launch arguments and TAA settings from the Luma wiki are applied on install. DX9 Luma games get dgVoodoo2 automatically.
 
@@ -82,7 +85,7 @@ Every game has a Neural Rendering section that installs one of five methods, and
 [*][b]GITC Uplift[/b] by ghostinthecamera: DLSS Neural Rendering on almost any game on an RTX card, even games without DLSS (DX9 to DX12, Vulkan and OpenGL, 64-bit and 32-bit). Drop it in and switch it on, with a choice of Look, Keep faces, and a Resolution setting for more speed. The default for 64-bit DX11, DX12 and Vulkan games without DLSS
 [*][b]ShortFuse DLSS Tool[/b]: most games with native DLSS (DX9, DX11, DX12, Vulkan)
 [*][b]DLSS5 Tool[/b]: DX12 games with native DLSS
-[*][b]DLSS5 Tool + DX11 Bridge[/b]: DX11 and Vulkan games with native DLSS
+[*][b]DLSS5 Tool + DX11 Bridge[/b]: DX11 and Vulkan games with native DLSS. Both DLSS5 Tool methods can use [b]FoveatedDLSS5[/b] by maximedgoulet instead, which runs Neural Rendering at full resolution only in the centre of the screen, for much higher frame rates
 [*][b]DLSS5 Feeder[/b]: games without DLSS, recommended for OpenGL, DX9 and 32-bit games
 [/list]
 
@@ -92,7 +95,7 @@ Pin versions of each tool and of nvngx_dlssnr.dll, and optionally add the NR Cos
 
 [size=5][b]Frame Generation and Upscaling[/b][/size]
 
-[b]OptiScaler[/b]: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are set from a menu that writes OptiScaler.ini for you. GPU-specific templates for NVIDIA, AMD and Intel. OptiPatcher included.
+[b]OptiScaler[/b]: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are set from a menu that writes OptiScaler.ini for you, and All Settings lists every setting in the game's ini, with descriptions. Save a game's ini under any name and load it into other games. GPU-specific templates for NVIDIA, AMD and Intel. OptiPatcher included.
 
 [b]Custom OptiScaler builds[/b]: add any OptiScaler build from a download link (GitHub, Discord or anywhere else), a zip, 7z or rar, a folder or a single OptiScaler.dll, then install it like the built-in versions.
 
@@ -134,7 +137,7 @@ Choose one per game. Both support 32-bit and 64-bit games, and installing either
 [size=5][b]Everyday Conveniences[/b][/size]
 
 [list]
-[*][b]RHI overlay[/b]: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game
+[*][b]RHI overlay[/b]: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game. Turn it off for any game in Spotlight's Game settings
 [*][b]Update All[/b]: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included. [b]Automatic Updates[/b] can install them in the background
 [*][b]Game launch[/b] from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game
 [*][b]HDR and resolution auto-toggle[/b]: Windows HDR and your target resolution switch on when a game starts and back when it closes, on the monitors you choose

@@ -18,17 +18,19 @@ Switch layouts from the top bar at any time. Every setting is available in every
 
 - **Classic+** (default): your game list on the left and the game's page on the right, in collapsible sections you can reorder.
 - **Tabs**: the same game page, one tab at a time, with a card for each component and an At a glance summary of everything else.
-- **Spotlight**: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like.
+- **Spotlight**: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like. Buttons beside the game's name open its ReShade screenshots and its own Game settings.
 - **Steam and Xbox achievements** in Spotlight: progress, latest unlock and the full list with unlock dates, rarity and search. Read from your PC, so no sign-in is needed. Off until you turn it on in Settings.
 - **Game collections**: make your own lists of games (Racing, Souls-likes and so on) and show one with a click. A game can be in as many as you like.
 - **Controller support** in Spotlight: browse, install, tweak and launch with an Xbox, PlayStation or Steam controller (DualShock 4, DualSense and DualSense Edge over USB or Bluetooth; Steam Controllers by USB or wireless dongle; nothing extra to install). RHI comes back to the front when your game closes.
-- **Interface size** from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens.
+- **Interface size** from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens. Resize the top bar and the game list on their own too.
+- **Game search** that works like Steam's: words in any order, initials (gta, rdr2, hl2), roman numerals as numbers, and small typos.
 
 ## HDR for every game
 
 - **[RenoDX](https://github.com/clshortfuse/renodx)**: finds and installs the right HDR mod for each game, and keeps it updated. Games without a dedicated mod get a generic one:
   - **Unreal Engine 4/5**: UE-Extended, with `reshade.ini` and `Engine.ini` configured for you.
   - **Unity**: the generic Unity addon (32-bit and 64-bit).
+  - **Source engine** (Half-Life 2, Portal 2, Left 4 Dead 2, Garry's Mod and more): RenoDX's Source mod in one click, with ReShade, DXVK and the ini settings set up for you.
 - **[Luma Framework](https://github.com/Filoppi/Luma-Framework)**: named Luma mods, plus generic Luma for DX11 Unreal Engine games. Engine.ini keys, launch arguments and TAA settings from the Luma wiki are applied on install. DX9 Luma games get dgVoodoo2 automatically.
 - **RTX HDR and Windows Auto HDR**: enable either per game from the RenoDX ⚙ menu. RTX HDR settings (peak brightness, contrast, saturation, middle grey, debanding) are written straight to the game's NVIDIA profile.
 - **[DXVK + Lilium HDR](https://github.com/EndlesslyFlowering/dxvk)**: scRGB HDR for DX8–DX11 games, with presets from "Safest" to "Experimental".
@@ -64,14 +66,14 @@ A Neural Rendering section on every game installs one of five methods, and recom
 - **[GITC Uplift](https://github.com/ghostinthecamera/GITC-Uplift)**: DLSS Neural Rendering on almost any game on an RTX card, even games without DLSS (DX9 to DX12, Vulkan and OpenGL, 64-bit and 32-bit). Drop it in and switch it on, with a choice of Look, Keep faces, and a Resolution setting for more speed. The default for 64-bit DX11, DX12 and Vulkan games without DLSS.
 - **ShortFuse DLSS Tool**: for most games with native DLSS (DX9, DX11, DX12, Vulkan).
 - **DLSS5 Tool**: for DX12 games with native DLSS.
-- **DLSS5 Tool + DX11 Bridge**: for DX11 and Vulkan games with native DLSS.
+- **DLSS5 Tool + DX11 Bridge**: for DX11 and Vulkan games with native DLSS. Both DLSS5 Tool methods can use **[FoveatedDLSS5](https://github.com/maximedgoulet/FoveatedDLSS5)** instead, which runs Neural Rendering at full resolution only in the centre of the screen, for much higher frame rates.
 - **DLSS5 Feeder**: for games without DLSS, recommended for OpenGL, DX9 and 32-bit games.
 
 Pin versions of each tool and of `nvngx_dlssnr.dll`, and optionally add the **NR Cost Scaler** to run the neural model at reduced cost.
 
 ## Frame generation and upscaling extras
 
-- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. **Custom builds**: add any OptiScaler build from a link, an archive, a folder or a single DLL, and install it like the built-in versions. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
+- **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. **Custom builds**: add any OptiScaler build from a link, an archive, a folder or a single DLL, and install it like the built-in versions. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are all set from a menu that writes `OptiScaler.ini` for you, and **All Settings** lists every setting in the game's ini, with descriptions. Save a game's ini under any name and load it into other games. GPU-specific ini templates for NVIDIA, AMD and Intel. OptiPatcher included.
 - **Multi Frame Generation**: set Fixed or Dynamic MFG (2x–6x) and a target frame rate on RTX 50 Series.
 - **MFG unlocks for older cards**: Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
 - **[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)** and **[dgVoodoo2](https://github.com/dege-diosg/dgVoodoo2)** with a filename picker. Frame generation unlocks and RTX Encore can run alongside ASI Loader under its Hooked name.
@@ -98,7 +100,7 @@ Written directly to the driver, so you don't need NVIDIA App or Profile Inspecto
 
 ## Everyday conveniences
 
-- **RHI overlay**: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game.
+- **RHI overlay**: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game. Turn it off for any game in Spotlight's Game settings.
 - **Update All**: updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included, globally or per game. **Automatic Updates** can install them in the background.
 - **Game launch**: launch from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game.
 - **HDR and resolution auto-toggle**: turn Windows HDR on and switch resolution when a game starts, and switch both back when it closes. Global or per game, on the monitors you choose.
@@ -155,6 +157,7 @@ RHI downloads these from their official sources. All credit goes to their author
 | [GITC Uplift](https://github.com/ghostinthecamera/GITC-Uplift) | ghostinthecamera |
 | [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) | jlrouzies-fr |
 | [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge) | NIGos |
+| [FoveatedDLSS5](https://github.com/maximedgoulet/FoveatedDLSS5) | maximedgoulet |
 | [Universal MFG Unlocker](https://github.com/dashdogy/MFG-Unlocker) | dashdogy |
 | [MFG Unlock](https://github.com/mavismmg/MFGAdaUnlock-RenoDx) | mavismmg |
 | [20/30 FG Unlock](https://github.com/sdli1995/dlssg_for_sm86) | sdli1995 |

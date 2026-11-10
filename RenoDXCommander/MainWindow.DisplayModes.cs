@@ -104,16 +104,20 @@ public sealed partial class MainWindow
 
     // ── Mode switch ──────────────────────────────────────────────────────────
 
-    /// <summary>Classic+ header: mode buttons + ⚙ after the RES button (built in C#, XAML constraint).</summary>
+    /// <summary>
+    /// Classic+ header: mode buttons + ⚙ at the end of the second row (after the mod file badge), built in C#
+    /// (XAML constraint). Not in the first row: Launch, HDR, RES and the links already fill it, and with Ultra+ /
+    /// UW Fix links the extra chips made the links run under the store / engine badges.
+    /// </summary>
     internal void RefreshClassicDisplayModeSwitch(GameCardViewModel card)
     {
         try
         {
             if (_dmClassicHost == null)
             {
-                if (DetailResToggleBtn.Parent is not Panel row) return;
-                _dmClassicHost = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-                row.Children.Insert(row.Children.IndexOf(DetailResToggleBtn) + 1, _dmClassicHost);
+                if (DetailInstalledFileBadge.Parent is not Panel row) return;
+                _dmClassicHost = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+                row.Children.Add(_dmClassicHost);
                 // Modes added / renamed / switched (Settings card, game menu, Switch all): redraw the shown game's switch
                 ViewModel.DisplayModesChanged += () => DispatcherQueue.TryEnqueue(() => RefreshDisplayModeUi());
             }
@@ -124,6 +128,8 @@ public sealed partial class MainWindow
                 return;
             }
             _dmClassicHost.Visibility = Visibility.Visible;
+            // Divider between the mod badges and the mode switch
+            _dmClassicHost.Children.Add(new Border { Width = 1, Height = 16, Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush), Margin = new Thickness(0, 0, 4, 0) });
 
             var modes = ViewModel.DisplayModeStore.Modes;
             var active = ViewModel.ActiveDisplayModeId(card);

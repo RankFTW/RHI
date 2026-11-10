@@ -190,7 +190,7 @@ public class DisplayModeTests : IDisposable
         DisplayModeItems.WriteRdx(ReShadeIni, "toneMapPeakNits", "700");
         var text = File.ReadAllText(ReShadeIni);
         Assert.Contains("toneMapPeakNits=700\r\nToneMapPeakNits=700\r\n; comment", text); // both lines, nothing merged or lost
-        Assert.Contains("[renodx-preset2]\r\nOther=1\r\ntoneMapPeakNits=700\r\n", text); // added to a section without it
+        Assert.Contains("[renodx-preset2]\r\nOther=1\r\ntoneMapPeakNits=700\r\nToneMapPeakNits=700\r\n", text); // both spellings added to a section without it
         Assert.DoesNotContain("\r\r", text);
     }
 
@@ -199,7 +199,55 @@ public class DisplayModeTests : IDisposable
     {
         File.WriteAllText(ReShadeIni, "[GENERAL]\nPresetPath=x.ini\n");
         DisplayModeItems.WriteRdx(ReShadeIni, "toneMapPeakNits", "800");
-        Assert.Equal("[GENERAL]\nPresetPath=x.ini\n\n[renodx-preset1]\ntoneMapPeakNits=800\n", File.ReadAllText(ReShadeIni));
+        Assert.Equal("[GENERAL]\nPresetPath=x.ini\n\n[renodx-preset1]\ntoneMapPeakNits=800\nToneMapPeakNits=800\n", File.ReadAllText(ReShadeIni));
+    }
+
+    [Fact]
+    public void Switch_ModeWithoutAValue_DoesNotInheritThePreviousModesValue()
+    {
+        // TV had no value on the first visit; its default is set afterwards (the bug: TV kept Monitor's value)
+        WriteFiles(peak: 1050, fps: 141);
+        var store = new DisplayModeStore();
+        var svc = new DisplayModeService(store);
+        svc.Switch(Ctx(), "tv");
+        Assert.Equal("1050", Peak()); // nothing to write yet
+        svc.Switch(Ctx(), "monitor");
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.RdxPeakNits)); // Monitor's 1050 wasn't copied into TV
+
+        store.SetModeDefault("tv", DisplayModeItemKeys.RdxPeakNits, "2000");
+        svc.Switch(Ctx(), "tv");
+        Assert.Equal("2000", Peak());
+        svc.Switch(Ctx(), "monitor");
+        Assert.Equal("1050", Peak());
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.RdxPeakNits)); // unchanged in TV: the default still applies
+
+        // Changed in game while on the TV: kept for TV
+        svc.Switch(Ctx(), "tv");
+        DisplayModeItems.WriteRdx(ReShadeIni, "toneMapPeakNits", "1800");
+        svc.Switch(Ctx(), "monitor");
+        Assert.Equal("1800", store.GameValue(Key, "tv", DisplayModeItemKeys.RdxPeakNits));
+    }
+
+    [Fact]
+    public void ReLimiterInstalledLater_GetsTheModesValueNotZero()
+    {
+        WriteFiles(peak: 1000, fps: 141);
+        File.Delete(ReLimiterIni); // ReLimiter not installed yet
+        var store = new DisplayModeStore();
+        store.SetModeDefault("tv", DisplayModeItemKeys.UlTargetFps, "118");
+        var svc = new DisplayModeService(store);
+        svc.Switch(Ctx(), "tv");
+
+        // ReLimiter installed while in TV: the install writes the global cap into a fresh relimiter.ini
+        var keep = svc.Keep(_dir, DisplayModeItemKeys.ReLimiterItems);
+        Assert.NotNull(keep);
+        File.WriteAllText(ReLimiterIni, "[FrameLimiter]\ntarget_fps=323\n");
+        keep!();
+        Assert.Equal("118", Fps());
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.UlTargetFps)); // not a game value: still the default
+
+        svc.Switch(Ctx(), "monitor");
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.UlTargetFps)); // unchanged since: nothing remembered
     }
 
     [Fact]

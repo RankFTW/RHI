@@ -25,6 +25,13 @@ public sealed class GameDisplayModeState
     /// <summary>Mode id → item key → this game's own value for that mode (remembered when switching away).</summary>
     public Dictionary<string, Dictionary<string, string>> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Item key → the value the game had right after it entered its active mode (null = the item couldn't be read then).
+    /// Leaving the mode remembers a value only when it changed since (an in-game change), so a mode that had no value
+    /// doesn't inherit the previous mode's. Null dictionary = never switched: the game's values are its starting mode's.
+    /// </summary>
+    public Dictionary<string, string?>? Entry { get; set; }
+
     /// <summary>Install folder and addon folder at the last switch, so global writers can find the game by folder.</summary>
     public List<string>? Folders { get; set; }
 }

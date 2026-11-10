@@ -93,7 +93,7 @@ RHI has three layouts, chosen with the **Classic+ | Tabs | Spotlight** switch on
 | Item | What it does |
 |---|---|
 | **RHI** logo | Goes back to your games from Settings, About or Quick Start. |
-| **Available Mods** | A searchable list of every supported game with **RenoDX**, **Luma** and **Ultra+** columns. ✓ = complete, 🔨 = in progress, ✗ = none. Click a tick to open that mod's page. Type `RenoDX`, `Luma` or `Ultra+` at the start of the search to show only that type, optionally followed by a name (e.g. `luma dead`). Includes Source engine games supported by RenoDX's Source addon; RHI lists these but can't install them yet. A green **New** badge appears when new RenoDX, Luma or Ultra+ mods have arrived since you last looked; click it to see them. Disabled until mod data has loaded. |
+| **Available Mods** | A searchable list of every supported game with **RenoDX**, **Luma** and **Ultra+** columns. ✓ = complete, 🔨 = in progress, ✗ = none. Click a tick to open that mod's page. Type `RenoDX`, `Luma` or `Ultra+` at the start of the search to show only that type, optionally followed by a name (e.g. `luma dead`). Includes Source engine games supported by RenoDX's Source addon (see [Source engine games](#source-engine-games)). A green **New** badge appears when new RenoDX, Luma or Ultra+ mods have arrived since you last looked; click it to see them. Disabled until mod data has loaded. |
 | **Shaders & Addons** | **Global Shaders** (shader pack picker) and **Global Addons** (ReShade addon manager). |
 | **Checked … ago** | When RHI last checked for updates. |
 | **Refresh** | Rescans your library and fetches the latest mod information. |
@@ -108,7 +108,12 @@ Patch notes (What's New) list every version down the left; click one to read its
 
 Used by Classic+ and Tabs.
 
-- **Search box** ("Filter games..."): filters live by game name, store, engine, graphics API, bitness, and RenoDX or Luma mod name and author. It also understands keywords such as `DLSS`, `Ray Reconstruction`, `Frame Generation`, `Streamline`, `RE Engine`, `RE Framework`, `32-bit`, `64-bit`, `UW Fix` and `Ultra+`.
+- **Search box** ("Filter games..."): filters live by game name, store, engine, graphics API, bitness, and RenoDX or Luma mod name and author. It also understands keywords such as `DLSS`, `Ray Reconstruction`, `Frame Generation`, `Streamline`, `RE Engine`, `RE Framework`, `32-bit`, `64-bit`, `UW Fix` and `Ultra+`. Name search works much like Steam's:
+  - Punctuation and spaces are ignored: `fear` finds F.E.A.R., `half life` finds Half-Life 2, `spiderman` finds Marvel's Spider-Man.
+  - Words can be in any order: `batman lego` finds LEGO Batman.
+  - Initials, or part of them: `gta`, `rdr2`, `ff7`, `hl2`, and `mw3` finds Call of Duty: Modern Warfare III.
+  - Roman numerals can be typed as numbers: `gta 3` finds Grand Theft Auto III, `final fantasy 7` finds Final Fantasy VII.
+  - Small typos are fine: `resident eviaa` still finds Resident Evil. Longer words allow up to two letters off, short words fewer.
 - **+** buttons next to the search box:
   - The green **+** (**Manually add a game**): see [Adding a game manually](#adding-a-game-manually).
   - A second **+** appears while you're searching: **Save current search as a custom filter** saves the search as a named chip. Click the chip to toggle it; right-click it to delete it.
@@ -161,10 +166,12 @@ Tabs shows the game page one tab at a time, next to the same sidebar as Classic+
 Spotlight is built around the game you've picked.
 
 - **Banner**: the game's Steam artwork across the top (for any store, when the game is also on Steam), with the same name, tags, path, links, Launch button and HDR / Resolution toggles as Tabs. On wide windows the banner gets taller so the artwork keeps its shape. With [achievements](#achievements) turned on, your progress, latest unlock and recent unlocks show under the Launch button.
+- **Screenshots** (the picture button beside the game's name): opens your ReShade screenshots of the game in the side panel, newest first. Click a screenshot to open it. Right-click it to set it as the game's banner, copy it, show it in its folder or delete it (to the Recycle Bin). RHI finds them the same way as the [RHI overlay](#what-it-shows).
+- **Game settings** (the cog beside the Screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to this game only. **RHI overlay** turns the [overlay](#rhi-overlay) off for this game: Alt + ` then goes to the game instead of opening the overlay, and the controller shortcut does nothing in it.
 - **Cover shelf**: your games as a row of covers instead of the sidebar list, with the search box, your [collections](#game-collections), the filter icon and the All / Installed / Favourites / Hidden switch above it. Scroll it with the mouse wheel, or hold the left mouse button on the covers and drag left or right. Click a cover to select the game, double-click to launch it, and right-click for the usual game menu. A game with an update shows a purple **Update** label and outline on its cover.
 - **Covers at bottom** (right of the search box): moves the covers, search and filters below the game page. **Covers at top** puts them back. The controller follows the layout.
 - **Resizing**: drag the banner's bottom edge, or the edge of the cover strip facing the game page, to change their size as you drag. RHI remembers the sizes; double-click an edge to reset it.
-- **What's installed**: a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter, plus **Manage components**, which opens the component cards.
+- **What's installed**: a tile for ReShade, RenoDX or Luma, RE Framework, DOF Fix and the frame limiter. Click any tile to open the component cards.
 - **Tune this game**: a tile for every section with its summary. Click one and that section slides in from the right, laid out as in Tabs; click outside it or ✕ to close. A component's ⚙ settings open in the same side panel, with a back button to the section you came from.
 - **Artwork**: downloaded from Steam only while Spotlight is in use, and saved so it's downloaded once. To use your own image, right-click a cover or the banner and choose **Artwork › Set custom cover...** or **Set custom banner...**. **Use Steam cover** / **Use Steam banner** puts Steam's back. Handy for games that aren't on Steam.
 
@@ -181,7 +188,7 @@ Collections are your own lists of games, like Racing or Souls-likes. They work i
 
 Spotlight can show your Steam and Xbox achievements for the selected game. Turn each store on in Settings → [Achievements](#achievements-settings); both are off by default.
 
-- Under the Launch button: your progress, latest unlock and recent unlocks. Click it for the full list, with unlock dates, rarity and search. Hidden achievements stay hidden until you unlock them.
+- Under the Launch button: your progress, latest unlock and recent unlocks. Click it for the full list, with unlock dates, rarity and search. Hidden achievements stay hidden until you unlock them, unless you click **Show hidden** beside the search, which shows the name and description of the hidden ones you haven't unlocked yet (they may spoil the story). It's off by default and also applies in the [RHI overlay](#rhi-overlay).
 - **Steam**: read from Steam's files on your PC, so no sign-in, API key or public profile is needed. A game shows its achievements once you've run it on this PC.
 - **Xbox and Game Pass**: read from the Xbox app's data on your PC, with Gamerscore and progress too. If a game shows nothing or misses recent unlocks, open its page in the Xbox app once.
 
@@ -215,6 +222,13 @@ In Spotlight you can use an Xbox, PlayStation or Steam controller. PlayStation c
 ### Interface size
 
 Settings → General → Windows and Admin Mode → **Interface size** makes RHI's window smaller or larger (50% to 200%, in 5% steps) without changing Windows' scaling, for TVs and high-DPI screens. You can also hold **Ctrl** and turn the mouse wheel anywhere in RHI; the new size shows in the status bar. Pop-ups, dropdown lists and tooltips keep the Windows size.
+
+The top bar and the game list also have their own sizes, on top of the interface size:
+
+- **Top bar size** (every layout): drag the top bar's bottom edge, or pick a size in Settings → General → Windows and Admin Mode → **Top bar size**.
+- **Game list size** (Classic+ and Tabs): drag the game list's right edge, or pick a size in Settings → General → Windows and Admin Mode → **Game list size**. Its text, rows and width change together. Spotlight's covers have their own size (see [Spotlight layout](#spotlight-layout)).
+
+RHI remembers the sizes. Double-click an edge to reset it.
 
 ### Status bar
 
@@ -261,7 +275,7 @@ Games with an unknown engine aren't fully rescanned on every launch, only when t
 
 ### Graphics API detection
 
-RHI reads each game executable's imports to find its graphics API and bitness. Badges: **DX8**, **DX9**, **DX10**, **DX11**, **DX12**, **VLK** (Vulkan) and **OGL** (OpenGL), combined when a game uses more than one (e.g. `DX11/12`, `DX11/12 / VLK`). Unity games are read from their `boot.config`. When the executable can't be read (Game Pass, protected folders), RHI uses PCGamingWiki data. The remote manifest and your own **Graphics API** override always take priority.
+RHI reads each game executable's imports to find its graphics API and bitness. Badges: **DX8**, **DX9**, **DX10**, **DX11**, **DX12**, **VLK** (Vulkan) and **OGL** (OpenGL), combined when a game uses more than one (e.g. `DX11/12`, `DX11/12 / VLK`). Unity games are read from their `boot.config`. When the executable can't be read (Game Pass games in the protected WindowsApps folder), RHI uses PCGamingWiki data. The remote manifest and your own **Graphics API** override always take priority.
 
 The API decides the ReShade DLL name, whether DXVK and generic Luma are offered, and which Neural Rendering methods are available.
 
@@ -354,7 +368,7 @@ Set per game in Game Overrides → **ReShade Channel**:
 | **No Addons** | Standard ReShade without addon support. Switching removes addon ReShade, RenoDX, ReLimiter and Display Commander. Shaders still work. |
 | **Legacy...** | Pick an older version. Legacy games are excluded from ReShade updates. |
 
-On Vulkan games, changing the channel applies to all Vulkan games (they share one layer), after you confirm.
+On Vulkan games, changing the channel (including picking a Legacy version) applies to all Vulkan games (they share one layer), after you confirm.
 
 ### ReShade ⚙ settings
 
@@ -383,7 +397,7 @@ If a game folder already has a `dxgi.dll` (or other ReShade name) that isn't ReS
 
 ### Game Pass games
 
-RHI can't write inside `C:\Program Files\WindowsApps\`. For Game Pass games installed elsewhere, if a game update moves the game to a new versioned folder, RHI reinstalls ReShade there automatically.
+RHI can't write inside `C:\Program Files\WindowsApps\`. Game Pass games installed to an Xbox games folder (the Xbox app's default) use that folder instead of the WindowsApps one. It doesn't change when the game updates, so installed mods stay recognised, and RHI can read the game's files to detect its graphics API and DLSS like any other game. For Game Pass games installed elsewhere, if a game update moves the game to a new versioned folder, RHI reinstalls ReShade there automatically.
 
 ---
 
@@ -405,6 +419,7 @@ When there's no named mod:
 |---|---|
 | Unreal Engine 4/5 | **UE Extended** (Marat's addon). Games with native HDR get **UE Extended Native HDR**. |
 | Unity | **Generic Unity** (NotVoosh's addon, 32-bit and 64-bit). RHI also writes per-game settings from the database. |
+| Source engine (games in the Source list) | **Generic Source Engine**. See [Source engine games](#source-engine-games). |
 
 Some mods are hosted outside GitHub. For these the button reads **Download from Nexus** (or Discord) and opens the page. Nexus-hosted mods are still checked for updates.
 
@@ -430,6 +445,19 @@ When UE-Extended is installed, RHI:
 - Writes the HDR keys to the game's `Engine.ini`, in the game's config folder, and makes the file read-only so the game doesn't overwrite it. Some games use a custom Engine.ini supplied by the manifest instead.
 
 Turning UE-Extended off removes these changes.
+
+### Source engine games
+
+RenoDX's Source engine mod installs in one click from the RenoDX row for the games in the Source list (Half-Life 2, Portal, Portal 2, Left 4 Dead 2, Team Fortress 2, Garry's Mod and more). These games show a **Source Engine** badge.
+
+RHI does the whole setup from the RenoDX instructions:
+
+- ReShade as `d3d9.dll`, with DXVK (stable) loaded through ReShade, plus the `reshade.ini` and `dxvk.conf` settings.
+- 32-bit games use the `bin` folder and 64-bit games the main folder. Garry's Mod gets both versions set up (`bin` for 32-bit, `bin\win64` for 64-bit), sharing one set of shaders. If RHI already installed ReShade in a 32-bit Source game's main folder, it's moved to `bin`.
+- `-insecure` is added to the game's launch options in RHI. **It turns VAC off, so don't join VAC-secured servers while the mod is installed.** RHI only adds it when you start the game from RHI; if you start the game from Steam, add `-insecure` to its launch options there too.
+- In the game, set **High Dynamic Range** to **Full** in the advanced video settings.
+
+A dialog explains this before the first install. Updating the mod keeps it all up to date, and uninstalling removes it again. While the mod is installed, the separate [DXVK](#dxvk) row isn't offered, since the mod brings its own.
 
 ---
 
@@ -561,8 +589,9 @@ RHI manages 56 ReShade shader packs. 50 are built in, and the remote manifest ca
 
 Toolbar **Shaders/Addons → Global Shaders** opens **Select Shader Packs**:
 
+- Packs are cards in two columns, with their full description. A selected pack is highlighted, and a green tick shows it's downloaded. Each category, and the top of the list, shows how many packs are selected.
 - Search packs and individual shaders.
-- Tick a whole pack, or expand it and tick single `.fx` files. A partly ticked pack shows a mixed checkbox. Shaders a pack depends on are ticked automatically.
+- Tick a whole pack, or click **Show *N* shaders** to open its shader list inside the card and tick single `.fx` files. A partly ticked pack shows a mixed checkbox. Shaders a pack depends on are ticked automatically.
 - **Expand All**, **Collapse All**, **Deselect All**.
 - A **Custom Shaders** section lists your own files.
 - **Deploy** saves the selection and copies it to your games. Only new or changed files are copied.
@@ -730,6 +759,7 @@ Changing a version while installed swaps just that file.
 
 - **NR Cost Scaler** (Off by default): also installs a proxy that runs the neural model at reduced cost (75% by default). Set it before installing; it's locked while a method is installed. ShortFuse DLSS Tool has this built in.
 - **ZZZ Load Order** (ShortFuse only): renames the addon so it loads last.
+- **Foveated** (DLSS5 Tool and DLSS5 Tool + DX11 Bridge, Off by default): installs FoveatedDLSS5 (by maximedgoulet) instead of the stock DLSS5 Tool add-on. Neural Rendering runs at full resolution in the centre of the screen, at lower resolution around it, and not at all at the edges. The author measured about 65% more fps, and the gain is biggest on ultrawide screens. With it on, the version list becomes **DLSS5 Tool Version (Foveated)** and shows Foveated releases; **Latest** keeps it up to date, and RHI's stock DLSS5 Tool updates don't replace it. Switching while installed swaps the add-on in place, and each download is checked against the hash published with the release. It's a pre-release built on an older DLSS5 Tool (7.5.0-rc5) and only works when NR runs after upscaling. Turn on foveation and set the zones in the add-on's own settings in the ReShade overlay (Add-ons › DLSS 5 Neural Rendering).
 - **ShortFuse ⚙ → Auto-configure ReShade for FrameGen** (Off by default): sets ReShade up to load through ASI Loader with Streamline hooks. Not needed on ShortFuse v0.54 or later.
 
 RHI tracks shared files such as `nvngx_dlssnr.dll`, so removing one tool doesn't delete a file another tool (OptiScaler, RTX Encore) still uses.
@@ -865,6 +895,8 @@ Settings are written straight into the game's `OptiScaler.ini`. Until OptiScaler
 - **Engine.ini Settings** (Unreal games): Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin.
 - **Neural Rendering Settings** (DLSS NR, F5): NR Runtime version, NR Enabled, Run Before SR, Passes, Working Scale, Apply to Finished Picture.
 - **Presets** (non-Stable variants): four global slots. **Save** stores the current settings; click a slot to apply it to any game.
+- **All Settings**: every setting in the game's `OptiScaler.ini`, with the options the installed OptiScaler build lists in its own ini, so custom builds and forks show their own settings and values (like F5's FG outputs). Pick a section or search all settings; hover one for its description. Nothing is written until you press **Apply**, and the old ini is backed up first. Applied changes are saved for that game and written again when OptiScaler is reinstalled, updated or switched to another version.
+- **Save ini...** and **Load saved ini...** (at the bottom): **Save ini...** saves the game's OptiScaler.ini under any name, as many as you like. **Load saved ini...** lists your saved inis (with **Add from file...** to add one from a file) and uses the one you pick as this game's OptiScaler.ini, backing up the current one first. The game keeps using it after a reinstall or update.
 - **Replace with a fresh copy...** (at the bottom, asks first) replaces the game's OptiScaler.ini with a fresh copy of your template. It doesn't keep the settings above.
 
 ### Info and templates
@@ -887,6 +919,7 @@ Removes everything OptiScaler installed and restores the originals, including DL
 
 - Found under **Extras → API Upgrades** on DX8, DX9, DX10 and DX11 games that don't also use DX12 or Vulkan.
 - Not offered for games with anti-cheat (blocked by the manifest).
+- Not offered while RenoDX's [Source engine mod](#source-engine-games) is installed, as it sets up its own DXVK.
 
 **⚙ DXVK Settings**:
 
@@ -967,6 +1000,8 @@ Turns Windows HDR on when a game starts and off when it closes.
 
 For games started through Steam, Epic or Xbox, RHI watches for a process running from the game folder for up to 60 seconds. If it can't find one, HDR is left on. If the game starts through a wrapper (such as SKSE or Mod Organizer 2), RHI follows the real game process.
 
+RHI remembers the games it started (with Launch or an RHI shortcut), so if you refresh or restart RHI while one is running, it still shows as running and HDR and resolution go back when it closes. If a game closed while RHI wasn't open, RHI switches them back the next time it starts. With more than one game started from RHI running, HDR and resolution go back only when the last one closes.
+
 ### Resolution auto-toggle
 
 Switches to a target resolution when a game starts and back when it closes.
@@ -994,7 +1029,8 @@ The RHI overlay is a full-screen RHI page you open over a game, like the Steam o
 
 - **Keyboard**: press **Alt + `** in the game. Press it again, or **Esc**, to go back to the game. Change the key in Settings → [RHI overlay](#rhi-overlay-settings).
 - **Controller**: hold **View + Menu** (Back + Start; Share + Options on PlayStation) for half a second. Inside the overlay: D-pad to move, **A** to select, **B** to go back, **LB / RB** to jump between columns, right stick to scroll the column you're in. Hold View + Menu again to close it.
-- It opens over the game in front, on that game's monitor. Games started from Steam, a shortcut or anywhere else are recognised by their folder. A program RHI doesn't know gets only the session and playtime.
+- It opens over the game in front, on that game's monitor. Games started from Steam, a shortcut or anywhere else are recognised by their folder. It only opens over games in your RHI library, not over other apps.
+- To turn it off for one game, use the cog beside the game's name in Spotlight (**Game settings › RHI overlay**). Alt + ` then goes to that game instead, and the controller shortcut does nothing in it.
 - It closes by itself if you Alt+Tab away or the game exits. **Back to game** (top right) closes it too.
 - It works in borderless and windowed games and in games using Windows' fullscreen optimisations. It can't show over true exclusive fullscreen; switch the game to borderless if nothing appears.
 - While it's open the game loses focus, so many games pause or go quiet. Games can still read the controller in the background; turn on **Pause the game while open** (Settings → RHI overlay) to stop that.
@@ -1006,7 +1042,7 @@ Everything is on one screen, arranged to fit it. On wide and ultrawide screens t
 | Section | What it shows |
 |---|---|
 | **Session and playtime** | How long you've been playing this session, your total playtime, whether Windows HDR is on for the game's monitor (with the display's peak brightness) and, on handhelds and laptops, the battery. Total playtime is Steam's own count for Steam games (not including the session that's running). For other games RHI counts the minutes the game is the window in front, from the day you started using the overlay. |
-| **Achievements** | The same Steam or Xbox achievements as [Spotlight](#achievements), with search, unlock dates and rarity. Locked achievements come first, most-earned first when rarity is known, so the easiest next ones are at the top. Uses the switches in Settings → Achievements. |
+| **Achievements** | The same Steam or Xbox achievements as [Spotlight](#achievements), with search, unlock dates and rarity. Locked achievements come first, most-earned first when rarity is known, so the easiest next ones are at the top. **Show hidden** beside the search shows hidden achievements you haven't unlocked yet (the same setting as Spotlight's). Uses the switches in Settings → Achievements. |
 | **Screenshots** | The game's ReShade screenshots, newest first (24 at a time, **Show more** for the rest). Click one for a large view (it fills the overlay; **Back to screenshots** or Esc returns) with **Previous** / **Next** (or Left / Right, or LB / RB on a controller), **Copy**, **Delete** (click twice; goes to the Recycle Bin), **Open** and **Show in folder**. New screenshots appear while the page is open. |
 | **This game** | What RHI has installed in the game, with versions and an **Update available** tag where Update All has something, plus the game's DLSS and Streamline DLL versions with the presets and render scale from its NVIDIA profile (NVIDIA cards; **Default preset** means the game picks). |
 | **Info and links** | **Your notes** for the game (saved as you type), the RenoDX and Luma notes, and links to Nexus Mods, PCGamingWiki, the ultrawide fix, Ultra+, the notes pages and Discord. A link closes the overlay and opens your browser. |
@@ -1022,6 +1058,8 @@ Everything is on one screen, arranged to fit it. On wide and ultrawide screens t
 The Settings page is one scrolling page with ten sections, in this order. Each section starts with a short line saying what it's for.
 
 The column on the left stays in view while you scroll. **Find a setting** searches every label, button and tooltip on the page as you type (for example `hotkey`, `HDR` or `ReBAR`); click a result to jump to it, or press Esc to clear the search. Below the search box, click a section name to jump to it. The section you're looking at is highlighted, and Settings reopens at the section you used last. In a narrow window the section list is hidden and the search box sits above the settings.
+
+**Tabs** (beside Find a setting) shows one section at a time as tabs, like the Tabs layout. Search still finds settings in every section and opens the right tab. Click **Tabs** again for the full list.
 
 ### General
 
@@ -1039,7 +1077,7 @@ Updates and how RHI behaves on your PC.
 
 **Windows and Admin Mode** card:
 
-- **Windows**: **Close to tray**, **Recent games in tray menu** and **Start with Windows** (see [System tray and jump list](#system-tray-and-jump-list)), and **Interface size** (see [Interface size](#interface-size)).
+- **Windows**: **Close to tray**, **Recent games in tray menu** and **Start with Windows** (see [System tray and jump list](#system-tray-and-jump-list)), **Interface size**, **Top bar size** and **Game list size** (see [Interface size](#interface-size)).
 - **Admin Mode**: RHI starts elevated without a UAC prompt each time (through a scheduled task called "RHI Admin Mode"). Needed for per-game driver settings, ReBAR, Low Latency Ultra, Smooth Motion, DLDSR and the DLSS indicator. Turning it on or off asks for UAC once.
 - **Drop Helper** (on by default, only used in Admin Mode): lets you drag files from Discord and browsers onto RHI while it's running as admin. Needs a restart to take effect.
 - **Controller support** (on by default): use an Xbox or PlayStation controller in the Spotlight layout. See [Controller support](#controller-support).
@@ -1114,7 +1152,7 @@ Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these.
 
 ### RHI overlay settings
 
-- **RHI overlay** (On by default): the overlay and its hotkey. See [RHI Overlay](#rhi-overlay).
+- **RHI overlay** (On by default): the overlay and its hotkey. See [RHI Overlay](#rhi-overlay). To turn it off for one game only, use Spotlight's **Game settings** cog.
 - **Controller (hold View + Menu)** (On by default): open and close the overlay with a controller.
 - **Pause the game while open** (Off by default, experimental): freezes the game while the overlay is open and unfreezes it when you go back. Windows can't stop a game reading the controller in the background, so without this the game also reacts to the buttons you press in the overlay. Online games can lose their connection, anti-cheat may object and some games stutter for a moment when they resume, so use it with single-player games only. It doesn't work on a game running as administrator unless RHI is in Admin Mode.
 - **Hotkey**: click the box and press a key with Ctrl or Alt (or Shift with an F key). **Backspace** puts back Alt + `. The line under the card says when another program already uses the key.
@@ -1197,7 +1235,7 @@ Double-clicking an `.addon64` or `.addon32` file opens it in RHI (or passes it t
 
 Vulkan games use ReShade's Vulkan layer, installed once in `C:\ProgramData\ReShade\` (this needs admin; RHI asks for permission). After that, each Vulkan game gets its own `reshade.ini` and shaders, and its status shows **(Vulkan)**.
 
-All Vulkan games share the one layer, so a ReShade channel change on one Vulkan game applies to all of them.
+All Vulkan games share the one layer, so a ReShade channel change on one Vulkan game (including a Legacy version) applies to all of them. Installing ReShade on a Vulkan game also brings the shared layer up to the chosen channel. Vulkan games show when a ReShade update is available, and [Update All](#update-all) updates them.
 
 For games that support both DirectX and Vulkan, set Game Overrides → **Graphics API** to the one you play with.
 

@@ -291,6 +291,37 @@ public sealed class DisplayModeStore
         }
     }
 
+    /// <summary>
+    /// Whether the game's value for <paramref name="item"/> was recorded when it entered its active mode, and what it was
+    /// (null = couldn't be read then). False = never recorded (the game hasn't been switched since RHI started tracking).
+    /// </summary>
+    public bool TryGetEntry(string gameKey, string item, out string? value)
+    {
+        lock (_lock)
+        {
+            value = null;
+            return _games.TryGetValue(gameKey, out var st) && st.Entry != null && st.Entry.TryGetValue(item, out value);
+        }
+    }
+
+    /// <summary>Replaces the values recorded when the game entered its active mode.</summary>
+    public void SetEntries(string gameKey, IDictionary<string, string?> entries)
+    {
+        lock (_lock)
+            GetOrAdd(gameKey).Entry = new Dictionary<string, string?>(entries, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Updates one recorded entry value (an edit written straight to the game).</summary>
+    public void SetEntry(string gameKey, string item, string? value)
+    {
+        lock (_lock)
+        {
+            var st = GetOrAdd(gameKey);
+            st.Entry ??= new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            st.Entry[item] = value;
+        }
+    }
+
     /// <summary>The managed game whose install or addon folder is <paramref name="folder"/>, or null.</summary>
     public string? FindManagedByFolder(string? folder)
     {
@@ -346,7 +377,7 @@ public sealed class DisplayModeStore
         if (_games.TryGetValue(key, out var st) && IsEmpty(st)) _games.Remove(key);
     }
 
-    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && st.Items == null && st.Values.Count == 0;
+    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && st.Items == null && st.Values.Count == 0 && st.Entry == null;
 
     public static string NormalizeFolder(string folder) => folder.Replace('/', '\\').TrimEnd('\\');
 
@@ -360,6 +391,7 @@ public sealed class DisplayModeStore
             Mode = st.Mode,
             Items = st.Items?.ToList(),
             Folders = st.Folders?.ToList(),
+            Entry = st.Entry == null ? null : new Dictionary<string, string?>(st.Entry, StringComparer.OrdinalIgnoreCase),
         };
         if (st.Values != null)
             foreach (var (mode, vals) in st.Values)

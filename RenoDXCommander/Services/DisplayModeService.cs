@@ -57,7 +57,9 @@ public sealed class DisplayModeService
         {
             var key = ctx.Key;
             var from = _store.ActiveModeId(key);
+            bool leaving = !from.Equals(targetModeId, StringComparison.OrdinalIgnoreCase);
             var results = new List<ItemResult>();
+            var entries = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var itemKey in _store.ItemsFor(key))
             {
@@ -73,28 +75,36 @@ public sealed class DisplayModeService
                 string? reason = Try(() => item.Unavailable(ctx), item, "check");
                 if (reason != null)
                 {
+                    entries[item.Key] = null; // not readable in this mode: nothing to remember when leaving it
                     results.Add(new ItemResult(item, false, null, reason));
                     continue;
                 }
 
-                // Remember what the game has now for the mode it's leaving (in-game changes are kept this way)
-                if (!from.Equals(targetModeId, StringComparison.OrdinalIgnoreCase))
+                var current = Try(() => item.Read(ctx), item, "read");
+                // Remember the value for the mode it's leaving, but only when it's the game's own: its starting values
+                // (never switched before), or a change made while in that mode (e.g. in game). A value it still has from
+                // the mode before (the mode it's leaving had none) isn't that mode's, so it isn't copied into it.
+                if (leaving && current != null)
                 {
-                    var current = Try(() => item.Read(ctx), item, "read");
-                    if (current != null) _store.SetGameValue(key, from, item.Key, current);
+                    bool recorded = _store.TryGetEntry(key, item.Key, out var atEntry);
+                    if (!recorded || (atEntry != null && !atEntry.Equals(current, StringComparison.Ordinal)))
+                        _store.SetGameValue(key, from, item.Key, current);
                 }
 
                 var value = _store.Effective(key, targetModeId, item.Key);
                 if (value == null)
                 {
-                    results.Add(new ItemResult(item, false, null, null)); // nothing set for this mode: left alone
+                    entries[item.Key] = current; // nothing set for this mode: left alone
+                    results.Add(new ItemResult(item, false, null, null));
                     continue;
                 }
                 var error = WriteItem(ctx, item, value);
+                entries[item.Key] = error == null ? Try(() => item.Read(ctx), item, "read") ?? value : current;
                 results.Add(new ItemResult(item, error == null, value, error));
             }
 
             _store.SetActive(key, targetModeId, Folders(ctx));
+            _store.SetEntries(key, entries);
             var modeName = _store.NameOf(targetModeId) ?? targetModeId;
             CrashReporter.Log($"[DisplayModeService.Switch] '{key}' {_store.NameOf(from)} → {modeName}: "
                 + string.Join(", ", results.Select(r => $"{r.Item.Key}={(r.Written ? r.Value : r.Problem ?? "-")}")));
@@ -111,7 +121,11 @@ public sealed class DisplayModeService
             var reason = Try(() => item.Unavailable(ctx), item, "check");
             if (reason != null) return reason;
             var error = WriteItem(ctx, item, value);
-            if (error == null) _store.SetActive(ctx.Key, _store.ActiveModeId(ctx.Key), Folders(ctx));
+            if (error == null)
+            {
+                _store.SetActive(ctx.Key, _store.ActiveModeId(ctx.Key), Folders(ctx));
+                _store.SetEntry(ctx.Key, item.Key, Try(() => item.Read(ctx), item, "read") ?? value);
+            }
             return error;
         }
     }
@@ -167,6 +181,8 @@ public sealed class DisplayModeService
                     if (v == null) continue;
                     var error = WriteItem(ctx, item, v);
                     if (error != null) CrashReporter.Log($"[DisplayModeService.Keep] '{key}' {item.Key} couldn't be put back — {error}");
+                    // A fresh ini (e.g. ReLimiter just installed) now holds the mode's value: that's what it entered with
+                    else if (value == null) _store.SetEntry(key, item.Key, v);
                 }
         };
     }
