@@ -302,11 +302,15 @@ public partial class FilterViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Looser name matching, on top of the plain "contains" search:
+    /// Looser name matching, on top of the plain "contains" search (like Steam's library search):
     /// <list type="bullet">
     /// <item>punctuation and spaces ignored: "fear" finds F.E.A.R., "half life" finds Half-Life 2;</item>
     /// <item>Roman numerals as numbers: "gta 3" / "grand theft auto 3" find Grand Theft Auto III;</item>
-    /// <item>initials, from the start: "gta" finds Grand Theft Auto, "ff7" Final Fantasy VII, "hl2" Half-Life 2.</item>
+    /// <item>initials: "gta", "ff7", "hl2"; three or more characters also match part of the initials ("mw4" finds
+    /// Call of Duty: Modern Warfare 4);</item>
+    /// <item>any word order: "batman lego" finds LEGO Batman (each typed word must match the name somewhere);</item>
+    /// <item>typos: a typed word of 5+ letters can be 2 letters off a word in the name, 4 letters 1 off
+    /// ("resident eviaa" finds Resident Evil). Each typed word is matched on its own.</item>
     /// </list>
     /// </summary>
     internal static bool NameMatchesLoosely(string gameName, string query)
@@ -314,37 +318,108 @@ public partial class FilterViewModel : ObservableObject
         var q = LettersAndDigits(query);
         if (q.Length < 2) return false;
         var f = s_searchForms.GetOrAdd(gameName, SearchForms);
-        return f.Plain.Contains(q, StringComparison.Ordinal)
-            || f.Numbered.Contains(q, StringComparison.Ordinal)
-            || f.Initials.StartsWith(q, StringComparison.Ordinal)
-            || f.RawInitials.StartsWith(q, StringComparison.Ordinal);
+
+        // The whole query as one piece
+        if (f.Plain.Contains(q, StringComparison.Ordinal) || f.Numbered.Contains(q, StringComparison.Ordinal)
+            || InitialsMatch(f, q))
+            return true;
+
+        // Word by word, any order: every typed word has to match
+        var tokens = SplitWords(query).Select(w => w.ToLowerInvariant()).ToList();
+        if (tokens.Count == 0) return false;
+        foreach (var t in tokens)
+            if (!TokenMatches(f, t)) return false;
+        return true;
     }
 
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Plain, string Numbered, string Initials, string RawInitials)> s_searchForms = new();
+    /// <summary>Initials: two characters from the start ("re"); three or more anywhere ("mw4").</summary>
+    private static bool InitialsMatch(SearchForm f, string q) => q.Length >= 3
+        ? f.Initials.Contains(q, StringComparison.Ordinal) || f.RawInitials.Contains(q, StringComparison.Ordinal)
+        : f.Initials.StartsWith(q, StringComparison.Ordinal) || f.RawInitials.StartsWith(q, StringComparison.Ordinal);
+
+    /// <summary>One typed word against a name: part of it, its initials, or a near miss of one of its words.</summary>
+    private static bool TokenMatches(SearchForm f, string t)
+    {
+        if (f.Plain.Contains(t, StringComparison.Ordinal) || f.Numbered.Contains(t, StringComparison.Ordinal))
+            return true;
+        if (t.Length >= 2 && InitialsMatch(f, t)) return true;
+
+        int allowed = t.Length >= 5 ? 2 : t.Length == 4 ? 1 : 0;
+        if (allowed == 0) return false;
+        foreach (var w in f.Words)
+        {
+            if (Math.Abs(w.Length - t.Length) <= allowed && TypoDistance(t, w, allowed) <= allowed) return true;
+            // Still typing: compare with the start of a longer word ("residnt" → "resident")
+            if (w.Length > t.Length && TypoDistance(t, w[..t.Length], allowed) <= allowed) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Letters changed, added, removed or swapped with a neighbour to turn <paramref name="a"/> into
+    /// <paramref name="b"/> (optimal string alignment). Stops early past <paramref name="max"/> (returns max + 1).
+    /// </summary>
+    internal static int TypoDistance(string a, string b, int max)
+    {
+        if (Math.Abs(a.Length - b.Length) > max) return max + 1;
+        var prev2 = new int[b.Length + 1];
+        var prev = new int[b.Length + 1];
+        var cur = new int[b.Length + 1];
+        for (int j = 0; j <= b.Length; j++) prev[j] = j;
+        for (int i = 1; i <= a.Length; i++)
+        {
+            cur[0] = i;
+            int rowMin = cur[0];
+            for (int j = 1; j <= b.Length; j++)
+            {
+                int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                int v = Math.Min(Math.Min(prev[j] + 1, cur[j - 1] + 1), prev[j - 1] + cost);
+                if (i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1])
+                    v = Math.Min(v, prev2[j - 2] + 1);
+                cur[j] = v;
+                rowMin = Math.Min(rowMin, v);
+            }
+            if (rowMin > max) return max + 1;
+            (prev2, prev, cur) = (prev, cur, prev2);
+        }
+        return prev[b.Length];
+    }
+
+    /// <summary>A name's search forms, worked out once per name.</summary>
+    internal sealed record SearchForm(string Plain, string Numbered, string Initials, string RawInitials, IReadOnlyList<string> Words);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SearchForm> s_searchForms = new();
 
     private static readonly System.Text.RegularExpressions.Regex RomanNumeral =
         new(@"^(X{0,3})(IX|IV|V?I{0,3})$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    /// <summary>
-    /// A name's search forms (cached per name): letters + digits; the same with Roman numerals as numbers; initials
-    /// with numbers ("gta3", "ff7"); initials with numerals as written ("gtaiii", "ffx").
-    /// </summary>
-    internal static (string Plain, string Numbered, string Initials, string RawInitials) SearchForms(string name)
+    /// <summary>Words of a name or query: apostrophes join ("Marvel's"), every other non-letter / digit separates.</summary>
+    private static List<string> SplitWords(string text)
     {
-        // Apostrophes join a word ("Marvel's"); every other non-letter / digit separates words
         var words = new List<string>();
         var current = new System.Text.StringBuilder();
-        foreach (var ch in name)
+        foreach (var ch in text)
         {
             if (char.IsLetterOrDigit(ch)) current.Append(ch);
             else if (ch is '\'' or '’') continue;
             else if (current.Length > 0) { words.Add(current.ToString()); current.Clear(); }
         }
         if (current.Length > 0) words.Add(current.ToString());
+        return words;
+    }
 
+    /// <summary>
+    /// A name's search forms: letters + digits; the same with Roman numerals as numbers; initials with numbers
+    /// ("gta3", "ff7"); initials with numerals as written ("gtaiii", "ffx"); its words (lower case, numerals as
+    /// numbers) for typo matching.
+    /// </summary>
+    internal static SearchForm SearchForms(string name)
+    {
+        var words = SplitWords(name);
         var numbered = new System.Text.StringBuilder();
         var initials = new System.Text.StringBuilder();
         var rawInitials = new System.Text.StringBuilder();
+        var lowerWords = new List<string>(words.Count);
         for (int i = 0; i < words.Count; i++)
         {
             var w = words[i];
@@ -353,8 +428,9 @@ public partial class FilterViewModel : ObservableObject
             numbered.Append(number ?? w.ToLowerInvariant());
             initials.Append(number ?? char.ToLowerInvariant(w[0]).ToString());
             rawInitials.Append(number != null ? w.ToLowerInvariant() : char.ToLowerInvariant(w[0]).ToString());
+            lowerWords.Add(number ?? w.ToLowerInvariant());
         }
-        return (LettersAndDigits(name), numbered.ToString(), initials.ToString(), rawInitials.ToString());
+        return new SearchForm(LettersAndDigits(name), numbered.ToString(), initials.ToString(), rawInitials.ToString(), lowerWords);
     }
 
     /// <summary>

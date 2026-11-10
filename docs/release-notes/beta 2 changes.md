@@ -18,9 +18,12 @@ Changes since v2.9.3 Beta 1.
 - Existing installs carry over on their own: nothing is moved or reinstalled.
 
 **Game search**
-- Punctuation and spaces are ignored, like Steam: fear finds F.E.A.R., half life finds Half-Life 2, spiderman finds Marvel's Spider-Man.
-- Search by initials: gta, rdr2, ff7, hl2.
-- Type Roman numerals as numbers: gta 3 finds Grand Theft Auto III, final fantasy 7 finds Final Fantasy VII.
+Search now works much like Steam's:
+- Punctuation and spaces are ignored: fear finds F.E.A.R., half life finds Half-Life 2, spiderman finds Marvel's Spider-Man.
+- Words in any order: batman lego finds LEGO Batman.
+- Initials, or part of them: gta, rdr2, ff7, hl2, and mw3 finds Call of Duty: Modern Warfare III.
+- Roman numerals as numbers: gta 3 finds Grand Theft Auto III, final fantasy 7 finds Final Fantasy VII.
+- Small typos are fine: resident eviaa still finds Resident Evil. Longer words allow up to two letters off, short words fewer.
 
 **Settings**
 - New Tabs button beside Find a setting: shows one section at a time as tabs, like the Tabs layout. Search still finds settings in every section and opens the right tab. Click it again for the full list.
