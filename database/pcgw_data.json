@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56039,
-  "generated": "2026-11-10T11:11:14Z",
+  "game_count": 56041,
+  "generated": "2026-11-10T13:11:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -22662,7 +22662,10 @@
       "steam_appid": 27920
     },
     "BoosterWare": {
-      "steam_appid": 2268510
+      "steam_appid": 2268510,
+      "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Overhead Games\\BoosterWare\\",
+      "engine": "Unity"
     },
     "Boot : Game Dev Sim": {
       "steam_appid": 1160480
@@ -122173,6 +122176,8 @@
       "engine": "Unity"
     },
     "PGA Tour 96": {},
+    "PGA Tour Golf": {},
+    "PGA Tour Golf II": {},
     "PGA Tour Pro": {},
     "PHAGEBORN Online Card Game": {
       "steam_appid": 1037990,
@@ -128415,7 +128420,7 @@
     },
     "PUBG Lite": {
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\ShadowTrackerExtra\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\ShadowTrackerExtra\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "PUBG Training Camp": {
