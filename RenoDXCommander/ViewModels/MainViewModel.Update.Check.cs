@@ -327,6 +327,7 @@ public partial class MainViewModel
                     await rdx5Service.EnsureStagingAsync().ConfigureAwait(false);
                 // Also refresh the available versions cache (used by the NR section addon version picker)
                 await rdx5Service.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                await rdx5Service.UpdateFoveatedGamesAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

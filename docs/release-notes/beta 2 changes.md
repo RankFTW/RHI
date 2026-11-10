@@ -11,6 +11,22 @@ Changes since v2.9.3 Beta 1.
 - In the game, set High Dynamic Range to Full in the advanced video settings.
 - If RHI already installed ReShade in a 32-bit Source game's main folder, it's moved to bin.
 
+**Screenshots in Spotlight**
+- New picture button beside the game's name in Spotlight: opens your ReShade screenshots of the game in the side panel, newest first.
+- Click a screenshot to open it. Right-click it to set it as the game's banner, copy it, show it in its folder or delete it (to the Recycle Bin).
+
+**Foveated DLSS5 Tool**
+- New Foveated switch in Neural Rendering for the DLSS5 Tool and DLSS5 Tool + DX11 Bridge methods. It installs FoveatedDLSS5 (by maximedgoulet) instead of the stock add-on: Neural Rendering runs at full resolution in the centre of the screen, at lower resolution around it, and not at all at the edges. The author measured about 65% more fps, and the gain is biggest on ultrawide screens.
+- With the switch on, the version list shows Foveated releases. Latest keeps it up to date on its own, and RHI's stock DLSS5 Tool updates no longer replace it. Switching while installed swaps the add-on in place.
+- Each download is checked against the hash published with the release.
+- It's a pre-release built on an older DLSS5 Tool (7.5.0-rc5). Turn on foveation and set the zones in the add-on's own settings in the ReShade overlay.
+
+**All OptiScaler settings**
+- New All Settings section in the OptiScaler ⚙: every setting in the game's OptiScaler.ini, with the options the installed OptiScaler build lists in its own ini. Custom builds and forks show their own settings and values (like F5's FG outputs) without waiting for an RHI update.
+- Pick a section or search all settings; hover one for its description. Nothing is written until you press Apply, and the old ini is backed up first.
+- Applied changes are saved for that game and written again when OptiScaler is reinstalled, updated or switched to another version.
+- New Save ini and Load saved ini buttons at the bottom of the OptiScaler ⚙. Save a game's OptiScaler.ini under any name (as many as you like), or add one from a file, then load it into any game. The game keeps using it after a reinstall or update.
+
 ### Changes
 
 **Game Pass games**

@@ -77,6 +77,28 @@ public class RhiInstallManifest
     [JsonPropertyName("nrMethod")]
     public string? NrMethod { get; set; }
 
+    /// <summary>
+    /// Which build of renodx-dlss5.addon64 the DLSS5 Tool deployed: <see cref="Dlss5BuildFoveated"/>
+    /// or null for the stock add-on. The stock auto-update skips folders with a Foveated build.
+    /// </summary>
+    [JsonPropertyName("dlss5Build")]
+    public string? Dlss5Build { get; set; }
+
+    /// <summary>Release tag of the deployed Foveated build (e.g. "v0.4.0").</summary>
+    [JsonPropertyName("dlss5BuildVersion")]
+    public string? Dlss5BuildVersion { get; set; }
+
+    /// <summary>True when the user picked a specific Foveated version (no auto-update).</summary>
+    [JsonPropertyName("dlss5BuildPinned")]
+    public bool Dlss5BuildPinned { get; set; }
+
+    public const string Dlss5BuildFoveated = "Foveated";
+
+    /// <summary>True when this folder's DLSS5 Tool add-on is the Foveated build.</summary>
+    [JsonIgnore]
+    public bool IsFoveatedDlss5 =>
+        string.Equals(Dlss5Build, Dlss5BuildFoveated, StringComparison.OrdinalIgnoreCase);
+
     // ── Static helpers ──────────────────────────────────────────────────────
 
     /// <summary>Filename written inside the game folder.</summary>
@@ -188,6 +210,13 @@ public class RhiInstallManifest
             if (manifest == null) return;
             if (manifest.Components.Remove(component))
             {
+                // The DLSS5 Tool add-on is gone, so its build record goes with it
+                if (component.Equals("Dlss5Tool", StringComparison.OrdinalIgnoreCase))
+                {
+                    manifest.Dlss5Build = null;
+                    manifest.Dlss5BuildVersion = null;
+                    manifest.Dlss5BuildPinned = false;
+                }
                 // If the manifest is now empty (no OptiScaler data, no shared files,
                 // no other components, no NR method), delete it entirely rather than
                 // leaving a hollow shell behind.
@@ -219,6 +248,32 @@ public class RhiInstallManifest
     /// Updates just the <c>nrMethod</c> field in an existing <c>rhi_install.txt</c>.
     /// Pass <c>null</c> to clear it (NR uninstalled). No-op if no manifest exists.
     /// </summary>
+    /// <summary>
+    /// Records which DLSS5 Tool build is in the folder. Pass <paramref name="foveated"/> = false to
+    /// mark it as the stock add-on (clears the Foveated fields). Creates the manifest if needed.
+    /// </summary>
+    public static void SetDlss5Build(string gameDir, bool foveated, string? version = null, bool pinned = false)
+    {
+        try
+        {
+            var manifest = Read(gameDir);
+            if (manifest == null)
+            {
+                if (!foveated) return;
+                manifest = new RhiInstallManifest { Component = "RHI" };
+            }
+            manifest.Dlss5Build        = foveated ? Dlss5BuildFoveated : null;
+            manifest.Dlss5BuildVersion = foveated ? version : null;
+            manifest.Dlss5BuildPinned  = foveated && pinned;
+            Write(gameDir, manifest);
+            CrashReporter.Log($"[RhiInstallManifest.SetDlss5Build] {(foveated ? $"Foveated {version ?? "?"}{(pinned ? " (pinned)" : "")}" : "Stock")} in {gameDir}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[RhiInstallManifest.SetDlss5Build] Failed in '{gameDir}' — {ex.Message}");
+        }
+    }
+
     public static void SetNrMethod(string gameDir, string? nrMethod)
     {
         try

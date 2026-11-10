@@ -484,6 +484,12 @@ public partial class InstallFolderMigrationService
             merged.Folders = merged.Folders.Union(old.Folders, StringComparer.OrdinalIgnoreCase).ToList();
         }
         merged.NrMethod ??= old.NrMethod;
+        if (merged.Dlss5Build == null && old.Dlss5Build != null)
+        {
+            merged.Dlss5Build        = old.Dlss5Build;
+            merged.Dlss5BuildVersion = old.Dlss5BuildVersion;
+            merged.Dlss5BuildPinned  = old.Dlss5BuildPinned;
+        }
         return JsonSerializer.Serialize(merged, ManifestJson);
     }
 

@@ -30,7 +30,29 @@ public partial class DetailPanelBuilder
         bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion.StartsWith("Latest");
 
         string addonSourcePath;
-        if (useLatest)
+        // Foveated build (maximedgoulet/FoveatedDLSS5): same file name, its own release list.
+        // No fallback to stock here: the user asked for the Foveated build.
+        bool foveated = _window.ViewModel.GetNrFoveated(gameName, store);
+        string? foveatedVersion = null;
+        if (foveated)
+        {
+            foveatedVersion = useLatest
+                ? rdx5Svc.GetLatestAvailableVersion(Renodx5AddonService.FoveatedSubDir)
+                : requestedVersion;
+            if (string.IsNullOrEmpty(foveatedVersion))
+            {
+                await rdx5Svc.FetchAndCacheAvailableVersionsAsync(forceRefresh: true).ConfigureAwait(false);
+                foveatedVersion = rdx5Svc.GetLatestAvailableVersion(Renodx5AddonService.FoveatedSubDir);
+            }
+            if (string.IsNullOrEmpty(foveatedVersion))
+                throw new InvalidOperationException("No Foveated DLSS5 Tool release found");
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = $"Staging DLSS5 Tool (Foveated) {foveatedVersion}...");
+            if (!await rdx5Svc.EnsureVersionStagedAsync(Renodx5AddonService.FoveatedSubDir, foveatedVersion).ConfigureAwait(false))
+                throw new InvalidOperationException($"Could not download Foveated DLSS5 Tool {foveatedVersion}");
+            addonSourcePath = rdx5Svc.GetVersionedStagedFilePath(Renodx5AddonService.FoveatedSubDir, foveatedVersion)!;
+            _window.ViewModel.SetNrAddonVersion(gameName, useLatest ? null : foveatedVersion, store);
+        }
+        else if (useLatest)
         {
             // Use the flat staging file (latest) — same as before
             _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Staging DLSS5 Tool...");
@@ -68,7 +90,7 @@ public partial class DetailPanelBuilder
             var deployDir = ModInstallService.GetAddonDeployPath(installPath);
             Directory.CreateDirectory(deployDir);
             File.Copy(addonSourcePath, Path.Combine(deployDir, "renodx-dlss5.addon64"), overwrite: true);
-            CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 (v{(useLatest ? "latest" : requestedVersion)}) to '{deployDir}'");
+            CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 ({(foveated ? $"Foveated {foveatedVersion}" : $"v{(useLatest ? "latest" : requestedVersion)}")}) to '{deployDir}'");
             // Note: intentionally NOT calling TrackAddonDeployment — NR-managed files are not
             // tracked by AddonPackService to prevent the stale-cleanup pass from removing them.
         }).ConfigureAwait(false);
@@ -82,6 +104,56 @@ public partial class DetailPanelBuilder
         if (!d5Files.Contains("renodx-dlss5.addon64", StringComparer.OrdinalIgnoreCase))
             d5Files.Insert(0, "renodx-dlss5.addon64");
         Models.RhiInstallManifest.SetComponent(installPath, "Dlss5Tool", d5Files);
+        // Which build is in the folder: the stock auto-update skips Foveated folders
+        Models.RhiInstallManifest.SetDlss5Build(installPath, foveated, foveatedVersion, pinned: foveated && !useLatest);
+    }
+
+    /// <summary>
+    /// Replaces an installed renodx-dlss5.addon64 with the stock or Foveated build.
+    /// <paramref name="version"/> null = latest of that build. Records the build in rhi_install.txt.
+    /// Returns false when the build couldn't be staged (nothing in the game folder changes).
+    /// </summary>
+    private static async Task<bool> SwapDlss5AddonAsync(
+        string installPath, bool foveated, string? version, Renodx5AddonService rdx5Svc)
+    {
+        string? source;
+        string? deployedVersion = version;
+        if (foveated)
+        {
+            deployedVersion = version ?? rdx5Svc.GetLatestAvailableVersion(Renodx5AddonService.FoveatedSubDir);
+            if (string.IsNullOrEmpty(deployedVersion))
+            {
+                CrashReporter.Log("[NeuralRendering.SwapDlss5Addon] No Foveated release known — swap aborted");
+                return false;
+            }
+            source = await rdx5Svc.EnsureVersionStagedAsync(Renodx5AddonService.FoveatedSubDir, deployedVersion).ConfigureAwait(false)
+                ? rdx5Svc.GetVersionedStagedFilePath(Renodx5AddonService.FoveatedSubDir, deployedVersion)
+                : null;
+        }
+        else if (version == null)
+        {
+            await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+            source = rdx5Svc.IsStagingReady ? rdx5Svc.StagedFilePath : null;
+        }
+        else
+        {
+            source = await rdx5Svc.EnsureVersionStagedAsync("dlss5tool", version).ConfigureAwait(false)
+                ? rdx5Svc.GetVersionedStagedFilePath("dlss5tool", version)
+                : null;
+        }
+
+        if (source == null || !File.Exists(source))
+        {
+            CrashReporter.Log($"[NeuralRendering.SwapDlss5Addon] Source not available ({(foveated ? "Foveated" : "stock")} {version ?? "latest"}) — swap aborted");
+            return false;
+        }
+
+        var deployDir = ModInstallService.GetAddonDeployPath(installPath);
+        Directory.CreateDirectory(deployDir);
+        File.Copy(source, Path.Combine(deployDir, "renodx-dlss5.addon64"), overwrite: true);
+        Models.RhiInstallManifest.SetDlss5Build(installPath, foveated, deployedVersion, pinned: version != null);
+        CrashReporter.Log($"[NeuralRendering.SwapDlss5Addon] Swapped to {(foveated ? "Foveated" : "stock")} {deployedVersion ?? "latest"} in '{deployDir}'");
+        return true;
     }
 
     /// <summary>

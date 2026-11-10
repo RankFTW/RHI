@@ -371,6 +371,8 @@ internal sealed partial class DetailLayoutHost
         FrameworkElement? content;
         if (key == AchievementsKey)
             content = BuildAchievementsPanel();
+        else if (key == ScreenshotsKey)
+            content = BuildScreenshotsPanel();
         else if (key == OverviewKey)
         {
             if (_overview == null) BuildOverview();
@@ -388,7 +390,8 @@ internal sealed partial class DetailLayoutHost
         _panelHost!.Children.Add(content);
         content.Visibility = Visibility.Visible;
         _panelKey = key;
-        _panelTitle!.Text = key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements" : GetTitle(key);
+        _panelTitle!.Text = key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements"
+            : key == ScreenshotsKey ? "Screenshots" : GetTitle(key);
         if (key == OverviewKey) RefreshOverviewCards();
 
         // Re-adding the sheet replays its slide-in transition
@@ -418,6 +421,11 @@ internal sealed partial class DetailLayoutHost
         if (key == AchievementsKey)
         {
             ReturnAchievementsPanel();
+            return;
+        }
+        if (key == ScreenshotsKey)
+        {
+            ReturnScreenshotsPanel();
             return;
         }
         if (key == OverviewKey)

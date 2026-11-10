@@ -332,6 +332,16 @@ public class InstallEventHandler
                     if (fgInput2 != "auto" || fgOutput2 != "auto")
                         OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput2, fgOutput2, fgNvngx2);
                 }
+
+                // The saved ini the game uses, then edits made in the cog's All Settings view,
+                // survive a reinstall / version switch
+                if (osRecord != null && !string.IsNullOrEmpty(card.InstallPath))
+                {
+                    var profile = ViewModel.GetOsIniProfile(card.GameName, card.Source ?? "");
+                    if (OsIniLibrary.Exists(profile))
+                        OsIniLibrary.Deploy(profile!, card.InstallPath, ViewModel.Settings.OsHotkey);
+                    OsIniEditor.ApplySaved(card.InstallPath, ViewModel.GetOsIniEdits(card.GameName, card.Source ?? ""));
+                }
             }
             catch (Exception ex)
             {
@@ -401,6 +411,8 @@ public class InstallEventHandler
                 ViewModel.SetOsDeployStreamline(gn, false, st);
                 ViewModel.SetOsDeployDlssEnabler(gn, false, st);
                 ViewModel.SetOsFgInput(gn, null, st);
+                ViewModel.SetOsIniEdits(gn, null, st);
+                ViewModel.SetOsIniProfile(gn, null, st);
                 ViewModel.SetOsFgOutput(gn, null, st);
                 ViewModel.SetOsFgNvngxReplacement(gn, null, st);
                 ViewModel.SetOsDilatedMotionVectorsOff(gn, false, st);

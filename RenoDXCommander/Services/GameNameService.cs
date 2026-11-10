@@ -125,6 +125,15 @@ public partial class GameNameService : IGameNameService
     /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     private Dictionary<string, string> _osFgInput = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Per-game OptiScaler.ini edits from the cog's All Settings view. Key = "GameName|Store",
+    /// value = "Section|Key" → value. Written back after a reinstall or update.
+    /// </summary>
+    private Dictionary<string, Dictionary<string, string>> _osIniEdits = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game saved OptiScaler.ini (OsIniLibrary name) the game uses. Key = "GameName|Store". Absent = RHI's template.</summary>
+    private Dictionary<string, string> _osIniProfile = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     private Dictionary<string, string> _osFgOutput = new(StringComparer.OrdinalIgnoreCase);
 
@@ -152,6 +161,8 @@ public partial class GameNameService : IGameNameService
     private HashSet<string> _dlssNrCostScalerEnabled = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Games where the ShortFuse addon is deployed as zzz_renodx-dlss.addon64 for load order control. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _sfZzzMode = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games set to the Foveated build of the DLSS5 Tool (maximedgoulet/FoveatedDLSS5). Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _nrFoveated = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _rtx40MfgInstalledAs = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dlssg2030InstalledAs = new(StringComparer.OrdinalIgnoreCase);
 
@@ -259,6 +270,8 @@ public partial class GameNameService : IGameNameService
 
     /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     public Dictionary<string, string> OsFgInput => _osFgInput;
+    public Dictionary<string, Dictionary<string, string>> OsIniEdits => _osIniEdits;
+    public Dictionary<string, string> OsIniProfile => _osIniProfile;
 
     /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     public Dictionary<string, string> OsFgOutput => _osFgOutput;
@@ -284,6 +297,8 @@ public partial class GameNameService : IGameNameService
     public HashSet<string> DlssNrCostScalerEnabled => _dlssNrCostScalerEnabled;
     /// <summary>Games where the ShortFuse addon is deployed as zzz_renodx-dlss.addon64. Composite-keyed "GameName|Store".</summary>
     public HashSet<string> SfZzzMode => _sfZzzMode;
+    /// <summary>Games set to the Foveated build of the DLSS5 Tool. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> NrFoveated => _nrFoveated;
     public Dictionary<string, string> Rtx40MfgInstalledAs => _rtx40MfgInstalledAs;
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>
     public Dictionary<string, string> Dlssg2030InstalledAs => _dlssg2030InstalledAs;
@@ -688,6 +703,14 @@ public partial class GameNameService : IGameNameService
         _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osFsrCrashFixDict) _osFsrCrashFix[kv.Key] = kv.Value;
 
+        var osIniEditsDict = Load<Dictionary<string, Dictionary<string, string>>>("OsIniEdits", new(StringComparer.OrdinalIgnoreCase));
+        _osIniEdits = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osIniEditsDict)
+            if (kv.Value is { Count: > 0 }) _osIniEdits[kv.Key] = new(kv.Value, StringComparer.OrdinalIgnoreCase);
+
+        var osIniProfileDict = Load<Dictionary<string, string>>("OsIniProfile", new(StringComparer.OrdinalIgnoreCase));
+        _osIniProfile = new(osIniProfileDict, StringComparer.OrdinalIgnoreCase);
+
         var osFgInputDict = Load<Dictionary<string, string>>("OsFgInput", new(StringComparer.OrdinalIgnoreCase));
         _osFgInput = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osFgInputDict) _osFgInput[kv.Key] = kv.Value;
@@ -723,6 +746,8 @@ public partial class GameNameService : IGameNameService
             Load<List<string>>("DlssNrCostScalerEnabled", new()), StringComparer.OrdinalIgnoreCase);
         _sfZzzMode = new HashSet<string>(
             Load<List<string>>("SfZzzMode", new()), StringComparer.OrdinalIgnoreCase);
+        _nrFoveated = new HashSet<string>(
+            Load<List<string>>("NrFoveated", new()), StringComparer.OrdinalIgnoreCase);
         _rtx40MfgInstalledAs = new Dictionary<string, string>(
             Load<Dictionary<string, string>>("Rtx40MfgInstalledAs", new()),
             StringComparer.OrdinalIgnoreCase);
@@ -922,6 +947,8 @@ public partial class GameNameService : IGameNameService
                 s["OsDilatedMotionVectorsOff"] = JsonSerializer.Serialize(_osDilatedMotionVectorsOff.ToList());
                 s["OsFsrCrashFix"] = JsonSerializer.Serialize(_osFsrCrashFix);
                 s["OsFgInput"] = JsonSerializer.Serialize(_osFgInput);
+                s["OsIniEdits"] = JsonSerializer.Serialize(_osIniEdits);
+                s["OsIniProfile"] = JsonSerializer.Serialize(_osIniProfile);
                 s["OsFgOutput"] = JsonSerializer.Serialize(_osFgOutput);
                 s["OsFgNvngxReplacement"] = JsonSerializer.Serialize(_osFgNvngxReplacement);
                 s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
@@ -940,6 +967,8 @@ public partial class GameNameService : IGameNameService
                 else s.Remove("DlssNrCostScalerEnabled");
                 if (_sfZzzMode.Count > 0) s["SfZzzMode"] = JsonSerializer.Serialize(_sfZzzMode.ToList());
                 else s.Remove("SfZzzMode");
+                if (_nrFoveated.Count > 0) s["NrFoveated"] = JsonSerializer.Serialize(_nrFoveated.ToList());
+                else s.Remove("NrFoveated");
                 if (_rtx40MfgInstalledAs.Count > 0) s["Rtx40MfgInstalledAs"] = JsonSerializer.Serialize(_rtx40MfgInstalledAs);
                 else s.Remove("Rtx40MfgInstalledAs");
                 if (_dlssg2030InstalledAs.Count > 0) s["Dlssg2030InstalledAs"] = JsonSerializer.Serialize(_dlssg2030InstalledAs);
@@ -1083,6 +1112,8 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_osDilatedMotionVectorsOff, oldName, newName);
         MigrateCompositeDict(_osFsrCrashFix, oldName, newName);
         MigrateCompositeDict(_osFgInput, oldName, newName);
+        MigrateCompositeDict(_osIniEdits, oldName, newName);
+        MigrateCompositeDict(_osIniProfile, oldName, newName);
         MigrateCompositeDict(_osFgOutput, oldName, newName);
         MigrateCompositeDict(_osFgNvngxReplacement, oldName, newName);
         MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
@@ -1094,6 +1125,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_sfAutoConfigEnabled, oldName, newName);
         MigrateCompositeHashSet(_dlssNrCostScalerEnabled, oldName, newName);
         MigrateCompositeHashSet(_sfZzzMode, oldName, newName);
+        MigrateCompositeHashSet(_nrFoveated, oldName, newName);
         MigrateCompositeDict(_rtx40MfgInstalledAs, oldName, newName);
         MigrateCompositeDict(_dlssg2030InstalledAs, oldName, newName);
         MigrateCompositeDict(_rtxEncoreInstalledAs, oldName, newName);

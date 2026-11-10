@@ -124,28 +124,46 @@ public sealed partial class MainWindow
 
     private static string OsUpscalerOptionToIni(string api, string display) => api switch
     {
-        "DX12"   => display switch { "DLSS" => "dlss", "XeSS" => "xess", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", _ => "auto" },
-        "Vulkan" => display switch { "DLSS" => "dlss", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", "XeSS" => "xess", "FSR2.1 on DX12" => "fsr21_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
-        _        => display switch { "DLSS" => "dlss", "FSR 2.2" => "fsr22", "FSR 3.1" => "fsr31", "XeSS (Arc only)" => "xess", "XeSS on DX12" => "xess_12", "FSR2.1 on DX12" => "fsr21_12", "FSR2.2 on DX12" => "fsr22_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
+        "DX12"   => display switch { "DLSS" => "dlss", "XeSS" => "xess", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", _ => OsRawOrAuto(display) },
+        "Vulkan" => display switch { "DLSS" => "dlss", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", "XeSS" => "xess", "FSR2.1 on DX12" => "fsr21_12", "FSR3 on DX12" => "ffx_12", _ => OsRawOrAuto(display) },
+        _        => display switch { "DLSS" => "dlss", "FSR 2.2" => "fsr22", "FSR 3.1" => "fsr31", "XeSS (Arc only)" => "xess", "XeSS on DX12" => "xess_12", "FSR2.1 on DX12" => "fsr21_12", "FSR2.2 on DX12" => "fsr22_12", "FSR3 on DX12" => "ffx_12", _ => OsRawOrAuto(display) },
     };
 
     private static string OsIniToUpscalerOption(string api, string ini) => api switch
     {
-        "DX12"   => ini switch { "dlss" => "DLSS", "xess" => "XeSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", _ => "Auto (Default)" },
-        "Vulkan" => ini switch { "dlss" => "DLSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", "xess" => "XeSS", "fsr21_12" => "FSR2.1 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
-        _        => ini switch { "dlss" => "DLSS", "fsr22" => "FSR 2.2", "fsr31" => "FSR 3.1", "xess" => "XeSS (Arc only)", "xess_12" => "XeSS on DX12", "fsr21_12" => "FSR2.1 on DX12", "fsr22_12" => "FSR2.2 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
+        "DX12"   => ini switch { "dlss" => "DLSS", "xess" => "XeSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", _ => OsAutoOrRaw(ini) },
+        "Vulkan" => ini switch { "dlss" => "DLSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", "xess" => "XeSS", "fsr21_12" => "FSR2.1 on DX12", "ffx_12" => "FSR3 on DX12", _ => OsAutoOrRaw(ini) },
+        _        => ini switch { "dlss" => "DLSS", "fsr22" => "FSR 2.2", "fsr31" => "FSR 3.1", "xess" => "XeSS (Arc only)", "xess_12" => "XeSS on DX12", "fsr21_12" => "FSR2.1 on DX12", "fsr22_12" => "FSR2.2 on DX12", "ffx_12" => "FSR3 on DX12", _ => OsAutoOrRaw(ini) },
     };
 
     private static string OsApiToIniKey(string api) => api switch { "DX12" => "Dx12Upscaler", "Vulkan" => "VulkanUpscaler", _ => "Dx11Upscaler" };
 
+    // ── Values a build supports but RHI doesn't list ─────────────────────────────
+    // Custom builds add their own values (F5's FGOutput=F5flow, ...). A value RHI doesn't know is shown
+    // as itself, added to the end of the list, instead of being shown (and written back) as Auto.
+
+    private const string OsAutoLabel = "Auto (Default)";
+
+    /// <summary>Display item → ini value for items outside the known list (the item is the raw value).</summary>
+    private static string OsRawOrAuto(string display) =>
+        string.IsNullOrWhiteSpace(display) || display == OsAutoLabel ? "auto" : display;
+
+    /// <summary>Ini value → display item for values outside the known list.</summary>
+    private static string OsAutoOrRaw(string? ini) =>
+        string.IsNullOrWhiteSpace(ini) || ini.Equals("auto", StringComparison.OrdinalIgnoreCase) ? OsAutoLabel : ini;
+
+    /// <summary><paramref name="items"/>, plus <paramref name="display"/> at the end when it isn't one of them.</summary>
+    private static string[] OsWithValue(string[] items, string display) =>
+        items.Contains(display) ? items : items.Append(display).ToArray();
+
     // ── Frame generation option mapping ──────────────────────────────────────────
 
-    private static string OsFgInputToIni(string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
-    private static string OsFgOutputToIni(string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
-    private static string OsFgNvngxToIni(string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", "Combo" => "Combo", _ => "None" };
-    private static string OsIniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
-    private static string OsIniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
-    private static string OsIniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", "Combo" => "Combo", _ => "None (Real DLSSG)" };
+    private static string OsFgInputToIni(string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => OsRawOrAuto(d) };
+    private static string OsFgOutputToIni(string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => OsRawOrAuto(d) };
+    private static string OsFgNvngxToIni(string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", "Combo" => "Combo", "None (Real DLSSG)" => "None", _ => string.IsNullOrWhiteSpace(d) ? "None" : d };
+    private static string OsIniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => OsAutoOrRaw(v) };
+    private static string OsIniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => OsAutoOrRaw(v) };
+    private static string OsIniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", "Combo" => "Combo", _ => string.IsNullOrWhiteSpace(v) || v.Equals("None", StringComparison.OrdinalIgnoreCase) || v.Equals("auto", StringComparison.OrdinalIgnoreCase) ? "None (Real DLSSG)" : v };
 
     // ── OptiScaler.ini readers ───────────────────────────────────────────────────
 
@@ -259,6 +277,12 @@ public sealed partial class MainWindow
     private static void AddOsGrid(OsCogContext ctx, params OsCell?[] cells)
     {
         if (cells.Length == 0) return;
+        ctx.Cog.AddContent(MakeOsGrid(ctx.Ungated, cells));
+    }
+
+    /// <summary>The two-per-row grid of <see cref="AddOsGrid"/>, not added anywhere.</summary>
+    private static Grid MakeOsGrid(List<UIElement>? ungated, params OsCell?[] cells)
+    {
         var grid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(OsComboColumnWidth) });
@@ -297,9 +321,9 @@ public sealed partial class MainWindow
             Grid.SetRow(control, row); Grid.SetColumn(control, col + 1);
             grid.Children.Add(label);
             grid.Children.Add(control);
-            if (cell.Ungated) { ctx.Ungated.Add(label); ctx.Ungated.Add(control); }
+            if (cell.Ungated && ungated != null) { ungated.Add(label); ungated.Add(control); }
         }
-        ctx.Cog.AddContent(grid);
+        return grid;
     }
 
     /// <summary>
@@ -429,8 +453,9 @@ public sealed partial class MainWindow
                 refreshingUpscaler = true;
                 try
                 {
-                    apiUpscalerCombo.ItemsSource = OsGetUpscalerOptions(api);
-                    apiUpscalerCombo.SelectedItem = OsIniToUpscalerOption(api, ReadOsUpscalerIni(card.InstallPath, OsApiToIniKey(api)));
+                    var current = OsIniToUpscalerOption(api, ReadOsUpscalerIni(card.InstallPath, OsApiToIniKey(api)));
+                    apiUpscalerCombo.ItemsSource = OsWithValue(OsGetUpscalerOptions(api), current);
+                    apiUpscalerCombo.SelectedItem = current;
                 }
                 finally { refreshingUpscaler = false; }
             }
@@ -478,6 +503,9 @@ public sealed partial class MainWindow
                     BuildOsNeuralRenderingSection(ctx);
             }
 
+            // ── Every setting in the game's OptiScaler.ini (all versions) ────
+            BuildOsAllSettingsSection(ctx);
+
             // Not installed: only the version (and nightly build) stay usable
             if (!isInstalled)
             {
@@ -500,6 +528,7 @@ public sealed partial class MainWindow
                 }
             }
 
+            if (_osCogNotice != null) { cog.SetSuccess(_osCogNotice); _osCogNotice = null; }
             var footer = BuildOsCogFooter(ctx, isInstalled);
             await cog.ShowAsync(footer);
         }

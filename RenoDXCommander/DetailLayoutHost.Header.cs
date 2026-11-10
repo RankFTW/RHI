@@ -19,6 +19,7 @@ internal sealed partial class DetailLayoutHost
     private Button? _hFav;
     private FontIcon? _hFavIcon;
     private Button? _hHide;
+    private Button? _hShots;
     private WrapPanel? _hChips;
     private TextBlock? _hPath;
     private HyperlinkButton? _hConfig;
@@ -59,10 +60,18 @@ internal sealed partial class DetailLayoutHost
         TabsTheme.Apply(_hHide, TabsTheme.IconButton with { Fg = TabsTheme.TextSecondary }, height: 36, fontSize: 12);
         _hHide.Click += (s, e) => { w.HeaderHide(e); RefreshHeaderSoon(); };
 
+        // Screenshots (Spotlight only): opens the game's screenshots in the side panel
+        _hShots = new Button { Width = 36, Padding = new Thickness(0), Content = TabsTheme.Icon("", 16) }; // photo
+        TabsTheme.Apply(_hShots, TabsTheme.IconButton with { Fg = TabsTheme.TextSecondary }, height: 36);
+        ToolTipService.SetToolTip(_hShots, "Screenshots");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_hShots, "Screenshots");
+        _hShots.Click += (s, e) => OpenPanel(ScreenshotsKey);
+
         var titleRow = new WrapPanel { HorizontalSpacing = 12, VerticalSpacing = 8 };
         titleRow.Children.Add(_hTitle);
         titleRow.Children.Add(_hFav);
         titleRow.Children.Add(_hHide);
+        titleRow.Children.Add(_hShots);
 
         _hChips = new WrapPanel { HorizontalSpacing = 6, VerticalSpacing = 6 };
 
@@ -250,6 +259,7 @@ internal sealed partial class DetailLayoutHost
         var card = w.ViewModel.SelectedGame;
 
         _hTitle!.Text = w.HeaderGameName.Text;
+        _hShots!.Visibility = IsSpotlight ? Visibility.Visible : Visibility.Collapsed; // the side panel is Spotlight's
 
         // Favourite star (amber, filled) / outline
         bool fav = card?.IsFavourite == true;

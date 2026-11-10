@@ -192,6 +192,12 @@ public interface IGameNameService
     /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     Dictionary<string, string> OsFgInput { get; }
 
+    /// <summary>Per-game OptiScaler.ini edits (All Settings). Key = "GameName|Store", value = "Section|Key" → value.</summary>
+    Dictionary<string, Dictionary<string, string>> OsIniEdits { get; }
+
+    /// <summary>Per-game saved OptiScaler.ini name (OsIniLibrary). Key = "GameName|Store".</summary>
+    Dictionary<string, string> OsIniProfile { get; }
+
     /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
     Dictionary<string, string> OsFgOutput { get; }
 
@@ -216,6 +222,8 @@ public interface IGameNameService
     HashSet<string> DlssNrCostScalerEnabled { get; }
     /// <summary>Games where the ShortFuse addon is deployed as zzz_renodx-dlss.addon64. Composite-keyed.</summary>
     HashSet<string> SfZzzMode { get; }
+    /// <summary>Games set to the Foveated build of the DLSS5 Tool. Composite-keyed.</summary>
+    HashSet<string> NrFoveated { get; }
     /// <summary>Per-game RTX 40 MFG installed DLL name. Key = "GameName|Store", Value = DLL filename (e.g. "version.dll").</summary>
     Dictionary<string, string> Rtx40MfgInstalledAs { get; }
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>

@@ -387,6 +387,9 @@ public partial class OptiScalerService
                 CrashReporter.Log("[OptiScalerService.InstallAsync] OptiScaler.ini already exists in game folder — preserved");
             }
 
+            // The build's own ini lists its options (cog › All Settings)
+            OsIniEditor.SaveReferenceIni(card.InstallPath, Path.Combine(effectiveStagingDir, IniFileName));
+
             // Always enforce LoadReshade=true in the deployed INI
             if (File.Exists(gameIniPath))
             {
@@ -1456,6 +1459,7 @@ public partial class OptiScalerService
             {
                 CrashReporter.Log("[OptiScalerService.UpdateAsync] Preserved existing OptiScaler.ini (no staged INI available)");
             }
+            OsIniEditor.SaveReferenceIni(gameDir, stagedIniPath);
 
             // ── 4b. Update nvngx_dlss.dll in game folder if staged ──────────
             var stagedDlssUpdate = GetStagedDlssPath();

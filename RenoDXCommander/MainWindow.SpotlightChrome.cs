@@ -632,6 +632,29 @@ public sealed partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Screenshots panel › Set as banner: the screenshot becomes the game's custom banner (same as Artwork ›
+    /// Set custom banner; Use Steam banner puts the old one back).
+    /// </summary>
+    internal async Task SetBannerFromFileAsync(GameCardViewModel card, string file)
+    {
+        try
+        {
+            var saved = await Task.Run(() => SteamArtworkService.SetCustom(ArtKey(card), SteamArtworkService.Kind.Hero, file));
+            if (saved == null)
+            {
+                ShowStatusBarMessage($"Couldn't set the banner for {card.GameName}", TimeSpan.FromSeconds(8));
+                return;
+            }
+            ShowArtChange(card, SteamArtworkService.Kind.Hero);
+            ShowStatusBarMessage($"Banner set for {card.GameName}. Right-click the banner › Artwork › Use Steam banner to undo.", TimeSpan.FromSeconds(8));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainWindow.SetBannerFromFileAsync] {card.GameName}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     private void ResetCustomArt(GameCardViewModel card, SteamArtworkService.Kind kind)
     {
         SteamArtworkService.ClearCustom(ArtKey(card), kind);

@@ -524,6 +524,7 @@ public partial class MainViewModel
                     // the update check yet (4-hour cooldown) — the version list fetch is independent.
                     await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
                     await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+                    await rdx5Svc.UpdateFoveatedGamesAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] NR addon versions fetch failed — {ex.Message}"); }
             });

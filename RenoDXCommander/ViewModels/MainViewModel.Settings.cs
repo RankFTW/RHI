@@ -611,6 +611,41 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── OptiScaler.ini edits (cog › All Settings) ─────────────────────────────
+
+    /// <summary>A copy of the game's saved OptiScaler.ini edits ("Section|Key" → value).</summary>
+    public Dictionary<string, string> GetOsIniEdits(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsIniEdits.TryGetValue(key, out var v)
+            ? new Dictionary<string, string>(v, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Replaces the game's saved OptiScaler.ini edits. Null or empty clears them.</summary>
+    public void SetOsIniEdits(string gameName, IDictionary<string, string>? edits, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (edits == null || edits.Count == 0) _gameNameService.OsIniEdits.Remove(key);
+        else _gameNameService.OsIniEdits[key] = new Dictionary<string, string>(edits, StringComparer.OrdinalIgnoreCase);
+        SaveNameMappings();
+    }
+
+    /// <summary>The saved OptiScaler.ini (OsIniLibrary name) this game uses, or null for RHI's template.</summary>
+    public string? GetOsIniProfile(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsIniProfile.TryGetValue(key, out var v) ? v : null;
+    }
+
+    public void SetOsIniProfile(string gameName, string? name, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(name)) _gameNameService.OsIniProfile.Remove(key);
+        else _gameNameService.OsIniProfile[key] = name;
+        SaveNameMappings();
+    }
+
     // ── FG Input ──────────────────────────────────────────────────────────────
 
     public string GetOsFgInput(string gameName, string store = "")
@@ -827,6 +862,29 @@ public partial class MainViewModel
         {
             _gameNameService.SfZzzMode.Remove(key);
             _gameNameService.SfZzzMode.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── DLSS5 Tool Foveated build ─────────────────────────────────────────────
+
+    /// <summary>True when the DLSS5 Tool methods should use the Foveated build (maximedgoulet/FoveatedDLSS5).</summary>
+    public bool GetNrFoveated(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.NrFoveated.Contains(key)
+            || _gameNameService.NrFoveated.Contains(gameName);
+    }
+
+    /// <summary>Sets whether the DLSS5 Tool methods use the Foveated build.</summary>
+    public void SetNrFoveated(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.NrFoveated.Add(key);
+        else
+        {
+            _gameNameService.NrFoveated.Remove(key);
+            _gameNameService.NrFoveated.Remove(gameName);
         }
         SaveNameMappings();
     }

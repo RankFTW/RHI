@@ -63,14 +63,17 @@ public sealed partial class MainWindow
             openBtn.IsEnabled = iniPath != null && File.Exists(iniPath);
         };
 
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var buttons = new Controls.WrapPanel { HorizontalSpacing = 8, VerticalSpacing = 8 };
         buttons.Children.Add(openBtn);
         buttons.Children.Add(replaceBtn);
-        var replaceNote = MakeOsFooterNote("A fresh copy resets most settings.");
-        replaceNote.VerticalAlignment = VerticalAlignment.Center;
-        replaceNote.Margin = new Thickness(4, 0, 0, 0);
-        buttons.Children.Add(replaceNote);
+        buttons.Children.Add(BuildOsSaveIniButton(ctx, iniPath, ShowStatus));
+        buttons.Children.Add(BuildOsLoadIniButton(ctx, ShowStatus));
         footer.Children.Add(buttons);
+
+        var profile = ViewModel.GetOsIniProfile(card.GameName, ctx.Store);
+        footer.Children.Add(MakeOsFooterNote(OsIniLibrary.Exists(profile)
+            ? $"This game uses your saved ini \"{profile}\". A fresh copy resets most settings and goes back to RHI's template."
+            : "A fresh copy resets most settings."));
 
         var tip = MakeOsFooterNote(
             "Crashing with ReShade and OptiScaler both installed? Rename ReShade (for example to d3d12.dll) in Game Overrides › DLL naming.");
@@ -114,7 +117,11 @@ public sealed partial class MainWindow
             var fgOutput = ViewModel.GetOsFgOutput(card.GameName, store);
             var fgNvngx = ViewModel.GetOsFgNvngxReplacement(card.GameName, store);
             OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput, fgOutput, fgNvngx);
-            showStatus("OptiScaler.ini copied to the game folder.", true);
+            ViewModel.SetOsIniProfile(card.GameName, null, store); // back on RHI's template
+            int kept = OsIniEditor.ApplySaved(card.InstallPath, ViewModel.GetOsIniEdits(card.GameName, store));
+            showStatus(kept > 0
+                ? $"OptiScaler.ini copied to the game folder. Your {kept} saved edit(s) from All Settings were applied again."
+                : "OptiScaler.ini copied to the game folder.", true);
         }
         catch (Exception ex)
         {
