@@ -29,6 +29,9 @@ public interface IGameNameService
     /// <summary>The user's game collections ("GameName|Store" keys) and the active one.</summary>
     GameCollectionStore Collections { get; }
 
+    /// <summary>Display modes (Monitor / TV / ...): the modes, the default swap list and each game's state ("GameName|Store").</summary>
+    DisplayModeStore DisplayModes { get; }
+
     /// <summary>Games removed from RHI ("GameName|Store"); left out of the game list until restored.</summary>
     HashSet<string> RemovedGames { get; }
 

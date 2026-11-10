@@ -331,51 +331,9 @@ public partial class DetailPanelBuilder
         _window.DetailPcgwBtn.Tag = card;
         _window.DetailPcgwBtn.Visibility = card.HasPcgwUrl ? Visibility.Visible : Visibility.Collapsed;
 
-        // HDR toggle button — show per-game state
-        _window.DetailHdrToggleBtn.Tag = card;
-        var hdrOverride = _gameNameService.HdrToggleOverrides
-            .TryGetValue(card.GameName, out var hov) ? hov : null;
-        bool hdrActive = hdrOverride != null
-            ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
-            : _window.ViewModel.Settings.HdrAutoToggle;
-        _window.DetailHdrToggleText.Text = "HDR";
-        _window.DetailHdrToggleBtn.Background = hdrActive
-            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
-            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-        _window.DetailHdrToggleBtn.BorderBrush = hdrActive
-            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
-            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
-        _window.DetailHdrToggleText.Foreground = hdrActive
-            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
-            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
-        ToolTipService.SetToolTip(_window.DetailHdrToggleBtn, HdrToggleTooltip(hdrActive, hdrOverride != null));
-
-        // RES toggle button — hidden unless feature enabled
-        if (FeatureFlags.ResolutionControl)
-        {
-            _window.DetailResToggleBtn.Visibility = Visibility.Visible;
-            _window.DetailResToggleBtn.Tag = card;
-            var resOverride = _gameNameService.ResToggleOverrides
-                .TryGetValue(card.GameName, out var rov) ? rov : null;
-            bool resActive = resOverride != null
-                ? string.Equals(resOverride, "On", StringComparison.OrdinalIgnoreCase)
-                : _window.ViewModel.Settings.ResolutionAutoToggle;
-            _window.DetailResToggleText.Text = "RES";
-            _window.DetailResToggleBtn.Background = resActive
-                ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
-                : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-            _window.DetailResToggleBtn.BorderBrush = resActive
-                ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
-                : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
-            _window.DetailResToggleText.Foreground = resActive
-                ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
-                : UIFactory.Brush(ResourceKeys.ChipTextBrush);
-            ToolTipService.SetToolTip(_window.DetailResToggleBtn, ResToggleTooltip(resActive, resOverride != null));
-        }
-        else
-        {
-            _window.DetailResToggleBtn.Visibility = Visibility.Collapsed;
-        }
+        // HDR / RES toggle buttons (a display mode may set them) and the display mode switch
+        _window.RefreshHeaderLaunchToggles(card);
+        _window.RefreshClassicDisplayModeSwitch(card);
 
         // Nexus Mods link button
         _window.DetailNexusModsBtn.Tag = card;
@@ -608,8 +566,11 @@ public partial class DetailPanelBuilder
 
     /// <summary>HDR button tooltip that states the current setting for this game.</summary>
     internal static string HdrToggleTooltip(bool active, bool isOverride)
+        => HdrToggleTooltip(active, isOverride ? "set for this game" : "following Settings › Display & HDR");
+
+    /// <summary>HDR button tooltip; <paramref name="source"/> says where the setting comes from.</summary>
+    internal static string HdrToggleTooltip(bool active, string source)
     {
-        var source = isOverride ? "set for this game" : "following Settings › Display & HDR";
         return active
             ? $"Windows HDR: On ({source}).\nWhen you launch the game from RHI, Windows HDR is turned on, then back off when the game closes.\nClick to turn off for this game."
             : $"Windows HDR: Off ({source}).\nClick to turn Windows HDR on when you launch this game from RHI (and back off when it closes).";
@@ -617,8 +578,10 @@ public partial class DetailPanelBuilder
 
     /// <summary>RES button tooltip that states the current setting for this game.</summary>
     internal static string ResToggleTooltip(bool active, bool isOverride)
+        => ResToggleTooltip(active, isOverride ? "set for this game" : "following Settings › Display & HDR");
+
+    internal static string ResToggleTooltip(bool active, string source)
     {
-        var source = isOverride ? "set for this game" : "following Settings › Display & HDR";
         return active
             ? $"Change resolution: On ({source}).\nWhen you launch the game from RHI, the display switches to your target resolution, then back when the game closes.\nClick to turn off for this game."
             : $"Change resolution: Off ({source}).\nClick to switch to your target resolution when you launch this game from RHI (and back when it closes).";

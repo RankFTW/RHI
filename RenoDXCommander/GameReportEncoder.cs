@@ -395,6 +395,8 @@ public static class GameReportEncoder
             ["keepRsIniUpdated"] = vm.GetKeepRsIniUpdated(gameName, card.Source ?? ""),
             ["rsLoadAsAsi"] = vm.GetRsAsiMode(gameName, card.Source ?? ""),
             ["rhiOverlayOff"] = vm.IsOverlayDisabled(gameName, card.Source ?? ""),
+            ["displayMode"] = vm.DisplayModesOn ? vm.ActiveDisplayModeName(card) : null,
+            ["displayModeItems"] = vm.DisplayModesOn ? vm.DisplayModeStore.ItemsFor(ViewModels.MainViewModel.DisplayModeKey(card)).ToList() : null,
         };
 
         // Addons

@@ -216,6 +216,8 @@ public partial class SettingsHandler
                 var iniFile = Path.Combine(deployPath, "relimiter.ini");
                 if (!File.Exists(iniFile)) continue;
 
+                // Display modes: the OSD key / frame rate cap this game swaps keep its current mode's values
+                var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath, DisplayModeItemKeys.ReLimiterItems);
                 try
                 {
                     AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
@@ -242,6 +244,7 @@ public partial class SettingsHandler
                 {
                     CrashReporter.Log($"[SettingsHandler.ApplyUlOsdHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
                 }
+                keepModes?.Invoke();
             }
 
             // Also update the template in AppData

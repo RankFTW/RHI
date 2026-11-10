@@ -666,6 +666,12 @@ public sealed partial class MainWindow
             TrackRecentLaunch(gameName);
             var launchArgs = _gameNameService.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
+            // Display mode: its launch arguments replace the Game Overrides ones ("" = none in this mode)
+            if (ViewModel.DisplayModeLaunchValue(card, DisplayModeItemKeys.LaunchArgs) is { } modeArgs)
+            {
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launch arguments from display mode '{ViewModel.ActiveDisplayModeName(card)}': '{modeArgs}'");
+                launchArgs = modeArgs.Length > 0 ? modeArgs : null;
+            }
 
             // ── HDR Auto-Toggle: resolve whether to enable ──
             var hdrOverride = _gameNameService.HdrToggleOverrides
@@ -673,6 +679,11 @@ public sealed partial class MainWindow
             bool shouldToggleHdr = hdrOverride != null
                 ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
                 : ViewModel.Settings.HdrAutoToggle;
+            if (ViewModel.DisplayModeHdrOn(card) is bool modeHdr)
+            {
+                shouldToggleHdr = modeHdr; // the game's display mode sets HDR
+                hdrOverride = $"display mode {ViewModel.ActiveDisplayModeName(card)}";
+            }
 
             bool hdrWasAlreadyOn = false;
             List<uint>? hdrTargets = null;
@@ -681,7 +692,7 @@ public sealed partial class MainWindow
                 hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
                 // Always attempt to enable — IsHdrEnabled can report false positives on some configs
-                hdrTargets = ViewModel.Settings.HdrTargetDisplays;
+                hdrTargets = ViewModel.DisplayModeHdrTargets(card) ?? ViewModel.Settings.HdrTargetDisplays;
                 HdrToggleService.EnableHdr(hdrTargets.Count > 0 ? hdrTargets : null);
             }
             else
@@ -700,9 +711,18 @@ public sealed partial class MainWindow
                     ? string.Equals(resOverride, "On", StringComparison.OrdinalIgnoreCase)
                     : ViewModel.Settings.ResolutionAutoToggle;
 
-                if (shouldToggleRes && !string.IsNullOrEmpty(ViewModel.Settings.ResolutionTarget))
+                // Display mode: Off, On (Settings target) or its own resolution
+                var resolutionTargetKey = ViewModel.Settings.ResolutionTarget;
+                if (ViewModel.DisplayModeResolution(card) is { } modeRes)
                 {
-                    var targetRes = ResolutionToggleService.DisplayResolution.Parse(ViewModel.Settings.ResolutionTarget);
+                    shouldToggleRes = !modeRes.Equals("Off", StringComparison.OrdinalIgnoreCase);
+                    if (shouldToggleRes && !modeRes.Equals("On", StringComparison.OrdinalIgnoreCase)) resolutionTargetKey = modeRes;
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Resolution from display mode '{ViewModel.ActiveDisplayModeName(card)}': {modeRes}");
+                }
+
+                if (shouldToggleRes && !string.IsNullOrEmpty(resolutionTargetKey))
+                {
+                    var targetRes = ResolutionToggleService.DisplayResolution.Parse(resolutionTargetKey);
                     if (targetRes != null)
                     {
                         resolutionToRestore = ResolutionToggleService.GetCurrentResolution();

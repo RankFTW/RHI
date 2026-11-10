@@ -4,6 +4,12 @@
 //   <output .png path>
 //   tab=<Tabs layout tab key>      (optional, e.g. Overview, Extras, NvidiaProfileDlss)
 //   target=detail                  (optional: render the whole game page instead of the window)
+//   target=popup                   (optional: render the open dialog / flyout instead of the window)
+//   page=settings[:Section]        (optional: open the Settings page, e.g. page=settings:Display)
+//   open=displaymodes              (optional: open the selected game's Display mode dialog)
+//   close=dialogs                  (optional: close open dialogs first)
+//   dmswitch=<mode name>           (optional: switch the selected game's display mode)
+//   target=popupcontent / settings (optional: a dialog's whole scrolling body / the whole Settings column)
 // Checked by the same 2 s timer as the installer shutdown signal.
 
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -139,8 +145,34 @@ public sealed partial class MainWindow
             RunPadScript(actions, waitMs);
             waitMs += actions.Count * 600 + 800;
         }
+        if (Opt("page") is { Length: > 0 } page && page.StartsWith("settings", StringComparison.OrdinalIgnoreCase))
+        {
+            _settingsHandler.SettingsButton_Click(this, new RoutedEventArgs());
+            var section = page.Contains(':') ? page[(page.IndexOf(':') + 1)..] : null;
+            if (!string.IsNullOrEmpty(section)) _settingsHandler.DevJumpToSection(section);
+            waitMs = Math.Max(waitMs, 3000);
+        }
+        // close=dialogs: hide open dialogs first (one left open by an earlier open=...)
+        if (string.Equals(Opt("close"), "dialogs", StringComparison.OrdinalIgnoreCase) && Content?.XamlRoot is { } cr)
+            foreach (var p in Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(cr))
+                if (p.Child is ContentDialog cd) cd.Hide();
+        // dmswitch=<mode name>: switch the selected game's display mode (same path as its mode button)
+        if (Opt("dmswitch") is { Length: > 0 } dmName && ViewModel.SelectedGame is { } dmGame
+            && ViewModel.DisplayModeStore.Modes.FirstOrDefault(m => m.Name.Equals(dmName, StringComparison.OrdinalIgnoreCase)) is { } dmMode)
+        {
+            _ = SwitchDisplayModeFromUiAsync(dmGame, dmMode.Id);
+            waitMs = Math.Max(waitMs, 3000);
+        }
+        if (string.Equals(Opt("open"), "displaymodes", StringComparison.OrdinalIgnoreCase) && ViewModel.SelectedGame is { } dmCard)
+        {
+            _ = ShowDisplayModeGameDialogAsync(dmCard);
+            waitMs = Math.Max(waitMs, 3000);
+        }
         if (int.TryParse(Opt("wait"), out var w) && w > 0) waitMs = w;
         bool detail = string.Equals(Opt("target"), "detail", StringComparison.OrdinalIgnoreCase);
+        bool popupContent = string.Equals(Opt("target"), "popupcontent", StringComparison.OrdinalIgnoreCase);
+        bool popup = popupContent || string.Equals(Opt("target"), "popup", StringComparison.OrdinalIgnoreCase);
+        bool settingsColumn = string.Equals(Opt("target"), "settings", StringComparison.OrdinalIgnoreCase);
 
         // Give layout (and any background section build) a moment before rendering
         // Kept in a field: a timer only held by a local can be garbage-collected before it fires
@@ -152,6 +184,21 @@ public sealed partial class MainWindow
             try
             {
                 UIElement target = detail ? DetailPanel : (UIElement)Content;
+                if (popup && Content?.XamlRoot is { } pr)
+                {
+                    // The dialog itself, not its dim layer (a separate popup)
+                    var popups = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(pr);
+                    var pick = popups.FirstOrDefault(p => p.Child is ContentDialog)
+                            ?? popups.LastOrDefault(p => p.Child is FrameworkElement { ActualWidth: > 0 } and not Microsoft.UI.Xaml.Shapes.Rectangle);
+                    if (pick?.Child is { } popupChild) target = popupChild;
+                    // popupcontent: the dialog's whole scrolling body, not just what fits on screen
+                    if (popupContent)
+                    {
+                        // A cog dialog's body is the StackPanel CogDialog makes BodyWidth wide
+                        if (FindDescendant<StackPanel>(target, sp => sp.Width == CogDialog.BodyWidth) is { } body) target = body;
+                    }
+                }
+                if (settingsColumn) target = SettingsCardsPanel;
                 var rtb = new RenderTargetBitmap();
                 _crashReporter.Log("[MainWindow.DevScreenshot] Rendering");
                 await rtb.RenderAsync(target);
@@ -176,5 +223,17 @@ public sealed partial class MainWindow
             finally { _devScreenshotBusy = false; }
         };
         delay.Start();
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root, Func<T, bool>? match = null) where T : DependencyObject
+    {
+        int n = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            var c = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
+            if (c is T t && (match == null || match(t))) return t;
+            if (FindDescendant(c, match) is { } found) return found;
+        }
+        return null;
     }
 }

@@ -244,6 +244,7 @@ public partial class MainViewModel
         AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
         AuxInstallService.GlobalPeakNitsEnabled = _settingsViewModel.PeakNitsEnabled;
         AuxInstallService.GlobalPeakNitsPresets = _settingsViewModel.PeakNitsPresets;
+        WireDisplayModes();
 
         // Wire up per-game custom ReShade DLL selection resolver
         AuxInstallService.CustomReShadeSelectionResolver = (gameName, store) =>

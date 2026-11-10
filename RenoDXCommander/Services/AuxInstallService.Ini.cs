@@ -11,6 +11,14 @@ public partial class AuxInstallService
     /// </summary>
     public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, int peakNits = 0)
     {
+        // Display modes: a game's peak brightness / keys / preset for its mode survive the merge
+        var keepModes = KeepDisplayModeValues(gameDir, DisplayModeItemKeys.ReShadeIniItems);
+        try { MergeRsIniCore(gameDir, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName, peakNits); }
+        finally { keepModes?.Invoke(); }
+    }
+
+    private static void MergeRsIniCore(string gameDir, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey, string? gameName, int peakNits)
+    {
         // Use global setting if no explicit value passed
         if (peakNits <= 0) peakNits = GlobalPeakNits;
         // Determine which template to use — RDR2/Max Payne 3 use a dedicated template
@@ -102,6 +110,13 @@ public partial class AuxInstallService
     /// For Red Dead Redemption 2, uses the dedicated reshade.rdr2.ini template instead.
     /// </summary>
     public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, int peakNits = 0)
+    {
+        var keepModes = KeepDisplayModeValues(gameDir, DisplayModeItemKeys.ReShadeIniItems);
+        try { MergeRsVulkanIniCore(gameDir, gameName, screenshotSavePath, overlayHotkey, screenshotHotkey, peakNits); }
+        finally { keepModes?.Invoke(); }
+    }
+
+    private static void MergeRsVulkanIniCore(string gameDir, string? gameName, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey, int peakNits)
     {
         // Use global setting if no explicit value passed
         if (peakNits <= 0) peakNits = GlobalPeakNits;

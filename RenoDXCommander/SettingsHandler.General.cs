@@ -237,9 +237,13 @@ public partial class SettingsHandler
                             ? null
                             : currentOverlayHotkey;
 
+                        // Display modes: keys this game swaps keep its current mode's values
+                        var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath,
+                            new[] { DisplayModeItemKeys.RsOverlayKey, DisplayModeItemKeys.RsScreenshotKey });
                         foreach (var iniFile in iniFiles)
                             ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
                                 currentScreenshotHotkey, rsVariableListUseTabs);
+                        keepModes?.Invoke();
                         updatedCount++;
                     }
                     catch (Exception ex)
@@ -324,7 +328,7 @@ public partial class SettingsHandler
                 return;
             }
 
-            int updatedCount = 0;
+            int updatedCount = 0, modeCount = 0;
             var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
         
             await Task.Run(() =>
@@ -345,6 +349,13 @@ public partial class SettingsHandler
                     // Skip games where reshade.ini updates are locked
                     if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
 
+                    // Skip games whose display mode sets their peak brightness
+                    if (AuxInstallService.KeepDisplayModeValues(card.InstallPath, new[] { DisplayModeItemKeys.RdxPeakNits }) != null)
+                    {
+                        modeCount++;
+                        continue;
+                    }
+
                     try
                     {
                         foreach (var iniFile in iniFiles)
@@ -361,7 +372,8 @@ public partial class SettingsHandler
             var dialog = new ContentDialog
             {
                 Title = "Peak Nits",
-                Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+                Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}."
+                    + (modeCount > 0 ? $"\n\n{modeCount} game{(modeCount == 1 ? "" : "s")} kept the peak brightness of {(modeCount == 1 ? "its" : "their")} display mode." : ""),
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,

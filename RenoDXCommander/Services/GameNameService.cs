@@ -677,6 +677,7 @@ public partial class GameNameService : IGameNameService
             Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new()),
             StringComparer.OrdinalIgnoreCase);
         LoadGameCollections(s);
+        LoadDisplayModes(s);
 
         _rtxHdrGames = new HashSet<string>(
             Load<List<string>>("RtxHdrGames", _rtxHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
@@ -935,6 +936,7 @@ public partial class GameNameService : IGameNameService
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 SaveGameCollections(s);
+                SaveDisplayModes(s);
                 s["RemovedGames"]        = JsonSerializer.Serialize(_removedGames?.ToList() ?? new List<string>());
                 SaveCustomGameFolders(s);
                 s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
@@ -1100,6 +1102,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_hiddenGames, oldName, newName);
         MigrateCompositeHashSet(_favouriteGames, oldName, newName);
         _collections.MigrateGameRename(oldName, newName);
+        _displayModes.MigrateGameRename(oldName, newName);
         GameJournalStore.MigrateGameRename(oldName, newName); // overlay notes and playtime
         MigrateCompositeHashSet(_removedGames, oldName, newName);
         MigrateCompositeHashSet(_updateAllExcludedReShade, oldName, newName);

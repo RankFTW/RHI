@@ -784,7 +784,7 @@ Inside `AuxInstallService.InstallReShadeAsync`, `filenameOverride` is applied as
 
 - **`DevUnlockService`** (`Services/DevUnlockService.cs`) — static class that gates developer-only features behind the existence of `%LocalAppData%\RHI\unlock.txt`. `IsUnlocked` is a static bool property, checked once on first access and cached for the process lifetime. No DI required — call `DevUnlockService.IsUnlocked` directly anywhere. Restart required to pick up file add/remove. Usage pattern: `if (DevUnlockService.IsUnlocked) { ... }` or `button.Visibility = DevUnlockService.IsUnlocked ? Visibility.Visible : Visibility.Collapsed;`
 
-## Resolution Auto-Toggle Feature
+## Resolution Auto-Toggle Feature (public for everyone; `FeatureFlags.ResolutionControl` is always true, the dev-only notes below are outdated)
 
 - **`ResolutionToggleService`** (`Services/ResolutionToggleService.cs`) — static class using Win32 `EnumDisplaySettings` / `ChangeDisplaySettingsEx` P/Invoke. `GetSupportedResolutions()` returns all modes sorted by width/height/Hz. `GetCurrentResolution()` reads the live desktop mode. `SetResolution(DisplayResolution)` applies a mode with `CDS_UPDATEREGISTRY`. `RestoreResolution()` passes null DEVMODE to revert to the registered default. `DisplayResolution` is a record with a `Key` property (`"WxH@Hz"`) used for persistence and a `Parse(string)` factory. No admin required for the primary display.
 

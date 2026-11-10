@@ -366,6 +366,9 @@ public partial class MainViewModel
             if (!string.IsNullOrEmpty(_latestUlVersion))
                 SaveUlMeta(_latestUlVersion, card.Is32Bit);
 
+            // Display modes: the frame rate cap / OSD key this game swaps keep its current mode's values
+            var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath, DisplayModeItemKeys.ReLimiterItems);
+
             // Deploy relimiter.ini from AppData if not already present in game folder
             AuxInstallService.DeployUlIniIfAbsent(card.InstallPath);
 
@@ -394,6 +397,7 @@ public partial class MainViewModel
                 if (File.Exists(iniFile3))
                     AuxInstallService.ApplyUlTargetFps(iniFile3, _settingsViewModel.UlTargetFps);
             }
+            keepModes?.Invoke();
 
             DispatcherQueue?.TryEnqueue(() =>
             {

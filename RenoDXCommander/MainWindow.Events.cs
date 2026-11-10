@@ -702,6 +702,10 @@ public sealed partial class MainWindow
         // ── Add to collection (tick per collection, New collection…) ──
         menu.Items.Add(BuildCollectionsMenu(card));
 
+        // ── Display mode (Monitor / TV / ...; only while display modes are on) ──
+        if (BuildDisplayModeMenu(card) is { } displayModeMenu)
+            menu.Items.Add(displayModeMenu);
+
         // ── Game notes (also on the RHI overlay's Info and links page) ──
         var gameNotesItem = new MenuFlyoutItem { Text = "Game notes…", Tag = card };
         gameNotesItem.Click += async (s, ev) => await EditGameNotesAsync(card);

@@ -43,6 +43,17 @@
 - Applied changes are saved for that game and written again when OptiScaler is reinstalled, updated or switched to another version.
 - New Save ini and Load saved ini buttons at the bottom of the OptiScaler ⚙. Save a game's OptiScaler.ini under any name (as many as you like), or add one from a file, then load it into any game. The game keeps using it after a reinstall or update.
 
+**Display modes (Monitor / TV)**
+- Switch a game between your displays from its page. Each mode swaps only what you pick for that game: one game might swap peak brightness and its frame rate cap, another those plus its keys and DLSS settings.
+- Turn it on in Settings › Display › Display modes. The switch then appears beside the HDR and resolution buttons in Classic+, Tabs and Spotlight, and in the game menu (right-click a game).
+- It starts with Monitor and TV. Add up to 6 modes (e.g. Handheld), rename and reorder them, and give each mode default values.
+- What a mode can swap: RenoDX peak, game and UI brightness; RTX HDR peak brightness; ReLimiter, Display Commander and NVIDIA driver frame rate caps; DLSS frame generation (off, 2x to 6x or dynamic); DLSS preset and render scale; the ReShade preset; ReShade overlay and screenshot keys, ReShade controller navigation and the ReLimiter OSD key; and, when you launch from RHI, Windows HDR, which display gets HDR, the resolution and the launch arguments.
+- Each game remembers its own values per mode. When you switch away from a mode, what the game has then (including changes you made in game) is kept for that mode and put back next time.
+- Pick what games swap in Settings, or give a game its own list with the ⚙ beside its mode switch. That ⚙ also sets the game's values for each mode.
+- Values stored in the game's files are written as soon as you switch, so they also apply when you start the game from Steam or a shortcut. HDR, resolution and launch arguments apply when you launch from RHI.
+- Switch all games: put every game in one mode at once, e.g. for an evening on the TV.
+- ReShade and ReLimiter installs and updates, and the Settings buttons that write peak brightness, keys or ReLimiter settings to all games, keep a game's display mode values.
+
 ### Changes
 
 **Game Pass games**

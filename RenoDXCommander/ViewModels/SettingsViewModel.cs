@@ -88,6 +88,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastKnownNewestStreamline = "";
     [ObservableProperty] private bool _hdrAutoToggle;
     [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
+    /// <summary>Display modes (Monitor / TV / ...): shows the mode switch on game pages. Modes and per-game state: GameNameService.DisplayModes.</summary>
+    [ObservableProperty] private bool _displayModesEnabled;
     // ── Resolution Auto-Toggle (dev-only) ─────────────────────────────────────
     [ObservableProperty] private bool _resolutionAutoToggle;
     /// <summary>Target resolution key in "WxH@Hz" format. Empty = no override.</summary>
@@ -392,6 +394,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
         if (s.TryGetValue("LastKnownNewestStreamline", out var lknsVal)) LastKnownNewestStreamline = lknsVal ?? "";
         if (s.TryGetValue("HdrAutoToggle", out var hatVal)) HdrAutoToggle = hatVal == "true";
+        if (s.TryGetValue("DisplayModesEnabled", out var dmeVal)) DisplayModesEnabled = dmeVal == "true";
         if (s.TryGetValue("HdrTargetDisplays", out var htdVal))
         {
             try { HdrTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(htdVal) ?? new(); }
@@ -591,6 +594,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         s["HdrAutoToggle"] = HdrAutoToggle ? "true" : "false";
+        s["DisplayModesEnabled"] = DisplayModesEnabled ? "true" : "false";
         if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
         s["ResolutionAutoToggle"] = ResolutionAutoToggle ? "true" : "false";
         if (!string.IsNullOrEmpty(ResolutionTarget)) s["ResolutionTarget"] = ResolutionTarget;

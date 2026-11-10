@@ -310,6 +310,7 @@ public partial class SettingsHandler
         EnsureCustomFoldersCard();
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
+        EnsureDisplayModesCard();
         EnsureAchievementsSection(); // before the nav, so it gets a jump button
         EnsureRhiOverlaySection();   // same; lands after Achievements (both go just before Tools)
         EnsureSettingsNavigation();
@@ -544,6 +545,10 @@ public partial class SettingsHandler
         JumpToSection(visible[next].Key, animate: false, saveAsLast: true);
         return visible[next].Panel;
     }
+
+    /// <summary>Dev screenshot hook: shows a Settings section (e.g. "Display").</summary>
+    internal void DevJumpToSection(string key) =>
+        _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => JumpToSection(key, animate: false, saveAsLast: false));
 
     private void JumpToSection(string key, bool animate, bool saveAsLast)
     {

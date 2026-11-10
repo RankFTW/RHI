@@ -21,6 +21,7 @@ internal sealed partial class DetailLayoutHost
 
         var rows = new StackPanel { Spacing = 16 };
         AddOverlayRow(rows, card);
+        AddDisplayModeRow(rows, card);
         root.Children.Add(TabsTheme.MakeCard(rows, 16));
         return root;
     }
@@ -52,6 +53,23 @@ internal sealed partial class DetailLayoutHost
         string desc = "Open the RHI overlay over this game with its hotkey or the controller. When off, the hotkey goes to the game.";
         if (!vm.Settings.RhiOverlayEnabled) desc += " The overlay is currently off for all games in Settings.";
         AddGameSettingRow(rows, "RHI overlay", desc, toggle);
+    }
+
+    private void AddDisplayModeRow(StackPanel rows, GameCardViewModel card)
+    {
+        var vm = _window.ViewModel;
+        var btn = new Button { Content = "Choose...", Padding = new Thickness(14, 0, 14, 0) };
+        TabsTheme.Apply(btn, TabsTheme.BlueButton, height: 34, fontSize: 12);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(btn, "Display mode settings");
+        btn.Click += async (s, e) =>
+        {
+            try { await _window.ShowDisplayModeGameDialogAsync(card); }
+            catch (Exception ex) when (ex is InvalidOperationException) { CrashReporter.Log($"[DetailLayoutHost.GameSettings] Display modes — {ex.Message}"); }
+        };
+        string desc = vm.DisplayModesOn
+            ? $"What this game swaps between display modes (now {vm.ActiveDisplayModeName(card)}), and its values per mode."
+            : "What this game swaps between display modes, and its values per mode. Display modes are off in Settings › Display.";
+        AddGameSettingRow(rows, "Display modes", desc, btn);
     }
 
     /// <summary>One setting: label and a one-line description on the left, the control on the right.</summary>
