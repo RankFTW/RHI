@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56041,
-  "generated": "2026-11-10T13:11:14Z",
+  "game_count": 56046,
+  "generated": "2026-11-10T17:11:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -21037,6 +21037,7 @@
     "Blockoid": {
       "steam_appid": 1116010
     },
+    "Blockout": {},
     "Blockpocalypse": {
       "steam_appid": 433660
     },
@@ -28091,6 +28092,10 @@
     },
     "Casual Spider Solitaire": {
       "steam_appid": 722810
+    },
+    "Casualties: Unknown": {
+      "steam_appid": 4576490,
+      "engine": "Unity"
     },
     "Casus Belli: Battle of Annihilation": {
       "steam_appid": 667000
@@ -79393,6 +79398,7 @@
     "Horresco Referens": {
       "steam_appid": 1078820
     },
+    "Horrible Histories: Ruthless Romans": {},
     "Horrid Henry: Missions of Mischief": {
       "steam_appid": 38240
     },
@@ -95780,6 +95786,7 @@
       "steam_appid": 898790,
       "engine": "Unity"
     },
+    "Locomotion (1992)": {},
     "LocoMotives": {
       "steam_appid": 1041100
     },
@@ -153451,7 +153458,7 @@
     "SPQR: The Empire's Darkest Hour": {},
     "Sprawl": {
       "steam_appid": 1549690,
-      "config_path": "%LOCALAPPDATA%\\SPRAWL\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\SPRAWL\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Sprawl Zero": {
@@ -162095,6 +162102,10 @@
     },
     "Takeout food": {
       "steam_appid": 887670
+    },
+    "Takeover 2": {
+      "steam_appid": 4423270,
+      "engine": "Unity"
     },
     "Takeshi and Hiroshi": {},
     "Taking Valhalla VR": {
@@ -173946,7 +173957,8 @@
       "steam_appid": 809410
     },
     "The TakeOver": {
-      "steam_appid": 418620
+      "steam_appid": 418620,
+      "engine": "Unity"
     },
     "The Tale of a Common Man": {
       "steam_appid": 370670
@@ -189680,7 +189692,8 @@
       "steam_appid": 910450
     },
     "Warhammer Survivors": {
-      "steam_appid": 3669620
+      "steam_appid": 3669620,
+      "engine": "Unity"
     },
     "Warhammer Underworlds: Online": {
       "steam_appid": 1022310,
