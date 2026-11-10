@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56035,
-  "generated": "2026-11-09T23:11:22Z",
+  "game_count": 56036,
+  "generated": "2026-11-10T01:11:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -189170,6 +189170,9 @@
       "vulkan": true,
       "config_path": "<path-to-game>\\config.blk, %USERPROFILE%\\Documents\\My Games\\WarThunder\\Saves\\",
       "engine": "Dagor Engine"
+    },
+    "War Times: European Frontline": {
+      "config_path": "<path-to-game>\\Datos\\configuracion.txt"
     },
     "War Trains": {
       "steam_appid": 1173340
