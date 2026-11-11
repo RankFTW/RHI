@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56068,
-  "generated": "2026-11-11T19:14:18Z",
+  "game_count": 56074,
+  "generated": "2026-11-11T21:14:18Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -22008,6 +22008,9 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Ludosity Interactive\\Bob Came in Pieces\\",
       "engine": "Unity"
     },
+    "Bob Logistics": {
+      "steam_appid": 5009390
+    },
     "Bob the Builder: Bob Builds a Park": {},
     "Bob the Builder: Bob's Castle Adventure": {
       "engine": "Director"
@@ -23208,6 +23211,9 @@
     "Box Align": {
       "steam_appid": 768590
     },
+    "Box Flow": {
+      "steam_appid": 4909100
+    },
     "Box It": {
       "steam_appid": 704940,
       "engine": "Unreal Engine 4"
@@ -23965,6 +23971,9 @@
     },
     "Brick Breaker with Risa": {
       "steam_appid": 910420
+    },
+    "Brick Buddies": {
+      "steam_appid": 4901540
     },
     "Brick Inventions": {
       "steam_appid": 411750
@@ -32435,6 +32444,9 @@
     "Clutter VI: Leigh's Story": {
       "steam_appid": 733810
     },
+    "Cluttermancer: Tidy Up the Nightmare Alley": {
+      "steam_appid": 5032140
+    },
     "CMD 2048": {
       "steam_appid": 922090
     },
@@ -35494,6 +35506,9 @@
       "steam_appid": 2289390,
       "engine": "Unity"
     },
+    "Crack": {
+      "steam_appid": 4312190
+    },
     "Crack Down": {},
     "Crack Down (Genesis)": {
       "steam_appid": 34273,
@@ -38404,6 +38419,9 @@
     },
     "Cutlass": {
       "steam_appid": 663020
+    },
+    "Cutout Village": {
+      "steam_appid": 3907910
     },
     "Cutthroat": {
       "steam_appid": 737380
@@ -78182,7 +78200,8 @@
       "steam_appid": 1904525
     },
     "Hillthorn": {
-      "steam_appid": 3504050
+      "steam_appid": 3504050,
+      "engine": "Godot"
     },
     "Him and I": {
       "steam_appid": 1157010
