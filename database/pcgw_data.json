@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56058,
-  "generated": "2026-11-11T09:12:17Z",
+  "game_count": 56065,
+  "generated": "2026-11-11T11:12:17Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -47317,6 +47317,7 @@
       "dx11": true,
       "engine": "Unity"
     },
+    "Don't Go Alone": {},
     "Don't Go into the Woods": {
       "steam_appid": 1017660
     },
@@ -119429,6 +119430,7 @@
     "P1R4T3S": {
       "steam_appid": 1133890
     },
+    "P47 Thunderbolt": {},
     "P9 The GateAway": {
       "steam_appid": 1224330
     },
@@ -134832,6 +134834,7 @@
     "Revenant Saga": {
       "steam_appid": 522530
     },
+    "Revenge of Defender": {},
     "Revenge of Roger Rouge": {
       "steam_appid": 443680
     },
@@ -154100,6 +154103,7 @@
     "Star Boy": {
       "steam_appid": 801940
     },
+    "Star Breaker": {},
     "Star Chart": {
       "steam_appid": 460580
     },
@@ -182000,6 +182004,7 @@
     "Tubular Rift": {
       "steam_appid": 717680
     },
+    "Tubular Worlds": {},
     "TUBWT": {
       "steam_appid": 1052310
     },
@@ -185068,6 +185073,7 @@
       "steam_appid": 1202410,
       "engine": "Unreal Engine 4"
     },
+    "Uridium": {},
     "Uriel's Chasm": {
       "steam_appid": 292630
     },
@@ -192682,6 +192688,7 @@
       "steam_appid": 1088420
     },
     "Wings of Destiny": {},
+    "Wings of Fury": {},
     "Wings of Glass þÄ╗þÆâÒü«þ¥¢": {
       "steam_appid": 1010780
     },
