@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56067,
-  "generated": "2026-11-11T13:12:17Z",
+  "game_count": 56068,
+  "generated": "2026-11-11T17:15:22Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -190708,6 +190708,9 @@
     },
     "We Stay Behind": {
       "steam_appid": 1142570
+    },
+    "We Steal From Old People: The Game": {
+      "steam_appid": 5051080
     },
     "We Walked in Darkness": {
       "steam_appid": 766090
