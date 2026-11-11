@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56074,
-  "generated": "2026-11-11T21:14:18Z",
+  "game_count": 56075,
+  "generated": "2026-11-11T23:14:18Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -40011,6 +40011,7 @@
     "Dark Scrolls": {
       "steam_appid": 2912550
     },
+    "Dark Secrets of Africa": {},
     "Dark Sector": {
       "steam_appid": 29900,
       "dx9": true,
