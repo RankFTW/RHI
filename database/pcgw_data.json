@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56058,
-  "generated": "2026-11-11T07:12:16Z",
+  "generated": "2026-11-11T09:12:17Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -114726,7 +114726,8 @@
       "steam_appid": 307010
     },
     "Northmen": {
-      "steam_appid": 5481810
+      "steam_appid": 5481810,
+      "engine": "Electron"
     },
     "Nortinium": {
       "steam_appid": 805220
