@@ -81,8 +81,7 @@
     "Winter 2023 Seasonal Pack",
     "Yakuza CD Collection Pack",
     "Assorted Outfit Pack",
-    "Skyrim Creation Kit",
-    "Warframe"
+    "Skyrim Creation Kit"
   ],
   "wikiUnlinks": [
     "ARC Raiders",
@@ -120,7 +119,8 @@
     "Call of Duty Black Ops 3",
     "Call of Duty: Black Ops III",
     "Dead Space 2",
-    "Dead Space 3"
+    "Dead Space 3",
+    "Warframe"
   ],
   "wikiNameOverrides": {
     "AFOP": "Avatar: Frontiers of Pandora\u2122",
@@ -861,6 +861,9 @@
     },
     "Cyberpunk 2077": {
       "renodx": "The Github version of RenoDX for Cyberpunk is outdated for version 2.5 of the game. Please go to the Cyberpunk channel on the RenoDX Discord and check the pinned messages."
+    },
+    "Warframe": {
+      "reshade": "YOU WILL BE BANNED IF YOU INSTALL RESHADE. SERIOUSLY, YOU WILL."
     }
   },
   "forceExternalOnly": {
