@@ -262,7 +262,9 @@
     "The Witcher 3: Wild Hunt - Complete Edition": "bin\\x64_dx12",
     "Outlast": "Binaries\\Win64",
     "Portal": "bin",
-    "Watch_Dogs": "bin"
+    "Watch_Dogs": "bin",
+    "Far Cry New Dawn": "bin",
+    "Far Cry 6": "bin"
   },
   "splitGames": {
     "Diablo": [
