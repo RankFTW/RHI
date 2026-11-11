@@ -241,7 +241,7 @@ public sealed partial class MainWindow
         if (_shelf != null)
         {
             Grid.SetRow(_shelf, bottom ? 0 : 3);
-            // Keep the side padding (UpdateShelfCentering widens it to centre a short Favourites row)
+            // Keep the side padding (UpdateShelfCentering widens it to centre a row that fits)
             _shelf.Padding = bottom ? new Thickness(_shelf.Padding.Left, 12, _shelf.Padding.Right, 2)
                                     : new Thickness(_shelf.Padding.Left, 4, _shelf.Padding.Right, 10);
             PlaceCoverGrip(bottom);
@@ -363,8 +363,8 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// With the Favourites filter or a collection on, centres the covers when they all fit on screen (extra side
-    /// padding); otherwise they start at the left as usual.
+    /// Centres the covers when they all fit on screen (extra side padding), whatever the filter or collection;
+    /// a longer row starts at the left as usual.
     /// </summary>
     private void UpdateShelfCentering()
     {
@@ -373,7 +373,7 @@ public sealed partial class MainWindow
         {
             double side = 20;
             double width = _shelf.ActualWidth;
-            if (width > 0 && (ViewModel.ActiveFilters.Contains("Favourites") || ViewModel.ActiveCollectionName != null))
+            if (width > 0)
             {
                 double items = ViewModel.DisplayedGames.Count * (TileWidth + 8); // tile + item margin 4,0,4,0
                 if (items > 0 && items + 40 <= width) side = Math.Floor((width - items) / 2);

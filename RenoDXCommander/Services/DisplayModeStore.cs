@@ -1,6 +1,7 @@
 // DisplayModeStore.cs -- Display modes data (pure, thread-safe, unit tested in DisplayModeStoreTests).
-// Modes (Monitor, TV, ...) hold default values per item; each game ("GameName|Store") remembers its active mode,
-// which items it swaps (or the default list) and its own value per mode. A game in no mode is Off (Mode = null):
+// Modes (Monitor, TV, ...) hold values per item, used by every game. Each game ("GameName|Store") remembers its
+// active mode and can have a Custom mode of its own (made in its ⚙: the ticked settings and their values), shown only
+// for that game. A game swaps every item a mode has a value for, plus its Custom mode's. A game in no mode is Off (Mode = null):
 // it follows the global settings, and global writers don't skip it. No file or UI work here:
 // DisplayModeService reads and writes the game files, GameNameService saves the snapshot in settings.json.
 
@@ -12,15 +13,17 @@ public sealed class DisplayModeStore
 {
     public const int MaxModes = 6;
     public const int MaxNameLength = 24;
+    /// <summary>Id of a game's own Custom mode (never a global mode id: those are monitor / tv or "m" + hex).</summary>
+    public const string CustomId = "custom";
+    public const string CustomName = "Custom";
 
     private readonly object _lock = new();
     private List<DisplayModeDefinition> _modes = new();
-    private List<string> _defaultItems = new();
     private Dictionary<string, GameDisplayModeState> _games = new(StringComparer.OrdinalIgnoreCase);
 
     public DisplayModeStore() => Load(null);
 
-    /// <summary>Monitor and TV, swapping peak brightness and the ReLimiter frame rate cap.</summary>
+    /// <summary>Monitor and TV, with no values yet.</summary>
     public static DisplayModeData CreateDefaults() => new()
     {
         Modes =
@@ -28,7 +31,6 @@ public sealed class DisplayModeStore
             new DisplayModeDefinition { Id = "monitor", Name = "Monitor" },
             new DisplayModeDefinition { Id = "tv", Name = "TV" },
         },
-        DefaultItems = { DisplayModeItemKeys.RdxPeakNits, DisplayModeItemKeys.UlTargetFps },
     };
 
     /// <summary>Replaces everything with saved data (null or no modes = the defaults).</summary>
@@ -58,12 +60,20 @@ public sealed class DisplayModeStore
                 });
             }
             if (_modes.Count == 0) _modes = CreateDefaults().Modes;
-            _defaultItems = (data.DefaultItems ?? new()).Where(k => !string.IsNullOrWhiteSpace(k))
-                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            _modes.RemoveAll(m => IsCustom(m.Id));
+            if (_modes.Count == 0) _modes = CreateDefaults().Modes;
             _games = new(StringComparer.OrdinalIgnoreCase);
             if (data.Games != null)
                 foreach (var (key, st) in data.Games)
-                    if (!string.IsNullOrWhiteSpace(key) && st != null) _games[key] = Copy(st);
+                {
+                    if (string.IsNullOrWhiteSpace(key) || st == null) continue;
+                    var c = Copy(st);
+                    // Older builds kept own values per global mode and a ticked list without a Custom mode: dropped
+                    foreach (var mode in c.Values.Keys.Where(m => !IsCustom(m)).ToList()) c.Values.Remove(mode);
+                    if (!c.Custom) { c.Items = null; c.Values.Clear(); }
+                    if (IsCustom(c.Mode) && !c.Custom) ClearActive(c);
+                    if (!IsEmpty(c)) _games[key] = c;
+                }
         }
     }
 
@@ -75,7 +85,6 @@ public sealed class DisplayModeStore
             var d = new DisplayModeData
             {
                 Modes = _modes.Select(m => new DisplayModeDefinition { Id = m.Id, Name = m.Name, Values = CopyValues(m.Values) }).ToList(),
-                DefaultItems = _defaultItems.ToList(),
             };
             foreach (var (k, st) in _games)
                 if (!IsEmpty(st)) d.Games[k] = Copy(st);
@@ -92,7 +101,18 @@ public sealed class DisplayModeStore
 
     public string? NameOf(string? modeId)
     {
+        if (IsCustom(modeId)) return CustomName;
         lock (_lock) return Find(modeId)?.Name;
+    }
+
+    public static bool IsCustom(string? modeId) => modeId != null && modeId.Equals(CustomId, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The modes this game can switch to: the global ones, then its Custom mode if it has one.</summary>
+    public IReadOnlyList<DisplayModeDefinition> ModesFor(string gameKey)
+    {
+        var list = Modes.ToList();
+        if (HasCustom(gameKey)) list.Add(new DisplayModeDefinition { Id = CustomId, Name = CustomName });
+        return list;
     }
 
     /// <summary>Null if the name can be used for a mode (other than <paramref name="exceptId"/>), else why not.</summary>
@@ -101,6 +121,7 @@ public sealed class DisplayModeStore
         var n = name?.Trim() ?? "";
         if (n.Length == 0) return "Enter a name.";
         if (n.Length > MaxNameLength) return $"Use {MaxNameLength} characters or fewer.";
+        if (n.Equals(CustomName, StringComparison.OrdinalIgnoreCase)) return "Custom is the name of a game's own mode. Pick another name.";
         lock (_lock)
             if (_modes.Any(m => m.Name.Equals(n, StringComparison.OrdinalIgnoreCase)
                              && !m.Id.Equals(exceptId ?? "", StringComparison.OrdinalIgnoreCase)))
@@ -184,17 +205,16 @@ public sealed class DisplayModeStore
         }
     }
 
-    // ── Default list ──────────────────────────────────────────────────────────
+    // ── Items with a mode value ───────────────────────────────────────────────
 
-    public IReadOnlyList<string> DefaultItems
+    /// <summary>Items any mode has a value for (set in Settings). Every game swaps these, ticked or not.</summary>
+    public IReadOnlyList<string> ModeValueItems
     {
-        get { lock (_lock) return _defaultItems.ToList(); }
+        get { lock (_lock) return ModeValueItemsLocked(); }
     }
 
-    public void SetDefaultItems(IEnumerable<string> items)
-    {
-        lock (_lock) _defaultItems = items.Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-    }
+    private List<string> ModeValueItemsLocked()
+        => _modes.SelectMany(m => m.Values.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     // ── Games ─────────────────────────────────────────────────────────────────
 
@@ -202,85 +222,128 @@ public sealed class DisplayModeStore
     public string? ActiveModeId(string gameKey)
     {
         lock (_lock)
-            return _games.TryGetValue(gameKey, out var st) && st.Mode != null ? Find(st.Mode)?.Id : null;
+        {
+            if (!_games.TryGetValue(gameKey, out var st) || st.Mode == null) return null;
+            if (IsCustom(st.Mode)) return st.Custom ? CustomId : null;
+            return Find(st.Mode)?.Id;
+        }
     }
 
     /// <summary>True while the game is in a mode: its swapped values are RHI-managed (global writers keep them).</summary>
     public bool IsManaged(string gameKey) => ActiveModeId(gameKey) != null;
 
-    /// <summary>Items the game swaps: its own list, or the default list.</summary>
+    /// <summary>Items the game swaps: everything a mode has a value for, plus what its Custom mode changes.</summary>
     public IReadOnlyList<string> ItemsFor(string gameKey)
     {
         lock (_lock)
-            return _games.TryGetValue(gameKey, out var st) && st.Items != null ? st.Items.ToList() : _defaultItems.ToList();
-    }
-
-    public bool UsesDefaultItems(string gameKey)
-    {
-        lock (_lock) return !_games.TryGetValue(gameKey, out var st) || st.Items == null;
+        {
+            var list = ModeValueItemsLocked();
+            foreach (var k in CustomItemsLocked(gameKey))
+                if (!list.Contains(k, StringComparer.OrdinalIgnoreCase)) list.Add(k);
+            return list;
+        }
     }
 
     public bool Swaps(string gameKey, string item) => ItemsFor(gameKey).Contains(item, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Sets the game's own list (null = use the default list).</summary>
-    public void SetItems(string gameKey, IEnumerable<string>? items)
+    // ── A game's Custom mode ──────────────────────────────────────────────────
+
+    public bool HasCustom(string gameKey)
+    {
+        lock (_lock) return _games.TryGetValue(gameKey, out var st) && st.Custom;
+    }
+
+    /// <summary>Makes the game's Custom mode (empty: it changes nothing until settings are ticked).</summary>
+    public void CreateCustom(string gameKey)
+    {
+        lock (_lock) GetOrAdd(gameKey).Custom = true;
+    }
+
+    /// <summary>Removes the game's Custom mode. If the game was in it, it's set to Off (write its normal values first).</summary>
+    public void DeleteCustom(string gameKey)
     {
         lock (_lock)
         {
-            var st = GetOrAdd(gameKey);
-            st.Items = items?.Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (!_games.TryGetValue(gameKey, out var st)) return;
+            st.Custom = false;
+            st.Items = null;
+            st.Values.Remove(CustomId);
+            if (IsCustom(st.Mode)) ClearActive(st);
             Prune(gameKey);
         }
     }
 
-    /// <summary>The game's own value for a mode, or null.</summary>
-    public string? GameValue(string gameKey, string modeId, string item)
+    /// <summary>Settings the game's Custom mode changes.</summary>
+    public IReadOnlyList<string> CustomItems(string gameKey)
+    {
+        lock (_lock) return CustomItemsLocked(gameKey);
+    }
+
+    private List<string> CustomItemsLocked(string gameKey)
+        => _games.TryGetValue(gameKey, out var st) && st.Custom && st.Items != null ? st.Items.ToList() : new List<string>();
+
+    public bool InCustom(string gameKey, string item) => CustomItems(gameKey).Contains(item, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Ticks or unticks a setting in the game's Custom mode (its value is kept while unticked).</summary>
+    public void SetInCustom(string gameKey, string item, bool on)
+    {
+        lock (_lock)
+        {
+            if (!_games.TryGetValue(gameKey, out var st) || !st.Custom) return;
+            st.Items ??= new();
+            st.Items.RemoveAll(k => k.Equals(item, StringComparison.OrdinalIgnoreCase));
+            if (on) st.Items.Add(item);
+        }
+    }
+
+    /// <summary>The Custom mode's value for a setting, or null.</summary>
+    public string? CustomValue(string gameKey, string item)
     {
         lock (_lock)
             return _games.TryGetValue(gameKey, out var st)
-                && st.Values.TryGetValue(modeId, out var vals)
+                && st.Values.TryGetValue(CustomId, out var vals)
                 && vals.TryGetValue(item, out var v) ? v : null;
     }
 
-    /// <summary>The game's own value for a mode, else the mode's default, else null.</summary>
+    /// <summary>Sets (or with null clears) the Custom mode's value for a setting.</summary>
+    public void SetCustomValue(string gameKey, string item, string? value)
+    {
+        lock (_lock)
+        {
+            if (!_games.TryGetValue(gameKey, out var st) || !st.Custom) return;
+            if (value == null)
+            {
+                if (st.Values.TryGetValue(CustomId, out var vals)) vals.Remove(item);
+                return;
+            }
+            if (!st.Values.TryGetValue(CustomId, out var dict))
+                st.Values[CustomId] = dict = new(StringComparer.OrdinalIgnoreCase);
+            dict[item] = value;
+        }
+    }
+
+    /// <summary>
+    /// What the game gets for an item in a mode: in its Custom mode the value it set (ticked settings only), in a
+    /// global mode that mode's value. Null = none (the game's normal value).
+    /// </summary>
     public string? Effective(string gameKey, string modeId, string item)
-        => GameValue(gameKey, modeId, item) ?? ModeDefault(modeId, item);
+        => IsCustom(modeId)
+            ? (InCustom(gameKey, item) ? CustomValue(gameKey, item) : null)
+            : ModeDefault(modeId, item);
 
     /// <summary>Effective value for the game's active mode, or null when it's Off / doesn't swap this item.</summary>
     public string? ActiveValue(string gameKey, string item)
         => Swaps(gameKey, item) && ActiveModeId(gameKey) is { } mode ? Effective(gameKey, mode, item) : null;
-
-    /// <summary>Sets (or with null clears) the game's own value for a mode.</summary>
-    public void SetGameValue(string gameKey, string modeId, string item, string? value)
-    {
-        lock (_lock)
-        {
-            if (Find(modeId) == null) return;
-            var st = GetOrAdd(gameKey);
-            if (value == null)
-            {
-                if (st.Values.TryGetValue(modeId, out var vals))
-                {
-                    vals.Remove(item);
-                    if (vals.Count == 0) st.Values.Remove(modeId);
-                }
-                Prune(gameKey);
-                return;
-            }
-            if (!st.Values.TryGetValue(modeId, out var dict))
-                st.Values[modeId] = dict = new(StringComparer.OrdinalIgnoreCase);
-            dict[item] = value;
-        }
-    }
 
     /// <summary>Marks the game as being in <paramref name="modeId"/> and remembers its folders.</summary>
     public void SetActive(string gameKey, string modeId, IEnumerable<string>? folders)
     {
         lock (_lock)
         {
-            if (Find(modeId) == null) return;
+            bool custom = IsCustom(modeId);
+            if (custom ? !(_games.TryGetValue(gameKey, out var cs) && cs.Custom) : Find(modeId) == null) return;
             var st = GetOrAdd(gameKey);
-            st.Mode = modeId;
+            st.Mode = custom ? CustomId : modeId;
             var list = folders?.Where(f => !string.IsNullOrWhiteSpace(f)).Select(NormalizeFolder)
                 .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             if (list is { Count: > 0 }) st.Folders = list;
@@ -366,7 +429,8 @@ public sealed class DisplayModeStore
     public IReadOnlyList<string> ManagedGames()
     {
         lock (_lock)
-            return _games.Where(kv => kv.Value.Mode != null && Find(kv.Value.Mode) != null).Select(kv => kv.Key).ToList();
+            return _games.Where(kv => kv.Value.Mode != null && (Find(kv.Value.Mode) != null || (IsCustom(kv.Value.Mode) && kv.Value.Custom)))
+                .Select(kv => kv.Key).ToList();
     }
 
     /// <summary>The managed game whose install or addon folder is <paramref name="folder"/>, or null.</summary>
@@ -431,7 +495,7 @@ public sealed class DisplayModeStore
         if (_games.TryGetValue(key, out var st) && IsEmpty(st)) _games.Remove(key);
     }
 
-    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && st.Items == null && st.Values.Count == 0 && st.Entry == null && st.Original == null;
+    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && !st.Custom && st.Items == null && st.Values.Count == 0 && st.Entry == null && st.Original == null;
 
     public static string NormalizeFolder(string folder) => folder.Replace('/', '\\').TrimEnd('\\');
 
@@ -443,6 +507,7 @@ public sealed class DisplayModeStore
         var c = new GameDisplayModeState
         {
             Mode = st.Mode,
+            Custom = st.Custom,
             Items = st.Items?.ToList(),
             Folders = st.Folders?.ToList(),
             Entry = st.Entry == null ? null : new Dictionary<string, string?>(st.Entry, StringComparer.OrdinalIgnoreCase),

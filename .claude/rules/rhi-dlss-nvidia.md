@@ -150,6 +150,7 @@ paths:
 ### Shader Cache Global Settings
 - Cache Size: `0x00AC8497`, Pre-Compile: `0x00EAD189` — set on `_session.BaseProfile`.
 - Base profile reads: raw API first, NvAPIWrapper fallback. Global defaults when at 0: Cache=16GB, PreCompile=Low.
+- **Compile now** (`NvShaderCompilerService`, Settings row from `SettingsHandler.ShaderCompile.cs`): runs the driver's `NvOSC.exe -runTool -resUtil=MIN|MED|MAX` (no `-resUtil` = the Pre-Compile DRS level), found via the NVIDIA display adapter's `UserModeDriverName` folder in the display Class registry key. **Working folder must be the driver folder** (it loads `nvgpucomp64.dll` / `NvMemMapStoragex.dll` by relative name; otherwise exit 3). No admin needed; compiles the user's DXCache (Local + LocalLow). Stop = kill NvOSC.exe (the NVIDIA App does `taskkill /F`). The idle task is `NVIDIA Shader Compiler` (`NvOSC -register` / `-deregister`).
 
 ### Quick Apply v1.x Guard
 - SR/RR: skip if `StartsWith("1.")`. FG: NO guard (can upgrade). Streamline: skip if v1.x.

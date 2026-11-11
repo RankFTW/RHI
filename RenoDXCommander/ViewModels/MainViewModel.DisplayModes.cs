@@ -149,35 +149,50 @@ public partial class MainViewModel
         return (done, running);
     }
 
-    /// <summary>
-    /// Sets the game's own value for a mode (null = use the mode default). When that mode is the active one and the
-    /// item is written to the game, it's written now. Returns a problem message, or null.
-    /// </summary>
-    public async Task<string?> SetDisplayModeGameValueAsync(GameCardViewModel card, string modeId, DisplayModeItem item, string? value)
+    // ── A game's Custom mode (made in its ⚙, shown only for that game) ────────
+
+    public void CreateCustomDisplayMode(GameCardViewModel card)
+    {
+        DisplayModeStore.CreateCustom(DisplayModeKey(card));
+        SaveNameMappings();
+        CrashReporter.Log($"[MainViewModel.CreateCustomDisplayMode] '{DisplayModeKey(card)}'");
+        NotifyDisplayModesChanged();
+    }
+
+    /// <summary>Deletes the game's Custom mode. If the game is in it, its mode is turned off first (normal values written).</summary>
+    public async Task DeleteCustomDisplayModeAsync(GameCardViewModel card)
     {
         var key = DisplayModeKey(card);
         var store = DisplayModeStore;
-        store.SetGameValue(key, modeId, item.Key, value);
-        SaveNameMappings();
-        string? problem = null;
-        bool isActive = modeId.Equals(store.ActiveModeId(key) ?? "", StringComparison.OrdinalIgnoreCase);
-        if (isActive && !item.AtLaunch && store.Swaps(key, item.Key))
+        if (DisplayModeStore.IsCustom(store.ActiveModeId(key)) && !card.IsRunning && !string.IsNullOrEmpty(card.InstallPath))
         {
-            if (card.IsRunning) return "Saved. The game is running, so it's written the next time you switch modes.";
             var ctx = BuildDisplayModeContext(card);
             var svc = DisplayModeService;
-            // Cleared: the mode default, else the game's normal value
-            problem = await Task.Run(() => svc.ValueFor(ctx, modeId, item) is { } effective ? svc.ApplyNow(ctx, item, effective) : null);
+            await Task.Run(() => svc.TurnOff(ctx));
         }
-        return problem;
+        store.DeleteCustom(key);
+        SaveNameMappings();
+        CrashReporter.Log($"[MainViewModel.DeleteCustomDisplayModeAsync] '{key}'");
+        NotifyDisplayModesChanged();
     }
 
-    /// <summary>The game's own item list (null = the default list).</summary>
-    public void SetDisplayModeItems(GameCardViewModel card, IEnumerable<string>? items)
+    /// <summary>
+    /// Ticks or unticks a setting in the game's Custom mode, or sets its value. While the game is in Custom the
+    /// result is written now (unticked = the game's normal value). Returns a problem message, or null.
+    /// </summary>
+    public async Task<string?> SetCustomDisplayModeItemAsync(GameCardViewModel card, DisplayModeItem item, bool included, string? value)
     {
-        DisplayModeStore.SetItems(DisplayModeKey(card), items);
+        var key = DisplayModeKey(card);
+        var store = DisplayModeStore;
+        store.SetInCustom(key, item.Key, included);
+        store.SetCustomValue(key, item.Key, value);
         SaveNameMappings();
         NotifyDisplayModesChanged();
+        if (item.AtLaunch || !DisplayModeStore.IsCustom(store.ActiveModeId(key))) return null;
+        if (card.IsRunning) return "Saved. The game is running, so it's written the next time you switch modes.";
+        var ctx = BuildDisplayModeContext(card);
+        var svc = DisplayModeService;
+        return await Task.Run(() => svc.ValueFor(ctx, DisplayModeStore.CustomId, item) is { } v ? svc.ApplyNow(ctx, item, v) : null);
     }
 
     /// <summary>Reset Overrides: forget the game's display mode state (files are left as they are).</summary>
@@ -197,11 +212,19 @@ public partial class MainViewModel
         => DisplayModesOn ? DisplayModeStore.ActiveValue(DisplayModeKey(card), itemKey) : null;
 
     /// <summary>True when the game's HDR button is set by its display mode (in a mode that swaps HDR; Off = the button's own rule).</summary>
-    public bool DisplayModeOwnsHdr(GameCardViewModel card)
-        => DisplayModesOn && DisplayModeStore.IsManaged(DisplayModeKey(card)) && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Hdr);
+    public bool DisplayModeOwnsHdr(GameCardViewModel card) => DisplayModeOwns(card, DisplayModeItemKeys.Hdr);
 
-    public bool DisplayModeOwnsResolution(GameCardViewModel card)
-        => DisplayModesOn && DisplayModeStore.IsManaged(DisplayModeKey(card)) && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Resolution);
+    public bool DisplayModeOwnsResolution(GameCardViewModel card) => DisplayModeOwns(card, DisplayModeItemKeys.Resolution);
+
+    /// <summary>True when the game's active mode sets this launch item (a shared mode with a value, or Custom with it ticked).</summary>
+    private bool DisplayModeOwns(GameCardViewModel card, string itemKey)
+    {
+        if (!DisplayModesOn) return false;
+        var key = DisplayModeKey(card);
+        var store = DisplayModeStore;
+        return store.ActiveModeId(key) is { } mode
+            && (DisplayModeStore.IsCustom(mode) ? store.InCustom(key, itemKey) : store.ModeDefault(mode, itemKey) != null);
+    }
 
     /// <summary>HDR on launch for the game's current mode: On / Off from the mode, else null (use the normal rule).</summary>
     public bool? DisplayModeHdrOn(GameCardViewModel card) => DisplayModeLaunchValue(card, DisplayModeItemKeys.Hdr) switch
@@ -221,14 +244,22 @@ public partial class MainViewModel
         return v != null && uint.TryParse(v, out var id) ? new List<uint> { id } : null;
     }
 
-    /// <summary>The HDR / RES header button was clicked while the mode owns it: flips the current mode's value for this game.</summary>
-    public void SetDisplayModeLaunchValue(GameCardViewModel card, string itemKey, string value)
+    /// <summary>
+    /// The HDR / RES header button was clicked while the mode owns it. In the game's Custom mode it flips Custom's value;
+    /// in a shared mode it returns a message instead (that mode's values are set in Settings).
+    /// </summary>
+    public string? SetDisplayModeLaunchValue(GameCardViewModel card, string itemKey, string value)
     {
         var key = DisplayModeKey(card);
-        if (DisplayModeStore.ActiveModeId(key) is not { } mode) return;
-        DisplayModeStore.SetGameValue(key, mode, itemKey, value);
+        if (DisplayModeStore.ActiveModeId(key) is not { } mode) return null;
+        if (!DisplayModeStore.IsCustom(mode))
+            return $"{DisplayModeStore.NameOf(mode)} mode sets this for every game. Change it in Settings › Display › Display modes, "
+                 + "or make a Custom mode for this game with the ⚙ beside its mode switch.";
+        DisplayModeStore.SetInCustom(key, itemKey, true);
+        DisplayModeStore.SetCustomValue(key, itemKey, value);
         SaveNameMappings();
-        CrashReporter.Log($"[MainViewModel.SetDisplayModeLaunchValue] '{key}' {DisplayModeStore.NameOf(mode)}: {itemKey}={value}");
+        CrashReporter.Log($"[MainViewModel.SetDisplayModeLaunchValue] '{key}' Custom: {itemKey}={value}");
+        return null;
     }
 
     // ── Modes (Settings card) ─────────────────────────────────────────────────
@@ -295,13 +326,7 @@ public partial class MainViewModel
     {
         DisplayModeStore.SetModeDefault(modeId, item, value);
         SaveNameMappings();
-    }
-
-    public void SetDisplayModeDefaultItems(IEnumerable<string> items)
-    {
-        DisplayModeStore.SetDefaultItems(items);
-        SaveNameMappings();
-        NotifyDisplayModesChanged();
+        NotifyDisplayModesChanged(); // what games swap can change with it
     }
 
     public void SetDisplayModesEnabled(bool on)

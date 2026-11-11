@@ -22,6 +22,8 @@ public static class DisplayModeItemKeys
     public const string MfgMode = "MfgMode";
     public const string DlssSrPreset = "DlssSrPreset";
     public const string DlssSrScale = "DlssSrScale";
+    public const string DlssRrPreset = "DlssRrPreset";
+    public const string DlssRrScale = "DlssRrScale";
     public const string RsPreset = "RsPreset";
     public const string RsOverlayKey = "RsOverlayKey";
     public const string RsScreenshotKey = "RsScreenshotKey";
@@ -284,13 +286,32 @@ public static class DisplayModeItems
         },
         new()
         {
-            Key = DisplayModeItemKeys.DlssSrScale, Label = "DLSS render scale", Group = GroupImage, Kind = DisplayModeValueKind.Choice,
+            Key = DisplayModeItemKeys.DlssSrScale, Label = "DLSS Super Resolution render scale", Group = GroupImage, Kind = DisplayModeValueKind.Choice,
             Help = "The driver's DLSS SR render scale override, e.g. Performance on a 4K TV and Quality on a 1440p monitor.",
             Choices = () => DlssPresetService.RenderScaleOptions.Where(o => o.Value != 0xFFFFFFFF)
                 .Select(o => (o.Name, o.Value.ToString(CultureInfo.InvariantCulture))).ToList(),
             Unavailable = NeedNvidia,
             Read = c => c.Nvidia!.GetSrRenderScale(c.GameName, c.InstallPath).ToString(CultureInfo.InvariantCulture),
             Write = (c, v) => uint.TryParse(v, out var p) && c.Nvidia!.SetSrRenderScale(c.GameName, c.InstallPath, p) ? null : "Couldn't write the NVIDIA profile",
+        },
+        new()
+        {
+            Key = DisplayModeItemKeys.DlssRrPreset, Label = "DLSS Ray Reconstruction preset", Group = GroupImage, Kind = DisplayModeValueKind.Choice,
+            Help = "The driver's DLSS Ray Reconstruction preset override for this game (NVIDIA profile). Used in games with ray reconstruction.",
+            Choices = () => DlssPresetService.RrPresets.Select(p => (p.Name, p.Value.ToString(CultureInfo.InvariantCulture))).ToList(),
+            Unavailable = NeedNvidia,
+            Read = c => c.Nvidia!.GetRrPreset(c.GameName, c.InstallPath).ToString(CultureInfo.InvariantCulture),
+            Write = (c, v) => uint.TryParse(v, out var p) && c.Nvidia!.SetRrPreset(c.GameName, c.InstallPath, p) ? null : "Couldn't write the NVIDIA profile",
+        },
+        new()
+        {
+            Key = DisplayModeItemKeys.DlssRrScale, Label = "DLSS Ray Reconstruction render scale", Group = GroupImage, Kind = DisplayModeValueKind.Choice,
+            Help = "The driver's DLSS Ray Reconstruction render scale override. Used instead of the Super Resolution one while ray reconstruction is on.",
+            Choices = () => DlssPresetService.RenderScaleOptions.Where(o => o.Value != 0xFFFFFFFF)
+                .Select(o => (o.Name, o.Value.ToString(CultureInfo.InvariantCulture))).ToList(),
+            Unavailable = NeedNvidia,
+            Read = c => c.Nvidia!.GetRrRenderScale(c.GameName, c.InstallPath).ToString(CultureInfo.InvariantCulture),
+            Write = (c, v) => uint.TryParse(v, out var p) && c.Nvidia!.SetRrRenderScale(c.GameName, c.InstallPath, p) ? null : "Couldn't write the NVIDIA profile",
         },
         new()
         {

@@ -1,6 +1,6 @@
 // SettingsHandler.DisplayModes.cs -- Settings › Display › "Display modes" card (built in C#, XAML constraint):
 // the on/off switch for the game page mode switch, the modes (add / rename / reorder / delete, default values per
-// mode), the default list of what games swap, and "Switch all games". Appended to the Display section the first
+// mode, which every game in that mode gets) and "Switch all games". Appended to the Display section the first
 // time Settings opens; rebuilt when modes change. Data: MainViewModel.DisplayModes.cs.
 
 using Microsoft.UI.Xaml;
@@ -41,8 +41,9 @@ public partial class SettingsHandler
             head.Children.Add(new TextBlock
             {
                 Text = "Save sets of the settings RHI applies to a game and switch between them from its page, e.g. one for your monitor and one for your TV, "
-                     + "or for trying different setups. Modes don't change your display themselves. Each game swaps only what you choose "
-                     + "(peak brightness, frame rate caps, keys, DLSS settings, HDR and resolution on launch, ...) and remembers its own values per mode.",
+                     + "or for trying different setups. Modes don't change your display themselves. Set a mode's values with Edit... "
+                     + "(peak brightness, frame rate caps, keys, DLSS settings, DLDSR, HDR and resolution on launch, ...): every game you switch to that mode gets them. "
+                     + "For different values in one game, make it a Custom mode with the ⚙ beside its mode switch.",
                 Style = FindStyle("SettingsCardDescStyle"),
                 TextWrapping = TextWrapping.Wrap,
             });
@@ -111,7 +112,7 @@ public partial class SettingsHandler
             int setCount = DisplayModeItems.All.Count(it => store.ModeDefault(m.Id, it.Key) != null);
             var label = new TextBlock
             {
-                Text = setCount == 0 ? $"{m.Name}  (no defaults set)" : $"{m.Name}  ({setCount} default{(setCount == 1 ? "" : "s")})",
+                Text = setCount == 0 ? $"{m.Name}  (nothing set)" : $"{m.Name}  ({setCount} setting{(setCount == 1 ? "" : "s")})",
                 Style = FindStyle("SettingsLabelStyle"),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
@@ -120,7 +121,7 @@ public partial class SettingsHandler
             var buttons = new Controls.WrapPanel { HorizontalSpacing = 6, VerticalSpacing = 6, HorizontalAlignment = HorizontalAlignment.Right };
             var id = m.Id;
             var name = m.Name;
-            buttons.Children.Add(DmButton("Defaults...", DmKind.Normal, $"The values games use in {name} mode until they have their own.",
+            buttons.Children.Add(DmButton("Edit...", DmKind.Normal, $"The values every game gets in {name} mode.",
                 async () => await ShowModeDefaultsAsync(id)));
             buttons.Children.Add(DmButton("Rename", DmKind.Normal, $"Rename {name}", async () =>
             {
@@ -155,36 +156,11 @@ public partial class SettingsHandler
             var newName = await PromptModeNameAsync("Add mode", "Name for the new mode:", "Add", "", null);
             if (newName == null) return;
             var newId = vm.AddDisplayMode(newName);
-            if (newId != null) SetDmStatus($"Added {newName}. Set its defaults with Defaults..., or give games their own values from their page.", false);
+            if (newId != null) SetDmStatus($"Added {newName}. Set its values with Edit..., or give a game its own values from its page.", false);
         });
         addBtn.IsEnabled = modes.Count < DisplayModeStore.MaxModes;
         addRow.Children.Add(addBtn);
         _dmBody.Children.Add(addRow);
-
-        // ── Default list ──
-        _dmBody.Children.Add(new TextBlock { Text = "What games swap", Style = FindStyle("SettingsHeadStyle") });
-        var defaults = store.DefaultItems.Select(DisplayModeItems.Get).Where(i => i != null).Select(i => i!.Label).ToList();
-        var listBtn = DmButton("Choose...", DmKind.Normal, "Pick what games swap unless you choose for a game on its page (the ⚙ beside the mode switch).",
-            async () => await ShowDefaultItemsAsync());
-        var listRow = new Grid { ColumnSpacing = 10 };
-        listRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        listRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        listRow.Children.Add(new TextBlock
-        {
-            Text = defaults.Count == 0 ? "Nothing (choose for each game on its page)" : string.Join(", ", defaults),
-            Style = FindStyle("SettingsLabelStyle"),
-            TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        Grid.SetColumn(listBtn, 1);
-        listRow.Children.Add(listBtn);
-        _dmBody.Children.Add(listRow);
-        _dmBody.Children.Add(new TextBlock
-        {
-            Text = "The default for every game. A game can have its own list (the ⚙ beside its mode switch).",
-            Style = FindStyle("SettingsHelpStyle"),
-            TextWrapping = TextWrapping.Wrap,
-        });
 
         // ── Switch all ──
         _dmBody.Children.Add(new TextBlock { Text = "Switch all games", Style = FindStyle("SettingsHeadStyle") });
@@ -289,9 +265,10 @@ public partial class SettingsHandler
         var name = store.NameOf(modeId);
         if (name == null) return;
         var cog = new CogDialog($"{name} Mode", _window.Content.XamlRoot);
-        cog.AddIntro($"Values games use in {name} mode until they have their own. A game gets its own value when you switch it away from {name} " +
-                     "(what it has then is kept) or when you set one on its page. Empty = not set: the game uses its normal value " +
-                     "(your global setting, or what it had before display modes; left as it is when there's neither).");
+        cog.AddIntro($"What every game gets when you switch it to {name} mode. Anything set in any mode is changed by every game, " +
+                     "and a game in a mode without a value for it gets its normal value back (your global setting, or what it had " +
+                     "before display modes). Empty = not set. For different values in one game, make it a Custom mode with the ⚙ beside its mode switch. " +
+                     "Games already in this mode get a change the next time you switch them.");
         foreach (var group in DisplayModeItems.Groups)
         {
             cog.AddSection(group);
@@ -304,36 +281,6 @@ public partial class SettingsHandler
                 cog.AddRow(item.Label, editor, item.Help);
             }
         }
-        await cog.ShowAsync();
-        RefreshDisplayModesCard();
-    }
-
-    /// <summary>The default list of what games swap (games without a list of their own).</summary>
-    private async Task ShowDefaultItemsAsync()
-    {
-        var vm = ViewModel;
-        var store = vm.DisplayModeStore;
-        var cog = new CogDialog("Display Modes", _window.Content.XamlRoot);
-        cog.AddIntro("What games swap when you switch modes, unless a game has its own list (the ⚙ beside its mode switch). " +
-                     "Items a game can't use (e.g. ReLimiter isn't installed) are skipped for that game.");
-        var checks = new Dictionary<string, CheckBox>(StringComparer.OrdinalIgnoreCase);
-        var current = store.DefaultItems;
-        foreach (var group in DisplayModeItems.Groups)
-        {
-            cog.AddSection(group);
-            var grid = new Controls.AutoFitGrid { MinColumnWidth = 270 };
-            foreach (var item in DisplayModeItems.All.Where(i => i.Group == group))
-            {
-                var cb = new CheckBox { Content = item.Label, FontSize = 12, MinWidth = 0, IsChecked = current.Contains(item.Key, StringComparer.OrdinalIgnoreCase) };
-                ToolTipService.SetToolTip(cb, item.Help);
-                cb.Checked += (_, _) => Save();
-                cb.Unchecked += (_, _) => Save();
-                checks[item.Key] = cb;
-                grid.Children.Add(cb);
-            }
-            cog.AddContent(grid);
-        }
-        void Save() => vm.SetDisplayModeDefaultItems(checks.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList());
         await cog.ShowAsync();
         RefreshDisplayModesCard();
     }

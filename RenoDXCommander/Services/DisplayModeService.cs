@@ -172,13 +172,9 @@ public sealed class DisplayModeService
             _store.SetOriginal(key, item.Key, current);
             return;
         }
-        bool recorded = _store.TryGetEntry(key, item.Key, out var atEntry);
-        if (!recorded)
-        {
-            if (_store.OriginalValue(key, item.Key) == null) _store.SetOriginal(key, item.Key, current);
-        }
-        else if (atEntry != null && !atEntry.Equals(current, StringComparison.Ordinal))
-            _store.SetGameValue(key, from, item.Key, current);
+        // An item that wasn't recorded on entry (it started being swapped while in the mode) is the game's normal value
+        if (!_store.TryGetEntry(key, item.Key, out _) && _store.OriginalValue(key, item.Key) == null)
+            _store.SetOriginal(key, item.Key, current);
     }
 
     /// <summary>The game's normal value for an item: the global setting, else its value from before modes. Null = none.</summary>

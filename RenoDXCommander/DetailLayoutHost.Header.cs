@@ -355,9 +355,15 @@ internal sealed partial class DetailLayoutHost
         if (resOn != _hResOn || _hRes!.Tag == null) { _hResOn = resOn; _hRes = ReplaceToggle(_hRes!, 1, "Resolution switch", resOn, e => w.HeaderToggleRes(e)); }
         ToolTipService.SetToolTip(_hHdr, ToolTipService.GetToolTip(w.HeaderHdrButton) as string);
         ToolTipService.SetToolTip(_hRes, ToolTipService.GetToolTip(w.HeaderResButton) as string);
+        // Either can be hidden in Settings › Display: the other takes the whole row, neither = no row
+        bool hdrShown = w.HeaderHdrButton.Visibility == Visibility.Visible;
         bool resShown = w.HeaderResButton.Visibility == Visibility.Visible;
+        _hHdr.Visibility = hdrShown ? Visibility.Visible : Visibility.Collapsed;
         _hRes.Visibility = resShown ? Visibility.Visible : Visibility.Collapsed;
         Grid.SetColumnSpan(_hHdr, resShown ? 1 : 2);
+        Grid.SetColumn(_hRes, hdrShown ? 1 : 0);
+        Grid.SetColumnSpan(_hRes, hdrShown ? 1 : 2);
+        _hToggles!.Visibility = hdrShown || resShown ? Visibility.Visible : Visibility.Collapsed;
 
         RefreshHeaderDisplayModes(card);
 
@@ -374,7 +380,7 @@ internal sealed partial class DetailLayoutHost
         if (card != null && vm.DisplayModesOn)
         {
             var key = ViewModels.MainViewModel.DisplayModeKey(card);
-            sig = key + "|" + vm.ActiveDisplayModeId(card) + "|" + string.Join(",", vm.DisplayModeStore.Modes.Select(m => m.Id + "=" + m.Name))
+            sig = key + "|" + vm.ActiveDisplayModeId(card) + "|" + string.Join(",", vm.DisplayModeStore.ModesFor(key).Select(m => m.Id + "=" + m.Name))
                 + "|" + string.Join(",", vm.DisplayModeStore.ItemsFor(key));
         }
         if (sig == _hModesSig && (_hModes.Child != null) == (sig.Length > 0)) return;

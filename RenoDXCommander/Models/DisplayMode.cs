@@ -1,6 +1,6 @@
-// DisplayMode.cs -- saved data for Display modes (Monitor / TV / ...): the modes with their default values,
-// the default list of things a game swaps, and each game's own state (active mode, its own list, and the values
-// it remembers per mode). Saved in settings.json as "DisplayModes" (DisplayModeStore.Snapshot).
+// DisplayMode.cs -- saved data for Display modes (Monitor / TV / ...): the modes with their values (every game
+// swaps an item a mode has a value for) and each game's own state (active mode, the items ticked on its page,
+// and its own values per mode for those). Saved in settings.json as "DisplayModes" (DisplayModeStore.Snapshot).
 
 namespace RenoDXCommander.Models;
 
@@ -19,10 +19,13 @@ public sealed class GameDisplayModeState
     /// <summary>Active mode id. Null = Off: the game isn't in a mode and follows the global settings.</summary>
     public string? Mode { get; set; }
 
-    /// <summary>Item keys this game swaps. Null = the default list from Settings.</summary>
+    /// <summary>True once a Custom mode was made for this game in its ⚙ (only this game shows it).</summary>
+    public bool Custom { get; set; }
+
+    /// <summary>Settings the game's Custom mode changes (ticked in its ⚙). Null = none.</summary>
     public List<string>? Items { get; set; }
 
-    /// <summary>Mode id → item key → this game's own value for that mode (remembered when switching away).</summary>
+    /// <summary>Mode id → item key → value. Only the Custom mode ("custom") is used: its values for this game.</summary>
     public Dictionary<string, Dictionary<string, string>> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -46,6 +49,8 @@ public sealed class GameDisplayModeState
 public sealed class DisplayModeData
 {
     public List<DisplayModeDefinition> Modes { get; set; } = new();
-    public List<string> DefaultItems { get; set; } = new();
+    /// <summary>Old Settings default list, read only to migrate it into games' ticks (no longer saved).</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? DefaultItems { get; set; }
     public Dictionary<string, GameDisplayModeState> Games { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

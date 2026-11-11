@@ -90,6 +90,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
     /// <summary>Display modes (Monitor / TV / ...): shows the mode switch on game pages. Modes and per-game state: GameNameService.DisplayModes.</summary>
     [ObservableProperty] private bool _displayModesEnabled;
+    // Show the HDR / Resolution launch buttons on game pages (hidden = still applied at launch)
+    [ObservableProperty] private bool _showHdrLaunchButton = true;
+    [ObservableProperty] private bool _showResLaunchButton = true;
     // ── Resolution Auto-Toggle (dev-only) ─────────────────────────────────────
     [ObservableProperty] private bool _resolutionAutoToggle;
     /// <summary>Target resolution key in "WxH@Hz" format. Empty = no override.</summary>
@@ -397,6 +400,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastKnownNewestStreamline", out var lknsVal)) LastKnownNewestStreamline = lknsVal ?? "";
         if (s.TryGetValue("HdrAutoToggle", out var hatVal)) HdrAutoToggle = hatVal == "true";
         if (s.TryGetValue("DisplayModesEnabled", out var dmeVal)) DisplayModesEnabled = dmeVal == "true";
+        ShowHdrLaunchButton = !s.TryGetValue("ShowHdrLaunchButton", out var shlbVal) || shlbVal != "false";
+        ShowResLaunchButton = !s.TryGetValue("ShowResLaunchButton", out var srlbVal) || srlbVal != "false";
         if (s.TryGetValue("HdrTargetDisplays", out var htdVal))
         {
             try { HdrTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(htdVal) ?? new(); }
@@ -598,6 +603,8 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         s["HdrAutoToggle"] = HdrAutoToggle ? "true" : "false";
         s["DisplayModesEnabled"] = DisplayModesEnabled ? "true" : "false";
+        s["ShowHdrLaunchButton"] = ShowHdrLaunchButton ? "true" : "false";
+        s["ShowResLaunchButton"] = ShowResLaunchButton ? "true" : "false";
         if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
         s["ResolutionAutoToggle"] = ResolutionAutoToggle ? "true" : "false";
         if (!string.IsNullOrEmpty(ResolutionTarget)) s["ResolutionTarget"] = ResolutionTarget;

@@ -311,6 +311,8 @@ public partial class SettingsHandler
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureDisplayModesCard();
+        EnsureLaunchButtonRows();
+        EnsureShaderCompileRow();
         EnsureAchievementsSection(); // before the nav, so it gets a jump button
         EnsureRhiOverlaySection();   // same; lands after Achievements (both go just before Tools)
         EnsureSettingsNavigation();

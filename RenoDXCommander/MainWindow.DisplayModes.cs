@@ -20,7 +20,8 @@ public sealed partial class MainWindow
     private static readonly HashSet<string> DmDriverItems = new(StringComparer.OrdinalIgnoreCase)
     {
         DisplayModeItemKeys.DriverFpsCap, DisplayModeItemKeys.MfgMode, DisplayModeItemKeys.DlssSrPreset,
-        DisplayModeItemKeys.DlssSrScale, DisplayModeItemKeys.RtxHdrPeak,
+        DisplayModeItemKeys.DlssSrScale, DisplayModeItemKeys.DlssRrPreset, DisplayModeItemKeys.DlssRrScale,
+        DisplayModeItemKeys.RtxHdrPeak,
     };
 
     // ── HDR / RES header buttons ─────────────────────────────────────────────
@@ -29,12 +30,14 @@ public sealed partial class MainWindow
     internal void RefreshHeaderLaunchToggles(GameCardViewModel card)
     {
         var (hdrOn, hdrSource) = ResolveHdrButton(card);
+        // Settings › Display can hide either button; what it's set to still applies at launch
+        DetailHdrToggleBtn.Visibility = ViewModel.Settings.ShowHdrLaunchButton ? Visibility.Visible : Visibility.Collapsed;
         DetailHdrToggleBtn.Tag = card;
         DetailHdrToggleText.Text = "HDR";
         StyleClassicToggle(DetailHdrToggleBtn, DetailHdrToggleText, hdrOn);
         ToolTipService.SetToolTip(DetailHdrToggleBtn, DetailPanelBuilder.HdrToggleTooltip(hdrOn, hdrSource));
 
-        if (FeatureFlags.ResolutionControl)
+        if (FeatureFlags.ResolutionControl && ViewModel.Settings.ShowResLaunchButton)
         {
             var (resOn, resSource) = ResolveResButton(card);
             DetailResToggleBtn.Visibility = Visibility.Visible;
@@ -47,6 +50,14 @@ public sealed partial class MainWindow
         {
             DetailResToggleBtn.Visibility = Visibility.Collapsed;
         }
+    }
+
+    /// <summary>Settings › Display showed or hid the HDR / Resolution buttons: update the shown game's header.</summary>
+    internal void RefreshLaunchButtonsShown()
+    {
+        if (ViewModel.SelectedGame is not { } card) return;
+        RefreshHeaderLaunchToggles(card);
+        _detailPanelBuilder?.Layout.RefreshHeader();
     }
 
     private static void StyleClassicToggle(Button btn, TextBlock text, bool active)
@@ -88,7 +99,8 @@ public sealed partial class MainWindow
     {
         if (!ViewModel.DisplayModeOwnsHdr(card)) return false;
         bool on = ResolveHdrButton(card).On;
-        ViewModel.SetDisplayModeLaunchValue(card, DisplayModeItemKeys.Hdr, on ? "Off" : "On");
+        if (ViewModel.SetDisplayModeLaunchValue(card, DisplayModeItemKeys.Hdr, on ? "Off" : "On") is { } why)
+            ShowStatusBarMessage(why, TimeSpan.FromSeconds(10));
         RefreshHeaderLaunchToggles(card);
         return true;
     }
@@ -97,7 +109,8 @@ public sealed partial class MainWindow
     {
         if (!ViewModel.DisplayModeOwnsResolution(card)) return false;
         bool on = ResolveResButton(card).On;
-        ViewModel.SetDisplayModeLaunchValue(card, DisplayModeItemKeys.Resolution, on ? "Off" : "On");
+        if (ViewModel.SetDisplayModeLaunchValue(card, DisplayModeItemKeys.Resolution, on ? "Off" : "On") is { } why)
+            ShowStatusBarMessage(why, TimeSpan.FromSeconds(10));
         RefreshHeaderLaunchToggles(card);
         return true;
     }
@@ -131,7 +144,7 @@ public sealed partial class MainWindow
             // Divider between the mod badges and the mode switch
             _dmClassicHost.Children.Add(new Border { Width = 1, Height = 16, Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush), Margin = new Thickness(0, 0, 4, 0) });
 
-            var modes = ViewModel.DisplayModeStore.Modes;
+            var modes = ViewModel.DisplayModeStore.ModesFor(MainViewModel.DisplayModeKey(card));
             var active = ViewModel.ActiveDisplayModeId(card);
             if (modes.Count <= 4)
             {
@@ -159,7 +172,7 @@ public sealed partial class MainWindow
             var cogText = new TextBlock { Text = "⚙", FontSize = 11 };
             var cog = MakeClassicChip(cogText);
             StyleClassicToggle(cog, cogText, false);
-            ToolTipService.SetToolTip(cog, "Display mode settings for this game: what it swaps and its values per mode");
+            ToolTipService.SetToolTip(cog, "Display mode settings for this game: its mode, and a Custom mode just for this game");
             cog.Click += async (s, e) => await ShowDisplayModeGameDialogAsync(card);
             _dmClassicHost.Children.Add(cog);
         }
@@ -184,7 +197,7 @@ public sealed partial class MainWindow
     internal Grid? BuildTabsDisplayModeSwitch(GameCardViewModel card, Action afterChange)
     {
         if (!ViewModel.DisplayModesOn) return null;
-        var modes = ViewModel.DisplayModeStore.Modes;
+        var modes = ViewModel.DisplayModeStore.ModesFor(MainViewModel.DisplayModeKey(card));
         var active = ViewModel.ActiveDisplayModeId(card);
         var grid = new Grid { ColumnSpacing = 8 };
 
@@ -225,7 +238,7 @@ public sealed partial class MainWindow
 
         var cog = new Button { Width = 36, Padding = new Thickness(0), Content = TabsTheme.Icon("", 15) };
         TabsTheme.Apply(cog, TabsTheme.IconButton with { Fg = TabsTheme.TextSecondary }, height: 36);
-        ToolTipService.SetToolTip(cog, "Display mode settings for this game: what it swaps and its values per mode");
+        ToolTipService.SetToolTip(cog, "Display mode settings for this game: its mode, and a Custom mode just for this game");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(cog, "Display mode settings");
         cog.Click += async (s, e) => { await ShowDisplayModeGameDialogAsync(card); afterChange(); };
         AddButton(cog, false);
@@ -236,7 +249,7 @@ public sealed partial class MainWindow
     {
         var items = ViewModel.DisplayModeStore.ItemsFor(MainViewModel.DisplayModeKey(card))
             .Select(DisplayModeItems.Get).Where(i => i != null).Select(i => i!.Label).ToList();
-        var what = items.Count == 0 ? "nothing yet (choose what to swap with the ⚙)" : string.Join(", ", items);
+        var what = items.Count == 0 ? "nothing yet (set what modes change in Settings › Display › Display modes, or per game with the ⚙)" : string.Join(", ", items);
         return on
             ? $"{modeName} mode is active for this game.\nSwaps: {what}.\nClick to turn it off: the game goes back to your global settings."
             : $"Switch this game to {modeName} mode.\nSwaps: {what}.";
@@ -249,7 +262,7 @@ public sealed partial class MainWindow
         var off = new ToggleMenuFlyoutItem { Text = "Off (global settings)", IsChecked = active == null };
         off.Click += async (s, e) => { await SwitchDisplayModeFromUiAsync(card, null); afterChange?.Invoke(); };
         menu.Items.Add(off);
-        foreach (var m in ViewModel.DisplayModeStore.Modes)
+        foreach (var m in ViewModel.DisplayModeStore.ModesFor(MainViewModel.DisplayModeKey(card)))
         {
             var item = new ToggleMenuFlyoutItem { Text = m.Name, IsChecked = m.Id.Equals(active, StringComparison.OrdinalIgnoreCase) };
             var id = m.Id;
@@ -314,7 +327,7 @@ public sealed partial class MainWindow
             catch (Exception ex) when (ex is InvalidOperationException) { CrashReporter.Log($"[MainWindow.DisplayModeMenu] {ex.Message}"); }
         };
         sub.Items.Add(off);
-        foreach (var m in ViewModel.DisplayModeStore.Modes)
+        foreach (var m in ViewModel.DisplayModeStore.ModesFor(MainViewModel.DisplayModeKey(card)))
         {
             var item = new ToggleMenuFlyoutItem { Text = m.Name, IsChecked = m.Id.Equals(active, StringComparison.OrdinalIgnoreCase) };
             var id = m.Id;
@@ -334,7 +347,7 @@ public sealed partial class MainWindow
 
     // ── Per-game dialog ──────────────────────────────────────────────────────
 
-    /// <summary>What the game swaps (default list or its own) and its value per mode.</summary>
+    /// <summary>The game's mode, and its own Custom mode (made here, shown only for this game).</summary>
     internal async Task ShowDisplayModeGameDialogAsync(GameCardViewModel card)
     {
         try
@@ -354,9 +367,9 @@ public sealed partial class MainWindow
             });
 
             var cog = new CogDialog("Display Mode Settings", Content.XamlRoot);
-            cog.AddIntro($"Display modes swap settings for {card.GameName} when you switch between them, e.g. Monitor and TV. " +
-                         "The game remembers its own values per mode: when you switch away from a mode, what the game has then " +
-                         "(including changes made in game) is kept for that mode. Off = no mode: the game uses your global settings.");
+            cog.AddIntro($"Pick the display mode for {card.GameName}. Your modes from Settings › Display › Display modes apply to every game. " +
+                         "Below you can make a Custom mode just for this game: it shows beside your other modes only here, and changes only " +
+                         "what you tick in it. Off = no mode: the game uses your global settings.");
             if (!vm.DisplayModesOn)
                 cog.AddWarning("Display modes are off. Turn them on in Settings › Display to show the switch on game pages.");
             if (card.IsRunning)
@@ -364,23 +377,32 @@ public sealed partial class MainWindow
 
             // ── Mode ──
             cog.AddSection("Mode");
-            var modes = store.Modes;
-            var modeNames = modes.Select(m => m.Name).ToList();
-            int modeIdx = modes.ToList().FindIndex(m => m.Id.Equals(store.ActiveModeId(key) ?? "", StringComparison.OrdinalIgnoreCase));
-            int activeIdx = Math.Max(0, modeIdx); // for "Values for" (no Off there)
-            StackPanel valuesPanel = new() { Spacing = 10 };
-            ComboBox? valuesModeCombo = null;
-
-            // Off first, then the modes
-            cog.AddCombo("Current mode",
-                "Switching writes this game's values for that mode. Pick the current mode again to re-apply its values. " +
+            var modes = store.ModesFor(key).ToList();
+            bool rebuildingCombo = false;
+            ComboBox? modeCombo = null;
+            var customPanel = new StackPanel { Spacing = 8 };
+            List<string> ModeChoices() => new[] { "Off" }.Concat(modes.Select(m => m.Name)).ToList();
+            int ActiveIndex() => modes.FindIndex(m => m.Id.Equals(store.ActiveModeId(key) ?? "", StringComparison.OrdinalIgnoreCase)) + 1;
+            modeCombo = cog.AddCombo("Current mode",
+                "Switching writes that mode's values to the game. Pick the current mode again to re-apply them. " +
                 "Off writes your global settings back (and what the game had before modes, for settings without a global value).",
-                new[] { "Off" }.Concat(modeNames).ToList(), modeIdx + 1, i =>
+                ModeChoices(), ActiveIndex(), i =>
                 {
+                    if (rebuildingCombo) return true;
                     if (!vm.DisplayModesOn) { cog.SetError("Turn display modes on in Settings › Display first."); return false; }
                     _ = SwitchFromDialogAsync(i == 0 ? null : modes[i - 1].Id);
                     return true;
                 });
+
+            void RefreshModeCombo()
+            {
+                modes = store.ModesFor(key).ToList();
+                if (modeCombo == null) return;
+                rebuildingCombo = true;
+                modeCombo.ItemsSource = ModeChoices();
+                modeCombo.SelectedIndex = ActiveIndex();
+                rebuildingCombo = false;
+            }
 
             async Task SwitchFromDialogAsync(string? id)
             {
@@ -390,112 +412,123 @@ public sealed partial class MainWindow
                 if (result == null) return;
                 cog.SetSuccess(result.Summary);
                 RefreshDisplayModeUi(card);
-                // Values were remembered for the mode left: show them
                 inGame = await Task.Run(() => vm.DisplayModeService.ReadCurrent(ctx, items));
-                BuildValues();
+                BuildCustom();
             }
 
-            // ── What it swaps ──
-            cog.AddSection("What this game swaps");
-            var checks = new Dictionary<string, CheckBox>(StringComparer.OrdinalIgnoreCase);
-            bool suppress = false;
-            cog.AddCombo("List",
-                "The default list is set in Settings › Display › Display modes. Pick Its own list to choose for this game only.",
-                new[] { "Default list", "Its own list" }, store.UsesDefaultItems(key) ? 0 : 1, i =>
-                {
-                    vm.SetDisplayModeItems(card, i == 0 ? null : store.ItemsFor(key));
-                    SyncChecks();
-                    BuildValues();
-                    return true;
-                });
+            // ── Custom mode for this game ──
+            cog.AddSection($"Custom mode for {card.GameName}");
+            cog.AddContent(customPanel);
 
-            var checkGrid = new Controls.AutoFitGrid { MinColumnWidth = 270 };
-            foreach (var group in DisplayModeItems.Groups)
+            void Report(string text, bool error) { if (error) cog.SetError(text); else cog.SetSuccess(text); }
+
+            void BuildCustom()
             {
-                var head = TabsTheme.SectionHeading(group);
-                head.FontSize = 11;
-                head.Margin = new Thickness(0, 6, 0, 0);
-                cog.AddContent(head);
-                checkGrid = new Controls.AutoFitGrid { MinColumnWidth = 270 };
-                foreach (var item in items.Where(i => i.Group == group))
+                customPanel.Children.Clear();
+                if (!store.HasCustom(key))
                 {
-                    var reason = reasons.TryGetValue(item.Key, out var r) ? r : null;
-                    var cb = new CheckBox
+                    customPanel.Children.Add(MutedLine("Make a mode just for this game: tick the settings it changes and set their values. " +
+                        "It shows as Custom beside your other modes, only for this game, and wins over them while it's picked."));
+                    customPanel.Children.Add(cog.MakeButton("Create custom mode", CogButtonKind.Primary, () =>
                     {
-                        Content = reason == null ? item.Label : $"{item.Label} (not available)",
-                        FontSize = 12,
-                        MinWidth = 0,
-                        Opacity = reason == null ? 1 : 0.6,
-                    };
-                    ToolTipService.SetToolTip(cb, reason == null ? item.Help : $"{item.Help}\n\nNot available for this game now: {reason}. It's used once that changes.");
-                    var k = item.Key;
-                    cb.Checked += (_, _) => OnCheck();
-                    cb.Unchecked += (_, _) => OnCheck();
-                    checks[k] = cb;
-                    checkGrid.Children.Add(cb);
-                }
-                cog.AddContent(checkGrid);
-            }
-
-            void SyncChecks()
-            {
-                suppress = true;
-                var list = store.ItemsFor(key);
-                bool own = !store.UsesDefaultItems(key);
-                foreach (var (k, cb) in checks)
-                {
-                    cb.IsChecked = list.Contains(k, StringComparer.OrdinalIgnoreCase);
-                    cb.IsEnabled = own;
-                }
-                suppress = false;
-            }
-
-            void OnCheck()
-            {
-                if (suppress) return;
-                var list = checks.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
-                vm.SetDisplayModeItems(card, list);
-                BuildValues();
-            }
-            SyncChecks();
-
-            // ── Values ──
-            cog.AddSection("Values");
-            cog.AddNote("Empty = the mode's default from Settings › Display › Display modes, else the game's normal value (your global setting, " +
-                        "or what it had before display modes). Values for the current mode are written to the game as soon as you set them.");
-            valuesModeCombo = cog.AddCombo("Values for", null, modeNames, activeIdx, i => { BuildValues(); return true; });
-            cog.AddContent(valuesPanel);
-
-            void BuildValues()
-            {
-                valuesPanel.Children.Clear();
-                int mi = valuesModeCombo?.SelectedIndex ?? 0;
-                if (mi < 0 || mi >= modes.Count) mi = 0;
-                var mode = modes[mi];
-                bool isActive = mode.Id.Equals(store.ActiveModeId(key) ?? "", StringComparison.OrdinalIgnoreCase);
-                var swapped = store.ItemsFor(key).Select(DisplayModeItems.Get).Where(i => i != null).Cast<DisplayModeItem>()
-                    .OrderBy(i => items.ToList().IndexOf(i)).ToList();
-                if (swapped.Count == 0)
-                {
-                    valuesPanel.Children.Add(MutedLine("Tick what this game swaps above."));
+                        vm.CreateCustomDisplayMode(card);
+                        RefreshModeCombo();
+                        BuildCustom();
+                        RefreshDisplayModeUi(card);
+                        cog.SetSuccess("Custom mode made. Tick what it changes, then pick Custom as the current mode.");
+                    }));
                     return;
                 }
-                foreach (var item in swapped)
+
+                bool inCustom = DisplayModeStore.IsCustom(store.ActiveModeId(key));
+                customPanel.Children.Add(MutedLine(inCustom
+                    ? "The game is in Custom: changes here are written to it now. Settings you don't tick get the game's normal values."
+                    : "Tick the settings Custom changes and set their values. Settings you don't tick get the game's normal values while it's in Custom. Pick Custom as the current mode above to use it."));
+
+                foreach (var group in DisplayModeItems.Groups)
                 {
-                    var def = store.ModeDefault(mode.Id, item.Key);
-                    var unset = def != null ? $"Mode default ({item.Format(def)})"
-                        : item.AtLaunch ? "Not set (the game's own setting)" : "Not set (normal value)";
-                    var editor = DisplayModeEditor.Build(item, store.GameValue(key, mode.Id, item.Key), unset,
-                        v => vm.SetDisplayModeGameValueAsync(card, mode.Id, item, v),
-                        (text, error) => { if (error) cog.SetError(text); else cog.SetSuccess(text); });
-                    var notes = new List<string>();
-                    if (item.AtLaunch) notes.Add("Used when RHI launches the game");
-                    else if (reasons.TryGetValue(item.Key, out var reason) && reason != null) notes.Add($"Not available now: {reason}");
-                    else if (isActive && inGame.TryGetValue(item.Key, out var now)) notes.Add($"In the game now: {item.Format(now)}");
-                    valuesPanel.Children.Add(MakeValueRow(item.Label, editor, string.Join(". ", notes), item.Help));
+                    var head = TabsTheme.SectionHeading(group);
+                    head.FontSize = 11;
+                    head.Margin = new Thickness(0, 6, 0, 0);
+                    customPanel.Children.Add(head);
+                    foreach (var item in items.Where(i => i.Group == group))
+                        customPanel.Children.Add(CustomRow(item, inCustom));
                 }
+
+                var delete = cog.MakeButton("Delete custom mode", CogButtonKind.Danger, async () =>
+                {
+                    await vm.DeleteCustomDisplayModeAsync(card);
+                    RefreshModeCombo();
+                    inGame = await Task.Run(() => vm.DisplayModeService.ReadCurrent(ctx, items));
+                    BuildCustom();
+                    RefreshDisplayModeUi(card);
+                    cog.SetSuccess(inCustom ? "Custom mode deleted. The game's mode is off: it's back on your global settings." : "Custom mode deleted.");
+                }, "Removes this game's Custom mode. If the game is in it, its mode is turned off first.");
+                delete.Margin = new Thickness(0, 8, 0, 0);
+                customPanel.Children.Add(delete);
             }
-            BuildValues();
+
+            // One setting: tick | name | its value (only while ticked)
+            FrameworkElement CustomRow(DisplayModeItem item, bool inCustom)
+            {
+                bool on = store.InCustom(key, item.Key);
+                var reason = reasons.TryGetValue(item.Key, out var r) ? r : null;
+                var grid = new Grid { ColumnSpacing = CogDialog.ColumnGap };
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(CogDialog.LabelColumnWidth + 60) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var cb = new CheckBox
+                {
+                    Content = new TextBlock { Text = item.Label, FontSize = 12, TextWrapping = TextWrapping.Wrap },
+                    IsChecked = on,
+                    MinWidth = 0,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                ToolTipService.SetToolTip(cb, reason == null ? item.Help : $"{item.Help}\n\nNot available for this game now: {reason}.");
+                cb.Checked += async (_, _) => await TickAsync(item, true);
+                cb.Unchecked += async (_, _) => await TickAsync(item, false);
+                grid.Children.Add(cb);
+
+                FrameworkElement right;
+                if (on)
+                {
+                    var unset = item.AtLaunch ? "Not set (the game's own setting)" : "Not set (normal value)";
+                    right = DisplayModeEditor.Build(item, store.CustomValue(key, item.Key), unset,
+                        v => vm.SetCustomDisplayModeItemAsync(card, item, true, v), Report);
+                    right.HorizontalAlignment = HorizontalAlignment.Stretch;
+                }
+                else
+                {
+                    string note = reason != null ? $"Not available now: {reason}"
+                        : item.AtLaunch ? "Not changed (used when RHI launches the game)"
+                        : inGame.TryGetValue(item.Key, out var now) && now != null ? $"Not changed (now {item.Format(now)})"
+                        : "Not changed";
+                    right = new TextBlock
+                    {
+                        Text = note,
+                        FontSize = 12,
+                        TextWrapping = TextWrapping.Wrap,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    };
+                }
+                right.VerticalAlignment = VerticalAlignment.Center;
+                Grid.SetColumn(right, 1);
+                grid.Children.Add(right);
+                return grid;
+            }
+
+            async Task TickAsync(DisplayModeItem item, bool on)
+            {
+                // A newly ticked setting starts at what the game has now, so ticking alone changes nothing
+                var value = store.CustomValue(key, item.Key)
+                    ?? (inGame.TryGetValue(item.Key, out var now) ? now : null);
+                var problem = await vm.SetCustomDisplayModeItemAsync(card, item, on, value);
+                if (problem != null) cog.SetError(problem);
+                BuildCustom();
+                RefreshDisplayModeUi(card);
+            }
+
+            BuildCustom();
 
             await cog.ShowAsync();
             RefreshDisplayModeUi(card);
