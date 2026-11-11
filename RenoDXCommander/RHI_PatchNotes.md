@@ -57,6 +57,7 @@
 
 **Compile shaders now**
 - New Compile shaders now button in Settings › Driver Settings, under Shader pre-compile. It runs NVIDIA's shader compiler straight away (the NVIDIA App's Compile now) instead of waiting for your PC to be idle, so games stutter less the first time you play them after a driver update. It rebuilds the shaders your games have already saved, so it has nothing to do right after Clear shader cache. It uses your Shader pre-compile level, takes a few minutes, and the same button stops it.
+- Shows a progress bar and which app it's compiling, for example "Compiling pbz.exe (3 of 12)".
 
 ### Changes
 
@@ -123,6 +124,7 @@ Search now works much like Steam's:
 - Fixed some GOG games (Ghost Song and other Unity games) showing as 32-bit, so ReShade and RenoDX installed the 32-bit files. RHI was reading GOG's uninstaller instead of the game. Affected games correct themselves on the next launch.
 - Fixed achievement pictures missing for older Steam games such as Half-Life 2.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
+- Fixed Low Latency Mode sometimes not being saved to the game's NVIDIA profile when RHI had to ask for admin to change it.
 
 ### Manifest Updates
 

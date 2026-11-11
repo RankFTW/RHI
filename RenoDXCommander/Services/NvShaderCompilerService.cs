@@ -12,7 +12,7 @@ using Microsoft.Win32;
 
 namespace RenoDXCommander.Services;
 
-public static class NvShaderCompilerService
+public static partial class NvShaderCompilerService
 {
     private const string ExeName = "NvOSC.exe";
     private const string DisplayClassKey = @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
@@ -69,9 +69,18 @@ public static class NvShaderCompilerService
     /// <summary>
     /// Runs the compiler and waits for it to finish. <paramref name="resUtil"/> = "MIN" / "MED" / "MAX", or null for
     /// the global Shader pre-compile level. Returns the exit code (0 = done), or null if it couldn't start.
+    /// With <paramref name="progress"/>, reports which app it's on about once a second (see .Progress.cs).
     /// </summary>
-    public static async Task<int?> RunAsync(string exePath, string? resUtil, CancellationToken ct)
+    public static async Task<int?> RunAsync(string exePath, string? resUtil, CancellationToken ct,
+        IProgress<ShaderCompileProgress>? progress = null)
     {
+        List<ShaderCacheEntry>? plan = null;
+        if (progress != null)
+        {
+            plan = await Task.Run(BuildPlan, ct);
+            progress.Report(Describe(plan, 0, started: false));
+        }
+
         var psi = new ProcessStartInfo(exePath)
         {
             WorkingDirectory = Path.GetDirectoryName(exePath)!,
@@ -93,7 +102,21 @@ public static class NvShaderCompilerService
         {
             CrashReporter.Log($"[NvShaderCompilerService.RunAsync] Started {exePath} -runTool{(resUtil != null ? " -resUtil=" + resUtil : "")} (pid {proc.Id})");
             var sw = Stopwatch.StartNew();
-            try { await proc.WaitForExitAsync(ct); }
+            try
+            {
+                if (plan is { Count: > 0 })
+                {
+                    var tracker = new ProgressTracker(plan, proc.Id);
+                    while (!proc.HasExited)
+                    {
+                        await Task.WhenAny(proc.WaitForExitAsync(ct), Task.Delay(1000, ct));
+                        ct.ThrowIfCancellationRequested();
+                        if (proc.HasExited) break;
+                        progress!.Report(await Task.Run(tracker.Tick, ct));
+                    }
+                }
+                await proc.WaitForExitAsync(ct);
+            }
             catch (OperationCanceledException)
             {
                 CrashReporter.Log("[NvShaderCompilerService.RunAsync] RHI closing, compiler left running");

@@ -444,13 +444,13 @@ $initDel.Invoke() | Out-Null
 $pCreateSession = [NvApi]::QueryInterface([uint32]0x0694D52E)
 $pLoadSettings  = [NvApi]::QueryInterface([uint32]0x375DBD6B)
 $pFindProfile   = [NvApi]::QueryInterface([uint32]0x7E4A9A0B)
-$pSetSetting    = [NvApi]::QueryInterface([uint32]0x577DD202)
+# Newer SetSetting (0x8A2CF5F5) first: the legacy one (0x577DD202) returns SETTING_NOT_FOUND for the ULL settings
+$pSetSetting    = [NvApi]::QueryInterface([uint32]2318202357)
 if ($pSetSetting -eq [IntPtr]::Zero) {{
-    # Try newer function ID as fallback
-    $pSetSetting = [NvApi]::QueryInterface([uint32]2317669877)
+    $pSetSetting = [NvApi]::QueryInterface([uint32]0x577DD202)
 }}
-$pSaveSettings  = [NvApi]::QueryInterface([uint32]4240072212)
-$pDestroy       = [NvApi]::QueryInterface([uint32]3671834584)
+$pSaveSettings  = [NvApi]::QueryInterface([uint32]4240211476)   # 0xFCBC7E14
+$pDestroy       = [NvApi]::QueryInterface([uint32]3671707640)   # 0xDAD9CFF8
 
 # Create session
 $createDel = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($pCreateSession, [NvApi+DRS_CreateSession])
@@ -527,11 +527,14 @@ $destroyDel.Invoke($hSession) | Out-Null
             if (process == null) return false;
             process.WaitForExit(15000);
 
-            // Read script output from log file
+            // Read script output from log file: success only when both settings were set and saved
+            bool succeeded = false;
             if (File.Exists(logPath))
             {
                 var output = File.ReadAllText(logPath).Trim();
                 CrashReporter.Log($"[DlssPresetService.SetLowLatencyElevated] Script output: {output}");
+                succeeded = output.Contains("SaveSettings result=0", StringComparison.Ordinal)
+                    && System.Text.RegularExpressions.Regex.Matches(output, @"SetSetting 0x[0-9A-F]+=\d+ result=0\b").Count == 2;
                 try { File.Delete(logPath); } catch (Exception) { /* temp file in %TEMP%; a leftover is harmless */ }
             }
 
@@ -544,8 +547,8 @@ $destroyDel.Invoke($hSession) | Out-Null
                 _cachedProfiles.TryAdd(p.Name, p);
             InvalidateProfileLookupCache();
 
-            CrashReporter.Log($"[DlssPresetService.SetLowLatencyElevated] Elevated process completed for '{gameName}'");
-            return true;
+            CrashReporter.Log($"[DlssPresetService.SetLowLatencyElevated] Elevated process {(succeeded ? "saved" : "FAILED")} for '{gameName}'");
+            return succeeded;
         }
         catch (Exception ex)
         {

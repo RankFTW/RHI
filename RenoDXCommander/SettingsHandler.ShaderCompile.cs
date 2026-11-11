@@ -14,6 +14,7 @@ public partial class SettingsHandler
     private bool _shaderCompileRowAdded;
     private Button? _shaderCompileBtn;
     private TextBlock? _shaderCompileStatus;
+    private ProgressBar? _shaderCompileBar;
     private bool _shaderCompileOurs; // RHI started the run being shown
 
     private const string ShaderCompileIdleText = "Compile now";
@@ -54,9 +55,18 @@ public partial class SettingsHandler
                 Visibility = Visibility.Collapsed,
             };
 
+            _shaderCompileBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = 100,
+                Margin = new Thickness(0, 2, 0, 0),
+                Visibility = Visibility.Collapsed,
+            };
+
             int at = column.Children.IndexOf(row) + 1;
             column.Children.Insert(at, SettingRow("Compile shaders now", _shaderCompileBtn));
             column.Children.Insert(at + 1, _shaderCompileStatus);
+            column.Children.Insert(at + 2, _shaderCompileBar);
 
             if (NvShaderCompilerService.FindCompiler() == null)
             {
@@ -105,13 +115,20 @@ public partial class SettingsHandler
             };
 
             ShowShaderCompileRunning(ours: true);
+            ShaderCompileProgress? last = null;
+            var progress = new Progress<ShaderCompileProgress>(p =>
+            {
+                last = p;
+                if (_shaderCompileOurs) ShowShaderCompileProgress(p);
+            });
             var started = DateTime.Now;
-            int? code = await NvShaderCompilerService.RunAsync(exe, resUtil, _window.LifetimeToken);
+            int? code = await NvShaderCompilerService.RunAsync(exe, resUtil, _window.LifetimeToken, progress);
             if (_window.IsShuttingDown || !_shaderCompileOurs) return; // stopped with the button: already reported
             ShowShaderCompileIdle();
 
             var elapsed = DateTime.Now - started;
             string took = elapsed.TotalMinutes < 1 ? "under a minute" : $"{elapsed.TotalMinutes:F0} min";
+            if (code == 0 && last is { Total: > 0 }) took += last.Total == 1 ? ", 1 app" : $", {last.Total} apps";
             SetShaderCompileStatus(code switch
             {
                 null => "NVIDIA's shader compiler couldn't be started. See the log for details.",
@@ -127,6 +144,18 @@ public partial class SettingsHandler
             CrashReporter.Log($"[SettingsHandler.ShaderCompileBtn_Click] {ex.Message}");
             ShowShaderCompileIdle();
         }
+    }
+
+    private void ShowShaderCompileProgress(ShaderCompileProgress p)
+    {
+        if (p.Total == 0) return; // no app caches found: keep the moving bar and the general text
+        if (_shaderCompileBar != null)
+        {
+            _shaderCompileBar.IsIndeterminate = p.Fraction == null;
+            if (p.Fraction is double f) _shaderCompileBar.Value = f * 100;
+        }
+        if (p.Done == 0) SetShaderCompileStatus($"Compiling shaders for {p.Total} app{(p.Total == 1 ? "" : "s")}...");
+        else SetShaderCompileStatus($"Compiling {p.CurrentApp ?? "shaders"} ({p.Done} of {p.Total})");
     }
 
     /// <summary>A run RHI didn't start was going when Settings opened: reset the button when it ends.</summary>
@@ -145,6 +174,12 @@ public partial class SettingsHandler
     {
         _shaderCompileOurs = ours;
         if (_shaderCompileBtn != null) _shaderCompileBtn.Content = "Stop compiling";
+        if (_shaderCompileBar != null)
+        {
+            _shaderCompileBar.IsIndeterminate = true; // until the first progress report (or for good without the log)
+            _shaderCompileBar.Value = 0;
+            _shaderCompileBar.Visibility = ours ? Visibility.Visible : Visibility.Collapsed;
+        }
         SetShaderCompileStatus(ours
             ? "Compiling shaders. This takes a few minutes and uses some CPU; you can keep using RHI."
             : "NVIDIA's shader compiler is already running (started by the NVIDIA App or its idle task).");
@@ -154,6 +189,7 @@ public partial class SettingsHandler
     {
         _shaderCompileOurs = false;
         if (_shaderCompileBtn != null) _shaderCompileBtn.Content = ShaderCompileIdleText;
+        if (_shaderCompileBar != null) _shaderCompileBar.Visibility = Visibility.Collapsed;
     }
 
     private void SetShaderCompileStatus(string? text)
