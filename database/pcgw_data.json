@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56065,
-  "generated": "2026-11-11T11:12:17Z",
+  "game_count": 56067,
+  "generated": "2026-11-11T13:12:17Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -74289,6 +74289,7 @@
       "steam_appid": 1013730
     },
     "Hard Drivin'": {},
+    "Hard Drivin' II": {},
     "Hard Era: The Fantasy Defence": {
       "steam_appid": 692260
     },
@@ -130455,6 +130456,7 @@
       "config_path": "%USERPROFILE%\\Documents\\Codemasters\\GRID\\hardwaresettings\\",
       "engine": "EGO"
     },
+    "Race Drivin'": {},
     "Race for the Galaxy": {
       "steam_appid": 579940
     },
