@@ -23,15 +23,35 @@ public static class UIFactory
     /// If the brush has not been created yet it is parsed, cached, and returned.
     /// </summary>
     /// <param name="hex">A hex colour string such as "#1C2848" or "#FF1C2848".</param>
+    /// <remarks>Hex values are RHI's default dark look; the brush follows the colour theme (<see cref="Services.ThemeService"/>).
+    /// The brush is shared, so never change its colour.</remarks>
     public static SolidColorBrush GetBrush(string hex)
     {
         if (_brushCache.TryGetValue(hex, out var cached))
             return cached;
 
-        var brush = new SolidColorBrush(ParseColor(hex));
+        var brush = ThemedBrush(ParseColor(hex));
         _brushCache[hex] = brush;
         return brush;
     }
+
+    private static readonly Dictionary<uint, SolidColorBrush> _colorBrushCache = new();
+
+    /// <summary>
+    /// A cached brush for a default-look colour that follows the colour theme. Use this instead of
+    /// <c>new SolidColorBrush(Color.FromArgb(…))</c> so the colour changes with the theme. Shared: never change its colour.
+    /// </summary>
+    public static SolidColorBrush ThemedBrush(Windows.UI.Color color)
+    {
+        uint key = ((uint)color.A << 24) | ((uint)color.R << 16) | ((uint)color.G << 8) | color.B;
+        if (_colorBrushCache.TryGetValue(key, out var cached))
+            return cached;
+        var brush = new SolidColorBrush(color);
+        Services.ThemeService.Track(brush, color);
+        _colorBrushCache[key] = brush;
+        return brush;
+    }
+
 
     /// <summary>
     /// Retrieves a <see cref="SolidColorBrush"/> from the application's merged resource dictionaries.

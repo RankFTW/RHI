@@ -37,10 +37,10 @@
             <SolidColorBrush x:Key="ToolTipForeground" Color="#FFE6EAF2"/>
             <Thickness x:Key="ToolTipBorderThemeThickness">1</Thickness>
             <Style TargetType="ToolTip" BasedOn="{StaticResource DefaultToolTipStyle}">
-                <Setter Property="Background" Value="#FF161D2B"/>
-                <Setter Property="BorderBrush" Value="#FF2A3446"/>
+                <Setter Property="Background" Value="{StaticResource ToolTipBackground}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource ToolTipBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Foreground" Value="#FFE6EAF2"/>
+                <Setter Property="Foreground" Value="{StaticResource ToolTipForeground}"/>
                 <Setter Property="CornerRadius" Value="6"/>
             </Style>
         </ResourceDictionary>

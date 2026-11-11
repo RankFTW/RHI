@@ -413,7 +413,7 @@ internal sealed partial class OverlayWindow
         inner.Children.Add(body);
         return new Border
         {
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xE6, 0x12, 0x18, 0x24)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(0xE6, 0x12, 0x18, 0x24)),
             BorderBrush = TabsTheme.B(TabsTheme.CardBorder),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),

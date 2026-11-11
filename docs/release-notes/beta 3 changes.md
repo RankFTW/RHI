@@ -4,6 +4,11 @@ Changes since v2.9.3 Beta 2.
 
 ### New
 
+**Colour themes**
+- New Colour theme setting in Settings › General. Pick Default, OLED Black, Midnight Blue, Ember, Forest, Violet, Slate, High Contrast or Colour-blind Friendly and RHI changes colour straight away, no restart needed.
+- Custom lets you choose your own colours: background, panels, text, accent, buttons and the status colours (installed, update available, warning, error). Start from any built-in theme and adjust it from there. RHI warns you if text would be hard to read.
+- Colour-blind Friendly swaps the green, purple, amber and red status colours for blue, pink, yellow and orange, which stay distinct with red-green colour blindness.
+
 **Display modes (Monitor / TV)**
 - Save sets of the settings RHI applies to a game and switch between them from its page, e.g. one for your monitor and one for your TV, or for trying different setups. Modes don't change your display themselves.
 - Turn it on in Settings › Display › Display modes. The switch then appears beside the HDR and resolution buttons in Classic+, Tabs and Spotlight, and in the game menu (right-click a game).
@@ -41,6 +46,7 @@ Changes since v2.9.3 Beta 2.
 - Words in any order: batman lego finds LEGO Batman.
 - Part of a game's initials: mw3 finds Call of Duty: Modern Warfare III.
 - Small typos are fine: resident eviaa still finds Resident Evil. Longer words allow up to two letters off, short words fewer.
+- When a game's full name or whole words match, near misses are hidden: sifu shows only Sifu, clone shows only games with Clone in the name.
 
 **Game settings in Spotlight**
 - New cog button beside the game's name in Spotlight (next to the screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to that game only.

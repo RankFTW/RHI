@@ -65,7 +65,7 @@ public class MassDlssDeployDialog
                 Content = card.GameName,
                 FontSize = 12,
                 IsEnabled = !isV1,
-                Foreground = new SolidColorBrush(isV1
+                Foreground = UIFactory.ThemedBrush(isV1
                     ? Windows.UI.Color.FromArgb(255, 120, 120, 120)
                     : Windows.UI.Color.FromArgb(255, 220, 220, 220)),
             };
@@ -78,8 +78,8 @@ public class MassDlssDeployDialog
         var selectAllBtn = new Button
         {
             Content = "Select All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             CornerRadius = new CornerRadius(6),
         };
         selectAllBtn.Click += (_, _) => { foreach (var cb in checkBoxes) if (cb.IsEnabled) cb.IsChecked = true; };
@@ -87,8 +87,8 @@ public class MassDlssDeployDialog
         var deselectAllBtn = new Button
         {
             Content = "Deselect All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             CornerRadius = new CornerRadius(6),
         };
         deselectAllBtn.Click += (_, _) => { foreach (var cb in checkBoxes) cb.IsChecked = false; };
@@ -135,7 +135,7 @@ public class MassDlssDeployDialog
         rightPanel.Children.Add(new Border
         {
             Height = 1,
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
             Margin = new Thickness(0, 4, 0, 4),
         });
         rightPanel.Children.Add(BuildDropdownSection("SR Preset", srPresetCombo));
@@ -155,7 +155,7 @@ public class MassDlssDeployDialog
             Content = "Auto-create NVIDIA profiles",
             IsChecked = true,
             FontSize = 11,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             Margin = new Thickness(0, 4, 0, 0),
         };
         ToolTipService.SetToolTip(autoCreateCheck,
@@ -167,7 +167,7 @@ public class MassDlssDeployDialog
         var separator = new Border
         {
             Width = 1,
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
             VerticalAlignment = VerticalAlignment.Stretch,
             Margin = new Thickness(16, 0, 16, 0),
         };
@@ -176,7 +176,7 @@ public class MassDlssDeployDialog
         var rightSeparator = new Border
         {
             Width = 1,
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
             VerticalAlignment = VerticalAlignment.Stretch,
             Margin = new Thickness(16, 0, 0, 0),
         };
@@ -264,7 +264,7 @@ public class MassDlssDeployDialog
         {
             Text = "Deploying to selected games...",
             FontSize = 12,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -525,7 +525,7 @@ public class MassDlssDeployDialog
         {
             Text = "Restoring selected games...",
             FontSize = 12,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -656,7 +656,7 @@ public class MassDlssDeployDialog
             Text = label,
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230)),
         });
         panel.Children.Add(combo);
         return panel;

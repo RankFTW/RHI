@@ -7,6 +7,11 @@
 
 ### New
 
+**Colour themes**
+- New Colour theme setting in Settings › General. Pick Default, OLED Black, Midnight Blue, Ember, Forest, Violet, Slate, High Contrast or Colour-blind Friendly and RHI changes colour straight away, no restart needed.
+- Custom lets you choose your own colours: background, panels, text, accent, buttons and the status colours (installed, update available, warning, error). Start from any built-in theme and adjust it from there. RHI warns you if text would be hard to read.
+- Colour-blind Friendly swaps the green, purple, amber and red status colours for blue, pink, yellow and orange, which stay distinct with red-green colour blindness.
+
 **RHI overlay**
 - Press Alt + ` in a game, or hold View + Menu on a controller, and RHI opens full screen over it, like the Steam overlay. Press it again, or Esc (B on a controller), to go back to the game. RHI must be running, but the tray is fine. It only opens over games in your RHI library, not over other apps.
 - Everything is on one screen, laid out to fit it: three columns on wide and ultrawide screens (your game info, screenshots, achievements), two or one on narrower ones. Each column scrolls on its own.
@@ -72,6 +77,7 @@ Search now works much like Steam's:
 - Initials, or part of them: gta, rdr2, ff7, hl2, and mw3 finds Call of Duty: Modern Warfare III.
 - Roman numerals as numbers: gta 3 finds Grand Theft Auto III, final fantasy 7 finds Final Fantasy VII.
 - Small typos are fine: resident eviaa still finds Resident Evil. Longer words allow up to two letters off, short words fewer.
+- When a game's full name or whole words match, near misses are hidden: sifu shows only Sifu, clone shows only games with Clone in the name.
 
 **Settings**
 - New Tabs button beside Find a setting: shows one section at a time as tabs, like the Tabs layout. Search still finds settings in every section and opens the right tab. Click it again for the full list.

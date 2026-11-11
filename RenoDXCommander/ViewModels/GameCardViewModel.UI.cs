@@ -9,11 +9,19 @@ namespace RenoDXCommander.ViewModels;
 public partial class GameCardViewModel
 {
     // ── Sidebar item styling (computed from IsSelected + managed state) ────────────
-    public string SidebarItemBackground => IsRunning ? "#1A3A20" : IsSelected ? "#1A2840" : "Transparent";
-    public string SidebarItemBorderBrush => IsRunning ? "#2A5A30" : IsSelected ? "#2A4060" : "Transparent";
-    public string SidebarItemForeground => IsSelected ? "#E2E8FF"
+    private string SidebarItemBackgroundRaw => IsRunning ? "#1A3A20" : IsSelected ? "#1A2840" : "Transparent";
+    private string SidebarItemBorderBrushRaw => IsRunning ? "#2A5A30" : IsSelected ? "#2A4060" : "Transparent";
+    private string SidebarItemForegroundRaw => IsSelected ? "#E2E8FF"
         : IsSidebarRsInstalled ? "#C8D4E8"   // brighter — ReShade is installed
         : "#5A6880";                         // dimmer — ReShade not installed
+
+    // Bound in XAML as strings (each binding makes its own brush), so they carry the colour theme's version
+    public string SidebarItemBackground => Services.ThemeService.MapHex(SidebarItemBackgroundRaw);
+    public string SidebarItemBorderBrush => Services.ThemeService.MapHex(SidebarItemBorderBrushRaw);
+    public string SidebarItemForeground => Services.ThemeService.MapHex(SidebarItemForegroundRaw);
+
+    /// <summary>The colour theme changed: re-read the bound colour strings.</summary>
+    public void NotifyThemeChanged() => NotifySidebarProps();
 
     /// <summary>Same definition as the "N ReShade" count (FilterViewModel.UpdateCounts).</summary>
     private bool IsSidebarRsInstalled => RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable;

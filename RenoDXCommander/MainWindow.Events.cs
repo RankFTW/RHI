@@ -1099,11 +1099,9 @@ public sealed partial class MainWindow
             {
                 Content = chipName,
                 Tag = chipName,
-                Background = new SolidColorBrush(
-                    ((SolidColorBrush)Application.Current.Resources[
-                        isActive ? ResourceKeys.CustomChipActiveBrush : ResourceKeys.CustomChipDefaultBrush]).Color),
+                Background = UIFactory.Brush(isActive ? ResourceKeys.CustomChipActiveBrush : ResourceKeys.CustomChipDefaultBrush),
                 Foreground = isActive
-                    ? new SolidColorBrush(Microsoft.UI.Colors.White)
+                    ? UIFactory.GetBrush("#FFFFFF")
                     : (SolidColorBrush)Application.Current.Resources[ResourceKeys.CustomChipTextBrush],
                 BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(7),

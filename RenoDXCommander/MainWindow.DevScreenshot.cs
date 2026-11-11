@@ -120,6 +120,15 @@ public sealed partial class MainWindow
             ApplyMainLayout();
             waitMs = 4000;
         }
+        // theme=<preset id | Custom | saved>: applies a colour theme live without saving it ("saved" = back to the saved one)
+        if (Opt("theme") is { Length: > 0 } theme)
+        {
+            if (theme.Equals("saved", StringComparison.OrdinalIgnoreCase)) theme = ViewModel.Settings.ColorTheme;
+            // Collect first: brushes whose C# wrapper was collected once lost their theme (weak tracking)
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            ThemeService.Apply(ThemePresets.Resolve(theme, ViewModel.Settings.CustomThemeColors));
+        }
         if (Opt("game") is { Length: > 0 } game)
         {
             // Select a game like a click in the list would (sections build in the background)

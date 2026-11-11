@@ -34,6 +34,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _osNightlyCleanup;
     /// <summary>RHI's own interface size in percent (on top of Windows scaling). 100 = normal.</summary>
     [ObservableProperty] private int _uiScale = 100;
+    /// <summary>Colour theme id (ThemePresets: "Default", "OledBlack", …, or "Custom").</summary>
+    [ObservableProperty] private string _colorTheme = "Default";
+    /// <summary>Colours picked for the Custom theme ("Background=#RRGGBB;Panel=…"). Empty = not set yet.</summary>
+    [ObservableProperty] private string _customThemeColors = "";
     [ObservableProperty] private bool _osDlssInputs = true;
     [ObservableProperty] private bool _osFirstTimeWarningDismissed;
     [ObservableProperty] private bool _ueExtendedWarningDismissed;
@@ -440,6 +444,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
         if (s.TryGetValue("PatchNotesNavHidden", out var pnhVal)) PatchNotesNavHidden = pnhVal == "true";
+        if (s.TryGetValue("ColorTheme", out var ctVal) && !string.IsNullOrWhiteSpace(ctVal)) ColorTheme = ctVal;
+        if (s.TryGetValue("CustomThemeColors", out var cthVal)) CustomThemeColors = cthVal ?? "";
         if (s.TryGetValue("TopBarScale", out var tbsVal) && int.TryParse(tbsVal, out var tbs)) TopBarScale = Math.Clamp(tbs, 50, 200);
         if (s.TryGetValue("GameListScale", out var glsVal) && int.TryParse(glsVal, out var gls)) GameListScale = Math.Clamp(gls, 50, 200);
         if (s.TryGetValue("SpotlightCoverScale", out var scsVal) && double.TryParse(scsVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scs) && scs > 0) SpotlightCoverScale = scs;
@@ -627,6 +633,8 @@ public partial class SettingsViewModel : ObservableObject
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesNavHidden"] = PatchNotesNavHidden ? "true" : "false";
         s["SpotlightCoverScale"] = SpotlightCoverScale.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        s["ColorTheme"] = ColorTheme;
+        s["CustomThemeColors"] = CustomThemeColors;
         s["TopBarScale"] = TopBarScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
         s["GameListScale"] = GameListScale.ToString(System.Globalization.CultureInfo.InvariantCulture);
         s["CloseToTray"] = CloseToTray ? "true" : "false";

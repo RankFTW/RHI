@@ -17,10 +17,10 @@ internal sealed class OverlayBackdrop : SystemBackdrop
         _controller = new DesktopAcrylicController
         {
             Kind = DesktopAcrylicKind.Thin,
-            TintColor = Windows.UI.Color.FromArgb(0xFF, 0x0B, 0x0F, 0x17),
+            TintColor = Services.ThemeService.Map(Windows.UI.Color.FromArgb(0xFF, 0x0B, 0x0F, 0x17)),
             TintOpacity = 0.15f,
             LuminosityOpacity = 0.2f,
-            FallbackColor = Windows.UI.Color.FromArgb(0xB0, 0x0B, 0x0F, 0x17),
+            FallbackColor = Services.ThemeService.Map(Windows.UI.Color.FromArgb(0xB0, 0x0B, 0x0F, 0x17)),
         };
         _controller.AddSystemBackdropTarget(target);
         _controller.SetSystemBackdropConfiguration(GetDefaultSystemBackdropConfiguration(target, xamlRoot));

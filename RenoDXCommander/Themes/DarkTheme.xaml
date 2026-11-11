@@ -192,6 +192,12 @@
     <SolidColorBrush x:Key="SettingsHelpBrush"  Color="{StaticResource SettingsHelpText}"/>
     <!-- Text on blue Settings buttons: a little brighter than AccentBlue -->
     <SolidColorBrush x:Key="SettingsButtonBlueBrush" Color="#FF96BEE6"/>
+    <!-- Troubleshooting card border (red tint) -->
+    <SolidColorBrush x:Key="SettingsDangerCardBorderBrush" Color="#FF5A2A2A"/>
+    <!-- Launch button (game header, green) -->
+    <SolidColorBrush x:Key="LaunchButtonBgBrush" Color="#FF1A3A20"/>
+    <SolidColorBrush x:Key="LaunchButtonFgBrush" Color="#FF6AE87A"/>
+    <SolidColorBrush x:Key="LaunchButtonBorderBrush" Color="#FF2A5A30"/>
 
     <Style x:Key="SettingsCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>

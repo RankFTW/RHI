@@ -311,6 +311,7 @@ public partial class SettingsHandler
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureDisplayModesCard();
+        EnsureColorThemeCard();
         EnsureLaunchButtonRows();
         EnsureShaderCompileRow();
         EnsureAchievementsSection(); // before the nav, so it gets a jump button

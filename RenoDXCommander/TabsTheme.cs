@@ -76,7 +76,7 @@ internal static class TabsTheme
     internal static Tone ToneOf(Brush? brush)
     {
         if (brush is not SolidColorBrush scb) return Tone.Grey;
-        var c = scb.Color;
+        var c = Services.ThemeService.OriginalColor(scb); // the default-look colour: themes change colours, not meaning
         double r = c.R, g = c.G, b = c.B;
         double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
         if (max - min < 28) return Tone.Grey;                       // greys
@@ -481,7 +481,7 @@ internal static class TabsTheme
     // ── Restyle pass ──────────────────────────────────────────────────────────
 
     private static Windows.UI.Color? ResColor(string key) =>
-        Application.Current.Resources.TryGetValue(key, out var v) && v is SolidColorBrush b ? b.Color : null;
+        Application.Current.Resources.TryGetValue(key, out var v) && v is SolidColorBrush b ? Services.ThemeService.OriginalColor(b) : null; // default look (colour themes)
 
     private static readonly Lazy<(Windows.UI.Color? Primary, Windows.UI.Color? Secondary, Windows.UI.Color? Tertiary)> AppText =
         new(() => (ResColor(ResourceKeys.TextPrimaryBrush), ResColor(ResourceKeys.TextSecondaryBrush), ResColor(ResourceKeys.TextTertiaryBrush)));
@@ -534,7 +534,7 @@ internal static class TabsTheme
         {
             // Classic sub-panels (card / overlay colours) take the mockup's inset colour;
             // badges, pills and other coloured borders keep theirs
-            if (root is Border bd && bd.Background is SolidColorBrush bg && IsAppSurface(bg.Color))
+            if (root is Border bd && bd.Background is SolidColorBrush bg && IsAppSurface(Services.ThemeService.OriginalColor(bg)))
             {
                 bd.Background = B(PanelBg);
                 bd.BorderBrush = B(CardBorder);
@@ -573,9 +573,10 @@ internal static class TabsTheme
     {
         if (text.Foreground is not SolidColorBrush fg) return;
         var (p, s, t) = AppText.Value;
-        if (p is { } pc && fg.Color == pc) text.Foreground = B(TextPrimary);
-        else if (s is { } sc && fg.Color == sc) text.Foreground = B(TextSecondary);
-        else if (t is { } tc && fg.Color == tc) text.Foreground = B(TextMuted);
+        var fc = Services.ThemeService.OriginalColor(fg);
+        if (p is { } pc && fc == pc) text.Foreground = B(TextPrimary);
+        else if (s is { } sc && fc == sc) text.Foreground = B(TextSecondary);
+        else if (t is { } tc && fc == tc) text.Foreground = B(TextMuted);
         if (text.FontSize < 12) text.FontSize = 12;
     }
 

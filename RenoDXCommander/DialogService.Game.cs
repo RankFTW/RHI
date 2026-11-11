@@ -749,7 +749,7 @@ public partial class DialogService
             panel.Children.Add(new Border
             {
                 Height      = 1,
-                Background  = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
+                Background  = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
                 Margin      = new Thickness(0, 0, 0, 12),
             });
         }

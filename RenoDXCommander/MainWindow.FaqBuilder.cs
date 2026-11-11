@@ -176,7 +176,7 @@ public sealed partial class MainWindow
                 Text = badge,
                 FontSize = 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
+                Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -251,7 +251,7 @@ public sealed partial class MainWindow
             Text = step.ToString(),
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -327,7 +327,7 @@ public sealed partial class MainWindow
             Text = "?",
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
+            Foreground = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50)),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -412,7 +412,7 @@ public sealed partial class MainWindow
             Width = 24,
             Height = 24
         };
-        var badgeFg = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50));
+        var badgeFg = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(255, 10, 30, 50));
         badgeBorder.Child = new TextBlock
         {
             Text = badge,

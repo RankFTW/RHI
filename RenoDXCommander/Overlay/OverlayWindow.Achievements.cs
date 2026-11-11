@@ -266,7 +266,7 @@ internal sealed partial class OverlayWindow
         }
         return new Border
         {
-            Background = new SolidColorBrush(a.Unlocked
+            Background = UIFactory.ThemedBrush(a.Unlocked
                 ? Windows.UI.Color.FromArgb(0xE6, 0x12, 0x18, 0x24)
                 : Windows.UI.Color.FromArgb(0xD9, 0x0F, 0x14, 0x1E)),
             BorderBrush = TabsTheme.B(TabsTheme.CardBorder),

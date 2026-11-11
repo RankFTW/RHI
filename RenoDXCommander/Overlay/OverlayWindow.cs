@@ -91,7 +91,7 @@ internal sealed partial class OverlayWindow : Window
     {
         var root = new Grid
         {
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x40, 0x0B, 0x0F, 0x17)), // light dim; the game stays visible
+            Background = UIFactory.ThemedBrush(Windows.UI.Color.FromArgb(0x40, 0x0B, 0x0F, 0x17)), // light dim; the game stays visible
             Padding = new Thickness(56, 40, 56, 32),
         };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });

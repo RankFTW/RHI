@@ -43,9 +43,7 @@ public sealed partial class MainWindow
                     // Lock Back button during refresh from Settings page
                     SettingsBackBtn.IsEnabled = !loading;
                     RefreshStatusBar();
-                    if (!silent) StatusDot.Fill = new SolidColorBrush(loading
-                        ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
-                        : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentGreenBrush]).Color);
+                    if (!silent) StatusDot.Fill = UIFactory.Brush(loading ? ResourceKeys.AccentAmberBrush : ResourceKeys.AccentGreenBrush);
                     if (!silent) ToolTipService.SetToolTip(StatusDot, loading
                         ? "Scanning your game library…"
                         : "Game library up to date.");
@@ -175,16 +173,17 @@ public sealed partial class MainWindow
     /// </summary>
     private void RefreshFilterButtonStyles()
     {
-        var active   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipActiveBrush]).Color;
-        var inactive = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipDefaultBrush]).Color;
-        var activeFg   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.TextPrimaryBrush]).Color;
-        var inactiveFg = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
+        // Shared theme brushes (they follow the colour theme)
+        var active     = UIFactory.Brush(ResourceKeys.ChipActiveBrush);
+        var inactive   = UIFactory.Brush(ResourceKeys.ChipDefaultBrush);
+        var activeFg   = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+        var inactiveFg = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         foreach (var b in new[] { FilterFavourites, FilterInstalled, FilterDetected, FilterUnreal, FilterUnity, FilterOther, FilterRenoDX, FilterLuma, FilterHidden })
         {
             bool isActive = ViewModel.ActiveFilters.Contains(b.Tag as string ?? "");
-            b.Background  = new SolidColorBrush(isActive ? active   : inactive);
-            b.Foreground  = new SolidColorBrush(isActive ? activeFg : inactiveFg);
+            b.Background  = isActive ? active   : inactive;
+            b.Foreground  = isActive ? activeFg : inactiveFg;
         }
         if (_tabsChromeBuilt) RefreshTabsChromeSoon(); // segmented filter + Filters count
     }

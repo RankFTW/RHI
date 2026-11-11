@@ -68,6 +68,9 @@ public sealed partial class MainWindow : Window
         _dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
         _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
         _addonPackService = viewModel.AddonPackServiceInstance;
+        // Colour theme (Settings › General): recolour the shared brushes before the window is built
+        var themePalette = ThemePresets.Resolve(viewModel.Settings.ColorTheme, viewModel.Settings.CustomThemeColors);
+        if (themePalette != ThemePalette.Default) ThemeService.Apply(themePalette);
         InitializeComponent();
         // Hide immediately if starting minimized — must be before any Activate() call
         if (App._startMinimized)
@@ -175,23 +178,9 @@ public sealed partial class MainWindow : Window
         var exeDir = AppPaths.ExeDir;
         AppWindow.SetIcon(Path.Combine(exeDir, "icon.ico"));
 
-        // Dark title bar — match our theme
-        if (AppWindow.TitleBar is { } titleBar)
-        {
-            var res = Application.Current.Resources;
-            titleBar.BackgroundColor              = (Windows.UI.Color)res["TitleBarBackground"];
-            titleBar.ForegroundColor              = (Windows.UI.Color)res["TitleBarForeground"];
-            titleBar.InactiveBackgroundColor      = (Windows.UI.Color)res["TitleBarInactiveBackground"];
-            titleBar.InactiveForegroundColor      = (Windows.UI.Color)res["TitleBarInactiveForeground"];
-            titleBar.ButtonBackgroundColor        = (Windows.UI.Color)res["TitleBarButtonBackground"];
-            titleBar.ButtonForegroundColor        = (Windows.UI.Color)res["TitleBarButtonForeground"];
-            titleBar.ButtonHoverBackgroundColor   = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
-            titleBar.ButtonHoverForegroundColor   = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
-            titleBar.ButtonPressedBackgroundColor = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
-            titleBar.ButtonPressedForegroundColor = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
-            titleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveBackground"];
-            titleBar.ButtonInactiveForegroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveForeground"];
-        }
+        // Dark title bar — match our theme (and the colour theme when it changes)
+        ApplyTitleBarColors();
+        ThemeService.ThemeChanged += OnColorThemeChanged;
         // Restore window size & position after activation (ensure HWND is ready)
         this.Activated += MainWindow_Activated;
         ViewModel.SetDispatcher(DispatcherQueue);
