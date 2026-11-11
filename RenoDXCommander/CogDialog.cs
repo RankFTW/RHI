@@ -629,6 +629,7 @@ internal sealed class CogDialog
         s.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
         s.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 36.0));
         s.Setters.Add(new Setter(Control.FontWeightProperty, look.Bold ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal));
+        s.Setters.Add(new Setter(Controls.ButtonFade.DisabledProperty, true)); // no hover fade (App.xaml)
         return s;
     }
 

@@ -144,6 +144,13 @@ public static class Catalog
         {
             new() { Key = "dllNameOverrides", Kind = FieldKind.DllNames, Label = "DLL names",
                 Help = "File names ReShade and Display Commander are installed as. Leave a box empty for RHI's default." },
+            new() { Key = "rtxEncoreDllNames", Kind = FieldKind.Choice, Label = "RTX Encore DLL name",
+                Help = "Name RHI recommends (and lists first) when installing RTX Encore. Only a recommendation; version.dll otherwise.",
+                // Same names as RtxEncoreService.KnownProxyNames; RHI ignores anything else
+                Options = _ => new[] { "version.dll", "dinput8.dll", "winmm.dll", "dxgi.dll", "d3d9.dll", "d3d10.dll", "d3d11.dll",
+                                       "d3d12.dll", "dsound.dll", "wininet.dll", "winhttp.dll", "binkw64.dll", "bink2w64.dll",
+                                       "xinput1_1.dll", "xinput1_2.dll", "xinput1_3.dll", "xinput1_4.dll", "xinput9_1_0.dll",
+                                       "xinputuap.dll", "rtx-encore.asi" } },
             new() { Key = "legacyReShadeVersions", Kind = FieldKind.Choice, Label = "Legacy ReShade version",
                 Help = "Locks the game to an older ReShade. Doesn't replace a ReShade version the user picked.",
                 Options = d => (d.Get("legacyReShadeAvailable")?.Items ?? new()).Where(i => i.IsString).Select(i => i.Str!) },

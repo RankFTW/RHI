@@ -1,6 +1,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RenoDXCommander.Controls">
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          RHI — Refined Dark Theme
@@ -272,6 +273,7 @@
         <Setter Property="Background" Value="{StaticResource SurfaceOverlayBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource SettingsLabelBrush}"/>
+        <Setter Property="controls:ButtonFade.Disabled" Value="True"/>
     </Style>
     <Style x:Key="SettingsPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SettingsButtonStyle}">
         <Setter Property="Background" Value="{StaticResource AccentBlueBgBrush}"/>

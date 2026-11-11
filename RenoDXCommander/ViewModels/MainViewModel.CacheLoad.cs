@@ -424,6 +424,7 @@ public partial class MainViewModel
         DlssPresetService.ApplyManifestPresets(cachedManifest);
         FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
         OsForkService.SetDefinitions(cachedManifest?.OsForks); // recommended OptiScaler forks
+        SetRtxEncoreDllNames(cachedManifest); // RTX Encore picker's recommended name
 
         // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder
         // (e.g. Witcher 2 → bin\, Cyberpunk → bin\x64). Without this, games added to the manifest

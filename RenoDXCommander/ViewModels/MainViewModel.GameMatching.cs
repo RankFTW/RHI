@@ -792,6 +792,42 @@ public partial class MainViewModel
         return null;
     }
 
+    // Manifest rtxEncoreDllNames (game → recommended RTX Encore DLL name). Swapped whole, read on the UI thread.
+    private Dictionary<string, string> _rtxEncoreDllNames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Takes the manifest's RTX Encore name recommendations. Called from ApplyManifest and the cache phase.</summary>
+    private void SetRtxEncoreDllNames(RemoteManifest? manifest)
+    {
+        if (manifest == null) return; // keep what we have when the fetch failed
+        _rtxEncoreDllNames = manifest.RtxEncoreDllNames != null
+            ? new Dictionary<string, string>(manifest.RtxEncoreDllNames, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The DLL name RTX Encore's picker recommends for a game: the manifest's rtxEncoreDllNames entry when it's
+    /// a known RTX Encore name, else version.dll. Same name lookup as <see cref="GetManifestDllNames"/>.
+    /// </summary>
+    internal string GetRtxEncoreRecommendedDll(string gameName)
+    {
+        const string fallback = "version.dll";
+        var map = _rtxEncoreDllNames;
+        if (map.Count == 0 || string.IsNullOrEmpty(gameName)) return fallback;
+        if (!map.TryGetValue(gameName, out var value))
+        {
+            var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+            if (stripped == gameName || !map.TryGetValue(stripped, out value))
+            {
+                var norm = NormalizeForLookup(gameName);
+                value = map.FirstOrDefault(kv => NormalizeForLookup(kv.Key) == norm).Value;
+            }
+        }
+        var known = RtxEncoreService.ToKnownProxyName(value);
+        if (value != null && known == null)
+            _crashReporter.Log($"[MainViewModel.GetRtxEncoreRecommendedDll] Ignoring unknown name '{value}' for '{gameName}'");
+        return known ?? fallback;
+    }
+
     /// <summary>
     /// Returns the GAC symlink directory for a game if it requires GAC symlink installation
     /// (e.g. XNA Framework games like Terraria). Returns null for normal games.
@@ -875,6 +911,7 @@ public partial class MainViewModel
             NormalizeForLookup,
             _manifestUeExtendedCompat);
         NoteInstallPathMigrations(manifest?.InstallPathMigrations);
+        SetRtxEncoreDllNames(manifest);
     }
 
     /// <summary>

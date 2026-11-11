@@ -143,6 +143,13 @@ Forces specific DLL proxy filenames (ReShade and/or DC) per game. Example: `{ "r
 - `GetManifestDllNames()` → exact → trademark-stripped → normalized lookup
 - `InstallReShadeAsync()`, `ApplyManifestDllRenames()` → use `.ReShade` filename
 
+### `rtxEncoreDllNames` — `Dict<string,string>`
+Game → DLL name to recommend in RTX Encore's name picker (e.g. `"Euro Truck Simulator 2": "winmm.dll"`). Case-insensitive keys.
+- Only a recommendation: the name gets the Recommended badge and is listed first. Nothing is installed or renamed automatically; existing installs keep their name.
+- Not part of `dllNameOverrides` on purpose: any game there gets its DLL override turned on and ReShade's name locked (`ApplyManifestDllRenames`).
+- `MainViewModel.SetRtxEncoreDllNames()` (from `ApplyManifest` and the cache phase) → `GetRtxEncoreRecommendedDll()` (exact → trademark-stripped → normalized lookup) → `GetExtraDllOptions(preferred:)`.
+- Values must be one of `RtxEncoreService.KnownProxyNames`; anything else is logged and ignored (version.dll is recommended). When ASI Loader is installed as the recommended name, its hooked name (e.g. `winmmHooked.dll`) is recommended instead.
+
 ### `gacSymlinkGames` — `Dict<string,string>`
 Routes XNA Framework games (e.g. Terraria) through a GAC symlink install instead of a normal DLL copy.
 - `GetGacSymlinkPath()` → checks this dict; if found, `InstallReShadeAsync` routes to `InstallReShadeGacAsync`

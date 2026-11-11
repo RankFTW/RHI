@@ -946,6 +946,9 @@
       "dc": ""
     }
   },
+  "rtxEncoreDllNames": {
+    "Euro Truck Simulator 2": "winmm.dll"
+  },
   "gacSymlinkGames": {
     "Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },

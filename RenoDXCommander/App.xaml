@@ -2,13 +2,20 @@
 <Application
     x:Class="RenoDXCommander.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RenoDXCommander.Controls">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Buttons switch hover/press colours instantly: with Windows animation effects on, the
+                 template's fade to the default near-transparent hover colour flashed bright (ButtonFade.cs) -->
+            <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="controls:ButtonFade.Disabled" Value="True"/>
+            </Style>
 
             <!-- Title-bar colours (extracted from hardcoded values for easy theming) -->
             <Color x:Key="TitleBarBackground">#FF0F1318</Color>

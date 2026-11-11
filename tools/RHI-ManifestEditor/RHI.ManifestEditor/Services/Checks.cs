@@ -20,7 +20,7 @@ public static class Checks
         "engineOverrides", "forceExternalOnly", "gacSymlinkGames", "gameNotes", "graphicsApiOverrides",
         "installPathMigrations", "installPathOverrides", "installWarnings", "lumaGameInfo", "lumaGameNotes", "lumaNameOverrides",
         "optiScalerGameInfo", "optiScalerWikiNames", "reframeworkGameInfo", "relimiterGameInfo", "reshadeGameInfo",
-        "snapshotOverrides", "streamlinePathOverrides", "wikiNameOverrides", "wikiStatusOverrides",
+        "rtxEncoreDllNames", "snapshotOverrides", "streamlinePathOverrides", "wikiNameOverrides", "wikiStatusOverrides",
     };
 
     private static HashSet<string>? _ciFields;

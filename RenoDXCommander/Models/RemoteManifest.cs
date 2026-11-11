@@ -142,6 +142,14 @@ public class RemoteManifest
     public Dictionary<string, ManifestDllNames>? DllNameOverrides { get; set; }
 
     /// <summary>
+    /// Per-game RTX Encore DLL name to recommend in its name picker (e.g. "Euro Truck Simulator 2": "winmm.dll").
+    /// Only a recommendation: nothing is renamed. Kept out of <see cref="DllNameOverrides"/>, which also turns on
+    /// the game's DLL override and locks ReShade's name. Values not in RtxEncoreService.KnownProxyNames are ignored.
+    /// </summary>
+    [JsonPropertyName("rtxEncoreDllNames")]
+    public Dictionary<string, string>? RtxEncoreDllNames { get; set; }
+
+    /// <summary>
     /// Per-game graphics API overrides. Allows the manifest to force a specific
     /// graphics API badge for games where auto-detection fails (e.g. games that
     /// load DirectX entirely at runtime with no static PE imports).

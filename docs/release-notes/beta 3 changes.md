@@ -42,6 +42,9 @@ Changes since v2.9.3 Beta 2.
 - New cog button beside the game's name in Spotlight (next to the screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to that game only.
 - RHI overlay: turn the overlay off for one game. Alt + ` then goes to the game instead of opening the overlay, and the controller shortcut does nothing in it.
 
+**Other**
+- RTX Encore's DLL name picker can recommend a different name for a game when it needs one, and lists the recommended name first. Thanks emptyes for the first version of this.
+
 ### Bug Fixes
 
 **Vulkan ReShade**
@@ -49,6 +52,10 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing Nightly or Stable on a Vulkan game sometimes not switching the ReShade build.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
+**Other**
+- Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
+
 ### Manifest Updates
 
 - Dead Space 2 and Dead Space 3 are no longer matched to a RenoDX mod from the wiki.
+- RTX Encore recommends winmm.dll in Euro Truck Simulator 2, which RTX Encore 1.0.0-rc.3 needs there. Already installed under another name? Reinstall it and pick winmm.dll.

@@ -52,6 +52,7 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 | `dofFixForceGames` | Array — force-enable DOF Fix (bypasses version check) |
 | `dlssSkipGames` | Array — skip expensive DLSS recursive scan |
 | `gacSymlinkGames` | Dict — game → GAC directory path |
+| `rtxEncoreDllNames` | Dict — game → RTX Encore DLL name recommended (and listed first) in its picker. Recommendation only; separate from `dllNameOverrides`, which also locks ReShade's name |
 | `installWarnings` | Dict — game → { component: warning message } |
 | `launchExeOverrides` | Game → relative exe path (also used for profile matching) |
 | `engineIniPathOverrides` | Game → project name or absolute path |

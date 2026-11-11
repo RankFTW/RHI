@@ -44,9 +44,14 @@ public static class HookedDllNames
         return list;
     }
 
-    /// <summary>The name to badge Recommended: versionHooked.dll when ASI Loader is version.dll, else version.dll.</summary>
-    public static string Recommended(string? ualName)
-        => string.Equals(ualName, "version.dll", StringComparison.OrdinalIgnoreCase) ? ToHooked("version.dll") : "version.dll";
+    /// <summary>
+    /// The name to badge Recommended: <paramref name="preferred"/> (version.dll unless the manifest names
+    /// another for the game), or its hooked name when ASI Loader is installed as it (versionHooked.dll).
+    /// </summary>
+    public static string Recommended(string? ualName, string preferred = "version.dll")
+        => string.Equals(ualName, preferred, StringComparison.OrdinalIgnoreCase)
+           && preferred.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+            ? ToHooked(preferred) : preferred;
 
     /// <summary>True when <paramref name="name"/> is the hooked name for ASI Loader's <paramref name="ualName"/>.</summary>
     public static bool IsHookedFor(string? name, string? ualName)

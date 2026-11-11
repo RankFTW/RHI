@@ -75,6 +75,15 @@ public class HookedDllNamesTests : IDisposable
     public void Recommended_PrefersVersionHookedWhenAsiLoaderIsVersion(string? ual, string expected)
         => Assert.Equal(expected, HookedDllNames.Recommended(ual));
 
+    [Theory]
+    [InlineData(null, "winmm.dll", "winmm.dll")]
+    [InlineData("version.dll", "winmm.dll", "winmm.dll")]
+    [InlineData("winmm.dll", "winmm.dll", "winmmHooked.dll")]
+    [InlineData("WINMM.dll", "winmm.dll", "winmmHooked.dll")]
+    [InlineData("rtx-encore.asi", "rtx-encore.asi", "rtx-encore.asi")]
+    public void Recommended_ManifestPreferredName_HookedWhenAsiLoaderHasIt(string? ual, string preferred, string expected)
+        => Assert.Equal(expected, HookedDllNames.Recommended(ual, preferred));
+
     [Fact]
     public void IsHookedFor_MatchesOnlyAsiLoadersName()
     {

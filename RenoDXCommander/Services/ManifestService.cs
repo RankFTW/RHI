@@ -174,6 +174,8 @@ public class ManifestService : IManifestService
             m.EngineOverrides = new Dictionary<string, string>(m.EngineOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.DllNameOverrides != null)
             m.DllNameOverrides = new Dictionary<string, ManifestDllNames>(m.DllNameOverrides, StringComparer.OrdinalIgnoreCase);
+        if (m.RtxEncoreDllNames != null)
+            m.RtxEncoreDllNames = new Dictionary<string, string>(m.RtxEncoreDllNames, StringComparer.OrdinalIgnoreCase);
         if (m.GraphicsApiOverrides != null)
             m.GraphicsApiOverrides = new Dictionary<string, string>(m.GraphicsApiOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.DlssPathOverrides != null)

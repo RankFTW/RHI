@@ -18,14 +18,16 @@ public partial class DetailPanelBuilder
     /// or another extra are blocked (the extra's own current name isn't). When ASI Loader is installed as one
     /// of <paramref name="baseNames"/>, its &lt;name&gt;Hooked.dll follows it; that row is blocked if the file
     /// is already there and isn't this extra (ASI Loader chained the game's own DLL there).
+    /// <paramref name="preferred"/> is the name to recommend (RTX Encore takes it from the manifest per game).
     /// </summary>
     private List<ExtraDllOption> GetExtraDllOptions(GameCardViewModel card, IEnumerable<string> baseNames,
-        string? currentDllName, Func<string, bool>? noHooked = null)
+        string? currentDllName, Func<string, bool>? noHooked = null, string preferred = "version.dll")
     {
         var ual    = _window.ViewModel.GetUalInstalledAs(card.GameName, card.Source ?? "");
         var owners = _window.ViewModel.GetRhiDllOwners(card);
         if (!string.IsNullOrEmpty(currentDllName)) owners.Remove(currentDllName);
-        var recommended = HookedDllNames.Recommended(ual);
+        // A name that can't take a hooked copy (Bink for RTX Encore) stays as is; it's then blocked by ASI Loader
+        var recommended = noHooked?.Invoke(preferred) == true ? preferred : HookedDllNames.Recommended(ual, preferred);
 
         var options = new List<ExtraDllOption>();
         foreach (var name in HookedDllNames.WithHooked(baseNames, ual, noHooked))

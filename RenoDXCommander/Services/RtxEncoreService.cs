@@ -43,6 +43,17 @@ public class RtxEncoreService
     public  const string ComponentName  = "RtxEncore";
     public  const string NrOwnerName    = "RtxEncore";
 
+    /// <summary>
+    /// A manifest rtxEncoreDllNames value as one of <see cref="KnownProxyNames"/> (its spelling), or null
+    /// when it isn't one, so a typo or an odd value in remote data never reaches a file name.
+    /// </summary>
+    public static string? ToKnownProxyName(string? name)
+    {
+        var trimmed = name?.Trim();
+        if (string.IsNullOrEmpty(trimmed)) return null;
+        return KnownProxyNames.FirstOrDefault(n => n.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <summary>All valid proxy DLL names RTX Encore can be deployed as (from INSTALLATION.md).</summary>
     public static readonly string[] KnownProxyNames =
     {

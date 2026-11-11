@@ -496,8 +496,11 @@ public partial class DetailPanelBuilder
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return null;
         // Bink names already keep the game's own Bink DLL as <name>Hooked.dll, so they get no hooked option
+        // The manifest can recommend another name per game (Euro Truck Simulator 2 needs winmm.dll); it's listed first
+        var preferred = _window.ViewModel.GetRtxEncoreRecommendedDll(card.GameName);
         var options = GetExtraDllOptions(card, RtxEncoreService.KnownProxyNames, currentDllName,
-            noHooked: n => n.StartsWith("bink", StringComparison.OrdinalIgnoreCase));
+            noHooked: n => n.StartsWith("bink", StringComparison.OrdinalIgnoreCase), preferred: preferred)
+            .OrderBy(o => o.IsRecommended ? 0 : 1).ToList();
         var rhiConflicts = options.Where(o => o.BlockedBy != null)
             .ToDictionary(o => o.Name, o => o.BlockedBy!, StringComparer.OrdinalIgnoreCase);
 

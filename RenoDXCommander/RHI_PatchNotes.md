@@ -87,6 +87,7 @@ Search now works much like Steam's:
 **Other**
 - The ReShade Addon Manager (global and per game) is wider, so addon descriptions are easier to read.
 - Spotlight: removed the Manage components button from What's installed. Click any component tile to open the components.
+- RTX Encore's DLL name picker can recommend a different name for a game when it needs one, and lists the recommended name first. Thanks emptyes for the first version of this.
 
 ### Bug Fixes
 
@@ -112,11 +113,13 @@ Search now works much like Steam's:
 **Other**
 - Fixed some GOG games (Ghost Song and other Unity games) showing as 32-bit, so ReShade and RenoDX installed the 32-bit files. RHI was reading GOG's uninstaller instead of the game. Affected games correct themselves on the next launch.
 - Fixed achievement pictures missing for older Steam games such as Half-Life 2.
+- Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
 
 ### Manifest Updates
 
 - Ghost Song is always treated as a 64-bit game.
 - Dead Space 2 and Dead Space 3 are no longer matched to a RenoDX mod from the wiki.
+- RTX Encore recommends winmm.dll in Euro Truck Simulator 2, which RTX Encore 1.0.0-rc.3 needs there. Already installed under another name? Reinstall it and pick winmm.dll.
 
 ## v2.9.2
 
