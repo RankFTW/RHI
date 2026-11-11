@@ -151,11 +151,14 @@ public sealed partial class MainWindow
         _filtersBtn.CornerRadius = new CornerRadius(6);
         _filtersBtn.Click += (s, e) => { _filtersOpen = !_filtersOpen; RefreshTabsChrome(); };
         _countsGrid.Children.Add(_filtersBtn);
-        // Spotlight only: puts the search / filters / cover shelf above or below the game page
+        // Spotlight only: cog with the strip's options (covers above / below the page, no background)
         _countsGrid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = GridLength.Auto });
-        _shelfPositionBtn = new Button { Padding = new Thickness(10, 0, 10, 0), Visibility = Visibility.Collapsed };
-        TabsTheme.Apply(_shelfPositionBtn, TabsTheme.IconButton, height: 30, fontSize: 12);
+        _shelfPositionBtn = TabsTheme.MakeIconButton(TabsTheme.GlyphSettings, TabsTheme.IconButton, 14);
+        _shelfPositionBtn.Width = 30;
+        _shelfPositionBtn.Height = 30;
+        _shelfPositionBtn.Visibility = Visibility.Collapsed;
         _shelfPositionBtn.CornerRadius = new CornerRadius(6);
+        ToolTipService.SetToolTip(_shelfPositionBtn, "Game list options");
         _shelfPositionBtn.Click += ShelfPositionBtn_Click;
         Grid.SetColumn(_shelfPositionBtn, 1);
         _countsGrid.Children.Add(_shelfPositionBtn);
@@ -460,9 +463,12 @@ public sealed partial class MainWindow
     /// <summary>The game list's Tabs colours, used in every layout.</summary>
     private void ApplySidebarColours()
     {
+        // Spotlight with "No background" on: the strip shows the page colour behind it
+        bool plain = _spotlightOn && ViewModel.Settings.SpotlightShelfPlain;
+        Brush panel = plain ? new SolidColorBrush(Microsoft.UI.Colors.Transparent) : TabsTheme.B(TabsTheme.PanelBg);
         if (_sidebar != null)
         {
-            _sidebar.Background = TabsTheme.B(TabsTheme.PanelBg);
+            _sidebar.Background = panel;
             _sidebar.BorderBrush = TabsTheme.B(TabsTheme.CardBorder);
         }
         // Game list rows: mockup selection (#1A2336 with an accent ring) and hover (#151C29).
@@ -477,7 +483,7 @@ public sealed partial class MainWindow
         foreach (var row in new[] { _searchRow, _chipsRow, _countsRow })
         {
             if (row == null) continue;
-            row.Background = TabsTheme.B(TabsTheme.PanelBg);
+            row.Background = panel;
             if (row.BorderThickness != default) row.BorderBrush = TabsTheme.B(TabsTheme.CardBorder);
         }
     }

@@ -843,6 +843,28 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── GITC Uplift: iMMERSE Launchpad motion ─────────────────────────────────
+
+    /// <summary>
+    /// Whether GITC Uplift gets iMMERSE Launchpad (motion vectors from ReShade) in this game: the
+    /// user's choice, else on in games without DLSS (no motion vectors of their own).
+    /// </summary>
+    public bool GetUpliftLaunchpad(string gameName, bool hasDlss, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.UpliftLaunchpad.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.UpliftLaunchpad.TryGetValue(gameName, out var v2)) return v2;
+        return !hasDlss;
+    }
+
+    public void SetUpliftLaunchpad(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        _gameNameService.UpliftLaunchpad.Remove(gameName);
+        _gameNameService.UpliftLaunchpad[key] = value;
+        SaveNameMappings();
+    }
+
     // ── ShortFuse ZZZ Mode (load order rename) ────────────────────────────────
 
     /// <summary>Returns true when the ShortFuse addon should be deployed as zzz_renodx-dlss.addon64.</summary>

@@ -45,7 +45,7 @@ public class DisplayModeTests : IDisposable
         var store = new DisplayModeStore();
         Assert.Equal(new[] { "Monitor", "TV" }, store.Modes.Select(m => m.Name));
         Assert.Equal(new[] { DisplayModeItemKeys.RdxPeakNits, DisplayModeItemKeys.UlTargetFps }, store.DefaultItems);
-        Assert.Equal("monitor", store.ActiveModeId(Key));
+        Assert.Null(store.ActiveModeId(Key)); // new games start Off
         Assert.False(store.IsManaged(Key));
     }
 
@@ -66,8 +66,9 @@ public class DisplayModeTests : IDisposable
         store.SetActive(Key, id!, null);
         store.SetGameValue(Key, id!, DisplayModeItemKeys.RdxPeakNits, "500");
         Assert.True(store.DeleteMode(id!));
-        Assert.Equal("monitor", store.ActiveModeId(Key)); // back to the first mode
+        Assert.Null(store.ActiveModeId(Key)); // turned off
         Assert.Null(store.GameValue(Key, id!, DisplayModeItemKeys.RdxPeakNits));
+        Assert.False(store.HasGameState(Key)); // nothing left to save
 
         while (store.Modes.Count > 1) store.DeleteMode(store.Modes[^1].Id);
         Assert.False(store.DeleteMode(store.Modes[0].Id)); // one always stays
@@ -165,13 +166,15 @@ public class DisplayModeTests : IDisposable
         Assert.Equal("700", Peak());
         Assert.Equal("117", Fps());
         Assert.Contains("toneMapPeakNits=700", File.ReadAllText(ReShadeIni).Split("[renodx-preset2]")[1]); // every preset
-        Assert.Equal("1000", store.GameValue(Key, "monitor", DisplayModeItemKeys.RdxPeakNits));
-        Assert.Equal("141", store.GameValue(Key, "monitor", DisplayModeItemKeys.UlTargetFps));
+        // Coming from Off: the starting values are its values from before modes, not Monitor's
+        Assert.Equal("1000", store.OriginalValue(Key, DisplayModeItemKeys.RdxPeakNits));
+        Assert.Equal("141", store.OriginalValue(Key, DisplayModeItemKeys.UlTargetFps));
+        Assert.Null(store.GameValue(Key, "monitor", DisplayModeItemKeys.RdxPeakNits));
         Assert.True(store.IsManaged(Key));
 
         // Changed in game while on the TV, then back to Monitor and to TV again
         DisplayModeItems.WriteRdx(ReShadeIni, "toneMapPeakNits", "650");
-        svc.Switch(Ctx(), "monitor");
+        svc.Switch(Ctx(), "monitor"); // Monitor has no values: the game's normal values
         Assert.Equal("1000", Peak());
         Assert.Equal("141", Fps());
         svc.Switch(Ctx(), "tv");
@@ -365,6 +368,105 @@ public class DisplayModeTests : IDisposable
         Assert.Equal("Off", DisplayModeItems.Get(DisplayModeItemKeys.UlTargetFps)!.Format("0"));
         Assert.Equal("4x", DisplayModeItems.Get(DisplayModeItemKeys.MfgMode)!.Format("fixed:3"));
         Assert.Equal("End", DisplayModeItems.Get(DisplayModeItemKeys.RsOverlayKey)!.Format("35,0,0,0"));
+    }
+
+    // ── Off ───────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void TurnOff_WritesGlobalValuesElseTheValuesFromBeforeModes()
+    {
+        WriteFiles(peak: 1000, fps: 141);
+        var store = new DisplayModeStore();
+        store.SetModeDefault("tv", DisplayModeItemKeys.RdxPeakNits, "700");
+        store.SetModeDefault("tv", DisplayModeItemKeys.UlTargetFps, "117");
+        var svc = new DisplayModeService(store)
+        {
+            // Only the frame rate cap has a global setting here
+            GlobalValue = (_, item) => item == DisplayModeItemKeys.UlTargetFps ? "60" : null,
+        };
+        svc.Switch(Ctx(), "tv");
+        DisplayModeItems.WriteRdx(ReShadeIni, "toneMapPeakNits", "650"); // changed in game
+
+        var r = svc.TurnOff(Ctx());
+        Assert.True(r.TurnedOff);
+        Assert.Equal("1000", Peak()); // no global: what it had before modes
+        Assert.Equal("60", Fps());    // the global setting
+        Assert.Equal("650", store.GameValue(Key, "tv", DisplayModeItemKeys.RdxPeakNits)); // in-game change kept for TV
+        Assert.Null(store.ActiveModeId(Key));
+        Assert.False(store.IsManaged(Key));
+        Assert.Null(store.OriginalValue(Key, DisplayModeItemKeys.RdxPeakNits));
+        Assert.Null(svc.Keep(_dir, DisplayModeItemKeys.ReShadeIniItems)); // global writes reach it again
+
+        // Back to TV: its remembered value, and a fresh before-modes record
+        svc.Switch(Ctx(), "tv");
+        Assert.Equal("650", Peak());
+        Assert.Equal("1000", store.OriginalValue(Key, DisplayModeItemKeys.RdxPeakNits));
+    }
+
+    [Fact]
+    public void TurnOff_WhenAlreadyOff_DoesNothing()
+    {
+        WriteFiles(peak: 1000, fps: 141);
+        var store = new DisplayModeStore();
+        var svc = new DisplayModeService(store) { GlobalValue = (_, _) => "60" };
+        var r = svc.TurnOff(Ctx());
+        Assert.Empty(r.Items);
+        Assert.Equal("141", Fps());
+    }
+
+    [Fact]
+    public void ModeWithoutAValue_UsesTheNormalValue()
+    {
+        WriteFiles(peak: 1000, fps: 141);
+        var store = new DisplayModeStore();
+        store.SetModeDefault("tv", DisplayModeItemKeys.RdxPeakNits, "700");
+        var svc = new DisplayModeService(store);
+        svc.Switch(Ctx(), "tv");
+        Assert.Equal("700", Peak());
+        svc.Switch(Ctx(), "monitor"); // Monitor has no peak value: back to the game's own, not TV's 700
+        Assert.Equal("1000", Peak());
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.RdxPeakNits));
+    }
+
+    [Fact]
+    public void LaunchItems_DontApplyWhileOff()
+    {
+        var store = new DisplayModeStore();
+        store.SetItems(Key, new[] { DisplayModeItemKeys.Hdr });
+        store.SetModeDefault("monitor", DisplayModeItemKeys.Hdr, "On");
+        Assert.Null(store.ActiveValue(Key, DisplayModeItemKeys.Hdr)); // Off: the HDR button's own rule
+        store.SetActive(Key, "monitor", null);
+        Assert.Equal("On", store.ActiveValue(Key, DisplayModeItemKeys.Hdr));
+    }
+
+    [Fact]
+    public void ItemAddedWhileInAMode_ItsValueCountsAsTheBeforeModesValue()
+    {
+        WriteFiles(peak: 1000, fps: 141);
+        var store = new DisplayModeStore();
+        store.SetItems(Key, new[] { DisplayModeItemKeys.RdxPeakNits });
+        store.SetModeDefault("tv", DisplayModeItemKeys.RdxPeakNits, "700");
+        store.SetModeDefault("tv", DisplayModeItemKeys.UlTargetFps, "117");
+        var svc = new DisplayModeService(store);
+        svc.Switch(Ctx(), "tv");
+        store.SetItems(Key, new[] { DisplayModeItemKeys.RdxPeakNits, DisplayModeItemKeys.UlTargetFps }); // ticked later
+        svc.TurnOff(Ctx());
+        Assert.Equal("1000", Peak());
+        Assert.Equal("141", Fps()); // never written by a mode: left as it is
+        Assert.Null(store.GameValue(Key, "tv", DisplayModeItemKeys.UlTargetFps));
+    }
+
+    [Fact]
+    public void Snapshot_KeepsTheBeforeModesValues()
+    {
+        var store = new DisplayModeStore();
+        store.SetActive(Key, "tv", new[] { _dir });
+        store.SetOriginal(Key, DisplayModeItemKeys.RdxPeakNits, "1000");
+        var copy = new DisplayModeStore();
+        copy.Load(JsonSerializer.Deserialize<DisplayModeData>(JsonSerializer.Serialize(store.Snapshot())));
+        Assert.Equal("1000", copy.OriginalValue(Key, DisplayModeItemKeys.RdxPeakNits));
+        copy.SetOff(Key);
+        Assert.False(copy.HasGameState(Key));
     }
 
     [Fact]

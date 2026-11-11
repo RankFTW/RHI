@@ -116,6 +116,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _rhiOverlayPauseGame;
     /// <summary>Spotlight: search, filters and the cover shelf below the game page instead of above it.</summary>
     [ObservableProperty] private bool _spotlightShelfAtBottom;
+    /// <summary>Spotlight: the search / filters / covers strip has no panel colour of its own (it shows the page colour).</summary>
+    [ObservableProperty] private bool _spotlightShelfPlain;
     /// <summary>Spotlight banner height set by dragging its bottom edge; 0 = automatic (follows the window width).</summary>
     [ObservableProperty] private double _spotlightHeroHeight;
     /// <summary>Spotlight cover size set by dragging the cover strip's edge (1 = 120 x 180).</summary>
@@ -429,6 +431,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("RhiOverlayController", out var rocVal)) RhiOverlayController = rocVal != "false"; // default true
         if (s.TryGetValue("RhiOverlayPauseGame", out var ropVal)) RhiOverlayPauseGame = ropVal == "true"; // default false
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
+        if (s.TryGetValue("SpotlightShelfPlain", out var sshpVal)) SpotlightShelfPlain = sshpVal == "true"; // default false (panel colour)
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
         if (s.TryGetValue("PatchNotesNavHidden", out var pnhVal)) PatchNotesNavHidden = pnhVal == "true";
@@ -612,6 +615,7 @@ public partial class SettingsViewModel : ObservableObject
         s["RhiOverlayController"] = RhiOverlayController ? "true" : "false";
         s["RhiOverlayPauseGame"] = RhiOverlayPauseGame ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
+        s["SpotlightShelfPlain"] = SpotlightShelfPlain ? "true" : "false";
         s["SpotlightHeroHeight"] = SpotlightHeroHeight.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesNavHidden"] = PatchNotesNavHidden ? "true" : "false";

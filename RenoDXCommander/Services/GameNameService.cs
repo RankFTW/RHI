@@ -66,6 +66,9 @@ public partial class GameNameService : IGameNameService
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     private Dictionary<string, string> _nrMethodOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game GITC Uplift iMMERSE Launchpad choice. Key = "GameName|Store". Absent = default (on in games without DLSS).</summary>
+    private Dictionary<string, bool> _upliftLaunchpad = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1" / "0.55". Absent = use latest.</summary>
     private Dictionary<string, string> _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
 
@@ -226,6 +229,8 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> OsNrRuntime => _osNrRuntime;
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
+    /// <summary>Per-game GITC Uplift iMMERSE Launchpad choice. Key = "GameName|Store". Absent = default (on in games without DLSS).</summary>
+    public Dictionary<string, bool> UpliftLaunchpad => _upliftLaunchpad;
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     public Dictionary<string, string> NrAddonVersion => _nrAddonVersion;
     /// <summary>Per-game NR DLL version override.</summary>
@@ -371,6 +376,7 @@ public partial class GameNameService : IGameNameService
         _reShadeChannelOverrides = new(StringComparer.OrdinalIgnoreCase);
         _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
         _nrMethodOverrides = new(StringComparer.OrdinalIgnoreCase);
+        _upliftLaunchpad = new(StringComparer.OrdinalIgnoreCase);
         _lumaEnabledGames       = new(StringComparer.OrdinalIgnoreCase);
         _lumaDisabledGames      = new(StringComparer.OrdinalIgnoreCase);
         _normalReShadeGames     = new(StringComparer.OrdinalIgnoreCase);
@@ -601,6 +607,11 @@ public partial class GameNameService : IGameNameService
             new(StringComparer.OrdinalIgnoreCase));
         _nrMethodOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in nrMethodOvDict) _nrMethodOverrides[kv.Key] = kv.Value;
+
+        var upliftLaunchpadDict = Load<Dictionary<string, bool>>("UpliftLaunchpad",
+            new(StringComparer.OrdinalIgnoreCase));
+        _upliftLaunchpad = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in upliftLaunchpadDict) _upliftLaunchpad[kv.Key] = kv.Value;
 
         var nrAddonVersionDict = Load<Dictionary<string, string>>("NrAddonVersion",
             new(StringComparer.OrdinalIgnoreCase));
@@ -920,6 +931,8 @@ public partial class GameNameService : IGameNameService
                 if (_osNightlyBuild.Count > 0) s["OsNightlyBuild"] = JsonSerializer.Serialize(_osNightlyBuild);
                 else s.Remove("OsNightlyBuild");
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
+                if (_upliftLaunchpad.Count > 0) s["UpliftLaunchpad"] = JsonSerializer.Serialize(_upliftLaunchpad);
+                else s.Remove("UpliftLaunchpad");
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
                 if (_nrDllVersion.Count > 0) s["NrDllVersion"] = JsonSerializer.Serialize(_nrDllVersion);
@@ -1168,6 +1181,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_osNightlyBuild, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
+        MigrateCompositeDict(_upliftLaunchpad, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);
         MigrateCompositeDict(_nrDllVersion, oldName, newName);
         MigrateCompositeDict(_nrPackVersion, oldName, newName);

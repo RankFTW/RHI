@@ -45,6 +45,23 @@ public partial class MainViewModel
                     _crashReporter.Log($"[{caller}] GITC Uplift technique enabled for '{c.GameName}' (OpenGL)");
             }
             if (apiFixed) SaveGameApiCache(); // so the next launch starts with the right API
+
+            // iMMERSE Launchpad (motion vectors): installs that haven't had the choice applied yet
+            // (from before RHI handled it, or iMMERSE couldn't be downloaded at install)
+            var undecided = cards.Where(c => !UpliftService.LaunchpadDecided(c.InstallPath!)).ToList();
+            if (undecided.Any(c => GetUpliftLaunchpad(c.GameName, c.HasDlssUpscaler, c.Source ?? ""))
+                && !UpliftService.LaunchpadStaged)
+                await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
+            foreach (var c in undecided)
+            {
+                bool wanted = GetUpliftLaunchpad(c.GameName, c.HasDlssUpscaler, c.Source ?? "");
+                if (wanted && !UpliftService.LaunchpadStaged) continue; // try again next launch
+                if (svc.EnsureLaunchpadFor(c.InstallPath!, wanted))
+                {
+                    _crashReporter.Log($"[{caller}] iMMERSE Launchpad enabled for '{c.GameName}' (GITC Uplift motion)");
+                    await DeployShadersForCardAsync(c.GameName).ConfigureAwait(false);
+                }
+            }
             await svc.CheckForUpdateAsync().ConfigureAwait(false);
             if (!svc.IsStagingReady || svc.HasUpdate)
                 await svc.EnsureStagingAsync().ConfigureAwait(false);

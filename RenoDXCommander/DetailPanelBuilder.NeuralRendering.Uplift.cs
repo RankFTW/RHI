@@ -52,12 +52,25 @@ public partial class DetailPanelBuilder
         if (nrSrc == null)
             CrashReporter.Log($"[NeuralRendering.Uplift] No NR DLL available for '{gameName}' — installing without it");
 
+        // iMMERSE Launchpad gives Uplift motion vectors (on by default in games without DLSS)
+        bool launchpad = _window.ViewModel.GetUpliftLaunchpad(gameName, card.HasDlssUpscaler, store);
+        if (launchpad && !UpliftService.LaunchpadStaged)
+        {
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading iMMERSE Launchpad...");
+            await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
+        }
+
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Installing GITC Uplift...");
         await Task.Run(() =>
         {
             upliftSvc.Install(installPath, card.Is32Bit, nrSrc, sourceDir, pinned);
             // OpenGL: NR can't read a multisampled back buffer at Present, so the Uplift technique must be on
             upliftSvc.EnsureTechniqueFor(installPath, card.GraphicsApi == GraphicsApiType.OpenGL);
+            // Not downloaded: left undecided, so the next launch tries again
+            if (!launchpad || UpliftService.LaunchpadStaged)
+                upliftSvc.EnsureLaunchpadFor(installPath, launchpad);
+            else
+                CrashReporter.Log($"[NeuralRendering.Uplift] iMMERSE not available — Launchpad not set up for '{gameName}'");
         }).ConfigureAwait(false);
 
         // Shaders come from the shader sync (UpliftService.ShaderFilesFor), so they survive later syncs.

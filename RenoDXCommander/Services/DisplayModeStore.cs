@@ -1,6 +1,7 @@
 // DisplayModeStore.cs -- Display modes data (pure, thread-safe, unit tested in DisplayModeStoreTests).
 // Modes (Monitor, TV, ...) hold default values per item; each game ("GameName|Store") remembers its active mode,
-// which items it swaps (or the default list) and its own value per mode. No file or UI work here:
+// which items it swaps (or the default list) and its own value per mode. A game in no mode is Off (Mode = null):
+// it follows the global settings, and global writers don't skip it. No file or UI work here:
 // DisplayModeService reads and writes the game files, GameNameService saves the snapshot in settings.json.
 
 using RenoDXCommander.Models;
@@ -134,7 +135,7 @@ public sealed class DisplayModeStore
         }
     }
 
-    /// <summary>Deletes a mode (at least one stays). Games on it go back to the first remaining mode; their values for it are dropped.</summary>
+    /// <summary>Deletes a mode (at least one stays). Games still in it are turned off; their values for it are dropped.</summary>
     public bool DeleteMode(string id)
     {
         lock (_lock)
@@ -146,8 +147,9 @@ public sealed class DisplayModeStore
             foreach (var st in _games.Values)
             {
                 st.Values.Remove(m.Id);
-                if (st.Mode != null && st.Mode.Equals(m.Id, StringComparison.OrdinalIgnoreCase)) st.Mode = _modes[0].Id;
+                if (st.Mode != null && st.Mode.Equals(m.Id, StringComparison.OrdinalIgnoreCase)) ClearActive(st);
             }
+            foreach (var k in _games.Keys.ToList()) Prune(k);
             return true;
         }
     }
@@ -196,21 +198,15 @@ public sealed class DisplayModeStore
 
     // ── Games ─────────────────────────────────────────────────────────────────
 
-    /// <summary>The game's active mode id (the first mode until it has been switched).</summary>
-    public string ActiveModeId(string gameKey)
+    /// <summary>The game's active mode id, or null when it's Off (not in a mode: it follows the global settings).</summary>
+    public string? ActiveModeId(string gameKey)
     {
         lock (_lock)
-        {
-            if (_games.TryGetValue(gameKey, out var st) && st.Mode != null && Find(st.Mode) != null) return Find(st.Mode)!.Id;
-            return _modes[0].Id;
-        }
+            return _games.TryGetValue(gameKey, out var st) && st.Mode != null ? Find(st.Mode)?.Id : null;
     }
 
-    /// <summary>True once the game has been switched (or set) to a mode: from then on its values are RHI-managed.</summary>
-    public bool IsManaged(string gameKey)
-    {
-        lock (_lock) return _games.TryGetValue(gameKey, out var st) && st.Mode != null;
-    }
+    /// <summary>True while the game is in a mode: its swapped values are RHI-managed (global writers keep them).</summary>
+    public bool IsManaged(string gameKey) => ActiveModeId(gameKey) != null;
 
     /// <summary>Items the game swaps: its own list, or the default list.</summary>
     public IReadOnlyList<string> ItemsFor(string gameKey)
@@ -250,9 +246,9 @@ public sealed class DisplayModeStore
     public string? Effective(string gameKey, string modeId, string item)
         => GameValue(gameKey, modeId, item) ?? ModeDefault(modeId, item);
 
-    /// <summary>Effective value for the game's active mode, or null when the game doesn't swap this item.</summary>
+    /// <summary>Effective value for the game's active mode, or null when it's Off / doesn't swap this item.</summary>
     public string? ActiveValue(string gameKey, string item)
-        => Swaps(gameKey, item) ? Effective(gameKey, ActiveModeId(gameKey), item) : null;
+        => Swaps(gameKey, item) && ActiveModeId(gameKey) is { } mode ? Effective(gameKey, mode, item) : null;
 
     /// <summary>Sets (or with null clears) the game's own value for a mode.</summary>
     public void SetGameValue(string gameKey, string modeId, string item, string? value)
@@ -322,6 +318,57 @@ public sealed class DisplayModeStore
         }
     }
 
+    /// <summary>The game's value from before it entered a mode (null = none recorded).</summary>
+    public string? OriginalValue(string gameKey, string item)
+    {
+        lock (_lock)
+            return _games.TryGetValue(gameKey, out var st) && st.Original != null && st.Original.TryGetValue(item, out var v) ? v : null;
+    }
+
+    /// <summary>Records (or with null forgets) the game's value from before it entered a mode.</summary>
+    public void SetOriginal(string gameKey, string item, string? value)
+    {
+        lock (_lock)
+        {
+            var st = GetOrAdd(gameKey);
+            if (value == null)
+            {
+                st.Original?.Remove(item);
+                if (st.Original is { Count: 0 }) st.Original = null;
+                Prune(gameKey);
+                return;
+            }
+            st.Original ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            st.Original[item] = value;
+        }
+    }
+
+    /// <summary>Turns the game's mode off: no active mode, and the entry / before-modes records are dropped.</summary>
+    public void SetOff(string gameKey)
+    {
+        lock (_lock)
+        {
+            if (!_games.TryGetValue(gameKey, out var st)) return;
+            ClearActive(st);
+            Prune(gameKey);
+        }
+    }
+
+    /// <summary>Keys of the games in <paramref name="modeId"/>.</summary>
+    public IReadOnlyList<string> GamesIn(string modeId)
+    {
+        lock (_lock)
+            return _games.Where(kv => kv.Value.Mode != null && kv.Value.Mode.Equals(modeId, StringComparison.OrdinalIgnoreCase))
+                .Select(kv => kv.Key).ToList();
+    }
+
+    /// <summary>Keys of every game that's in a mode.</summary>
+    public IReadOnlyList<string> ManagedGames()
+    {
+        lock (_lock)
+            return _games.Where(kv => kv.Value.Mode != null && Find(kv.Value.Mode) != null).Select(kv => kv.Key).ToList();
+    }
+
     /// <summary>The managed game whose install or addon folder is <paramref name="folder"/>, or null.</summary>
     public string? FindManagedByFolder(string? folder)
     {
@@ -372,12 +419,19 @@ public sealed class DisplayModeStore
         return st;
     }
 
+    private static void ClearActive(GameDisplayModeState st)
+    {
+        st.Mode = null;
+        st.Entry = null;
+        st.Original = null;
+    }
+
     private void Prune(string key)
     {
         if (_games.TryGetValue(key, out var st) && IsEmpty(st)) _games.Remove(key);
     }
 
-    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && st.Items == null && st.Values.Count == 0 && st.Entry == null;
+    private static bool IsEmpty(GameDisplayModeState st) => st.Mode == null && st.Items == null && st.Values.Count == 0 && st.Entry == null && st.Original == null;
 
     public static string NormalizeFolder(string folder) => folder.Replace('/', '\\').TrimEnd('\\');
 
@@ -392,6 +446,7 @@ public sealed class DisplayModeStore
             Items = st.Items?.ToList(),
             Folders = st.Folders?.ToList(),
             Entry = st.Entry == null ? null : new Dictionary<string, string?>(st.Entry, StringComparer.OrdinalIgnoreCase),
+            Original = st.Original == null ? null : CopyValues(st.Original),
         };
         if (st.Values != null)
             foreach (var (mode, vals) in st.Values)

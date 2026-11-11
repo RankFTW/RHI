@@ -411,6 +411,7 @@ public partial class DetailPanelBuilder
         // Foveated build of the DLSS5 Tool (per game). Only for the DLSS5 Tool and DLSS5 Tool + Bridge methods.
         bool foveatedOn = _window.ViewModel.GetNrFoveated(gameName, store);
         StackPanel? foveatedGroup = null;  // built with the Cost Scaler row below
+        StackPanel? launchpadRow = null;   // GITC Uplift only, built below the Cost Scaler row
         static bool IsDlss5ToolMethod(string key) => key == NrMethodDlss5Tool || key == NrMethodDlss5ToolBridge;
         string AddonTypeForSel(string key) =>
             foveatedOn && IsDlss5ToolMethod(key) ? Renodx5AddonService.FoveatedSubDir : AddonTypeFor(key);
@@ -819,6 +820,7 @@ public partial class DetailPanelBuilder
                 string? srv = null, rrv = null, fgv = null, nrv2 = null;
                 string? ualName = null;
                 bool upi = false, upHelper = false, upDll = false, upFx = false;
+                bool? upLaunchpad = null; // null = Launchpad switched off for this install
                 string? upDllV = null, upVer = null, upPin = null;
                 bool scanSucceeded = false;
                 string d5Suffix = "";
@@ -890,6 +892,8 @@ public partial class DetailPanelBuilder
                 upDllV   = upDll ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(UpliftService.NrDllPath(installPath))) : null;
                 upFx     = UpliftService.ShaderFiles.All(f => File.Exists(Path.Combine(shadersDir, f)));
                 (upVer, upPin) = upi ? UpliftService.ReadMarker(installPath) : (null, null);
+                if (upi && UpliftService.LaunchpadOn(installPath))
+                    upLaunchpad = File.Exists(Path.Combine(shadersDir, "iMMERSE", "MartysMods_LAUNCHPAD.fx"));
                 scanSucceeded = true;
                 }
                 finally
@@ -912,7 +916,7 @@ public partial class DetailPanelBuilder
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk,
                         srOk, rrOk, fgOk, nrOk, srv, rrv, fgv, nrv2,
                         ualName, ualOk, feedFxPresent, lumeniteFxPresent, isDx9Feeder, dgVoodooOk,
-                        (upi, upHelper, upDll, upDllV, upFx, upVer, upPin != null));
+                        (upi, upHelper, upDll, upDllV, upFx, upVer, upPin != null, upLaunchpad));
                 });
             });  // end Task.Run
         }  // end RefreshStatus
@@ -927,7 +931,7 @@ public partial class DetailPanelBuilder
             string? ualName, bool ualOk,
             bool feedFxPresent, bool lumeniteFxPresent,
             bool isDx9Feeder, bool dgVoodooOk,
-            (bool Addon, bool Helper, bool Dll, string? DllVersion, bool Shaders, string? Version, bool Pinned) uplift)
+            (bool Addon, bool Helper, bool Dll, string? DllVersion, bool Shaders, string? Version, bool Pinned, bool? Launchpad) uplift)
         {
             statusPanel.Children.Clear();
             _window.ViewModel.SetLastUiAction($"NeuralRendering.RefreshStatusWithData:Building({card.GameName})");
@@ -1010,6 +1014,8 @@ public partial class DetailPanelBuilder
                     Tag(uplift.Helper  ? "✓ Helper"      : "✗ Helper",      uplift.Helper);
                     Tag(uplift.Dll     ? $"✓ NR DLL {uplift.DllVersion}" : "✗ NR DLL", uplift.Dll);
                     Tag(uplift.Shaders ? "✓ Uplift.fx"   : "✗ Uplift.fx",   uplift.Shaders);
+                    if (uplift.Launchpad is bool lp)
+                        Tag(lp ? "✓ Launchpad" : "✗ Launchpad", lp);
                     break;
                 default:
                     Tag("Not installed", false);
@@ -1230,6 +1236,8 @@ public partial class DetailPanelBuilder
                                    : Dlss5VersionLabel(selKey);
             if (foveatedGroup != null)
                 foveatedGroup.Visibility = IsDlss5ToolMethod(selKey) ? Visibility.Visible : Visibility.Collapsed;
+            if (launchpadRow != null)
+                launchpadRow.Visibility = selKey == NrMethodUplift ? Visibility.Visible : Visibility.Collapsed;
 
             // Addon version combo — enabled always (swap-in-place supported while installed)
             addonVersionStack.Opacity   = 1.0;
@@ -1848,6 +1856,74 @@ public partial class DetailPanelBuilder
         nrBody.Children.Add(costScalerRow);
         _window.ViewModel.SetLastUiAction($"NeuralRenderingSectionWithData:CostScalerRow({card.GameName})");
 
+        // ── GITC Uplift: iMMERSE Launchpad toggle (motion vectors from ReShade) ──
+        {
+            bool launchpadPref = _window.ViewModel.GetUpliftLaunchpad(gameName, card.HasDlssUpscaler, store);
+            const string launchpadTip =
+                "Gives GITC Uplift motion vectors from iMMERSE Launchpad (by Marty McFly), a ReShade effect. " +
+                "RHI installs Launchpad and turns it on above the Uplift effect.\n\n" +
+                "On by default in games without DLSS, which have no motion vectors of their own. " +
+                "Games with DLSS use the game's motion vectors; turn this on if those look wrong in a game. " +
+                "Launchpad costs some performance.";
+            launchpadRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Margin = new Thickness(0, 4, 0, 0) };
+            var launchpadLabel = new TextBlock
+            {
+                Text = "iMMERSE Launchpad",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            ToolTipService.SetToolTip(launchpadLabel, launchpadTip);
+            var launchpadToggle = new ToggleSwitch
+            {
+                IsOn = launchpadPref,
+                OnContent = "On", OffContent = "Off",
+                VerticalAlignment = VerticalAlignment.Center,
+                MinWidth = 0,
+            };
+            ToolTipService.SetToolTip(launchpadToggle, launchpadTip);
+            var launchpadStatus = new TextBlock
+            {
+                Text = "",
+                FontSize = 11,
+                Foreground = UIFactory.GetBrush("#5ECB7D"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            // Saves the choice; while Uplift is installed it's applied straight away
+            launchpadToggle.Toggled += async (s, ev) =>
+            {
+                bool on = launchpadToggle.IsOn;
+                if (on == launchpadPref) return;
+                launchpadPref = on;
+                _window.ViewModel.SetUpliftLaunchpad(gameName, on, store);
+                try
+                {
+                    if (!await Task.Run(() => UpliftService.IsRhiInstalled(installPath))) return; // applied at install
+                    launchpadToggle.IsEnabled = false;
+                    launchpadStatus.Text = on ? "Installing..." : "Removing...";
+                    if (on && !UpliftService.LaunchpadStaged)
+                        await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId });
+                    bool ok = (!on || UpliftService.LaunchpadStaged)
+                              && await Task.Run(() => upliftSvc.SetLaunchpad(installPath, on));
+                    if (ok) await _window.ViewModel.DeployShadersForCardAsync(gameName);
+                    else CrashReporter.Log($"[NeuralRendering.LaunchpadToggle] Launchpad {(on ? "on" : "off")} failed for '{gameName}'");
+                    launchpadStatus.Text = ok ? "" : "Failed";
+                    RefreshStatus();
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[NeuralRendering.LaunchpadToggle] Unhandled error — {ex.Message}");
+                    launchpadStatus.Text = "Failed";
+                }
+                finally { launchpadToggle.IsEnabled = true; }
+            };
+            launchpadRow.Children.Add(launchpadLabel);
+            launchpadRow.Children.Add(launchpadToggle);
+            launchpadRow.Children.Add(launchpadStatus);
+            launchpadRow.Visibility = upliftSelectedAtBuild ? Visibility.Visible : Visibility.Collapsed;
+            nrBody.Children.Add(launchpadRow);
+        }
+
         // Note shown when ShortFuse method is selected — cost scaler is now built into 310.8.2
         if (effectiveMethod == NrMethodShortFuse)
         {
@@ -1925,6 +2001,7 @@ public partial class DetailPanelBuilder
         linksRow.Children.Add(MakeLink("DX11 Bridge →", "https://github.com/NIGos/dlss5-bridge"));
         linksRow.Children.Add(MakeLink("ShortFuse →",   "https://discord.com/channels/1408098019194310818/1543975158937821315"));
         linksRow.Children.Add(MakeLink("Feeder →",      "https://github.com/jlrouzies-fr/DLSS5-Feeder"));
+        linksRow.Children.Add(MakeLink("GITC Uplift →", Services.UpliftService.ReleasesPage));
         nrBody.Children.Add(linksRow);
         // Tabs (mockup A): method cards + a Setup card, from the same controls
         if (Layout.IsTabs) Layout.ArrangeNeuralRendering(nrBody);

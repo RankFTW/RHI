@@ -66,4 +66,40 @@ public class UpliftPresetTests
         Assert.False(changedAgain);
         Assert.Equal(OpenMw, untouched);
     }
+
+    private const string Lp = UpliftService.LaunchpadToken;
+
+    [Fact]
+    public void Launchpad_goes_just_above_uplift()
+    {
+        var text = "Techniques=A@a.fx,Uplift@Uplift.fx\nTechniqueSorting=A@a.fx,Uplift@Uplift.fx,B@b.fx\n";
+        var (result, alreadyOn, changed) = UpliftService.AddTechniqueToPreset(text, Lp, Token);
+        Assert.False(alreadyOn);
+        Assert.True(changed);
+        Assert.Equal($"Techniques=A@a.fx,{Lp},Uplift@Uplift.fx\nTechniqueSorting=A@a.fx,{Lp},Uplift@Uplift.fx,B@b.fx\n", result);
+    }
+
+    [Fact]
+    public void Launchpad_below_uplift_is_moved_above_it()
+    {
+        var text = $"Techniques=Uplift@Uplift.fx,{Lp}\nTechniqueSorting=Uplift@Uplift.fx,B@b.fx,{Lp}\n";
+        var (result, alreadyOn, changed) = UpliftService.AddTechniqueToPreset(text, Lp, Token);
+        Assert.True(alreadyOn);
+        Assert.True(changed);
+        Assert.Equal($"Techniques=Uplift@Uplift.fx,{Lp}\nTechniqueSorting={Lp},Uplift@Uplift.fx,B@b.fx\n", result);
+
+        var (again, _, changedAgain) = UpliftService.AddTechniqueToPreset(result, Lp, Token);
+        Assert.False(changedAgain);
+        Assert.Equal(result, again);
+    }
+
+    [Fact]
+    public void Remove_launchpad_keeps_uplift()
+    {
+        var (withUplift, _, _) = UpliftService.AddTechniqueToPreset(OpenMw);
+        var (withBoth, _, _) = UpliftService.AddTechniqueToPreset(withUplift, Lp, Token);
+        var (removed, changed) = UpliftService.RemoveTechniqueFromPreset(withBoth, Lp);
+        Assert.True(changed);
+        Assert.Equal(withUplift, removed);
+    }
 }

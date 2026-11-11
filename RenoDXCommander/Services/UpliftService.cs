@@ -103,14 +103,16 @@ public class UpliftService
 
     // technique= in the marker: "" not checked yet, "1" RHI enabled it (removed again on uninstall),
     // "user" it was already on (left alone). Checked once, so a user who turns it off keeps it off.
-    private static (string? Installed, string? Pinned, string Technique) ReadMarkerAll(string installPath)
+    // launchpad= (iMMERSE Launchpad, see below): "" not decided yet, "1" RHI enabled its technique,
+    // "user" it was already on, "off" switched off. Its shader files are deployed for "1" / "user".
+    private static (string? Installed, string? Pinned, string Technique, string Launchpad) ReadMarkerAll(string installPath)
     {
         string? installed = null, pinned = null;
-        string technique = "";
+        string technique = "", launchpad = "";
         try
         {
             var path = MarkerPath(installPath);
-            if (!File.Exists(path)) return (null, null, "");
+            if (!File.Exists(path)) return (null, null, "", "");
             foreach (var line in File.ReadAllLines(path))
             {
                 var i = line.IndexOf('=');
@@ -120,14 +122,15 @@ public class UpliftService
                 if (key == "version") installed = val.Length > 0 ? val : null;
                 else if (key == "pinned") pinned = val.Length > 0 ? val : null;
                 else if (key == "technique") technique = val;
+                else if (key == "launchpad") launchpad = val;
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        return (installed, pinned, technique);
+        return (installed, pinned, technique, launchpad);
     }
 
-    private static void WriteMarker(string installPath, string? version, string? pinned, string technique) =>
-        File.WriteAllLines(MarkerPath(installPath), new[] { $"version={version}", $"pinned={pinned}", $"technique={technique}" });
+    private static void WriteMarker(string installPath, string? version, string? pinned, string technique, string launchpad) =>
+        File.WriteAllLines(MarkerPath(installPath), new[] { $"version={version}", $"pinned={pinned}", $"technique={technique}", $"launchpad={launchpad}" });
 
     // ── The Uplift technique in the ReShade preset ────────────────────────────
     // Uplift.fx's "Uplift" technique marks where NR runs among the effects. Without it NR runs
@@ -164,46 +167,53 @@ public class UpliftService
     }
 
     /// <summary>
-    /// Puts Uplift first in the preset's Techniques and TechniqueSorting (creating the preset or the
-    /// lines when missing). False if it was already enabled (so RHI didn't add it).
+    /// Puts a technique (Uplift by default) in the preset's Techniques and TechniqueSorting, first or
+    /// just before <paramref name="before"/> (creating the preset or the lines when missing). False if
+    /// it was already enabled (so RHI didn't add it).
     /// </summary>
-    public bool EnableTechnique(string installPath)
+    public bool EnableTechnique(string installPath, string token = TechniqueToken, string? before = null)
     {
         var preset = PresetPath(installPath);
         string text = File.Exists(preset) ? File.ReadAllText(preset) : "";
-        var (newText, alreadyOn, changed) = AddTechniqueToPreset(text);
+        var (newText, alreadyOn, changed) = AddTechniqueToPreset(text, token, before);
         if (changed)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(preset)!);
             File.WriteAllText(preset, newText);
-            _crashReporter.Log($"[UpliftService.EnableTechnique] Enabled '{TechniqueToken}' first in '{preset}'");
+            _crashReporter.Log($"[UpliftService.EnableTechnique] Enabled '{token}'{(before != null ? $" before '{before}'" : " first")} in '{preset}'");
         }
         return !alreadyOn;
     }
 
-    /// <summary>Takes Uplift back out of the preset's Techniques and TechniqueSorting.</summary>
-    public void DisableTechnique(string installPath)
+    /// <summary>Takes a technique (Uplift by default) back out of the preset's Techniques and TechniqueSorting.</summary>
+    public void DisableTechnique(string installPath, string token = TechniqueToken)
     {
         var preset = PresetPath(installPath);
         if (!File.Exists(preset)) return;
         try
         {
-            var (newText, changed) = RemoveTechniqueFromPreset(File.ReadAllText(preset));
+            var (newText, changed) = RemoveTechniqueFromPreset(File.ReadAllText(preset), token);
             if (changed)
             {
                 File.WriteAllText(preset, newText);
-                _crashReporter.Log($"[UpliftService.DisableTechnique] Removed '{TechniqueToken}' from '{preset}'");
+                _crashReporter.Log($"[UpliftService.DisableTechnique] Removed '{token}' from '{preset}'");
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { _crashReporter.Log($"[UpliftService.DisableTechnique] '{preset}' not updated — {ex.Message}"); }
     }
 
+    /// <summary>Preset text with Uplift first in every Techniques / TechniqueSorting line.</summary>
+    public static (string Text, bool AlreadyOn, bool Changed) AddTechniqueToPreset(string text) =>
+        AddTechniqueToPreset(text, TechniqueToken, null);
+
     /// <summary>
-    /// Preset text with Uplift first in every Techniques / TechniqueSorting line (lines added at the
-    /// top when missing). Line endings and everything else are kept. AlreadyOn: Techniques had it.
+    /// Preset text with <paramref name="token"/> in every Techniques / TechniqueSorting line, first or
+    /// just before <paramref name="before"/> when that's in the line (lines added at the top when
+    /// missing). A token already in TechniqueSorting but after <paramref name="before"/> is moved in
+    /// front of it. Line endings and everything else are kept. AlreadyOn: Techniques had it.
     /// </summary>
-    public static (string Text, bool AlreadyOn, bool Changed) AddTechniqueToPreset(string text)
+    public static (string Text, bool AlreadyOn, bool Changed) AddTechniqueToPreset(string text, string token, string? before)
     {
         var nl = text.Contains("\r\n") ? "\r\n" : "\n";
         var lines = text.Length == 0 ? new List<string>() : text.Split(nl).ToList();
@@ -214,24 +224,35 @@ public class UpliftService
             {
                 if (!lines[i].StartsWith(key + "=", StringComparison.Ordinal)) continue;
                 var items = SplitList(lines[i][(key.Length + 1)..]);
-                bool has = items.Contains(TechniqueToken, StringComparer.OrdinalIgnoreCase);
-                if (key == "Techniques") { hadTechniques = true; alreadyOn |= has; }
+                int at = items.FindIndex(t => t.Equals(token, StringComparison.OrdinalIgnoreCase));
+                int beforeAt = before == null ? -1 : items.FindIndex(t => t.Equals(before, StringComparison.OrdinalIgnoreCase));
+                if (key == "Techniques") { hadTechniques = true; alreadyOn |= at >= 0; }
                 else hadSorting = true;
-                if (has) continue;
-                items.Insert(0, TechniqueToken);
+                if (at >= 0)
+                {
+                    // Order matters only in TechniqueSorting: keep it in front of `before`
+                    if (key != "TechniqueSorting" || beforeAt < 0 || at < beforeAt) continue;
+                    items.RemoveAt(at);
+                    items.Insert(beforeAt, token);
+                }
+                else items.Insert(Math.Max(0, beforeAt), token);
                 lines[i] = key + "=" + string.Join(",", items);
                 changed = true;
             }
         }
         // Top-level lines go before the first section, as ReShade writes them
-        if (!hadSorting) { lines.Insert(0, "TechniqueSorting=" + TechniqueToken); changed = true; }
-        if (!hadTechniques) { lines.Insert(0, "Techniques=" + TechniqueToken); changed = true; }
+        if (!hadSorting) { lines.Insert(0, "TechniqueSorting=" + token); changed = true; }
+        if (!hadTechniques) { lines.Insert(0, "Techniques=" + token); changed = true; }
         if (text.Length == 0) lines.Add(""); // end a new file with a line break
         return (string.Join(nl, lines), alreadyOn, changed);
     }
 
     /// <summary>Preset text with Uplift removed from every Techniques / TechniqueSorting line.</summary>
-    public static (string Text, bool Changed) RemoveTechniqueFromPreset(string text)
+    public static (string Text, bool Changed) RemoveTechniqueFromPreset(string text) =>
+        RemoveTechniqueFromPreset(text, TechniqueToken);
+
+    /// <summary>Preset text with <paramref name="token"/> removed from every Techniques / TechniqueSorting line.</summary>
+    public static (string Text, bool Changed) RemoveTechniqueFromPreset(string text, string token)
     {
         var nl = text.Contains("\r\n") ? "\r\n" : "\n";
         var lines = text.Split(nl);
@@ -241,7 +262,7 @@ public class UpliftService
             {
                 if (!lines[i].StartsWith(key + "=", StringComparison.Ordinal)) continue;
                 var items = SplitList(lines[i][(key.Length + 1)..]);
-                if (items.RemoveAll(t => t.Equals(TechniqueToken, StringComparison.OrdinalIgnoreCase)) == 0) continue;
+                if (items.RemoveAll(t => t.Equals(token, StringComparison.OrdinalIgnoreCase)) == 0) continue;
                 lines[i] = key + "=" + string.Join(",", items);
                 changed = true;
             }
@@ -263,7 +284,7 @@ public class UpliftService
         try
         {
             bool added = EnableTechnique(installPath);
-            WriteMarker(installPath, m.Installed, m.Pinned, added ? "1" : "user");
+            WriteMarker(installPath, m.Installed, m.Pinned, added ? "1" : "user", m.Launchpad);
             return added;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -271,6 +292,89 @@ public class UpliftService
             _crashReporter.Log($"[UpliftService.EnsureTechniqueFor] '{installPath}' — {ex.Message}");
             return false;
         }
+    }
+
+    // ── iMMERSE Launchpad (motion vectors) ────────────────────────────────────
+    // Uplift needs motion vectors. DLSS games give it theirs; in other games they come from a ReShade
+    // effect: iMMERSE Launchpad (Marty McFly, free iMMERSE repo). Its technique must be on and above
+    // the Uplift technique, which Uplift.fx uses to hand the motion to the add-on (README / wiki Guide,
+    // "Motion sources and effect order", 1.8.0). RHI deploys only Launchpad and its includes from the
+    // iMMERSE shader pack (through the shader sync hook, like Uplift.fx) and edits the preset.
+    // On by default in games without DLSS; a per-game toggle in the Neural Rendering section.
+
+    public const string LaunchpadToken = "MartysMods_Launchpad@MartysMods_LAUNCHPAD.fx";
+    /// <summary>The shader pack Launchpad comes from (ShaderPackService).</summary>
+    public const string LaunchpadPackId = "iMMERSE";
+    private static string LaunchpadFx => Path.Combine(ShaderPackService.ShadersDir, "iMMERSE", "MartysMods_LAUNCHPAD.fx");
+
+    /// <summary>True when the iMMERSE pack (with Launchpad) has been downloaded.</summary>
+    public static bool LaunchpadStaged => File.Exists(LaunchpadFx);
+
+    /// <summary>True when RHI deploys Launchpad in this game (switched on, or it was already on).</summary>
+    public static bool LaunchpadOn(string installPath) => ReadMarkerAll(installPath).Launchpad is "1" or "user";
+
+    /// <summary>True once Launchpad has been switched on or off for this install.</summary>
+    public static bool LaunchpadDecided(string installPath) => ReadMarkerAll(installPath).Launchpad.Length > 0;
+
+    /// <summary>Launchpad's files (reshade-shaders relative path → staged source): the effect, its includes and its texture.</summary>
+    private static IEnumerable<(string Rel, string Source)> LaunchpadFiles()
+    {
+        if (!File.Exists(LaunchpadFx)) yield break;
+        var shaders = Path.GetDirectoryName(LaunchpadFx)!;
+        yield return (Path.Combine("Shaders", "iMMERSE", "MartysMods_LAUNCHPAD.fx"), LaunchpadFx);
+        var includes = Path.Combine(shaders, "MartysMods");
+        if (Directory.Exists(includes))
+            foreach (var f in Directory.EnumerateFiles(includes))
+                yield return (Path.Combine("Shaders", "iMMERSE", "MartysMods", Path.GetFileName(f)), f);
+        var noise = Path.Combine(ShaderPackService.TexturesDir, "iMMERSE", "iMMERSE_bluenoise_opt.png");
+        if (File.Exists(noise))
+            yield return (Path.Combine("Textures", "iMMERSE", "iMMERSE_bluenoise_opt.png"), noise);
+    }
+
+    /// <summary>
+    /// Switches Launchpad on (its technique, then Uplift's after it, in the preset; the files follow
+    /// through the shader sync) or off (only a technique RHI added comes out). The caller syncs the
+    /// game's shaders afterwards. False if Uplift isn't installed here or the preset can't be written.
+    /// </summary>
+    public bool SetLaunchpad(string installPath, bool on)
+    {
+        if (!IsRhiInstalled(installPath)) return false;
+        var m = ReadMarkerAll(installPath);
+        try
+        {
+            string technique = m.Technique, launchpad;
+            if (on)
+            {
+                // Launchpad's motion reaches the add-on through the Uplift technique below it
+                bool upliftAdded = EnableTechnique(installPath);
+                if (technique.Length == 0) technique = upliftAdded ? "1" : "user";
+                bool added = EnableTechnique(installPath, LaunchpadToken, before: TechniqueToken);
+                launchpad = added || m.Launchpad == "1" ? "1" : "user";
+            }
+            else
+            {
+                if (m.Launchpad == "1") DisableTechnique(installPath, LaunchpadToken);
+                launchpad = "off";
+            }
+            WriteMarker(installPath, m.Installed, m.Pinned, technique, launchpad);
+            _crashReporter.Log($"[UpliftService.SetLaunchpad] Launchpad {(on ? "on" : "off")} in '{installPath}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[UpliftService.SetLaunchpad] '{installPath}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// First time only (install, or installs from before RHI handled Launchpad): applies the game's
+    /// Launchpad choice. True if Launchpad was switched on.
+    /// </summary>
+    public bool EnsureLaunchpadFor(string installPath, bool wanted)
+    {
+        if (!IsRhiInstalled(installPath) || LaunchpadDecided(installPath)) return false;
+        return SetLaunchpad(installPath, wanted) && wanted;
     }
 
     /// <summary>
@@ -289,6 +393,7 @@ public class UpliftService
             var src = Path.Combine(dir, f);
             if (File.Exists(src)) list.Add((Path.Combine("Shaders", f), src));
         }
+        if (LaunchpadOn(gameDir)) list.AddRange(LaunchpadFiles());
         return list;
     }
 
@@ -553,7 +658,8 @@ public class UpliftService
             _crashReporter.Log($"[UpliftService.Install] Keeping the user's own {dllRel} in '{addonDir}'");
 
         var version = ReadVersion(sourceDir);
-        WriteMarker(installPath, version, pinned, ReadMarkerAll(installPath).Technique);
+        var prev = ReadMarkerAll(installPath);
+        WriteMarker(installPath, version, pinned, prev.Technique, prev.Launchpad);
         Record(Path.Combine(DllFolder, MarkerName));
 
         RhiInstallManifest.SetComponent(installPath, Component, recorded);
@@ -602,7 +708,7 @@ public class UpliftService
         foreach (var old in OldNames) TryDelete(Path.Combine(addonDir, old));
         if (changed || installed != StagedVersion)
         {
-            try { WriteMarker(installPath, StagedVersion, null, ReadMarkerAll(installPath).Technique); }
+            try { var m = ReadMarkerAll(installPath); WriteMarker(installPath, StagedVersion, null, m.Technique, m.Launchpad); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             { _crashReporter.Log($"[UpliftService.UpdateInstalled] Marker not updated — {ex.Message}"); }
         }
@@ -616,7 +722,9 @@ public class UpliftService
         if (string.IsNullOrEmpty(installPath)) return;
         var addonDir = AddonDir(installPath);
         // Only a technique RHI added comes back out of the preset
-        if (ReadMarkerAll(installPath).Technique == "1") DisableTechnique(installPath);
+        var marker = ReadMarkerAll(installPath);
+        if (marker.Technique == "1") DisableTechnique(installPath);
+        if (marker.Launchpad == "1") DisableTechnique(installPath, LaunchpadToken);
         foreach (var rel in RhiInstallManifest.GetComponentFiles(installPath, Component))
             if (FileHelper.SafeCombine(addonDir, rel) is { } path) TryDelete(path);
         var folder = Path.Combine(addonDir, DllFolder);

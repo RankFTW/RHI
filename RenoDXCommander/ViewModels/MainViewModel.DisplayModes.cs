@@ -34,6 +34,33 @@ public partial class MainViewModel
     private void WireDisplayModes()
     {
         AuxInstallService.DisplayModeKeeper = (folder, items) => DisplayModesOn ? DisplayModeService.Keep(folder, items) : null;
+        DisplayModeService.GlobalValue = GlobalDisplayModeValue;
+    }
+
+    /// <summary>
+    /// The global setting a game goes back to when its mode is turned off (or a mode has no value for it), in the
+    /// item's value format, or null when there's no global setting (the game's value from before modes is used).
+    /// Follows the same rules as the Settings "write to all games" buttons. Called on a background thread.
+    /// </summary>
+    private string? GlobalDisplayModeValue(DisplayModeContext ctx, string itemKey)
+    {
+        var s = _settingsViewModel;
+        // reshade.ini locked for this game: global writes skip it
+        if (DisplayModeItemKeys.ReShadeIniItems.Contains(itemKey, StringComparer.OrdinalIgnoreCase)
+            && !GetKeepRsIniUpdated(ctx.GameName, ctx.Store)) return null;
+        static string? NotEmpty(string? v) => string.IsNullOrWhiteSpace(v) ? null : v;
+        return itemKey switch
+        {
+            DisplayModeItemKeys.RdxPeakNits => s.PeakNitsEnabled && s.PeakNits > 0
+                ? s.PeakNits.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+            // RDR2 / Max Payne 3 keep their own overlay key (the global key isn't written to them)
+            DisplayModeItemKeys.RsOverlayKey => AuxInstallService.IsRdr2(ctx.GameName) ? null : NotEmpty(s.OverlayHotkey),
+            DisplayModeItemKeys.RsScreenshotKey => NotEmpty(s.ScreenshotHotkey),
+            DisplayModeItemKeys.UlTargetFps => Math.Max(0, s.UlTargetFps).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            DisplayModeItemKeys.UlOsdKey => NotEmpty(s.UlOsdHotkey),
+            DisplayModeItemKeys.DriverFpsCap => "global", // the game's own driver FPS limit is cleared
+            _ => null,
+        };
     }
 
     public static string DisplayModeKey(GameCardViewModel card) => GameKey.FromCard(card.GameName, card.Source ?? "").ToKey();
@@ -49,12 +76,16 @@ public partial class MainViewModel
         Nvidia = _dlssPresetService,
     };
 
-    public string ActiveDisplayModeId(GameCardViewModel card) => DisplayModeStore.ActiveModeId(DisplayModeKey(card));
+    /// <summary>The game's active mode id, or null when its mode is off.</summary>
+    public string? ActiveDisplayModeId(GameCardViewModel card) => DisplayModeStore.ActiveModeId(DisplayModeKey(card));
 
-    public string ActiveDisplayModeName(GameCardViewModel card) => DisplayModeStore.NameOf(ActiveDisplayModeId(card)) ?? "";
+    public string ActiveDisplayModeName(GameCardViewModel card) => DisplayModeStore.NameOf(ActiveDisplayModeId(card)) ?? "Off";
 
-    /// <summary>Switches one game. Returns null (with <paramref name="refused"/> set) when it can't switch now.</summary>
-    public async Task<DisplayModeService.SwitchResult?> SwitchDisplayModeAsync(GameCardViewModel card, string modeId, Action<string>? refused = null)
+    /// <summary>
+    /// Switches one game, or with a null <paramref name="modeId"/> turns its mode off (back to the global settings).
+    /// Returns null (with <paramref name="refused"/> set) when it can't switch now.
+    /// </summary>
+    public async Task<DisplayModeService.SwitchResult?> SwitchDisplayModeAsync(GameCardViewModel card, string? modeId, Action<string>? refused = null)
     {
         if (!DisplayModesOn) return null;
         if (card.IsRunning)
@@ -69,7 +100,7 @@ public partial class MainViewModel
         }
         var ctx = BuildDisplayModeContext(card);
         var svc = DisplayModeService;
-        var result = await Task.Run(() => svc.Switch(ctx, modeId));
+        var result = await Task.Run(() => modeId == null ? svc.TurnOff(ctx) : svc.Switch(ctx, modeId));
         SaveNameMappings();
         NotifyDisplayModesChanged();
         return result;
@@ -77,18 +108,19 @@ public partial class MainViewModel
 
     /// <summary>
     /// Switches every game that isn't hidden or running and has a folder (Settings › Display modes › Switch all games).
-    /// Returns (switched, skipped because running).
+    /// A null <paramref name="modeId"/> turns off every game that's in a mode. Returns (switched, skipped because running).
     /// </summary>
-    public async Task<(int Switched, int Running)> SwitchAllDisplayModesAsync(string modeId, IProgress<(string msg, double pct)>? progress, CancellationToken ct)
+    public async Task<(int Switched, int Running)> SwitchAllDisplayModesAsync(string? modeId, IProgress<(string msg, double pct)>? progress, CancellationToken ct)
     {
         if (!DisplayModesOn) return (0, 0);
-        var cards = _allCards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        var svc = DisplayModeService;
+        var store = DisplayModeStore;
+        var cards = _allCards.Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)
+                                          && (modeId != null || store.IsManaged(DisplayModeKey(c)))).ToList();
         int running = cards.Count(c => c.IsRunning);
         var targets = cards.Where(c => !c.IsRunning)
             .Select(c => (Card: c, Ctx: BuildDisplayModeContext(c))).ToList();
-        var svc = DisplayModeService;
-        var store = DisplayModeStore;
-        string modeName = store.NameOf(modeId) ?? modeId;
+        string modeName = modeId == null ? "Off" : store.NameOf(modeId) ?? modeId;
         int done = 0;
         await Task.Run(() =>
         {
@@ -97,11 +129,12 @@ public partial class MainViewModel
                 if (ct.IsCancellationRequested) break;
                 var (card, ctx) = targets[i];
                 if (store.ItemsFor(ctx.Key).Count == 0) continue;
-                progress?.Report(($"{modeName} mode: {ctx.GameName}", (double)i / Math.Max(1, targets.Count) * 100));
+                progress?.Report((modeId == null ? $"Turning off: {ctx.GameName}" : $"{modeName} mode: {ctx.GameName}",
+                    (double)i / Math.Max(1, targets.Count) * 100));
                 try
                 {
                     if (!Directory.Exists(ctx.InstallPath)) continue;
-                    svc.Switch(ctx, modeId);
+                    if (modeId == null) svc.TurnOff(ctx); else svc.Switch(ctx, modeId);
                     done++;
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -127,14 +160,14 @@ public partial class MainViewModel
         store.SetGameValue(key, modeId, item.Key, value);
         SaveNameMappings();
         string? problem = null;
-        bool isActive = store.ActiveModeId(key).Equals(modeId, StringComparison.OrdinalIgnoreCase);
-        var effective = store.Effective(key, modeId, item.Key);
-        if (isActive && store.IsManaged(key) && !item.AtLaunch && effective != null && store.Swaps(key, item.Key))
+        bool isActive = modeId.Equals(store.ActiveModeId(key) ?? "", StringComparison.OrdinalIgnoreCase);
+        if (isActive && !item.AtLaunch && store.Swaps(key, item.Key))
         {
             if (card.IsRunning) return "Saved. The game is running, so it's written the next time you switch modes.";
             var ctx = BuildDisplayModeContext(card);
             var svc = DisplayModeService;
-            problem = await Task.Run(() => svc.ApplyNow(ctx, item, effective));
+            // Cleared: the mode default, else the game's normal value
+            problem = await Task.Run(() => svc.ValueFor(ctx, modeId, item) is { } effective ? svc.ApplyNow(ctx, item, effective) : null);
         }
         return problem;
     }
@@ -163,12 +196,12 @@ public partial class MainViewModel
     public string? DisplayModeLaunchValue(GameCardViewModel card, string itemKey)
         => DisplayModesOn ? DisplayModeStore.ActiveValue(DisplayModeKey(card), itemKey) : null;
 
-    /// <summary>True when the game's HDR button is set by its display mode.</summary>
+    /// <summary>True when the game's HDR button is set by its display mode (in a mode that swaps HDR; Off = the button's own rule).</summary>
     public bool DisplayModeOwnsHdr(GameCardViewModel card)
-        => DisplayModesOn && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Hdr);
+        => DisplayModesOn && DisplayModeStore.IsManaged(DisplayModeKey(card)) && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Hdr);
 
     public bool DisplayModeOwnsResolution(GameCardViewModel card)
-        => DisplayModesOn && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Resolution);
+        => DisplayModesOn && DisplayModeStore.IsManaged(DisplayModeKey(card)) && DisplayModeStore.Swaps(DisplayModeKey(card), DisplayModeItemKeys.Resolution);
 
     /// <summary>HDR on launch for the game's current mode: On / Off from the mode, else null (use the normal rule).</summary>
     public bool? DisplayModeHdrOn(GameCardViewModel card) => DisplayModeLaunchValue(card, DisplayModeItemKeys.Hdr) switch
@@ -192,9 +225,10 @@ public partial class MainViewModel
     public void SetDisplayModeLaunchValue(GameCardViewModel card, string itemKey, string value)
     {
         var key = DisplayModeKey(card);
-        DisplayModeStore.SetGameValue(key, DisplayModeStore.ActiveModeId(key), itemKey, value);
+        if (DisplayModeStore.ActiveModeId(key) is not { } mode) return;
+        DisplayModeStore.SetGameValue(key, mode, itemKey, value);
         SaveNameMappings();
-        CrashReporter.Log($"[MainViewModel.SetDisplayModeLaunchValue] '{key}' {DisplayModeStore.NameOf(DisplayModeStore.ActiveModeId(key))}: {itemKey}={value}");
+        CrashReporter.Log($"[MainViewModel.SetDisplayModeLaunchValue] '{key}' {DisplayModeStore.NameOf(mode)}: {itemKey}={value}");
     }
 
     // ── Modes (Settings card) ─────────────────────────────────────────────────
@@ -213,11 +247,41 @@ public partial class MainViewModel
         return ok;
     }
 
-    public bool DeleteDisplayMode(string id)
+    /// <summary>
+    /// Deletes a mode. Its games are turned off first (their global settings written back); running / undetected
+    /// games are just set to Off. Returns (deleted, games turned off).
+    /// </summary>
+    public async Task<(bool Deleted, int TurnedOff)> DeleteDisplayModeAsync(string id)
     {
-        bool ok = DisplayModeStore.DeleteMode(id);
-        if (ok) { SaveNameMappings(); NotifyDisplayModesChanged(); }
-        return ok;
+        var store = DisplayModeStore;
+        if (store.Modes.Count <= 1) return (false, 0);
+        var inMode = store.GamesIn(id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var targets = _allCards.Where(c => !c.IsRunning && !string.IsNullOrEmpty(c.InstallPath) && inMode.Contains(DisplayModeKey(c)))
+            .Select(BuildDisplayModeContext).ToList();
+        var svc = DisplayModeService;
+        int done = 0;
+        if (targets.Count > 0)
+            await Task.Run(() =>
+            {
+                foreach (var ctx in targets)
+                {
+                    try
+                    {
+                        if (!Directory.Exists(ctx.InstallPath)) continue;
+                        svc.TurnOff(ctx);
+                        done++;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+                    {
+                        CrashReporter.Log($"[MainViewModel.DeleteDisplayModeAsync] '{ctx.GameName}' — {ex.Message}");
+                    }
+                }
+            });
+        bool ok = store.DeleteMode(id); // anything left in it is set to Off
+        CrashReporter.Log($"[MainViewModel.DeleteDisplayModeAsync] '{id}' deleted={ok}, {done} game(s) turned off");
+        SaveNameMappings();
+        NotifyDisplayModesChanged();
+        return (ok, done);
     }
 
     public bool MoveDisplayMode(string id, int delta)

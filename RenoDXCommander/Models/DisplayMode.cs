@@ -16,7 +16,7 @@ public sealed class DisplayModeDefinition
 /// <summary>One game's display mode state, keyed "GameName|Store".</summary>
 public sealed class GameDisplayModeState
 {
-    /// <summary>Active mode id. Null = the first mode (nothing has been switched yet).</summary>
+    /// <summary>Active mode id. Null = Off: the game isn't in a mode and follows the global settings.</summary>
     public string? Mode { get; set; }
 
     /// <summary>Item keys this game swaps. Null = the default list from Settings.</summary>
@@ -31,6 +31,12 @@ public sealed class GameDisplayModeState
     /// doesn't inherit the previous mode's. Null dictionary = never switched: the game's values are its starting mode's.
     /// </summary>
     public Dictionary<string, string?>? Entry { get; set; }
+
+    /// <summary>
+    /// Item key → the game's value before it entered a mode from Off. Turning the mode off writes these back for items
+    /// with no global setting, and a mode with no value of its own uses them too. Null = none recorded.
+    /// </summary>
+    public Dictionary<string, string>? Original { get; set; }
 
     /// <summary>Install folder and addon folder at the last switch, so global writers can find the game by folder.</summary>
     public List<string>? Folders { get; set; }
