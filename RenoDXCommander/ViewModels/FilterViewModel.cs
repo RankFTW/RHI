@@ -451,11 +451,42 @@ public partial class FilterViewModel : ObservableObject
         return total > 0 ? total.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
     }
 
+    /// <summary>
+    /// The name matches the search properly: the whole name ("sifu" → Sifu, punctuation ignored), or every typed
+    /// word is a whole word of the name ("clone" → Clone Hero, "resident evil 4"). When any shown game matches this
+    /// way, games that only matched by a near miss or part of a word are dropped (Sifu no longer brings up
+    /// PC Building Simulator).
+    /// </summary>
+    internal static bool NameMatchesWholeWords(string gameName, string query)
+    {
+        var q = LettersAndDigits(query);
+        if (q.Length == 0) return false;
+        var f = s_searchForms.GetOrAdd(gameName, SearchForms);
+        if (f.Plain == q || f.Numbered == q) return true;
+
+        var tokens = SplitWords(query);
+        if (tokens.Count == 0) return false;
+        var rawWords = SplitWords(gameName);
+        foreach (var t in tokens)
+        {
+            bool found = f.Words.Any(w => w.Equals(t, StringComparison.OrdinalIgnoreCase))
+                      || rawWords.Any(w => w.Equals(t, StringComparison.OrdinalIgnoreCase));
+            if (!found) return false;
+        }
+        return true;
+    }
+
     internal static bool MatchesUniversalSearch(GameCardViewModel card, string query)
     {
         return card.GameName.Contains(query, StringComparison.OrdinalIgnoreCase)
             || NameMatchesLoosely(card.GameName, query)
-            || card.Maintainer.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || MatchesSearchOutsideName(card, query);
+    }
+
+    /// <summary>The search against everything except the game's name (maintainer, store, engine, API, mods…).</summary>
+    private static bool MatchesSearchOutsideName(GameCardViewModel card, string query)
+    {
+        return card.Maintainer.Contains(query, StringComparison.OrdinalIgnoreCase)
             || card.Source.Contains(query, StringComparison.OrdinalIgnoreCase)
             || card.EngineHint.Contains(query, StringComparison.OrdinalIgnoreCase)
             || card.GraphicsApi.ToString().Contains(query, StringComparison.OrdinalIgnoreCase)
@@ -578,6 +609,12 @@ public partial class FilterViewModel : ObservableObject
             if (!matched) return false;
             return !c.IsHidden;
         }).OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
+
+        // A proper name match hides the near misses: games that only matched by a typo or part of a word.
+        // Games found through something other than the name (engine, store, maintainer…) stay.
+        if (!string.IsNullOrEmpty(query) && filtered.Any(c => NameMatchesWholeWords(c.GameName, query)))
+            filtered = filtered.Where(c => NameMatchesWholeWords(c.GameName, query)
+                                        || MatchesSearchOutsideName(c, query)).ToList();
 
         _displayedGames.ReplaceAll(filtered);
         UpdateCounts();

@@ -46,6 +46,32 @@ public class GameSearchTests
         Assert.True(FilterViewModel.NameMatchesLoosely(name, query));
     }
 
+    // A proper name match (whole name or whole words) hides games that only matched by a near miss
+    [Theory]
+    [InlineData("Sifu", "sifu")]
+    [InlineData("Sifu", "SIFU")]
+    [InlineData("Clone Hero", "clone")]
+    [InlineData("Clone Hero", "hero clone")]
+    [InlineData("F.E.A.R. 3", "fear 3")]
+    [InlineData("Resident Evil 4", "resident evil 4")]
+    [InlineData("Grand Theft Auto III", "grand theft auto 3")]
+    [InlineData("Grand Theft Auto III", "grand theft auto iii")]
+    [InlineData("Marvel's Spider-Man 2", "marvels")]
+    public void WholeWordMatches(string name, string query)
+    {
+        Assert.True(FilterViewModel.NameMatchesWholeWords(name, query));
+    }
+
+    [Theory]
+    [InlineData("PC Building Simulator", "sifu")]                   // typo match only
+    [InlineData("Uncharted: The Nathan Drake Collection", "clone")] // typo match only
+    [InlineData("Clone Hero", "clon")]                              // part of a word: still typing
+    [InlineData("Resident Evil 4", "resident evil 3")]
+    public void NearMissesArentWholeWordMatches(string name, string query)
+    {
+        Assert.False(FilterViewModel.NameMatchesWholeWords(name, query));
+    }
+
     [Theory]
     [InlineData("Grand Theft Auto V", "gta4")]       // the number has to be right
     [InlineData("Red Dead Redemption 2", "rr")]      // two characters only match initials from the start
