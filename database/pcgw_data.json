@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56050,
-  "generated": "2026-11-10T23:12:16Z",
+  "generated": "2026-11-11T01:12:20Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -145625,11 +145625,13 @@
     },
     "Shrek 2 Activity Center: Twisted Fairy Tale Fun": {},
     "Shrek 2 Remastered": {
-      "steam_appid": 2523740
+      "steam_appid": 2523740,
+      "engine": "Lux Engine"
     },
     "Shrek 2: Team Action": {
       "dx9": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Activision\\Shrek 2 Team Action\\Settings"
+      "config_path": "HKEY_CURRENT_USER\\Software\\Activision\\Shrek 2 Team Action\\Settings",
+      "engine": "Lux Engine"
     },
     "Shrek 2: The Game": {
       "config_path": "<path-to-game>\\system\\, %USERPROFILE%\\Documents\\Shrek 2\\",
