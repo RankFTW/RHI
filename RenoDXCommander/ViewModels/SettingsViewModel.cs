@@ -48,6 +48,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _mfgWarningDismissed;
     [ObservableProperty] private bool _engineBadgeWarningDismissed;
     [ObservableProperty] private bool _umfgReShadeWarningDismissed;
+    /// <summary>"Don't show this again" on the HSF install notice (anti-cheat, other frame generation).</summary>
+    [ObservableProperty] private bool _hsfNoticeDismissed;
     /// <summary>"Don't show this again" on the Source engine mod install dialog.</summary>
     [ObservableProperty] private bool _sourceEngineNoticeDismissed;
     /// <summary>Achievements (Spotlight panel and overlay): show the name and description of locked hidden ones.</summary>
@@ -347,6 +349,8 @@ public partial class SettingsViewModel : ObservableObject
 
         if (s.TryGetValue("UmfgReShadeWarningDismissed", out var urwdVal))
             UmfgReShadeWarningDismissed = urwdVal == "true";
+        if (s.TryGetValue("HsfNoticeDismissed", out var hsfndVal))
+            HsfNoticeDismissed = hsfndVal == "true";
 
         if (s.TryGetValue("SourceEngineNoticeDismissed", out var sendVal))
             SourceEngineNoticeDismissed = sendVal == "true";
@@ -577,6 +581,7 @@ public partial class SettingsViewModel : ObservableObject
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EngineBadgeWarningDismissed"] = EngineBadgeWarningDismissed ? "true" : "false";
         s["UmfgReShadeWarningDismissed"] = UmfgReShadeWarningDismissed ? "true" : "false";
+        s["HsfNoticeDismissed"] = HsfNoticeDismissed ? "true" : "false";
         s["SourceEngineNoticeDismissed"] = SourceEngineNoticeDismissed ? "true" : "false";
         s["ShowHiddenAchievements"] = ShowHiddenAchievements ? "true" : "false";
         s["SettingsTabbed"] = SettingsTabbed ? "true" : "false";

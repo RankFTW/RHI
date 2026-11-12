@@ -316,8 +316,8 @@ public class UpliftService
     /// <summary>True once Launchpad has been switched on or off for this install.</summary>
     public static bool LaunchpadDecided(string installPath) => ReadMarkerAll(installPath).Launchpad.Length > 0;
 
-    /// <summary>Launchpad's files (reshade-shaders relative path → staged source): the effect, its includes and its texture.</summary>
-    private static IEnumerable<(string Rel, string Source)> LaunchpadFiles()
+    /// <summary>Launchpad's files (reshade-shaders relative path → staged source): the effect, its includes and its texture. HSF uses them too.</summary>
+    internal static IEnumerable<(string Rel, string Source)> LaunchpadFiles()
     {
         if (!File.Exists(LaunchpadFx)) yield break;
         var shaders = Path.GetDirectoryName(LaunchpadFx)!;

@@ -341,6 +341,20 @@ public partial class DlssStreamlineService
     }
 
     /// <summary>
+    /// Folders that hold a mod's own DLSS / Streamline copies, which the game never loads:
+    /// HSF_streamline (HSF's Streamline 2.14 and DLSS-G). Counting them made a game without DLSS-G
+    /// look like it had it, and DLSS swaps would then have replaced the files HSF was built against.
+    /// </summary>
+    internal static readonly string[] ModOwnedFolderNames = { HsfService.StreamlineFolder };
+
+    internal static bool IsModOwnedFolder(string directory) =>
+        ModOwnedFolderNames.Contains(Path.GetFileName(directory.TrimEnd('\\', '/')), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>True if the path has a mod-owned folder (<see cref="ModOwnedFolderNames"/>) in it.</summary>
+    internal static bool IsInModOwnedFolder(string? path) =>
+        path != null && path.Replace('/', '\\').Split('\\').Any(seg => ModOwnedFolderNames.Contains(seg, StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>
     /// Recursively searches directories for DLSS/Streamline DLLs,
     /// gracefully skipping directories that throw access-denied exceptions.
     /// Skips DLSS DLLs in directories containing OptiScaler.ini (those are
@@ -417,6 +431,7 @@ public partial class DlssStreamlineService
         {
             foreach (var subDir in Directory.EnumerateDirectories(directory))
             {
+                if (IsModOwnedFolder(subDir)) continue; // a mod's own bundled copies, not the game's
                 SearchDirectory(subDir, result, depth + 1);
             }
         }

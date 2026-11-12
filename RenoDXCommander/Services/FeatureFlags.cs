@@ -36,4 +36,11 @@ public static class FeatureFlags
 
     /// <summary>Resolution auto-toggle feature (Settings card + per-game toggle).</summary>
     public static bool ResolutionControl => true;
+
+    /// <summary>
+    /// HSF row in Extras › MFG Unlocks. Off for users until HSF's GitHub repo is public (the download
+    /// needs repo access until then); turned on for everyone with "hsf": true in the manifest.
+    /// </summary>
+    public static bool Hsf
+        => DevUnlockService.IsUnlocked || _manifestFlags?.Hsf == true;
 }

@@ -78,6 +78,7 @@ public partial class DetailPanelBuilder
         if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Unlock", "On"));
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
+        if (HsfService.IsInstalledIn(installPath, card.Is32Bit))                           exSummaryEntries.Add(("HSF", "On"));
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
         if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
         if (dgvInstalled)                                                                   exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
@@ -135,6 +136,12 @@ public partial class DetailPanelBuilder
         __t0 = __exSw.ElapsedMilliseconds;
         BuildMfgAdaUnlockRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] MfgAdaRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── HSF row (manifest flag "hsf"; always shown where HSF is already installed, so it can be removed) ──
+        __t0 = __exSw.ElapsedMilliseconds;
+        if (FeatureFlags.Hsf || HsfService.IsInstalledIn(installPath, card.Is32Bit))
+            BuildHsfRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] HsfRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── API Upgrades sub-header + DXVK row ────────────────────────────────
         if (card.IsDxvkToggleVisible)

@@ -31,6 +31,9 @@ paths:
 - No `Binaries`/`Bin` in the path → `FindUnrealGameRootAbove` climbs up to 2 levels to a folder with `Engine\Plugins` or `Engine\Binaries` (PBZ manual/override at `platform\steam`, DLLs in `{root}\Engine\Plugins`). Never climbs into a store library folder or a drive root.
 - OptiScaler detection: skip DLLs in directories containing `OptiScaler.ini`.
 
+### Mod-owned DLSS copies
+- `SearchDirectory` skips folders in `DlssStreamlineService.ModOwnedFolderNames` (`HSF_streamline`): HSF's bundled Streamline 2.14 / DLSS-G aren't the game's. Counting them showed DLSS-G for games without it and let swaps / auto-update replace HSF's files. `PathsAreWithin` rejects trusted-cache entries inside such a folder (forces a rescan). Add other mods' private DLSS folders to that list.
+
 ### Caching
 - **Scan skip cache** (`dlss_scan_cache.json`): Games scanned 3× with no DLSS → auto-exempted.
 - **Trusted path cache** (`dlss_trusted_paths.json`): Games found at same paths 3× → fast `File.Exists` + `FileVersionInfo` (~1ms).

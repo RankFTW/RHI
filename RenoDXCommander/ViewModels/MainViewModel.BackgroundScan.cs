@@ -499,6 +499,12 @@ public partial class MainViewModel
                 // GITC Uplift: check for a new release and update the games that have it
                 await RefreshUpliftInstallsAsync("RunBackgroundScanAndMergeAsync");
 
+                // Which NVIDIA card(s) the PC has (cached; the HSF install uses it)
+                _ = GpuInfoService.GetNvidiaGpusAsync();
+
+                // HSF: same for the frame generation add-on
+                await RefreshHsfInstallsAsync("RunBackgroundScanAndMergeAsync");
+
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
 

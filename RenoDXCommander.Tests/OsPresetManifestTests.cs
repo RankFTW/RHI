@@ -40,7 +40,7 @@ public class OsPresetManifestTests
         var both = OsPresetService.Parse(
             "{\"version\":1,\"presets\":[{\"name\":\"A\"}],\"presetsV2\":[{\"name\":\"B\",\"installAnrFg\":true}]}");
         Assert.Equal(new[] { "A", "B" }, both!.Select(p => p.Name));
-        Assert.True(both[1].InstallAnrFg);
+        Assert.True(both![1].InstallAnrFg);
         Assert.Single(OsPresetService.Parse("{\"version\":1,\"presetsV2\":[{\"name\":\"B\"}]}")!);
     }
 

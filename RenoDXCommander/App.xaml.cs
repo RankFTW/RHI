@@ -136,6 +136,7 @@ public partial class App : Application
         services.AddSingleton<IAutoHdrService, AutoHdrService>();
         services.AddSingleton<RtxEncoreService>();
         services.AddSingleton<UpliftService>();
+        services.AddSingleton<HsfService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 
@@ -146,9 +147,16 @@ public partial class App : Application
 
         Services = services.BuildServiceProvider();
 
-        // GITC Uplift's shaders stay in a game's reshade-shaders folder while it's installed there
+        // GITC Uplift's and HSF's shaders stay in a game's reshade-shaders folder while they're installed there
         var uplift = Services.GetRequiredService<UpliftService>();
-        ShaderPackService.ExtraGameFiles = uplift.ShaderFilesFor;
+        var hsf = Services.GetRequiredService<HsfService>();
+        ShaderPackService.ExtraGameFiles = dir =>
+        {
+            var files = new List<(string Rel, string Source)>(uplift.ShaderFilesFor(dir));
+            foreach (var f in hsf.ShaderFilesFor(dir))
+                if (!files.Any(x => x.Rel.Equals(f.Rel, StringComparison.OrdinalIgnoreCase))) files.Add(f); // LaunchPad: once
+            return files;
+        };
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)

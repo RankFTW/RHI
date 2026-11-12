@@ -367,6 +367,9 @@ public partial class DetailPanelBuilder
         bool addonConflict = card.MfgAdaInstalled;
         var currentDllName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store);
         bool isPluginInstall = isInstalled && Rtx40MfgService.IsPluginInstall(currentDllName); // loaded by OptiScaler
+        bool isHsfMods       = isInstalled && Rtx40MfgService.IsHsfModsInstall(currentDllName); // loaded by HSF's helper
+        bool hasHsf          = !string.IsNullOrEmpty(installPath)
+            && (HsfService.IsInstalledIn(installPath, false) || HsfService.IsInstalledIn(installPath, true));
 
         // Status
         string statusText  = isInstalled ? (mfgSvc.StagedVersion ?? "Installed") : "Ready";
@@ -466,7 +469,8 @@ public partial class DetailPanelBuilder
             bool osPluginLikely = card.IsOsInstalled && !string.IsNullOrEmpty(installPath)
                 && System.IO.Directory.Exists(System.IO.Path.Combine(installPath, "OptiScaler"));
             ToolTipService.SetToolTip(installBtn,
-                isPluginInstall ? $"Reinstall Universal MFG Unlocker (loaded by OptiScaler from {currentDllName})"
+                isHsfMods ? "Reinstall Universal MFG Unlocker in HSF_streamline\\mods (loaded by HSF's helper)"
+                : isPluginInstall ? $"Reinstall Universal MFG Unlocker (loaded by OptiScaler from {currentDllName})"
                 : osPluginLikely ? (isInstalled
                     ? $"Reinstall Universal MFG Unlocker. OptiScaler is installed, so it moves from {currentDllName} into OptiScaler\\plugins."
                     : "Install Universal MFG Unlocker as an OptiScaler plugin (OptiScaler\\plugins\\MFGUnlocker.asi), as its author recommends with OptiScaler.")
@@ -484,6 +488,17 @@ public partial class DetailPanelBuilder
             bool asPlugin    = await Task.Run(() => vm.IsOptiScalerPluginHost(card));
             var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
             bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
+
+            // Installed for HSF's helper (HSF_streamline\mods): reinstall in the same place, no name to pick
+            if (liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName))
+            {
+                installBtn.IsEnabled = false;
+                installBtn.Content   = "Installing...";
+                var hsfError = await vm.InstallMfgForHsfAsync(card, null);
+                if (hsfError != null) CrashReporter.Log($"[BuildRtx40MfgRow] HSF mods reinstall failed — {hsfError}");
+                RequestExtrasRebuild(card);
+                return;
+            }
 
             // XeMFG standalone can't start while ReShade hooks DXGI (the mod reports menu_factory_not_dxgi).
             // Through OptiScaler it works, so no warning there.
@@ -573,13 +588,25 @@ public partial class DetailPanelBuilder
                     cog.AddNote("The mod's own menu still opens beside OptiScaler's for the DLSS presets and DLSS 5. If OptiScaler is removed, RHI moves the mod back next to the game's exe.");
                 }
 
+                if (isHsfMods || hasHsf)
+                {
+                    cog.AddSection("Used with HSF");
+                    cog.AddIntro(isHsfMods
+                        ? "Installed in HSF_streamline\\mods: in this game HSF runs frame generation in its helper, which loads the unlocker from there. "
+                          + "Pick the multiplier in HSF's tab in ReShade's overlay. Removing HSF removes this copy too."
+                        : "HSF is installed in this game. Pick the multiplier in HSF's tab in ReShade's overlay.");
+                    cog.AddNote("No RTXMFG-XeSS folder: HSF's frame generation is DLSS, so XeMFG isn't used.");
+                }
+
                 cog.AddSection("XeSS frame generation (XeMFG)");
-                if (isPluginInstall)
+                if (isHsfMods || hasHsf)
+                    cog.AddIntro("Not installed in games with HSF. If you want XeMFG here instead, remove HSF and reinstall the mod.");
+                else if (isPluginInstall)
                     cog.AddIntro("Through OptiScaler, XeMFG is OptiScaler's FG Output set to XeFG. It uses the XeSS files OptiScaler installs, so nothing else is needed.");
                 else
                     cog.AddIntro("The mod can also use Intel's XeSS frame generation, 2x to 6x on any GPU (experimental). Tick \"XeMFG standalone\" in the in-game menu and restart the game. "
                         + "It needs Intel's libxess_fg.dll and libxell.dll in an RTXMFG-XeSS folder next to the mod; RHI installs them with the mod.");
-                if (isInstalled && !isPluginInstall && !string.IsNullOrEmpty(installPath))
+                if (isInstalled && !isPluginInstall && !isHsfMods && !hasHsf && !string.IsNullOrEmpty(installPath))
                 {
                     var xessDir = System.IO.Path.Combine(installPath, Rtx40MfgService.XessFolderName);
                     bool xessPresent = System.IO.File.Exists(System.IO.Path.Combine(xessDir, "libxess_fg.dll"))

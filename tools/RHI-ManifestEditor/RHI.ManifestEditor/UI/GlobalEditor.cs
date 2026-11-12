@@ -70,6 +70,7 @@ public sealed class GlobalEditor
         ("dlssNr", "DLSS Neural Rendering", "Shows the Neural Rendering section and DLSS NR downloads."),
         ("nexusMods", "Nexus Mods", "Nexus Mods account and downloads."),
         ("resolutionControl", "Resolution control", "Per-game resolution and DLDSR settings."),
+        ("hsf", "HSF", "HSF row in Extras › MFG Unlocks. Turn on when HSF's GitHub repo is public."),
     };
 
     private UIElement Flags()

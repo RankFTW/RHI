@@ -654,6 +654,12 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         var dlssnrPath = entry.DlssnrPath?.Replace('/', '\\');
         var streamlineFolder = entry.StreamlineFolder?.Replace('/', '\\');
 
+        // Cached before RHI skipped mod-owned folders (HSF_streamline): scan again
+        if (DlssStreamlineService.IsInModOwnedFolder(dlssPath) || DlssStreamlineService.IsInModOwnedFolder(dlssdPath)
+            || DlssStreamlineService.IsInModOwnedFolder(dlssgPath) || DlssStreamlineService.IsInModOwnedFolder(dlssnrPath)
+            || DlssStreamlineService.IsInModOwnedFolder(streamlineFolder))
+            return false;
+
         if (dlssPath != null && !dlssPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
         if (dlssdPath != null && !dlssdPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))

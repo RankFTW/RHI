@@ -137,7 +137,8 @@ public partial class Rtx40MfgService
     /// </summary>
     public string? MoveToOptiScalerPlugin(string installPath, string proxyName)
     {
-        if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(proxyName) || IsPluginInstall(proxyName)) return null;
+        if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(proxyName) || IsPluginInstall(proxyName)
+            || IsHsfModsInstall(proxyName)) return null; // HSF's helper loads that copy, not the game
         var src  = Path.Combine(installPath, proxyName);
         var dest = Path.Combine(installPath, PluginRelPath);
         if (!File.Exists(src)) return null;
@@ -201,7 +202,8 @@ public partial class Rtx40MfgService
             if (File.Exists(marker)) File.Delete(marker);
 
             // Standalone XeMFG needs RTXMFG-XeSS next to the proxy again
-            if (IsXessStagingReady) DeployXessFiles(installPath);
+            if (SkipsXessFiles(installPath, name)) { }
+            else if (IsXessStagingReady) DeployXessFiles(installPath);
             else
                 _ = Task.Run(async () =>
                 {
@@ -218,6 +220,31 @@ public partial class Rtx40MfgService
             return null;
         }
     }
+
+    // ── HSF ───────────────────────────────────────────────────────────────────
+    // In DirectX 9 / 11 and 32-bit games HSF runs DLSS frame generation in its own 64-bit helper, which
+    // loads every DLL in HSF_streamline\mods before Streamline. The mod goes there for those games (a proxy
+    // next to the game would never reach the helper's process). Games with HSF get no RTXMFG-XeSS folder:
+    // HSF's frame generation is DLSS, so standalone XeMFG isn't used.
+
+    /// <summary>File name inside HSF_streamline\mods.</summary>
+    public const string HsfModsFileName = "MFGUnlocker.dll";
+
+    /// <summary>The installed-as value (relative to the game's install folder) for HSF's mods folder.</summary>
+    public static string HsfModsRelPath(string installPath) =>
+        Path.GetRelativePath(installPath,
+            Path.Combine(HsfService.AddonDir(installPath), HsfService.StreamlineFolder, "mods", HsfModsFileName));
+
+    /// <summary>True when <paramref name="installedAs"/> is HSF's mods folder (loaded by HSF's helper).</summary>
+    public static bool IsHsfModsInstall(string? installedAs) =>
+        !string.IsNullOrEmpty(installedAs)
+        && ("\\" + installedAs.Replace('/', '\\')).EndsWith(
+            "\\" + Path.Combine(HsfService.StreamlineFolder, "mods", HsfModsFileName), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>True when the game gets no RTXMFG-XeSS folder: OptiScaler plugin, HSF's mods folder, or HSF is installed there.</summary>
+    public static bool SkipsXessFiles(string installPath, string? installedAs) =>
+        IsPluginInstall(installedAs) || IsHsfModsInstall(installedAs)
+        || HsfService.IsInstalledIn(installPath, is32Bit: false) || HsfService.IsInstalledIn(installPath, is32Bit: true);
 
     private static bool FilesEqual(string a, string b)
     {
@@ -689,7 +716,7 @@ public partial class Rtx40MfgService
 
         // Games installed before RHI added the XeSS runtime get it once
         var needXess = list
-            .Where(i => !IsPluginInstall(i.InstalledAs) // OptiScaler plugin installs use OptiScaler's XeSS files
+            .Where(i => !SkipsXessFiles(i.InstallPath, i.InstalledAs) // OptiScaler's XeSS files, or HSF (DLSS frame generation)
                 && IsInstalledIn(i.InstallPath, i.InstalledAs) && NeedsXessFiles(i.InstallPath))
             .Select(i => i.InstallPath)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -725,8 +752,8 @@ public partial class Rtx40MfgService
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[Rtx40MfgService.Install] Deployed as '{dllName}' to '{installPath}'");
             // XeSS runtime for standalone XeMFG. Not fatal: DLSS frame generation works without it.
-            // Not for OptiScaler plugin installs: XeMFG there uses OptiScaler's own XeSS files.
-            if (IsPluginInstall(dllName)) { }
+            // Not for OptiScaler plugin installs (XeMFG there uses OptiScaler's own XeSS files) or games with HSF.
+            if (SkipsXessFiles(installPath, dllName)) { }
             else if (IsXessStagingReady) DeployXessFiles(installPath);
             else _crashReporter.Log("[Rtx40MfgService.Install] XeSS runtime not staged — RTXMFG-XeSS skipped");
             return true;
