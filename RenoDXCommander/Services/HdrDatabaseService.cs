@@ -22,14 +22,17 @@ public class HdrDatabaseService : IHdrDatabaseService
     internal const string ReadmeUrl =
         "https://raw.githubusercontent.com/KoKlusz/HDR-Gaming-Database/main/README.md";
 
+    private const string DiscussionUrl = @"https://github\.com/KoKlusz/HDR-Gaming-Database/discussions/\d+";
+
     /// <summary>
-    /// Matches lines like:
-    ///   * [Game Name](https://github.com/KoKlusz/HDR-Gaming-Database/discussions/123)
-    ///   * [Game Name](https://github.com/KoKlusz/HDR-Gaming-Database/discussions/123) ⭐
+    /// Matches an entry in either README format:
+    ///   HTML table (current):  &lt;a href="https://github.com/KoKlusz/HDR-Gaming-Database/discussions/123"&gt;Game Name&lt;/a&gt;
+    ///   Markdown list (older): * [Game Name](https://github.com/KoKlusz/HDR-Gaming-Database/discussions/123)
     /// </summary>
     private static readonly Regex EntryPattern = new(
-        @"^\s*\*\s*\[([^\]]+)\]\((https://github\.com/KoKlusz/HDR-Gaming-Database/discussions/\d+)\)",
-        RegexOptions.Compiled);
+        @"<a\s+href=""(?<url>" + DiscussionUrl + @")""\s*>(?<name>[^<]+)</a>"
+        + @"|^\s*\*\s*\[(?<name>[^\]]+)\]\((?<url>" + DiscussionUrl + @")\)",
+        RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     public HdrDatabaseService(HttpClient http)
     {
@@ -49,22 +52,11 @@ public class HdrDatabaseService : IHdrDatabaseService
         try
         {
             var markdown = await _http.GetStringAsync(ReadmeUrl).ConfigureAwait(false);
-            var lines = markdown.Split('\n');
+            result = Parse(markdown);
 
-            foreach (var line in lines)
-            {
-                var match = EntryPattern.Match(line);
-                if (!match.Success) continue;
-
-                var gameName = NormalizeQuotes(match.Groups[1].Value.Trim());
-                gameName = StripTrademarks(gameName);
-                var url = match.Groups[2].Value.Trim();
-
-                // First occurrence wins (case-insensitive)
-                result.TryAdd(gameName, url);
-            }
-
-            CrashReporter.Log($"[HdrDatabaseService.FetchAsync] Parsed {result.Count} HDR database entries");
+            CrashReporter.Log(result.Count == 0
+                ? $"[HdrDatabaseService.FetchAsync] Parsed 0 HDR database entries from {markdown.Length} chars — the README format may have changed"
+                : $"[HdrDatabaseService.FetchAsync] Parsed {result.Count} HDR database entries");
         }
         catch (Exception ex)
         {
@@ -73,6 +65,22 @@ public class HdrDatabaseService : IHdrDatabaseService
 
         CachedData = result;
         progress?.Report($"HDR database: {result.Count} entries");
+        return result;
+    }
+
+    /// <summary>
+    /// Game name → discussion URL from the README text. Names are HTML-decoded ("Ratchet &amp;amp; Clank"),
+    /// with curly quotes straightened and ™ ® © removed so they match store names. First occurrence wins.
+    /// </summary>
+    internal static Dictionary<string, string> Parse(string readme)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match match in EntryPattern.Matches(readme))
+        {
+            var gameName = StripTrademarks(NormalizeQuotes(System.Net.WebUtility.HtmlDecode(match.Groups["name"].Value).Trim()));
+            if (gameName.Length == 0) continue;
+            result.TryAdd(gameName, match.Groups["url"].Value.Trim());
+        }
         return result;
     }
 

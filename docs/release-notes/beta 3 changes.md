@@ -85,6 +85,7 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
+- Fixed the HDR Gaming Database link (KoKlusz's HDR analysis of the game) missing from every game's RenoDX and Luma Info: the database changed its game list to a table, which RHI couldn't read.
 - Fixed ReBAR changes (turning ReBAR on or off globally, the ReBAR mode and per-game ReBAR) not being saved since v2.8.9. RHI reported them as done, but the helper that writes them couldn't find a file it needs.
 - Fixed a fresh Display Commander install getting no DisplayCommander.ini since v2.8.9.
 - Fixed games with HSF installed showing HSF's own DLSS frame generation and Streamline files as the game's, which let DLSS updates replace them.
