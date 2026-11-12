@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56075,
-  "generated": "2026-11-11T23:14:18Z",
+  "game_count": 56076,
+  "generated": "2026-11-12T11:14:18Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -173582,6 +173582,7 @@
     "The Slug": {
       "steam_appid": 681070
     },
+    "The Smelly Mystery": {},
     "The Smurfs": {},
     "The Smurfs 2: The Prisoner of the Green Stone": {
       "steam_appid": 2397500,
