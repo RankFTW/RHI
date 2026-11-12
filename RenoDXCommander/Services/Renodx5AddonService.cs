@@ -1182,15 +1182,9 @@ public class Renodx5AddonService
                         using (var hexOutV = File.Create(hostExeVersioned))
                             await hexStreamV.CopyToAsync(hexOutV).ConfigureAwait(false);
 
-                        // Also write to the flat addon staging dir so FindStagedAddon("DLSS5 Feeder", ".exe") finds it
-                        var addonStagingDir = AddonPackService.GetStagingDir();
-                        if (!string.IsNullOrEmpty(addonStagingDir) && Directory.Exists(addonStagingDir))
-                        {
-                            var hostExeFlat = Path.Combine(addonStagingDir, "DLSS5 Feeder_host64.exe");
-                            using var hexStreamF = hostExeEntry.Open();
-                            using var hexOutF = File.Create(hostExeFlat);
-                            await hexStreamF.CopyToAsync(hexOutF).ConfigureAwait(false);
-                        }
+                        // Not copied to the shared addon staging (DLSS5 Feeder_host64.exe): that copy must stay
+                        // from the same download as DLSS5 Feeder.addon32, or a 32-bit install would pair this
+                        // version's host with the latest add-on (2.0.0+ add-ons and hosts refuse other releases).
                         _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Extracted host64 exe v{version} → '{hostExeVersioned}'");
                     }
                 }

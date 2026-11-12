@@ -815,6 +815,7 @@ public partial class DetailPanelBuilder
                 bool dlssi = false, dlssdi = false, dlssgi = false, hostExeOk = true;
                 bool srOk = false, rrOk = false, fgOk = false, nrOk = false;
                 bool ualOk = false, feedFxPresent = false, lumeniteFxPresent = false;
+                int? feederMv = null;
                 bool isDx9Feeder = false, dgVoodooOk = false;
                 string? nrv = null, dlssv = null, dlssdv = null, dlssgv = null;
                 string? srv = null, rrv = null, fgv = null, nrv2 = null;
@@ -878,6 +879,7 @@ public partial class DetailPanelBuilder
                     Directory.GetFiles(shadersDir, "DLSS5_Feed.fx", SearchOption.AllDirectories).Length > 0;
                 lumeniteFxPresent = Directory.Exists(shadersDir) &&
                     Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
+                feederMv = FeederPreset.ReadGameProvider(installPath);
 
                 // dgVoodoo2 (DX9 Feeder) — only when DX9 is the PRIMARY graphics API,
                 // not just present in DetectedApis (UE4 games have a legacy DX9 shim in DetectedApis).
@@ -915,7 +917,7 @@ public partial class DetailPanelBuilder
                     d5BuildSuffix = d5Suffix;
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk,
                         srOk, rrOk, fgOk, nrOk, srv, rrv, fgv, nrv2,
-                        ualName, ualOk, feedFxPresent, lumeniteFxPresent, isDx9Feeder, dgVoodooOk,
+                        ualName, ualOk, feedFxPresent, lumeniteFxPresent, feederMv, isDx9Feeder, dgVoodooOk,
                         (upi, upHelper, upDll, upDllV, upFx, upVer, upPin != null, upLaunchpad));
                 });
             });  // end Task.Run
@@ -929,7 +931,7 @@ public partial class DetailPanelBuilder
             bool srOk, bool rrOk, bool fgOk, bool nrOk,
             string? srv, string? rrv, string? fgv, string? nrv2,
             string? ualName, bool ualOk,
-            bool feedFxPresent, bool lumeniteFxPresent,
+            bool feedFxPresent, bool lumeniteFxPresent, int? feederMv,
             bool isDx9Feeder, bool dgVoodooOk,
             (bool Addon, bool Helper, bool Dll, string? DllVersion, bool Shaders, string? Version, bool Pinned, bool? Launchpad) uplift)
         {
@@ -1003,7 +1005,11 @@ public partial class DetailPanelBuilder
                     Tag(dlssi ? $"✓ DLSS SR {dlssv}"        : "✗ DLSS SR",       dlssi);
                     Tag(nri   ? $"✓ NR DLL {nrv}"           : "✗ NR DLL",        nri);
                     Tag(feedFxPresent    ? "✓ Feed.fx"    : "✗ Feed.fx",    feedFxPresent);
-                    Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
+                    // Feeder 2.0.0+ has its own motion vectors (DLSS5_MV_PROVIDER=5): LumeniteFX only matters for 3 / 4
+                    if (feederMv is int mv && !FeederPreset.NeedsLumenite(mv))
+                        Tag(mv == FeederPreset.BuiltInProvider ? "✓ Built-in motion vectors" : $"Motion vectors: provider {mv}", true);
+                    else
+                        Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
                     if (isDx9Feeder)
                         Tag(dgVoodooOk ? "✓ dgVoodoo2" : "✗ dgVoodoo2", dgVoodooOk);
                     break;
@@ -1074,9 +1080,10 @@ public partial class DetailPanelBuilder
                     descLink.NavigateUri = new Uri("https://discord.com/channels/1408098019194310818/1543975158937821315");
                     break;
                 case NrMethodFeeder:
-                    descText.Text = is32Bit
-                        ? "For 32-bit games. Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Deploys the Feeder addon, DLSS5 Tool (neural consumer), NR DLL, DLSS SR DLL, and the required shaders (DLSS5_Feed.fx + LumeniteFX)."
-                        : "For games with no native DLSS (DX11, DX12, Vulkan, OpenGL). Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Deploys the Feeder addon, DLSS5 Tool (neural consumer), NR DLL, DLSS SR DLL, and required shaders.";
+                    descText.Text = (is32Bit
+                        ? "For 32-bit games. Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Deploys the Feeder addon and its 64-bit host, DLSS5 Tool (neural consumer), NR DLL, DLSS SR DLL and DLSS5_Feed.fx."
+                        : "For games with no native DLSS (DX11, DX12, Vulkan, OpenGL). Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Deploys the Feeder addon, DLSS5 Tool (neural consumer), NR DLL, DLSS SR DLL and DLSS5_Feed.fx.")
+                        + " New installs use the motion vectors built into DLSS5_Feed.fx; one that already uses LumeniteFX keeps it. Press Alt+C in the game for the Feeder menu.";
                     descLink.Content = "Feeder setup guide →";
                     descLink.NavigateUri = new Uri("https://github.com/jlrouzies-fr/DLSS5-Feeder");
                     break;

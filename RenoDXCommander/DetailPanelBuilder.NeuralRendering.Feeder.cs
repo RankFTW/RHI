@@ -70,7 +70,9 @@ public partial class DetailPanelBuilder
             // Fall back to AddonPackService (always latest)
             var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
                 p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
-            bool needsHostExe = card.Is32Bit && FindStagedAddon(FeederPackageName, ".exe") == null;
+            // 32-bit: the add-on and host64 exe must come from the same release (2.0.0+ refuse a mismatch),
+            // so re-download when the staged host wasn't extracted together with the staged .addon32
+            bool needsHostExe = card.Is32Bit && !FeederHostMatchesAddon32();
             if (entry != null && (!addonSvc.IsDownloaded(FeederPackageName) || needsHostExe))
                 await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
             var bitnessExt = card.Is32Bit ? ".addon32" : ".addon64";
@@ -186,16 +188,15 @@ public partial class DetailPanelBuilder
             }).ConfigureAwait(false);
         }
 
-        // Deploy DLSS5_Feed.fx + lumenite_Kernel.fx
+        // Deploy DLSS5_Feed.fx (+ lumenite_Kernel.fx when the motion-vector provider is LumeniteFX)
         // DLSS5_Feed.fx is seeded from the Feeder addon zip into the DLSS5Feeder staging folder.
-        // LumeniteFX is downloaded via the pack system.
+        // Provider and preset follow Feeder's own installer (FeederPreset): built-in vectors (5) on a new
+        // install, the preset's existing provider kept; LumeniteFX is only downloaded for providers 3 / 4.
         // We do NOT call EnsurePacksAsync for DLSS5Feeder — its URL is a dead fallback that 404s.
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying shaders...");
+        bool useLumenite = false, createdPreset = false;
         try
         {
-            // Ensure LumeniteFX is staged (DLSS5Feeder is self-contained — no download needed)
-            await _shaderPackService.EnsurePacksAsync(new[] { "LumeniteFX" }).ConfigureAwait(false);
-
             // Seed DLSS5_Feed.fx into the staging folder from the feeder addon zip if missing
             var feedFxStaged = System.IO.Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder", "DLSS5_Feed.fx");
             if (!File.Exists(feedFxStaged))
@@ -254,134 +255,64 @@ public partial class DetailPanelBuilder
                 }
             }
 
-            // Build exclusion sets — deploy only lumenite_Kernel.fx from LumeniteFX, only DLSS5_Feed.fx from DLSS5Feeder
-            var lumeniteExclude = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
-                .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // Motion-vector provider: the one the game's preset already names, else the shader's built-in one
+            var iniPath = Path.Combine(installPath, "reshade.ini");
+            var iniText = File.Exists(iniPath) ? await File.ReadAllTextAsync(iniPath).ConfigureAwait(false) : null;
+            var presetRel = FeederPreset.GetKey(iniText, "GENERAL", "PresetPath");
+            var presetPath = string.IsNullOrWhiteSpace(presetRel)
+                ? Path.Combine(installPath, "ReShadePreset.ini")
+                : Path.IsPathRooted(presetRel) ? presetRel : Path.GetFullPath(Path.Combine(installPath, presetRel));
+            var presetText = File.Exists(presetPath) ? await File.ReadAllTextAsync(presetPath).ConfigureAwait(false) : null;
+            var fxText = File.Exists(feedFxStaged) ? await File.ReadAllTextAsync(feedFxStaged).ConfigureAwait(false) : null;
+            int mvProvider = FeederPreset.ChooseProvider(presetText, fxText);
+            useLumenite = FeederPreset.NeedsLumenite(mvProvider);
+            CrashReporter.Log($"[NeuralRendering] Feeder motion vectors: DLSS5_MV_PROVIDER={mvProvider}"
+                + (FeederPreset.ReadProvider(presetText) != null ? " (kept from the game's preset)" : " (new install)"));
+            if (useLumenite)
+                await _shaderPackService.EnsurePacksAsync(new[] { "LumeniteFX" }).ConfigureAwait(false);
+
+            // Build exclusion sets — only DLSS5_Feed.fx from DLSS5Feeder, only lumenite_Kernel.fx from LumeniteFX
             var feederExclude = _shaderPackService.GetPackShaderFiles(new[] { "DLSS5Feeder" })
                 .Where(f => !f.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var exclusions = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
             {
-                ["LumeniteFX"]  = lumeniteExclude,
                 ["DLSS5Feeder"] = feederExclude,
             };
+            if (useLumenite)
+                exclusions["LumeniteFX"] = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
+                    .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var packs = useLumenite ? new[] { "LumeniteFX", "DLSS5Feeder" } : new[] { "DLSS5Feeder" };
 
             await Task.Run(() =>
             {
-                _shaderPackService.DeployToGameFolder(installPath, new[] { "LumeniteFX", "DLSS5Feeder" }, exclusions);
-                CrashReporter.Log($"[NeuralRendering] Deployed lumenite_Kernel.fx + DLSS5_Feed.fx to '{installPath}'");
+                _shaderPackService.DeployToGameFolder(installPath, packs, exclusions);
+                CrashReporter.Log($"[NeuralRendering] Deployed {(useLumenite ? "lumenite_Kernel.fx + " : "")}DLSS5_Feed.fx to '{installPath}'");
 
-                // Write DLSS5_MV_PROVIDER=3 to reshade.ini [GENERAL] PreprocessorDefinitions
-                var iniPath = Path.Combine(installPath, "reshade.ini");
-                if (File.Exists(iniPath))
+                try
                 {
-                    try
+                    // ReShade.ini: drop RHI's old global DLSS5_MV_PROVIDER (ignored there) and point at the preset
+                    if (iniText != null)
                     {
-                        var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                        if (!ini.TryGetValue("GENERAL", out var general))
-                        {
-                            general = new AuxInstallService.OrderedDict();
-                            ini["GENERAL"] = general;
-                        }
-                        if (general.TryGetValue("PreprocessorDefinitions", out var existing) && !string.IsNullOrEmpty(existing))
-                        {
-                            if (!existing.Contains("DLSS5_MV_PROVIDER", StringComparison.OrdinalIgnoreCase))
-                                general["PreprocessorDefinitions"] = existing.TrimEnd(',') + ",DLSS5_MV_PROVIDER=3";
-                        }
-                        else
-                        {
-                            general["PreprocessorDefinitions"] = "DLSS5_MV_PROVIDER=3";
-                        }
-                        AuxInstallService.WriteIni(iniPath, ini);
-                        CrashReporter.Log($"[NeuralRendering] Set DLSS5_MV_PROVIDER=3 in reshade.ini for '{installPath}'");
-
-                        // Write ReShadePreset.ini with both techniques enabled, full TechniqueSorting order
-                        const string lumeniteTech = "Lumenite_Kernel@lumenite_Kernel.fx";
-                        const string feederTech   = "DLSS5_Feed@DLSS5_Feed.fx";
-                        var presetPath = Path.Combine(installPath, "ReShadePreset.ini");
-                        if (!File.Exists(presetPath))
-                        {
-                            var presetContent =
-                                "Techniques=Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "TechniqueSorting=DLSS5_Feed_Debug@DLSS5_Feed.fx,lilium__rcas_hdr@lilium__rcas_hdr.fx,lilium__make_overlay_bg_redraw@lilium__hdr_and_sdr_analysis.fx,lilium__hdr_and_sdr_analysis@lilium__hdr_and_sdr_analysis.fx,Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "\r\n" +
-                                "[DLSS5_Feed.fx]\r\n" +
-                                "DEBUG_VIEW=0\r\n" +
-                                "DEPTH_TOLERANCE=0.100000\r\n" +
-                                "GEOM_AGREE_PX=-1.500000\r\n" +
-                                "GEOM_DYNAMIC_MARGIN=0.250000\r\n" +
-                                "GEOM_ENABLE=3\r\n" +
-                                "GEOM_MASK_REJECTED=0.350000\r\n" +
-                                "GEOM_OUTLIER_PX=4.000000\r\n" +
-                                "GEOM_PARALLAX=1.020000\r\n" +
-                                "LUMA_TOLERANCE=0.280000\r\n" +
-                                "MASK_STRENGTH=1.000000\r\n" +
-                                "MV_CONSISTENCY=1.400000\r\n" +
-                                "MV_LOWRES_FILTER=0\r\n" +
-                                "MV_PROVIDER_INFO=0\r\n" +
-                                "MV_SCALE=1.000000\r\n" +
-                                "MV_SIGN=1.000000,1.000000\r\n" +
-                                "MV_VALIDATE=1\r\n" +
-                                "STATIC_BIAS=0.150000\r\n" +
-                                "STATIC_MIN_CONTRAST=0.012000\r\n" +
-                                "VALIDATE_DEPTH=1\r\n" +
-                                "VALIDATE_LUMA=0\r\n" +
-                                "VALIDATE_MV=1\r\n" +
-                                "VALIDATE_STATIC=1\r\n" +
-                                "\r\n" +
-                                "[GENERAL]\r\n" +
-                                "Techniques=Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "TechniqueSorting=DLSS5_Feed_Debug@DLSS5_Feed.fx,lilium__rcas_hdr@lilium__rcas_hdr.fx,lilium__make_overlay_bg_redraw@lilium__hdr_and_sdr_analysis.fx,lilium__hdr_and_sdr_analysis@lilium__hdr_and_sdr_analysis.fx,Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n";
-                            File.WriteAllText(presetPath, presetContent);
-                            // Point reshade.ini at this preset
-                            var rIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                            if (!rIni.TryGetValue("GENERAL", out var rg))
-                            { rg = new AuxInstallService.OrderedDict(); rIni["GENERAL"] = rg; }
-                            rg["PresetPath"] = ".\\ReShadePreset.ini";
-                            AuxInstallService.WriteIni(iniPath, rIni);
-                            CrashReporter.Log($"[NeuralRendering] Created ReShadePreset.ini for '{installPath}'");
-                        }
-                        else
-                        {
-                            // Overwrite existing preset — always use the canonical layout
-                            // (Techniques/TechniqueSorting as top-level lines then [GENERAL] section)
-                            var presetContent =
-                                "Techniques=Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "TechniqueSorting=DLSS5_Feed_Debug@DLSS5_Feed.fx,lilium__rcas_hdr@lilium__rcas_hdr.fx,lilium__make_overlay_bg_redraw@lilium__hdr_and_sdr_analysis.fx,lilium__hdr_and_sdr_analysis@lilium__hdr_and_sdr_analysis.fx,Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "\r\n" +
-                                "[DLSS5_Feed.fx]\r\n" +
-                                "DEBUG_VIEW=0\r\n" +
-                                "DEPTH_TOLERANCE=0.100000\r\n" +
-                                "GEOM_AGREE_PX=-1.500000\r\n" +
-                                "GEOM_DYNAMIC_MARGIN=0.250000\r\n" +
-                                "GEOM_ENABLE=3\r\n" +
-                                "GEOM_MASK_REJECTED=0.350000\r\n" +
-                                "GEOM_OUTLIER_PX=4.000000\r\n" +
-                                "GEOM_PARALLAX=1.020000\r\n" +
-                                "LUMA_TOLERANCE=0.280000\r\n" +
-                                "MASK_STRENGTH=1.000000\r\n" +
-                                "MV_CONSISTENCY=1.400000\r\n" +
-                                "MV_LOWRES_FILTER=0\r\n" +
-                                "MV_PROVIDER_INFO=0\r\n" +
-                                "MV_SCALE=1.000000\r\n" +
-                                "MV_SIGN=1.000000,1.000000\r\n" +
-                                "MV_VALIDATE=1\r\n" +
-                                "STATIC_BIAS=0.150000\r\n" +
-                                "STATIC_MIN_CONTRAST=0.012000\r\n" +
-                                "VALIDATE_DEPTH=1\r\n" +
-                                "VALIDATE_LUMA=0\r\n" +
-                                "VALIDATE_MV=1\r\n" +
-                                "VALIDATE_STATIC=1\r\n" +
-                                "\r\n" +
-                                "[GENERAL]\r\n" +
-                                "Techniques=Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n" +
-                                "TechniqueSorting=DLSS5_Feed_Debug@DLSS5_Feed.fx,lilium__rcas_hdr@lilium__rcas_hdr.fx,lilium__make_overlay_bg_redraw@lilium__hdr_and_sdr_analysis.fx,lilium__hdr_and_sdr_analysis@lilium__hdr_and_sdr_analysis.fx,Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx\r\n";
-                            File.WriteAllText(presetPath, presetContent);
-                            CrashReporter.Log($"[NeuralRendering] Overwrote ReShadePreset.ini for '{installPath}'");
-                        }
+                        var newIni = FeederPreset.RemoveGlobalProvider(iniText);
+                        if (string.IsNullOrWhiteSpace(presetRel))
+                            newIni = FeederPreset.SetKey(newIni, "GENERAL", "PresetPath", @".\ReShadePreset.ini");
+                        if (newIni != iniText) File.WriteAllText(iniPath, newIni);
                     }
-                    catch (Exception iniEx) { CrashReporter.Log($"[NeuralRendering] reshade.ini/preset update failed — {iniEx.Message}"); }
+
+                    // ReShadePreset.ini: merged, never replaced (the user's other effects and values stay)
+                    var merged = FeederPreset.Merge(presetText, mvProvider);
+                    createdPreset = presetText == null;
+                    if (merged != presetText)
+                    {
+                        File.WriteAllText(presetPath, merged);
+                        CrashReporter.Log($"[NeuralRendering] {(presetText == null ? "Created" : "Updated")} '{Path.GetFileName(presetPath)}': DLSS5_Feed enabled, DLSS5_MV_PROVIDER={mvProvider}");
+                    }
+                }
+                catch (Exception iniEx) when (iniEx is IOException or UnauthorizedAccessException)
+                {
+                    CrashReporter.Log($"[NeuralRendering] reshade.ini/preset update failed — {iniEx.Message}");
                 }
             }).ConfigureAwait(false);
 
@@ -394,13 +325,13 @@ public partial class DetailPanelBuilder
             {
                 // Persist pack-level exclusions (SetExcludedFiles acquires _settingsLock —
                 // run synchronously here; we're already on a background thread).
-                var lumeniteAllFiles = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
-                    .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
                 var feederAllFiles = _shaderPackService.GetPackShaderFiles(new[] { "DLSS5Feeder" })
                     .Where(f => !f.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
                     .ToList();
-                _shaderPackService.SetExcludedFiles("LumeniteFX", lumeniteAllFiles);
+                if (useLumenite)
+                    _shaderPackService.SetExcludedFiles("LumeniteFX", _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
+                        .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
+                        .ToList());
                 _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
 
                 var gameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
@@ -408,7 +339,7 @@ public partial class DetailPanelBuilder
                     ? sel.ToList() : new List<string>();
                 if (!current.Contains("DLSS5Feeder", StringComparer.OrdinalIgnoreCase))
                     current.Add("DLSS5Feeder");
-                if (!current.Contains("LumeniteFX", StringComparer.OrdinalIgnoreCase))
+                if (useLumenite && !current.Contains("LumeniteFX", StringComparer.OrdinalIgnoreCase))
                     current.Add("LumeniteFX");
                 _gameNameService.PerGameShaderSelection[gameKey] = current;
                 CrashReporter.Log($"[NeuralRendering.FeederShaders] Wrote PerGameShaderSelection['{gameKey}'] = [{string.Join(", ", current)}]");
@@ -551,9 +482,10 @@ public partial class DetailPanelBuilder
             feederFiles.Add("nvngx_dlssnr.dll");
             feederFiles.Add("renodx-dlss5.addon64");
             feederFiles.Add("nvngx_dlss.dll");
-            feederFiles.Add(@"reshade-shaders\Shaders\lumenite_Kernel.fx");
+            if (useLumenite) feederFiles.Add(@"reshade-shaders\Shaders\lumenite_Kernel.fx");
             feederFiles.Add(@"reshade-shaders\Shaders\DLSS5_Feed.fx");
-            feederFiles.Add("ReShadePreset.ini");
+            // Only a preset RHI created is removed with Feeder; an existing one was merged into and stays
+            if (createdPreset) feederFiles.Add("ReShadePreset.ini");
             if (card.Is32Bit)
             {
                 feederFiles.Add(@"host64\dlss5-feed-host64.exe");
@@ -606,5 +538,21 @@ public partial class DetailPanelBuilder
                 }
             });
         });
+    }
+
+    /// <summary>
+    /// True when the staged DLSS5 Feeder host64 exe and .addon32 exist and were written by the same download
+    /// (AddonPackService extracts both within seconds). Older RHI builds could overwrite the host with a
+    /// pinned version's copy, which a 2.0.0+ add-on refuses.
+    /// </summary>
+    private bool FeederHostMatchesAddon32()
+    {
+        var host  = FindStagedAddon(FeederPackageName, ".exe");
+        var addon = FindStagedAddon(FeederPackageName, ".addon32");
+        if (host == null || addon == null || !File.Exists(host) || !File.Exists(addon)) return false;
+        var gap = (File.GetLastWriteTimeUtc(host) - File.GetLastWriteTimeUtc(addon)).Duration();
+        if (gap <= TimeSpan.FromMinutes(5)) return true;
+        CrashReporter.Log($"[NeuralRendering] Staged Feeder host64 exe and .addon32 are from different downloads ({gap.TotalMinutes:F0} min apart) — re-downloading");
+        return false;
     }
 }

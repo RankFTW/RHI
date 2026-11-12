@@ -67,6 +67,11 @@ Changes since v2.9.3 Beta 2.
 - New cog button beside the game's name in Spotlight (next to the screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to that game only.
 - RHI overlay: turn the overlay off for one game. Alt + ` then goes to the game instead of opening the overlay, and the controller shortcut does nothing in it.
 
+**DLSS5 Feeder 2.0**
+- New Feeder installs use the motion vectors built into Feeder 2.0.0, so LumeniteFX is no longer downloaded for it. Games that already use LumeniteFX keep it, and Feeder's own menu can switch them over.
+- Installing Feeder now adds it to the game's ReShade preset instead of replacing the preset, so your other effects and their settings stay.
+- The Neural Rendering status shows Built-in motion vectors instead of LumeniteFX for those games, and the Feeder description mentions its new in-game menu (Alt+C).
+
 **Other**
 - Spotlight: the Covers at bottom / top button is now a cog by the game counts. It has Covers below the game page and a new No background option, which gives the search, filters and covers the page colour instead of their own panel colour.
 - GITC Uplift now installs iMMERSE Launchpad, which gives it motion vectors in games without DLSS, and turns it on above the Uplift effect in ReShade. It's on by default in games without DLSS, including existing installs. Games with DLSS use their own motion vectors: turn on the new iMMERSE Launchpad toggle under the Neural Rendering section if those look wrong in a game.
@@ -85,6 +90,9 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
+- Fixed removing DLSS5 Feeder deleting the game's ReShade preset when the preset was there before Feeder.
+- Fixed DLSS5 Feeder's motion vector choice being written to reshade.ini, where Feeder doesn't read it. It's now set in the preset, as Feeder's own installer does.
+- Fixed a 32-bit DLSS5 Feeder install possibly pairing the add-on with a host64 helper from another Feeder release after a 64-bit game was set to an older Feeder version. Feeder 2.0.0 refuses a mismatched pair, so RHI now downloads a matching pair if needed.
 - Fixed the HDR Gaming Database link (KoKlusz's HDR analysis of the game) missing from every game's RenoDX and Luma Info: the database changed its game list to a table, which RHI couldn't read.
 - Fixed ReBAR changes (turning ReBAR on or off globally, the ReBAR mode and per-game ReBAR) not being saved since v2.8.9. RHI reported them as done, but the helper that writes them couldn't find a file it needs.
 - Fixed a fresh Display Commander install getting no DisplayCommander.ini since v2.8.9.
@@ -97,3 +105,5 @@ Changes since v2.9.3 Beta 2.
 
 - Dead Space 2 and Dead Space 3 are no longer matched to a RenoDX mod from the wiki.
 - RTX Encore recommends winmm.dll in Euro Truck Simulator 2, which RTX Encore 1.0.0-rc.3 needs there. Already installed under another name? Reinstall it and pick winmm.dll.
+- DLSS5 Feeder's description now says it has its own motion vectors and an in-game menu (Alt+C).
+- New recommended OptiScaler version: Feeder NR, the DLSS5 Feeder author's Neural Rendering fork. From v0.8.93, Feeder's menu changes its settings while the game runs.
