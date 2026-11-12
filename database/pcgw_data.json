@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56079,
-  "generated": "2026-11-12T15:14:19Z",
+  "game_count": 56081,
+  "generated": "2026-11-12T17:14:19Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -45825,6 +45825,9 @@
       "config_path": "%USERPROFILE%\\Documents\\My Games\\Dirt Showdown\\",
       "engine": "EGO"
     },
+    "Dirt Town": {
+      "steam_appid": 5275590
+    },
     "Dirt Track Racing": {},
     "Dirt Track Racing 2": {},
     "Dirt Track Racing: Australia": {},
@@ -61679,6 +61682,7 @@
     "Fisher-Price Ready for School: Kindergarten": {},
     "Fisher-Price Ready for School: Kindergarten Edition": {},
     "Fisher-Price: Dream DollHouse: Where Dreams Come To Life": {},
+    "Fisher-Price: Time to Play - Pet Shop": {},
     "Fishermurs": {
       "steam_appid": 564210
     },
