@@ -110,6 +110,10 @@ internal sealed class PcgwCentralData
             }
         }
 
+        // 6. Platform suffix a store added ("Banishers: Ghosts of New Eden - Windows", "Game (Windows 10)", "Game (PC)")
+        if (StoreNameSuffix.StripPlatform(gameName) is { } withoutPlatform)
+            return TryLookup(withoutPlatform, steamAppId: null);
+
         return (null, null);
     }
 

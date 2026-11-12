@@ -26,7 +26,9 @@ public partial class DetailPanelBuilder
         try
         {
             var pcgw = App.Services.GetRequiredService<IPcgwService>();
-            return pcgw.GetSteamAppIdFromCentralData(card.GameName);
+            // A demo or playtest without its own entry uses the full game's (artwork, Steam page)
+            return pcgw.GetSteamAppIdFromCentralData(card.GameName)
+                ?? (StoreNameSuffix.StripTrial(card.GameName) is { } fullGame ? pcgw.GetSteamAppIdFromCentralData(fullGame) : null);
         }
         catch (InvalidOperationException ex)
         {
