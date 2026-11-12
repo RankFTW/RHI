@@ -185,6 +185,11 @@ public partial class DetailPanelBuilder
         {
             if (string.IsNullOrEmpty(installPath)) return;
 
+            var st = _window.ViewModel.Settings;
+            if (!isInstalled && !await ShowClosedSourceNoticeAsync("20/30 FG Unlock", "sdli1995",
+                    () => st.Dlssg2030ClosedSourceDismissed, () => st.Dlssg2030ClosedSourceDismissed = true, installBtn.XamlRoot))
+                return;
+
             var chosen = await ShowDlssg2030DllPickerAsync(card, currentDllName);
             if (chosen == null) return;
 

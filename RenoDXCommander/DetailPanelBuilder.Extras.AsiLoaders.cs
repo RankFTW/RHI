@@ -420,6 +420,10 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
+            var st = _window.ViewModel.Settings;
+            if (!isInstalled && !await ShowClosedSourceNoticeAsync("RTX Encore", "SilyNoMeta",
+                    () => st.RtxEncoreClosedSourceDismissed, () => st.RtxEncoreClosedSourceDismissed = true, installBtn.XamlRoot))
+                return;
             var chosen = await ShowRtxEncoreDllPickerAsync(card, currentDllName);
             if (chosen == null) return;
             installBtn.IsEnabled = false; installBtn.Content = "Installing...";

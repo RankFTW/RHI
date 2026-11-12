@@ -54,7 +54,11 @@ public sealed partial class MainWindow
         });
 
         // ── Ready-made presets ──────────────────────────────────────────────
-        var manifestPresets = OsPresetService.ManifestPresets;
+        // ANR FG is behind the manifest flag "anrFg" (kept where it's already installed)
+        bool showAnr = FeatureFlags.AnrFg || AnrFgService.IsInstalledIn(card.InstallPath);
+        var manifestPresets = OsPresetService.ManifestPresets
+            .Where(p => p.InstallAnrFg != true || showAnr)
+            .ToList();
         var active = manifestPresets.FirstOrDefault(p => IsOsPresetActive(card, p));
 
         var description = MakeOsPresetCaption(active != null

@@ -43,4 +43,8 @@ public static class FeatureFlags
     /// </summary>
     public static bool Hsf
         => DevUnlockService.IsUnlocked || _manifestFlags?.Hsf == true;
+
+    /// <summary>ANR FG preset in the OptiScaler ⚙. Turned on for everyone with "anrFg": true in the manifest.</summary>
+    public static bool AnrFg
+        => DevUnlockService.IsUnlocked || _manifestFlags?.AnrFg == true;
 }

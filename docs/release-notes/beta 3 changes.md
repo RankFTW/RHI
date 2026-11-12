@@ -41,9 +41,19 @@ Changes since v2.9.3 Beta 2.
 - New Compile shaders now button in Settings › Driver Settings, under Shader pre-compile. It runs NVIDIA's shader compiler straight away (the NVIDIA App's Compile now) instead of waiting for your PC to be idle, so games stutter less the first time you play them after a driver update. It rebuilds the shaders your games have already saved, so it has nothing to do right after Clear shader cache. It uses your Shader pre-compile level, takes a few minutes, and the same button stops it.
 
 **ANR FG preset**
+- Locked for now: it unlocks once Apex Compute publishes ANR FG's source code.
 - New ANR FG preset in the OptiScaler ⚙. It installs ANR FG (Apex Neural Rendering frame generation, beta) and sets OptiScaler up to run it in place of the game's DLSS frame generation. Turn on DLSS frame generation in the game to use it.
 - Needs OptiScaler Nightly, or a fork or custom build based on a recent Nightly (RHI checks the installed build), and a game with DLSS frame generation. Works on NVIDIA RTX 20 and newer and GTX 16, AMD RX 5000 and newer, and Intel Arc.
 - RHI downloads the newest ANR FG release from Apex Compute's GitHub and checks it against the release's published hashes. Applying the preset again updates it, and your ANR settings (nr_fg.ini) are kept.
+
+**HSF frame generation**
+- Locked for now: it unlocks once HSF's GitHub repository is open to the public.
+- New HSF row in Extras › MFG Unlocks. HSF (Hunter's Sloppy Frames, by Capt-Hunter) is a ReShade add-on that adds DLSS frame generation, up to 6x, to DirectX 9, 11 and 12 games that don't have it, 32-bit games included.
+- One click installs everything it needs: the add-on, HSF's Streamline and frame generation files, HSF.ini, HSF.fx and iMMERSE LaunchPad for optical flow. Set the multiplier and turn FRAME GEN on in HSF's tab in the ReShade overlay.
+- DirectX 12 games work from the first launch: RHI sets up HSF's DirectX 12 mode before the game starts, so there's no restart.
+- RHI keeps HSF up to date in the games it installed it in, and keeps your HSF settings. The ⚙ shows the installed version and DirectX 12 mode, and turns LaunchPad off if you use LumeniteFX or the game's own motion instead.
+- RTX 20, 30 and 40 cards: installing HSF offers Universal MFG Unlocker too, which those cards need for HSF's frame generation (RTX 40 for more than 2x). RHI detects your graphics card and doesn't ask on RTX 50. DirectX 12 games get the usual DLL name choice; DirectX 9, 11 and 32-bit games get it in HSF's own folder, where HSF loads it. It comes without the RTXMFG-XeSS folder, which HSF doesn't use.
+- Needs ReShade with add-on support and an RTX 40 or newer GPU (RTX 20 and 30 through Universal MFG Unlocker). Never use it in games with online anti-cheat.
 
 ### Changes
 
@@ -65,6 +75,7 @@ Changes since v2.9.3 Beta 2.
 - Settings › Display & HDR: new HDR button on game pages and Resolution button on game pages options hide either button on game pages. A game's own HDR and resolution choice still applies when you launch it from RHI.
 - RTX Encore's DLL name picker can recommend a different name for a game when it needs one, and lists the recommended name first. Thanks emptyes for the first version of this.
 - OptiScaler ⚙: FG Nvngx Override now lists custom frame generation providers found in OptiScaler's custom folder (such as ANR FG) by name.
+- Installing RTX Encore or 20/30 FG Unlock now first tells you the mod is closed source (its author publishes only the DLL, not the code), with Install, Cancel and Don't show this again. The row's Info button opens its GitHub page.
 
 ### Bug Fixes
 
@@ -74,6 +85,7 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
+- Fixed games with HSF installed showing HSF's own DLSS frame generation and Streamline files as the game's, which let DLSS updates replace them.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
 - Fixed OptiScaler updates deleting custom upscalers and frame generation providers in OptiScaler's custom folder.
 - Fixed the OptiScaler ⚙'s FG Nvngx Override being greyed out and not saved when FG Input was DLSSG via Nvngx, where OptiScaler uses it.

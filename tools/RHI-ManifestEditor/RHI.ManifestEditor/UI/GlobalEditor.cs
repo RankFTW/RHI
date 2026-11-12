@@ -71,6 +71,7 @@ public sealed class GlobalEditor
         ("nexusMods", "Nexus Mods", "Nexus Mods account and downloads."),
         ("resolutionControl", "Resolution control", "Per-game resolution and DLDSR settings."),
         ("hsf", "HSF", "HSF row in Extras › MFG Unlocks. Turn on when HSF's GitHub repo is public."),
+        ("anrFg", "ANR FG", "ANR FG preset in the OptiScaler settings."),
     };
 
     private UIElement Flags()

@@ -5,7 +5,8 @@
     "dlssNr": true,
     "nexusMods": false,
     "resolutionControl": false,
-    "hsf": false
+    "hsf": false,
+    "anrFg": false
   },
   "blacklistPrefixes": [
     "Battle.net."
