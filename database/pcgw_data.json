@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56076,
-  "generated": "2026-11-12T11:14:18Z",
+  "game_count": 56079,
+  "generated": "2026-11-12T15:14:19Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -26854,6 +26854,7 @@
       "steam_appid": 2083790,
       "engine": "Unity"
     },
+    "Capone": {},
     "Capria: Magic of the Elements": {
       "steam_appid": 457790,
       "engine": "Unreal Engine 4"
@@ -36082,6 +36083,7 @@
     "Crazy Shopping": {
       "steam_appid": 1163980
     },
+    "Crazy Shot": {},
     "Crazy Simulator": {
       "steam_appid": 1184160
     },
@@ -116649,6 +116651,7 @@
       "steam_appid": 277700,
       "config_path": "<path-to-game>\\settings.ini"
     },
+    "On Safari": {},
     "On Target VR Darts": {
       "steam_appid": 1000870
     },
