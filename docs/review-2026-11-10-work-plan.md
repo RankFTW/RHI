@@ -30,7 +30,7 @@ Path shorthand: `App\` = `RenoDXCommander\`, `S\` = `RenoDXCommander\Services\`,
   - Open question (answered): loose files come from `publish.bat`'s explicit `copy` lines, not from the csproj; these two were missing from that list. The NuGet DLL was only ever in the extraction folder.
   - Follow-up (not done): the elevated ReBAR helper's result isn't checked, so a failed write still logs "completed". Read the value back after the script.
 
-- [ ] **1.2 HDR Gaming Database parses 0 entries. [V in a user log from 8 Nov]**
+- [x] **1.2 HDR Gaming Database parses 0 entries. [V in a user log from 8 Nov]** Done in `3d99906`: parser reads the HTML table rows (and still the old Markdown list), HTML-decodes names (`Ratchet &amp; Clank`), logs when 0 parse. Tested: 138 entries; links show in RenoDX / Luma Info.
   - `S\HdrDatabaseService.cs:30-32` `EntryPattern` only matches markdown bullets; the upstream README is now an HTML table (138 entries). Log line: `[HdrDatabaseService.FetchAsync] Parsed 0 HDR database entries`.
   - Fix: parse the table rows.
 
