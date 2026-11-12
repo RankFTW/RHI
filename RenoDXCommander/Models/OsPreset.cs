@@ -37,6 +37,7 @@ public class OsPreset
     public string? Description            { get; set; }  // one line, shown under the buttons and as the tooltip
     public string? StreamlineVersion      { get; set; }  // "latest" or a version like "2.14.16"
     public bool?   InstallUniversalMfg    { get; set; }  // installs Universal MFG Unlocker if it's missing
+    public bool?   InstallAnrFg           { get; set; }  // installs ANR FG (Apex Neural Rendering) as a custom FG provider
 }
 
 /// <summary>The optiscaler_presets.json file: ready-made OptiScaler presets shown in the OptiScaler cog.</summary>
@@ -44,4 +45,9 @@ public class OsPresetManifest
 {
     public int Version { get; set; }
     public List<OsPreset>? Presets { get; set; }
+    /// <summary>
+    /// Presets that need this version of RHI or newer (older versions don't read this list, so they
+    /// never show a preset whose fields they don't understand). Shown after <see cref="Presets"/>.
+    /// </summary>
+    public List<OsPreset>? PresetsV2 { get; set; }
 }

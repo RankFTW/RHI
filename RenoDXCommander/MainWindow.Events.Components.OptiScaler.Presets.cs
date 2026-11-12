@@ -90,6 +90,17 @@ public sealed partial class MainWindow
                             return;
                         }
                     }
+                    if (p.InstallAnrFg == true)
+                    {
+                        ShowStatus($"Applying {p.Name}: downloading and installing ANR FG...", true);
+                        var error = await ViewModel.EnsureAnrFgForPresetAsync(card);
+                        if (error != null)
+                        {
+                            ShowStatus($"{p.Name} settings applied, but: {error}", false);
+                            foreach (var b in pills.Children.OfType<Button>()) b.IsEnabled = true;
+                            return;
+                        }
+                    }
                     CrashReporter.Log($"[OsPreset.ApplyManifest] '{p.Name}' applied to '{card.GameName}'");
                     ReopenOsCog(ctx);
                 }
@@ -257,7 +268,7 @@ public sealed partial class MainWindow
         if (!Same(p.FgEnabled, ReadOsIniSectionValue(card.InstallPath, "FrameGen", "Enabled", ""), "false")) return false;
         if (!Same(p.FgInput, ViewModel.GetOsFgInput(card.GameName, store), "auto")) return false;
         if (!Same(p.FgOutput, ViewModel.GetOsFgOutput(card.GameName, store), "auto")) return false;
-        if (string.Equals(p.FgOutput, "dlssg", StringComparison.OrdinalIgnoreCase)
+        if (OptiScalerService.UsesNvngxReplacement(p.FgInput, p.FgOutput)
             && !Same(p.FgNvngxReplacement, ViewModel.GetOsFgNvngxReplacement(card.GameName, store), "None")) return false;
         if (!Same(p.HudFix, ReadOsIniSectionValue(card.InstallPath, "OptiFG", "HUDFix", ""), "auto")) return false;
         if (!Same(p.ForceReflex, ReadOsIniSectionValue(card.InstallPath, "fakenvapi", "ForceReflex", ""), "0")) return false;
@@ -265,6 +276,7 @@ public sealed partial class MainWindow
         if (!Same(p.DxgiSpoofing, ReadOsIniSectionValue(card.InstallPath, "Spoofing", "Dxgi", ""), "auto")) return false;
         if (p.DeployStreamline.HasValue && p.DeployStreamline.Value != ViewModel.GetOsDeployStreamline(card.GameName, store)) return false;
         if (p.InstallUniversalMfg == true && !card.Rtx40MfgInstalled) return false;
+        if (p.InstallAnrFg == true && !AnrFgService.IsInstalledIn(card.InstallPath)) return false;
         return true;
     }
 

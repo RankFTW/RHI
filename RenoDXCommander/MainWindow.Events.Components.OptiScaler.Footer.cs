@@ -256,7 +256,7 @@ public sealed partial class MainWindow
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", p.FgInput);
             if (p.FgOutput != null)
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", p.FgOutput);
-            if (p.FgNvngxReplacement != null && string.Equals(p.FgOutput, "dlssg", StringComparison.OrdinalIgnoreCase))
+            if (p.FgNvngxReplacement != null && OptiScalerService.UsesNvngxReplacement(p.FgInput, p.FgOutput))
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", p.FgNvngxReplacement);
 
             // SR preset

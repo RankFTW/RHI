@@ -126,7 +126,18 @@ public static class OsPresetService
             HudFix = "true", ForceReflex = "0", UseGamesReflexMarkers = "true",
             InstallUniversalMfg = true,
         },
+        new()
+        {
+            Id = "AnrFg", Name = "ANR FG",
+            Description = AnrFgDescription,
+            FgInput = "nvngxfg", FgOutput = "auto", FgNvngxReplacement = AnrFgService.ProviderName,
+            InstallAnrFg = true,
+        },
     };
+
+    private const string AnrFgDescription =
+        "Apex Neural Rendering frame generation (beta) in place of the game's DLSS frame generation. "
+        + "Needs OptiScaler Nightly and a game with DLSS frame generation; turn on DLSS frame generation in the game.";
 
     /// <summary>The ready-made presets: fetched, else cached, else built-in.</summary>
     public static IReadOnlyList<OsPreset> ManifestPresets
@@ -187,7 +198,8 @@ public static class OsPresetService
         try
         {
             var manifest = JsonSerializer.Deserialize<OsPresetManifest>(json, ManifestJsonOptions);
-            var presets = manifest?.Presets?
+            var presets = (manifest?.Presets ?? new List<OsPreset>())
+                .Concat(manifest?.PresetsV2 ?? new List<OsPreset>())
                 .Where(p => p != null && !string.IsNullOrWhiteSpace(p.Name))
                 .Take(MaxManifestPresets)
                 .ToList();

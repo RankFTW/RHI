@@ -40,6 +40,11 @@ Changes since v2.9.3 Beta 2.
 **Compile shaders now**
 - New Compile shaders now button in Settings › Driver Settings, under Shader pre-compile. It runs NVIDIA's shader compiler straight away (the NVIDIA App's Compile now) instead of waiting for your PC to be idle, so games stutter less the first time you play them after a driver update. It rebuilds the shaders your games have already saved, so it has nothing to do right after Clear shader cache. It uses your Shader pre-compile level, takes a few minutes, and the same button stops it.
 
+**ANR FG preset**
+- New ANR FG preset in the OptiScaler ⚙. It installs ANR FG (Apex Neural Rendering frame generation, beta) and sets OptiScaler up to run it in place of the game's DLSS frame generation. Turn on DLSS frame generation in the game to use it.
+- Needs OptiScaler Nightly and a game with DLSS frame generation. Works on NVIDIA RTX 20 and newer and GTX 16, AMD RX 5000 and newer, and Intel Arc.
+- RHI downloads the newest ANR FG release from Apex Compute's GitHub and checks it against the release's published hashes. Applying the preset again updates it, and your ANR settings (nr_fg.ini) are kept.
+
 ### Changes
 
 **Game search**
@@ -59,6 +64,7 @@ Changes since v2.9.3 Beta 2.
 - Neural Rendering: added a GITC Uplift link to the links at the bottom of the section.
 - Settings › Display & HDR: new HDR button on game pages and Resolution button on game pages options hide either button on game pages. A game's own HDR and resolution choice still applies when you launch it from RHI.
 - RTX Encore's DLL name picker can recommend a different name for a game when it needs one, and lists the recommended name first. Thanks emptyes for the first version of this.
+- OptiScaler ⚙: FG Nvngx Override now lists custom frame generation providers found in OptiScaler's custom folder (such as ANR FG) by name.
 
 ### Bug Fixes
 
@@ -69,6 +75,8 @@ Changes since v2.9.3 Beta 2.
 
 **Other**
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
+- Fixed OptiScaler updates deleting custom upscalers and frame generation providers in OptiScaler's custom folder.
+- Fixed the OptiScaler ⚙'s FG Nvngx Override being greyed out and not saved when FG Input was DLSSG via Nvngx, where OptiScaler uses it.
 
 ### Manifest Updates
 

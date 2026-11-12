@@ -117,6 +117,7 @@ public partial class App : Application
         services.AddSingleton<UltimateAsiLoaderService>();
         services.AddSingleton<DlssNrCostScalerService>();
         services.AddSingleton<Rtx40MfgService>();
+        services.AddSingleton<AnrFgService>();
         services.AddSingleton<Dlssg20_30Service>();
         services.AddSingleton<AutoUpdateService>();
         services.AddSingleton<DlssEnablerService>();

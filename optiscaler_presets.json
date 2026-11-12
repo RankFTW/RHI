@@ -46,5 +46,16 @@
       "useGamesReflexMarkers": "true",
       "installUniversalMfg": true
     }
+  ],
+  "presetsV2": [
+    {
+      "id": "AnrFg",
+      "name": "ANR FG",
+      "description": "Apex Neural Rendering frame generation (beta) in place of the game's DLSS frame generation. Needs OptiScaler Nightly and a game with DLSS frame generation; turn on DLSS frame generation in the game.",
+      "fgInput": "nvngxfg",
+      "fgOutput": "auto",
+      "fgNvngxReplacement": "Apex Neural Rendering FG",
+      "installAnrFg": true
+    }
   ]
 }

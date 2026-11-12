@@ -1339,8 +1339,9 @@ public partial class OptiScalerService
                 var gameSubDir = Path.Combine(gameDir, dirName);
                 if (Directory.Exists(gameSubDir))
                 {
-                    // Keep OptiScaler\plugins: OptiPatcher, DXVK coexistence DLLs and other plugins live there
-                    try { DeleteDirKeepingPlugins(gameSubDir); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Cleared old subdir (plugins kept): {dirName}"); }
+                    // Keep OptiScaler\plugins (OptiPatcher, DXVK coexistence DLLs, other plugins) and
+                    // OptiScaler\custom (custom upscaler / frame generation providers such as ANR FG)
+                    try { DeleteDirKeepingPlugins(gameSubDir); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Cleared old subdir (plugins and custom kept): {dirName}"); }
                     catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.UpdateAsync] Failed to remove subdir {dirName} — {ex.Message}"); }
                 }
             }
@@ -1834,16 +1835,19 @@ public partial class OptiScalerService
     }
 
     /// <summary>
-    /// Empties <paramref name="dir"/> except its plugins subfolder, which holds things other
-    /// components put there (OptiPatcher, DXVK coexistence DLLs, Universal MFG Unlocker).
+    /// Empties <paramref name="dir"/> except its plugins and custom subfolders, which hold things other
+    /// components put there (OptiPatcher, DXVK coexistence DLLs, Universal MFG Unlocker; custom
+    /// upscaler and frame generation providers such as ANR FG).
     /// </summary>
-    private static void DeleteDirKeepingPlugins(string dir)
+    internal static void DeleteDirKeepingPlugins(string dir)
     {
         foreach (var file in Directory.GetFiles(dir))
             File.Delete(file);
         foreach (var sub in Directory.GetDirectories(dir))
         {
-            if (Path.GetFileName(sub).Equals("plugins", StringComparison.OrdinalIgnoreCase)) continue;
+            var name = Path.GetFileName(sub);
+            if (name.Equals("plugins", StringComparison.OrdinalIgnoreCase)
+                || name.Equals(CustomProvidersFolder, StringComparison.OrdinalIgnoreCase)) continue;
             Directory.Delete(sub, recursive: true);
         }
     }
@@ -2204,14 +2208,62 @@ public partial class OptiScalerService
 
     /// <summary>
     /// Applies all persisted FG settings to the game's OptiScaler.ini in one pass.
-    /// FGNvngxReplacement is only written when fgOutput == "dlssg".
+    /// FGNvngxReplacement is only written when OptiScaler uses it (see <see cref="UsesNvngxReplacement"/>).
     /// </summary>
     public static void ApplyFgSettings(string gameInstallPath, string fgInput, string fgOutput, string fgNvngxReplacement)
     {
         if (!File.Exists(Path.Combine(gameInstallPath, IniFileName))) return;
         SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGInput", fgInput);
         SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGOutput", fgOutput);
-        if (string.Equals(fgOutput, "dlssg", StringComparison.OrdinalIgnoreCase))
+        if (UsesNvngxReplacement(fgInput, fgOutput))
             SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGNvngxReplacement", fgNvngxReplacement);
+    }
+
+    /// <summary>
+    /// True when OptiScaler reads FGNvngxReplacement: with FG Output DLSSG, or with FG Input
+    /// "DLSSG via Nvngx" (nvngxfg), where the replacement stands in for the game's own DLSSG.
+    /// </summary>
+    public static bool UsesNvngxReplacement(string? fgInput, string? fgOutput) =>
+        string.Equals(fgOutput, "dlssg", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(fgInput, "nvngxfg", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>OptiScaler's folder for custom providers: custom\&lt;name&gt;\&lt;kind&gt; next to its DLL.</summary>
+    public const string CustomProvidersFolder = "custom";
+
+    /// <summary>
+    /// The folder OptiScaler loads custom providers from: OptiScaler\custom on OptiScaler 10 builds
+    /// (they have the OptiScaler\ subfolder), else custom\ next to the game's exe.
+    /// </summary>
+    public static string GetCustomProvidersDir(string gameInstallPath)
+    {
+        var osSub = Path.Combine(gameInstallPath, "OptiScaler");
+        return Path.Combine(Directory.Exists(osSub) ? osSub : gameInstallPath, CustomProvidersFolder);
+    }
+
+    /// <summary>
+    /// Names of the custom frame generation providers in the game (folders in OptiScaler's custom
+    /// folder that have a dlssg folder with a DLL). These are valid FGNvngxReplacement values.
+    /// </summary>
+    public static List<string> FindCustomFgProviders(string? gameInstallPath)
+    {
+        var names = new List<string>();
+        if (string.IsNullOrEmpty(gameInstallPath)) return names;
+        try
+        {
+            var root = GetCustomProvidersDir(gameInstallPath);
+            if (!Directory.Exists(root)) return names;
+            foreach (var dir in Directory.GetDirectories(root))
+            {
+                var dlssg = Path.Combine(dir, "dlssg");
+                if (Directory.Exists(dlssg) && Directory.EnumerateFiles(dlssg, "*.dll").Any())
+                    names.Add(Path.GetFileName(dir));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[OptiScalerService.FindCustomFgProviders] {gameInstallPath} — {ex.Message}");
+        }
+        names.Sort(StringComparer.OrdinalIgnoreCase);
+        return names;
     }
 }
