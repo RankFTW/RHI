@@ -85,6 +85,8 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
+- Fixed ReBAR changes (turning ReBAR on or off globally, the ReBAR mode and per-game ReBAR) not being saved since v2.8.9. RHI reported them as done, but the helper that writes them couldn't find a file it needs.
+- Fixed a fresh Display Commander install getting no DisplayCommander.ini since v2.8.9.
 - Fixed games with HSF installed showing HSF's own DLSS frame generation and Streamline files as the game's, which let DLSS updates replace them.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
 - Fixed OptiScaler updates deleting custom upscalers and frame generation providers in OptiScaler's custom folder.

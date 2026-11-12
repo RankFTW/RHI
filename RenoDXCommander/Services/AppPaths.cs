@@ -12,8 +12,19 @@ public static class AppPaths
     public static string ExeDir { get; } =
         Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
 
-    /// <summary>Path of a file shipped next to RHI.exe.</summary>
-    public static string InExeDir(string fileName) => Path.Combine(ExeDir, fileName);
+    /// <summary>
+    /// Path of a file shipped with RHI.exe: next to the exe, or else the copy in the single-file
+    /// extraction folder (AppContext.BaseDirectory, %TEMP%\.net\RHI\...), where content and
+    /// assemblies such as NvAPIWrapper.dll are unpacked when publish.bat didn't copy them loose.
+    /// Returns the exe-folder path when neither exists.
+    /// </summary>
+    public static string InExeDir(string fileName)
+    {
+        var path = Path.Combine(ExeDir, fileName);
+        if (File.Exists(path)) return path;
+        var extracted = Path.Combine(AppContext.BaseDirectory, fileName);
+        return File.Exists(extracted) ? extracted : path;
+    }
 
     /// <summary>The 7z.exe shipped next to RHI.exe.</summary>
     public static string Bundled7Zip => InExeDir("7z.exe");

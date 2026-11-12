@@ -413,7 +413,6 @@ public partial class DlssPresetService
         try
         {
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_latency_set.ps1");
-            var nvApiPath = AppPaths.InExeDir("NvAPIWrapper.dll");
 
             // Use raw NVAPI P/Invoke from PowerShell — NvAPIWrapper can't write these settings
             var script = $@"
