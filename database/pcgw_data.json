@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56081,
-  "generated": "2026-11-12T17:14:19Z",
+  "game_count": 56082,
+  "generated": "2026-11-12T19:14:19Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -89995,6 +89995,7 @@
     },
     "Kingdom: New Lands": {
       "steam_appid": 496300,
+      "dx9": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\noio\\Kingdom\\, %USERPROFILE%\\AppData\\LocalLow\\noio\\Kingdom\\preferences",
       "engine": "Unity"
     },
@@ -153847,6 +153848,10 @@
     },
     "Squeakers": {
       "steam_appid": 798650
+    },
+    "Squeakross: Home Squeak Home": {
+      "steam_appid": 2871440,
+      "engine": "Unity"
     },
     "Squeezone": {
       "steam_appid": 513630
