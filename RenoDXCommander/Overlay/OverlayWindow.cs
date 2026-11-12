@@ -67,7 +67,8 @@ internal sealed partial class OverlayWindow : Window
         TabsTheme.Apply(_backButton, TabsTheme.BlueButton, height: 44, fontSize: 15);
         _backButton.Click += (_, _) => Close(returnToGame: true);
 
-        Content = BuildContent();
+        _dashRoot = BuildContent();
+        Content = _dashRoot;
 
         _timer = DispatcherQueue.CreateTimer();
         _timer.Interval = TimeSpan.FromSeconds(1);
@@ -166,7 +167,8 @@ internal sealed partial class OverlayWindow : Window
         if (monitor != IntPtr.Zero && OverlayNative.GetMonitorInfo(monitor, ref info))
         {
             var r = info.rcMonitor;
-            AppWindow.MoveAndResize(new RectInt32(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top));
+            _monitorRect = new RectInt32(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
+            AppWindow.MoveAndResize(_monitorRect);
             if (r.Right > r.Left && r.Bottom > r.Top) _thumbAspect = (double)(r.Bottom - r.Top) / (r.Right - r.Left);
         }
 
@@ -189,6 +191,9 @@ internal sealed partial class OverlayWindow : Window
         _timer.Start();
         // Optional: freeze the game so it doesn't react to the controller (Settings › RHI overlay, off by default)
         if (_settings().RhiOverlayPauseGame && card != null) GamePauser.Pause(game.ProcessId);
+        // Closed while changing Ultra+ settings: come back to them for the same game
+        if (_upReopenFor != null && card != null && _upReopenFor == card.GameName && DevUnlockService.IsExtraUnlocked)
+            EnterUltraPlus();
         CrashReporter.Log($"[OverlayWindow.Open] Over '{_title.Text}' (PID {game.ProcessId}, known: {card != null}, notification state {OverlayNative.QueryNotificationState()})");
     }
 
@@ -198,6 +203,8 @@ internal sealed partial class OverlayWindow : Window
         if (!IsOpen) return;
         SaveNotes();
         StopShotWatcher();
+        _upReopenFor = _upMode ? _game?.Card?.GameName : null;
+        ExitUltraPlus(closing: true);
         IsOpen = false;
         _closing = true;
         _timer.Stop();
@@ -243,6 +250,7 @@ internal sealed partial class OverlayWindow : Window
     /// <summary>Esc / B: out of the screenshot viewer first, then back to the game.</summary>
     private void GoBack()
     {
+        if (_upMode) { ExitUltraPlus(); return; }
         if (ViewerOpen) { CloseViewer(); return; }
         Close(returnToGame: true);
     }
@@ -260,6 +268,8 @@ internal sealed partial class OverlayWindow : Window
     internal void HandlePad(PadAction action)
     {
         if (!IsOpen || Content?.XamlRoot is not { } xamlRoot) return;
+        // Ultra+ settings: no controller yet (the game reads the pad too); B still goes back to the dashboard
+        if (_upMode) { if (action == PadAction.Back) ExitUltraPlus(); return; }
         if (!_padUsed) { _padUsed = true; UpdateHint(); }
         var focused = FocusManager.GetFocusedElement(xamlRoot) as DependencyObject;
         switch (action)
@@ -310,6 +320,7 @@ internal sealed partial class OverlayWindow : Window
     internal void PadScroll(double pixels)
     {
         if (!IsOpen || pixels == 0 || Content?.XamlRoot is not { } xamlRoot) return;
+        if (_upMode) return;
         var sv = ViewerOpen ? _viewerScroller
             : ScrollerOf(FocusManager.GetFocusedElement(xamlRoot) as DependencyObject) ?? FirstVisibleScroller();
         sv?.ChangeView(null, Math.Max(0, sv.VerticalOffset + pixels), null, disableAnimation: true);

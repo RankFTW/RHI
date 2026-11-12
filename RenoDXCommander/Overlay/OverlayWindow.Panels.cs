@@ -302,6 +302,7 @@ internal sealed partial class OverlayWindow
             gameBody.Children.Add(SubHeading("DLSS and Streamline"));
             gameBody.Children.Add(dlss);
         }
+        if (MakeUltraPlusButton(card) is { } upButton) gameBody.Children.Add(upButton); // unlock_extra.txt only
         _gameBox.Children.Add(MakeCard("This game", gameBody, stretch: true));
     }
 

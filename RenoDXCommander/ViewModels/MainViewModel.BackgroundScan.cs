@@ -149,6 +149,7 @@ public partial class MainViewModel
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS manifest fetch failed — {ex.Message}"); }
                 await OsPresetService.FetchManifestAsync(_http);
+                await Services.UltraPlus.UltraPlusData.FetchAsync(_http); // unlock_extra.txt only
             });
             var dxvkTask     = Task.Run(async () => {
                 try

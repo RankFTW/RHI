@@ -480,6 +480,7 @@ public partial class MainViewModel
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS manifest fetch failed — {ex.Message}"); }
                 await OsPresetService.FetchManifestAsync(_http);
+                await Services.UltraPlus.UltraPlusData.FetchAsync(_http); // unlock_extra.txt only
             });
             // Initialize DLSS preset service (loads NVAPI + caches driver profiles)
             _ = Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed — {ex.Message}"); } });
