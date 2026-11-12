@@ -10,7 +10,8 @@ public partial class MainViewModel
 {
     /// <summary>
     /// Makes sure ANR FG is in the game's OptiScaler custom folder, downloading or updating it first.
-    /// Needs RHI's OptiScaler Nightly (the first build with custom frame generation providers).
+    /// Needs an OptiScaler build that loads custom frame generation providers: Nightly from 29 Oct 2026,
+    /// or a fork / custom build based on one. Checked in the installed DLL, not by version name.
     /// Returns an error message, or null when it's in place.
     /// </summary>
     public async Task<string?> EnsureAnrFgForPresetAsync(GameCardViewModel card)
@@ -21,10 +22,12 @@ public partial class MainViewModel
         var installPath = card.InstallPath;
         var record = _auxInstaller.FindRecord(card.GameName, installPath, OptiScalerService.AddonType);
         var variant = record?.OsVariant ?? OsVariants.Stable;
-        if (!variant.Equals(OsVariants.Nightly, StringComparison.OrdinalIgnoreCase))
+        var osDll = string.IsNullOrEmpty(record?.InstalledAs) ? null : FileHelper.SafeCombine(installPath, record.InstalledAs);
+        bool supported = osDll != null && await Task.Run(() => OptiScalerService.SupportsCustomFgProviders(osDll));
+        if (!supported)
         {
-            _crashReporter.Log($"[MainViewModel.EnsureAnrFgForPreset] '{card.GameName}' has OptiScaler {variant}; ANR FG needs Nightly");
-            return "ANR FG needs OptiScaler Nightly. Set Version to Nightly in this cog, then apply the preset again.";
+            _crashReporter.Log($"[MainViewModel.EnsureAnrFgForPreset] '{card.GameName}': OptiScaler {variant} ({record?.InstalledAs ?? "no record"}) can't load custom frame generation providers");
+            return $"This OptiScaler version ({OsVariants.Label(variant)}) can't load ANR FG yet. Set Version to Nightly, or a build based on a recent Nightly, then apply the preset again.";
         }
 
         var anr = App.Services.GetRequiredService<AnrFgService>();

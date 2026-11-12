@@ -2241,6 +2241,26 @@ public partial class OptiScalerService
     }
 
     /// <summary>
+    /// True when the OptiScaler DLL at <paramref name="dllPath"/> can load custom frame generation
+    /// providers (custom\&lt;name&gt;\dlssg, upstream since Nightly 29 Oct 2026). Looks for the build's
+    /// own log text for them, so forks and custom builds based on a recent Nightly count too.
+    /// </summary>
+    public static bool SupportsCustomFgProviders(string dllPath)
+    {
+        try
+        {
+            if (!File.Exists(dllPath)) return false;
+            var bytes = File.ReadAllBytes(dllPath);
+            return bytes.AsSpan().IndexOf("Custom DLSSG"u8) >= 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[OptiScalerService.SupportsCustomFgProviders] {dllPath} — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Names of the custom frame generation providers in the game (folders in OptiScaler's custom
     /// folder that have a dlssg folder with a DLL). These are valid FGNvngxReplacement values.
     /// </summary>

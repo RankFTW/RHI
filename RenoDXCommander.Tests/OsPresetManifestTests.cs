@@ -76,6 +76,22 @@ public class OsPresetManifestTests
     }
 
     [Fact]
+    public void SupportsCustomFgProviders_LooksForTheBuildsCustomDlssgText()
+    {
+        var with = Path.GetTempFileName();
+        var without = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllBytes(with, new byte[] { 0, 1 }.Concat("xxCustom DLSSG {} initializedxx"u8.ToArray()).ToArray());
+            File.WriteAllText(without, "OptiScaler 0.9.4");
+            Assert.True(OptiScalerService.SupportsCustomFgProviders(with));
+            Assert.False(OptiScalerService.SupportsCustomFgProviders(without));
+            Assert.False(OptiScalerService.SupportsCustomFgProviders(with + ".missing"));
+        }
+        finally { File.Delete(with); File.Delete(without); }
+    }
+
+    [Fact]
     public void FindCustomFgProviders_ListsFoldersWithADlssgDll()
     {
         var game = Path.Combine(Path.GetTempPath(), "rhi-test-" + Guid.NewGuid().ToString("N"));

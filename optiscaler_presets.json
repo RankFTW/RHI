@@ -51,7 +51,7 @@
     {
       "id": "AnrFg",
       "name": "ANR FG",
-      "description": "Apex Neural Rendering frame generation (beta) in place of the game's DLSS frame generation. Needs OptiScaler Nightly and a game with DLSS frame generation; turn on DLSS frame generation in the game.",
+      "description": "Apex Neural Rendering frame generation (beta) in place of the game's DLSS frame generation. Needs OptiScaler Nightly (or a build based on a recent Nightly) and a game with DLSS frame generation; turn on DLSS frame generation in the game.",
       "fgInput": "nvngxfg",
       "fgOutput": "auto",
       "fgNvngxReplacement": "Apex Neural Rendering FG",

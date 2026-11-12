@@ -137,7 +137,7 @@ public static class OsPresetService
 
     private const string AnrFgDescription =
         "Apex Neural Rendering frame generation (beta) in place of the game's DLSS frame generation. "
-        + "Needs OptiScaler Nightly and a game with DLSS frame generation; turn on DLSS frame generation in the game.";
+        + "Needs OptiScaler Nightly (or a build based on a recent Nightly) and a game with DLSS frame generation; turn on DLSS frame generation in the game.";
 
     /// <summary>The ready-made presets: fetched, else cached, else built-in.</summary>
     public static IReadOnlyList<OsPreset> ManifestPresets
