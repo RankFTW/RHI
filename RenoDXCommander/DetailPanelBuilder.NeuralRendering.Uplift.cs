@@ -60,6 +60,8 @@ public partial class DetailPanelBuilder
             await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
         }
 
+        int upliftKey = _window.ViewModel.Settings.UpliftEnableKey;
+        bool keepRsIni = _window.ViewModel.GetKeepRsIniUpdated(gameName, store);
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Installing GITC Uplift...");
         await Task.Run(() =>
         {
@@ -71,6 +73,9 @@ public partial class DetailPanelBuilder
                 upliftSvc.EnsureLaunchpadFor(installPath, launchpad);
             else
                 CrashReporter.Log($"[NeuralRendering.Uplift] iMMERSE not available — Launchpad not set up for '{gameName}'");
+            // RHI's global Uplift NR key (Settings › ReShade › Keys and screenshots), unless the game keeps its own reshade.ini
+            if (upliftKey > 0 && keepRsIni)
+                UpliftService.ApplyEnableKey(Path.Combine(installPath, "reshade.ini"), upliftKey);
         }).ConfigureAwait(false);
 
         // Shaders come from the shader sync (UpliftService.ShaderFilesFor), so they survive later syncs.

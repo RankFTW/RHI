@@ -336,6 +336,60 @@ public class UpliftService
     /// through the shader sync) or off (only a technique RHI added comes out). The caller syncs the
     /// game's shaders afterwards. False if Uplift isn't installed here or the preset can't be written.
     /// </summary>
+    // ── Start with NR on ([Uplift] StartEnabled in reshade.ini, from 2.0.0) ──
+
+    /// <summary>Uplift 2.0.0+ starts every session with NR off; StartEnabled=1 under [Uplift] in reshade.ini turns it on at start.</summary>
+    public const string StartEnabledKey = "StartEnabled";
+
+    /// <summary>NR on at game start (StartEnabled=1), false otherwise; null when the game has no reshade.ini.</summary>
+    public static bool? ReadStartEnabled(string installPath)
+    {
+        var ini = Path.Combine(installPath, "reshade.ini");
+        if (!File.Exists(ini)) return null;
+        return Dlssg20_30Service.ReadIniValue(ini, "Uplift", StartEnabledKey) == "1";
+    }
+
+    /// <summary>Writes StartEnabled=1 or 0 under [Uplift] in the game's reshade.ini. False when it couldn't.</summary>
+    public bool SetStartEnabled(string installPath, bool on)
+    {
+        var ini = Path.Combine(installPath, "reshade.ini");
+        if (!File.Exists(ini)) return false;
+        try
+        {
+            Dlssg20_30Service.WriteIniValue(ini, "Uplift", StartEnabledKey, on ? "1" : "0");
+            _crashReporter.Log($"[UpliftService.SetStartEnabled] {StartEnabledKey}={(on ? 1 : 0)} in '{ini}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[UpliftService.SetStartEnabled] '{ini}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Uplift's NR on/off key: a decimal Win32 virtual-key code under [Uplift] in reshade.ini (0 = none).</summary>
+    public const string EnableKeyKey = "EnableKey";
+
+    /// <summary>
+    /// Writes RHI's global Uplift key ([Uplift] EnableKey) into a reshade.ini. Nothing is written for 0 (none), so a
+    /// key the player set in Uplift's own panel stays until they pick one in RHI. False when it couldn't.
+    /// </summary>
+    public static bool ApplyEnableKey(string iniPath, int vk)
+    {
+        if (vk <= 0 || vk > 255 || !File.Exists(iniPath)) return false;
+        try
+        {
+            Dlssg20_30Service.WriteIniValue(iniPath, "Uplift", EnableKeyKey, vk.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            CrashReporter.Log($"[UpliftService.ApplyEnableKey] {EnableKeyKey}={vk} in '{iniPath}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[UpliftService.ApplyEnableKey] '{iniPath}' — {ex.Message}");
+            return false;
+        }
+    }
+
     public bool SetLaunchpad(string installPath, bool on)
     {
         if (!IsRhiInstalled(installPath)) return false;
@@ -691,7 +745,8 @@ public class UpliftService
         var (installed, pinned) = ReadMarker(installPath);
         if (pinned != null) return false;
         var addonDir = AddonDir(installPath);
-        bool changed = false;
+        // Files that differ from the staged release
+        var pending = new List<(string Src, string Dest)>();
         foreach (var rel in RhiInstallManifest.GetComponentFiles(installPath, Component))
         {
             var name = Path.GetFileName(rel);
@@ -701,11 +756,33 @@ public class UpliftService
             var src = new FileInfo(Path.Combine(StagingDir, name));
             var cur = new FileInfo(dest);
             if (cur.Length == src.Length && cur.LastWriteTimeUtc == src.LastWriteTimeUtc) continue;
-            try { File.Copy(src.FullName, dest, overwrite: true); changed = true; }
+            pending.Add((src.FullName, dest));
+        }
+
+        // All or nothing: the add-ons and the helper must come from the same release (from 2.0.0 they refuse
+        // each other otherwise). A running game holds the add-on but not always the helper, so check every
+        // file can be replaced before touching any; the next check tries again.
+        foreach (var (_, dest) in pending)
+        {
+            try { using var probe = new FileStream(dest, FileMode.Open, FileAccess.ReadWrite, FileShare.None); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            { _crashReporter.Log($"[UpliftService.UpdateInstalled] '{dest}' not updated (game running?) — {ex.Message}"); }
+            {
+                _crashReporter.Log($"[UpliftService.UpdateInstalled] '{dest}' is in use (game running?), nothing updated in '{addonDir}' — {ex.Message}");
+                return false;
+            }
+        }
+        bool changed = false, failed = false;
+        foreach (var (src, dest) in pending)
+        {
+            try { File.Copy(src, dest, overwrite: true); changed = true; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                failed = true;
+                _crashReporter.Log($"[UpliftService.UpdateInstalled] '{dest}' not updated — {ex.Message}");
+            }
         }
         foreach (var old in OldNames) TryDelete(Path.Combine(addonDir, old));
+        if (failed) return changed; // the marker keeps the old version; the next check copies the rest
         if (changed || installed != StagedVersion)
         {
             try { var m = ReadMarkerAll(installPath); WriteMarker(installPath, StagedVersion, null, m.Technique, m.Launchpad); }
