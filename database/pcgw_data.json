@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56093,
-  "generated": "2026-11-13T21:15:21Z",
+  "game_count": 56095,
+  "generated": "2026-11-13T23:16:22Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -84618,8 +84618,6 @@
     },
     "Into the Dead: Our Darkest Days": {
       "steam_appid": 2239710,
-      "dx11": true,
-      "dx12": true,
       "engine": "Unity"
     },
     "Into The Dread": {
@@ -125121,6 +125119,11 @@
     },
     "Pokris": {
       "steam_appid": 1036780
+    },
+    "PokéPark 2: Wonders Beyond": {
+      "vulkan": true,
+      "opengl": true,
+      "config_path": "<path-to-game>\\settings.ini"
     },
     "PokéPark Wii: Pikachu's Adventure": {
       "vulkan": true,
@@ -185594,7 +185597,7 @@
     "Valor Mortis": {
       "steam_appid": 2828710,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%/ValorMortis/Saved/Config/Windows",
+      "config_path": "%LOCALAPPDATA%\\ValorMortis\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Valor Time": {
@@ -192925,6 +192928,9 @@
     "Winx Club": {
       "dx9": true,
       "config_path": "<path-to-game>\\config.ini, <path-to-game>\\winx.ini"
+    },
+    "Winx Club: Moonlight Quest": {
+      "steam_appid": 5189950
     },
     "Wipe Out VR": {
       "steam_appid": 553630
