@@ -142,7 +142,7 @@ public partial class InstallFolderMigrationService : IInstallFolderMigrationServ
     // ── Running-game check ────────────────────────────────────────────────────
 
     /// <summary>Name of a process whose exe lives under one of the folders, or null.</summary>
-    private static string? FindRunningProcess(IEnumerable<string?> folders)
+    internal static string? FindRunningProcess(IEnumerable<string?> folders)
     {
         var roots = folders.Where(f => !string.IsNullOrEmpty(f) && f!.Length > 3)
             .Select(f => InstallFolderMover.Norm(f!) + "\\")

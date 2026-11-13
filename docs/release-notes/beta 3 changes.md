@@ -58,7 +58,7 @@ Changes since v2.9.3 Beta 2.
 
 ### Changes
 
-- GITC Uplift 2.0 starts every game session with NR off. A new Start with NR on switch next to iMMERSE Launchpad in the Neural Rendering section turns it on at game start, as before 2.0.
+- GITC Uplift 2.0 starts every game session with NR off. Turn it on in game with Uplift's NR on/off key (below) or in its tab in the ReShade overlay.
 - New GITC Uplift card in Settings › Components with an NR on/off key: the key that turns Uplift's NR on and off in game. RHI writes it into games when it installs Uplift, and Write key to all Uplift games writes it to every game with Uplift.
 - Refresh now fully rescans the selected game, as Full Refresh does for every game: DLSS that a game update added or removed shows straight away, with no Full Refresh needed.
 **Game search**
@@ -81,6 +81,7 @@ Changes since v2.9.3 Beta 2.
 **Other**
 - Spotlight: the Covers at bottom / top button is now a cog by the game counts. It has Covers below the game page and a new No background option, which gives the search, filters and covers the page colour instead of their own panel colour.
 - GITC Uplift now installs iMMERSE Launchpad, which gives it motion vectors in games without DLSS, and turns it on above the Uplift effect in ReShade. It's on by default in games without DLSS, including existing installs. Games with DLSS use their own motion vectors: turn on the new iMMERSE Launchpad toggle under the Neural Rendering section if those look wrong in a game.
+- iMMERSE Launchpad is kept at the top of the game's ReShade effects, above GITC Uplift and HSF, which use its motion in the same frame. HSF switched it on at the bottom of the list. RHI moves it when the game isn't running and changes nothing else.
 - Spotlight: the covers are centred whenever they all fit on screen, with any filter. Before, only Favourites and collections were centred.
 - Neural Rendering: added a GITC Uplift link to the links at the bottom of the section.
 - Settings › Display & HDR: new HDR button on game pages and Resolution button on game pages options hide either button on game pages. A game's own HDR and resolution choice still applies when you launch it from RHI.

@@ -46,6 +46,9 @@ public partial class MainViewModel
             }
             if (apiFixed) SaveGameApiCache(); // so the next launch starts with the right API
 
+            // iMMERSE Launchpad above Uplift / HSF in the preset (HSF switches it on at the end of the list)
+            foreach (var path in games) UpliftService.KeepLaunchpadFirst(path);
+
             // iMMERSE Launchpad (motion vectors): installs that haven't had the choice applied yet
             // (from before RHI handled it, or iMMERSE couldn't be downloaded at install)
             var undecided = cards.Where(c => !UpliftService.LaunchpadDecided(c.InstallPath!)).ToList();

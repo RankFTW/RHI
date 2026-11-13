@@ -233,6 +233,9 @@ public partial class MainViewModel
                 // A DirectX 12 game whose route isn't set yet (the DLSS scan hadn't run at install, or HSF took it
                 // back after a DirectX 11 run) gets it now, so its next launch generates without a restart
                 svc.PresetRoute(c.InstallPath!, HsfRouteFor(c));
+                // HSF switches LaunchPad on itself and ReShade lists it last, after HSF_Motion, which reads its flow:
+                // put it first (only the order; the game must be closed, ReShade rewrites the preset on exit)
+                UpliftService.KeepLaunchpadFirst(c.InstallPath!);
                 if (!svc.UpdateInstalled(c.InstallPath!, c.Is32Bit)) continue;
                 updated++;
                 await DeployShadersForCardAsync(c.GameName).ConfigureAwait(false); // a new HSF.fx

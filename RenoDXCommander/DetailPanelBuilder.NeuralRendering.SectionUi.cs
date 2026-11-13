@@ -1094,8 +1094,11 @@ public partial class DetailPanelBuilder
                         + "Neural Rendering through a ReShade addon, built for ease of use, stability and performance, and works with any game, no DLSS needed. It also works well for virtual photography. "
                         + "Deploys the Uplift addon, its 64-bit helper, the NR DLL (in its GITC-Uplift folder) and its shaders. "
                         + "In the game, open ReShade (Home), go to the GITC Uplift tab and tick Enable. "
-                        + "From Uplift 2.0, NR starts off every time the game starts, unless Start with NR on is on below; "
+                        + "From Uplift 2.0, NR starts off every time the game starts (games with their own DLSS lose it when NR starts with them); "
                         + "the NR on/off key in Settings › Components › GITC Uplift turns it on and off in game."
+                        + (card.HasDlssUpscaler
+                            ? " This game has DLSS: Uplift uses DLSS's motion vectors only while the game renders with DLSS, so set its upscaler to DLSS, or turn on iMMERSE Launchpad below."
+                            : "")
                         + (isVulkan || card.GraphicsApi == GraphicsApiType.OpenGL ? " Vulkan and OpenGL need ReShade 6.8 or newer." : "");
                     descLink.Content = "GITC Uplift guide →";
                     descLink.NavigateUri = new Uri(UpliftService.ReleasesPage);
@@ -1929,68 +1932,6 @@ public partial class DetailPanelBuilder
             launchpadRow.Children.Add(launchpadLabel);
             launchpadRow.Children.Add(launchpadToggle);
             launchpadRow.Children.Add(launchpadStatus);
-
-            // ── Start with NR on: Uplift 2.0.0+ starts every session with NR off ([Uplift] StartEnabled in reshade.ini) ──
-            const string startTip =
-                "GITC Uplift 2.0 starts every game session with NR off, so the game can create its device and compile its shaders "
-                + "first. Turn NR on from Uplift's panel in the ReShade overlay or with its hotkey.\n\n"
-                + "On: NR starts on with the game, as before Uplift 2.0 (StartEnabled=1 under [Uplift] in the game's reshade.ini). "
-                + "Turn it off again if the game has trouble starting.";
-            launchpadRow.Children.Add(new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), VerticalAlignment = VerticalAlignment.Stretch, Margin = new Thickness(4, 0, 4, 0) });
-            var startLabel = new TextBlock
-            {
-                Text = "Start with NR on",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTipService.SetToolTip(startLabel, startTip);
-            var startToggle = new ToggleSwitch
-            {
-                OnContent = "On", OffContent = "Off",
-                VerticalAlignment = VerticalAlignment.Center,
-                MinWidth = 0,
-                IsEnabled = false, // until the game's reshade.ini has been read
-            };
-            ToolTipService.SetToolTip(startToggle, startTip);
-            var startStatus = new TextBlock
-            {
-                Text = "",
-                FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            bool startReading = true;
-            startToggle.Toggled += async (s, ev) =>
-            {
-                if (startReading) return;
-                bool on = startToggle.IsOn;
-                try
-                {
-                    startToggle.IsEnabled = false;
-                    bool ok = await Task.Run(() => upliftSvc.SetStartEnabled(installPath, on));
-                    startStatus.Text = ok ? "" : "Failed";
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[NeuralRendering.UpliftStartEnabled] Unhandled error — {ex.Message}");
-                    startStatus.Text = "Failed";
-                }
-                finally { startToggle.IsEnabled = true; }
-            };
-            _ = Task.Run(() => UpliftService.ReadStartEnabled(installPath)).ContinueWith(t =>
-                _window.DispatcherQueue?.TryEnqueue(() =>
-                {
-                    var state = t.IsCompletedSuccessfully ? t.Result : null;
-                    startToggle.IsOn = state == true;
-                    startReading = false;
-                    startToggle.IsEnabled = state != null;
-                    if (state == null)
-                        ToolTipService.SetToolTip(startToggle, "Install ReShade first: this setting lives in the game's reshade.ini.\n\n" + startTip);
-                }), TaskScheduler.Default);
-            launchpadRow.Children.Add(startLabel);
-            launchpadRow.Children.Add(startToggle);
-            launchpadRow.Children.Add(startStatus);
 
             launchpadRow.Visibility = upliftSelectedAtBuild ? Visibility.Visible : Visibility.Collapsed;
             nrBody.Children.Add(launchpadRow);

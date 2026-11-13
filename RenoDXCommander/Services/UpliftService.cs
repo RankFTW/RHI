@@ -251,6 +251,61 @@ public class UpliftService
     public static (string Text, bool Changed) RemoveTechniqueFromPreset(string text) =>
         RemoveTechniqueFromPreset(text, TechniqueToken);
 
+    /// <summary>
+    /// Preset text with <paramref name="token"/> moved to the front of every Techniques / TechniqueSorting line
+    /// that already has it. Never adds or removes anything (what's ticked stays as it is).
+    /// </summary>
+    public static (string Text, bool Changed) MoveTechniqueFirst(string text, string token)
+    {
+        var nl = text.Contains("\r\n") ? "\r\n" : "\n";
+        var lines = text.Split(nl);
+        bool changed = false;
+        for (int i = 0; i < lines.Length; i++)
+            foreach (var key in new[] { "Techniques", "TechniqueSorting" })
+            {
+                if (!lines[i].StartsWith(key + "=", StringComparison.Ordinal)) continue;
+                var items = SplitList(lines[i][(key.Length + 1)..]);
+                int at = items.FindIndex(t => t.Equals(token, StringComparison.OrdinalIgnoreCase));
+                if (at <= 0) continue;
+                var item = items[at];
+                items.RemoveAt(at);
+                items.Insert(0, item);
+                lines[i] = key + "=" + string.Join(",", items);
+                changed = true;
+            }
+        return (string.Join(nl, lines), changed);
+    }
+
+    /// <summary>
+    /// iMMERSE Launchpad makes the motion that Uplift and HSF read in the same frame, so it must run before them:
+    /// moves it to the top of the game's preset when it's there but lower down (HSF switches it on itself and ReShade
+    /// adds it at the end). Only the order changes. Call while the game isn't running: ReShade writes the preset
+    /// back when the game closes. True when the preset was changed.
+    /// </summary>
+    public static bool KeepLaunchpadFirst(string installPath)
+    {
+        var preset = PresetPath(installPath);
+        if (!File.Exists(preset)) return false;
+        try
+        {
+            var (text, changed) = MoveTechniqueFirst(File.ReadAllText(preset), LaunchpadToken);
+            if (!changed) return false;
+            if (InstallFolderMigrationService.FindRunningProcess(new[] { installPath, Path.GetDirectoryName(preset) }) is { } exe)
+            {
+                CrashReporter.Log($"[UpliftService.KeepLaunchpadFirst] '{installPath}': {exe} is running — order left until it closes");
+                return false;
+            }
+            File.WriteAllText(preset, text);
+            CrashReporter.Log($"[UpliftService.KeepLaunchpadFirst] iMMERSE Launchpad moved to the top of '{preset}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[UpliftService.KeepLaunchpadFirst] '{preset}' not updated — {ex.Message}");
+            return false;
+        }
+    }
+
     /// <summary>Preset text with <paramref name="token"/> removed from every Techniques / TechniqueSorting line.</summary>
     public static (string Text, bool Changed) RemoveTechniqueFromPreset(string text, string token)
     {
@@ -331,42 +386,6 @@ public class UpliftService
             yield return (Path.Combine("Textures", "iMMERSE", "iMMERSE_bluenoise_opt.png"), noise);
     }
 
-    /// <summary>
-    /// Switches Launchpad on (its technique, then Uplift's after it, in the preset; the files follow
-    /// through the shader sync) or off (only a technique RHI added comes out). The caller syncs the
-    /// game's shaders afterwards. False if Uplift isn't installed here or the preset can't be written.
-    /// </summary>
-    // ── Start with NR on ([Uplift] StartEnabled in reshade.ini, from 2.0.0) ──
-
-    /// <summary>Uplift 2.0.0+ starts every session with NR off; StartEnabled=1 under [Uplift] in reshade.ini turns it on at start.</summary>
-    public const string StartEnabledKey = "StartEnabled";
-
-    /// <summary>NR on at game start (StartEnabled=1), false otherwise; null when the game has no reshade.ini.</summary>
-    public static bool? ReadStartEnabled(string installPath)
-    {
-        var ini = Path.Combine(installPath, "reshade.ini");
-        if (!File.Exists(ini)) return null;
-        return Dlssg20_30Service.ReadIniValue(ini, "Uplift", StartEnabledKey) == "1";
-    }
-
-    /// <summary>Writes StartEnabled=1 or 0 under [Uplift] in the game's reshade.ini. False when it couldn't.</summary>
-    public bool SetStartEnabled(string installPath, bool on)
-    {
-        var ini = Path.Combine(installPath, "reshade.ini");
-        if (!File.Exists(ini)) return false;
-        try
-        {
-            Dlssg20_30Service.WriteIniValue(ini, "Uplift", StartEnabledKey, on ? "1" : "0");
-            _crashReporter.Log($"[UpliftService.SetStartEnabled] {StartEnabledKey}={(on ? 1 : 0)} in '{ini}'");
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _crashReporter.Log($"[UpliftService.SetStartEnabled] '{ini}' — {ex.Message}");
-            return false;
-        }
-    }
-
     /// <summary>Uplift's NR on/off key: a decimal Win32 virtual-key code under [Uplift] in reshade.ini (0 = none).</summary>
     public const string EnableKeyKey = "EnableKey";
 
@@ -390,6 +409,11 @@ public class UpliftService
         }
     }
 
+    /// <summary>
+    /// Switches Launchpad on (its technique, then Uplift's after it, in the preset; the files follow
+    /// through the shader sync) or off (only a technique RHI added comes out). The caller syncs the
+    /// game's shaders afterwards. False if Uplift isn't installed here or the preset can't be written.
+    /// </summary>
     public bool SetLaunchpad(string installPath, bool on)
     {
         if (!IsRhiInstalled(installPath)) return false;
@@ -404,6 +428,8 @@ public class UpliftService
                 if (technique.Length == 0) technique = upliftAdded ? "1" : "user";
                 bool added = EnableTechnique(installPath, LaunchpadToken, before: TechniqueToken);
                 launchpad = added || m.Launchpad == "1" ? "1" : "user";
+                // Above HSF's techniques too, when HSF is in the preset
+                KeepLaunchpadFirst(installPath);
             }
             else
             {

@@ -99,9 +99,10 @@ Search now works much like Steam's:
 - Existing installs carry over on their own: nothing is moved or reinstalled.
 
 **GITC Uplift**
-- GITC Uplift 2.0 starts every game session with NR off. A new Start with NR on switch next to iMMERSE Launchpad in the Neural Rendering section turns it on at game start, as before 2.0.
+- GITC Uplift 2.0 starts every game session with NR off. Turn it on in game with Uplift's NR on/off key (below) or in its tab in the ReShade overlay.
 - New GITC Uplift card in Settings › Components with an NR on/off key: the key that turns Uplift's NR on and off in game. RHI writes it into games when it installs Uplift, and Write key to all Uplift games writes it to every game with Uplift.
 - GITC Uplift now installs iMMERSE Launchpad, which gives it motion vectors in games without DLSS, and turns it on above the Uplift effect in ReShade. It's on by default in games without DLSS, including existing installs. Games with DLSS use their own motion vectors: turn on the new iMMERSE Launchpad toggle under the Neural Rendering section if those look wrong in a game.
+- iMMERSE Launchpad is kept at the top of the game's ReShade effects, above GITC Uplift and HSF, which use its motion in the same frame. HSF switched it on at the bottom of the list. RHI moves it when the game isn't running and changes nothing else.
 - Neural Rendering: added a GITC Uplift link to the links at the bottom of the section.
 
 **DLSS5 Feeder 2.0**
