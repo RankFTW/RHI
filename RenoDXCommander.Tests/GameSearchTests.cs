@@ -136,4 +136,48 @@ public class GameSearchTests
     {
         Assert.False(FilterViewModel.NameMatchesLoosely(name, query));
     }
+
+    [Theory]
+    [InlineData("Resident Evil 4", "resident evil 4", 0)]
+    [InlineData("F.E.A.R.", "fear", 0)]
+    [InlineData("Grand Theft Auto III", "grand theft auto 3", 0)]
+    [InlineData("Resident Evil 4 Remake", "resident evil 4", 1)]
+    [InlineData("Evil West", "evil", 1)]
+    [InlineData("The Evil Within", "evil", 2)]
+    [InlineData("Devil May Cry 5", "evil", 3)]
+    [InlineData("Grand Theft Auto V", "gta", 4)]
+    [InlineData("Resident Evil 2", "resident eviaa", 5)]
+    [InlineData("Cyberpunk 2077", "steam", 6)]
+    public void NameRank_BestMatchFirst(string name, string query, int rank)
+    {
+        Assert.Equal(rank, FilterViewModel.NameRank(name, query));
+    }
+
+    [Theory]
+    [InlineData("Steam", "steam")]
+    [InlineData("Unreal Engine 5.3", "unreal")]
+    [InlineData("Unreal Engine 5.3", "unreal engine")]
+    [InlineData("DX12", "dx12")]
+    [InlineData("32-bit", "32bit")]
+    [InlineData("32-bit", "32 bit")]
+    [InlineData("UW Fix", "uw fix")]
+    [InlineData("Ultra+", "ultra+")]
+    [InlineData("Ray Reconstruction", "reconstruction")]
+    public void TagMatches_WholeWords(string tag, string query)
+    {
+        Assert.True(FilterViewModel.TagMatches(tag, FilterViewModel.LettersAndDigits(query)));
+    }
+
+    [Theory]
+    [InlineData("Steam", "st")]
+    [InlineData("Steam", "stea")]
+    [InlineData("Unreal Engine 5.3", "un")]
+    [InlineData("Unity", "un")]
+    [InlineData("DLSS", "dl")]
+    [InlineData("Frame Generation", "frame gen")]
+    [InlineData("Unreal Engine", "unrealengine5")]
+    public void TagMatches_NotPartOfAWord(string tag, string query)
+    {
+        Assert.False(FilterViewModel.TagMatches(tag, FilterViewModel.LettersAndDigits(query)));
+    }
 }

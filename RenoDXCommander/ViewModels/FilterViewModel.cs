@@ -483,31 +483,77 @@ public partial class FilterViewModel : ObservableObject
             || MatchesSearchOutsideName(card, query);
     }
 
+    /// <summary>
+    /// How well a game's name matches the search, for ordering results (lower is better, like Steam):
+    /// 0 the whole name, 1 the name starts with it, 2 whole words of the name, 3 part of the name,
+    /// 4 the initials, 5 a near miss (typo, words in another order), 6 not the name (store, engine, mod…).
+    /// </summary>
+    internal static int NameRank(string gameName, string query)
+    {
+        var q = LettersAndDigits(query);
+        if (q.Length == 0) return 6;
+        var f = s_searchForms.GetOrAdd(gameName, SearchForms);
+        if (f.Plain == q || f.Numbered == q) return 0;
+        if (f.Plain.StartsWith(q, StringComparison.Ordinal) || f.Numbered.StartsWith(q, StringComparison.Ordinal)) return 1;
+        if (NameMatchesWholeWords(gameName, query)) return 2;
+        if (gameName.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || f.Plain.Contains(q, StringComparison.Ordinal) || f.Numbered.Contains(q, StringComparison.Ordinal)) return 3;
+        if (InitialsMatch(f, q)) return 4;
+        return NameMatchesLoosely(gameName, query) ? 5 : 6;
+    }
+
     /// <summary>The search against everything except the game's name (maintainer, store, engine, API, mods…).</summary>
     private static bool MatchesSearchOutsideName(GameCardViewModel card, string query)
     {
-        return card.Maintainer.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || card.Source.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || card.EngineHint.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || card.GraphicsApi.ToString().Contains(query, StringComparison.OrdinalIgnoreCase)
-            || card.GraphicsApiLabel.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || card.DetectedApis.Any(a => a.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.Is32Bit ? "32-bit" : "64-bit").Contains(query, StringComparison.OrdinalIgnoreCase)
-            || (card.IsREEngineGame && "RE Engine".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.IsREEngineGame && "RE Framework".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.Mod?.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
-            || (card.Mod?.Maintainer?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
-            || (card.LumaMod?.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
-            || (card.LumaMod?.Author?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
-            || card.VulkanRenderingPath.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || (card.HasUwFixUrl && "UW Fix".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasUltraPlusUrl && "Ultra+".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasDlss && "DLSS".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasDlssd && "Ray Reconstruction".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasDlssg && "Frame Generation".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasStreamline && "Streamline".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasAnyDlssStreamline && "DLSS".Contains(query, StringComparison.OrdinalIgnoreCase));
+        var q = LettersAndDigits(query);
+        if (q.Length == 0) return false;
+        return TagMatches(card.Maintainer, q)
+            || TagMatches(card.Source, q)
+            || TagMatches(card.EngineHint, q)
+            || TagMatches(card.GraphicsApi.ToString(), q)
+            || TagMatches(card.GraphicsApiLabel, q)
+            || card.DetectedApis.Any(a => TagMatches(a.ToString(), q))
+            || TagMatches(card.Is32Bit ? "32-bit" : "64-bit", q)
+            || (card.IsREEngineGame && (TagMatches("RE Engine", q) || TagMatches("RE Framework", q)))
+            || TagMatches(card.Mod?.Name, q)
+            || TagMatches(card.Mod?.Maintainer, q)
+            || TagMatches(card.LumaMod?.Name, q)
+            || TagMatches(card.LumaMod?.Author, q)
+            || TagMatches(card.VulkanRenderingPath, q)
+            || (card.HasUwFixUrl && TagMatches("UW Fix", q))
+            || (card.HasUltraPlusUrl && TagMatches("Ultra+", q))
+            || ((card.HasDlss || card.HasAnyDlssStreamline) && TagMatches("DLSS", q))
+            || (card.HasDlssd && TagMatches("Ray Reconstruction", q))
+            || (card.HasDlssg && TagMatches("Frame Generation", q))
+            || (card.HasStreamline && TagMatches("Streamline", q));
     }
+
+    /// <summary>
+    /// A tag (store, engine, API, mod, author…) matches only on whole words, so the first letters of a game's name
+    /// don't bring up every game on that store or engine ("st" isn't Steam, "un" isn't Unreal). Spaces and
+    /// punctuation are ignored ("dx12", "32bit", "uw fix", "unreal engine"). <paramref name="q"/> is the search as
+    /// <see cref="LettersAndDigits"/>.
+    /// </summary>
+    internal static bool TagMatches(string? tag, string q)
+    {
+        if (string.IsNullOrEmpty(tag) || q.Length == 0) return false;
+        var words = s_tagWords.GetOrAdd(tag, t => SplitWords(t).Select(LettersAndDigits).Where(w => w.Length > 0).ToArray());
+        for (int i = 0; i < words.Length; i++)
+        {
+            // A run of whole words starting here, joined: "unreal" + "engine" for "unreal engine"
+            int len = 0;
+            for (int j = i; j < words.Length; j++)
+            {
+                if (len + words[j].Length > q.Length
+                    || string.CompareOrdinal(q, len, words[j], 0, words[j].Length) != 0) break;
+                len += words[j].Length;
+                if (len == q.Length) return true;
+            }
+        }
+        return false;
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string[]> s_tagWords = new();
 
     public void ApplyFilter()
     {
@@ -615,6 +661,10 @@ public partial class FilterViewModel : ObservableObject
         if (!string.IsNullOrEmpty(query) && filtered.Any(c => NameMatchesWholeWords(c.GameName, query)))
             filtered = filtered.Where(c => NameMatchesWholeWords(c.GameName, query)
                                         || MatchesSearchOutsideName(c, query)).ToList();
+
+        // Best match first (whole name, then starts with, whole words…), A to Z within each
+        if (!string.IsNullOrEmpty(query))
+            filtered = filtered.OrderBy(c => NameRank(c.GameName, query)).ToList();
 
         _displayedGames.ReplaceAll(filtered);
         UpdateCounts();
