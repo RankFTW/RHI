@@ -13,6 +13,7 @@ public class StoreNameSuffixTests
     [InlineData("Some Game (Win10)", "Some Game")]
     [InlineData("Some Game (PC)", "Some Game")]
     [InlineData("Some Game [PC]", "Some Game")]
+    [InlineData("Goat Simulator 3 PC", "Goat Simulator 3")]
     [InlineData("Some Game for Windows", "Some Game")]
     [InlineData("Some Game for Windows 10", "Some Game")]
     [InlineData("Some Game – PC", "Some Game")]
@@ -32,6 +33,7 @@ public class StoreNameSuffixTests
     [InlineData("Half-Life 2")]
     [InlineData("Windows 98 Simulator")]            // platform word not at the end
     [InlineData("PC Building Simulator")]
+    [InlineData("Arc Pc")]                          // bare "PC" only in capitals
     [InlineData("")]
     [InlineData(null)]
     public void StripPlatform_LeavesOtherNames(string? name) =>

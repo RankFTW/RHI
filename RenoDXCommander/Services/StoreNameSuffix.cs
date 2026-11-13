@@ -13,9 +13,9 @@ public static class StoreNameSuffix
     private const string Platform = @"(?:Windows(?:\s*(?:10|11|PC))?|Win\s*(?:10|11)|PC|Microsoft\s+Store(?:\s+Edition)?)";
 
     // " - Windows", " – PC", ": Windows 10", " (Windows)", " (Windows PC)", " [PC]", " for Windows 10",
-    // " Windows 10" / " Windows" / " Windows PC" at the very end
+    // " Windows 10" / " Windows" / " Windows PC" / " PC" (capitals only: "Goat Simulator 3 PC") at the very end
     private static readonly Regex PlatformSuffix = new(
-        @"\s*(?:[-–—:]\s*" + Platform + @"|\(\s*" + Platform + @"\s*\)|\[\s*" + Platform + @"\s*\]|\s+for\s+Windows(?:\s*(?:10|11))?|\s+Windows(?:\s*(?:10|11|PC))?)\s*$",
+        @"\s*(?:[-–—:]\s*" + Platform + @"|\(\s*" + Platform + @"\s*\)|\[\s*" + Platform + @"\s*\]|\s+for\s+Windows(?:\s*(?:10|11))?|\s+Windows(?:\s*(?:10|11|PC))?|(?-i:\s+PC))\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     // Edition names a store keeps in the title while PCGamingWiki files the game under its base name
