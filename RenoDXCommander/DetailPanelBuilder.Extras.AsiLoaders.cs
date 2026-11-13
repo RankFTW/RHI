@@ -422,7 +422,7 @@ public partial class DetailPanelBuilder
             if (string.IsNullOrEmpty(installPath)) return;
             var st = _window.ViewModel.Settings;
             if (!isInstalled && !await ShowClosedSourceNoticeAsync("RTX Encore", "SilyNoMeta",
-                    () => st.RtxEncoreClosedSourceDismissed, () => st.RtxEncoreClosedSourceDismissed = true, installBtn.XamlRoot))
+                    () => st.RtxEncoreClosedSourceDismissed, () => st.RtxEncoreClosedSourceDismissed = true, installBtn.XamlRoot ?? _window.Content.XamlRoot))
                 return;
             var chosen = await ShowRtxEncoreDllPickerAsync(card, currentDllName);
             if (chosen == null) return;

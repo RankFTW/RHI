@@ -662,6 +662,9 @@ internal sealed class CogDialog
 
     private Action? _closeEmbedded;
 
+    /// <summary>Shown in the layout (Spotlight panel, Tabs in place), not as a dialog: another dialog can open over it.</summary>
+    internal bool IsEmbedded => _closeEmbedded != null;
+
     /// <summary>"&lt;Component&gt; Settings".</summary>
     internal string Title => _title;
     /// <summary>Apply button text when <see cref="UseApplyButton"/> was called, else null.</summary>

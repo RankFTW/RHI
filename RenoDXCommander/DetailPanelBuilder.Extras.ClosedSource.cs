@@ -1,8 +1,12 @@
-// DetailPanelBuilder.Extras.ClosedSource.cs — notice shown before installing an Extras mod whose author
-// publishes only the compiled DLL (RTX Encore, 20/30 FG Unlock): Install / Cancel / Don't show this again.
+// DetailPanelBuilder.Extras.ClosedSource.cs — notice shown before installing a mod whose author publishes
+// only the compiled DLL (RTX Encore, 20/30 FG Unlock, ANR FG): Install / Cancel / Don't show this again.
+
+using Microsoft.Extensions.DependencyInjection;
+using RenoDXCommander.ViewModels;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using System;
 using System.Threading.Tasks;
 
@@ -13,11 +17,13 @@ public partial class DetailPanelBuilder
     /// <summary>
     /// Tells the user <paramref name="modName"/> is closed source before a first install. Skipped once
     /// <paramref name="isDismissed"/> is true; ticking "Don't show this again" calls <paramref name="dismiss"/>
-    /// and saves settings. Returns true to go on with the install.
+    /// and saves settings. <paramref name="githubUrl"/> replaces the line pointing at the row's Info button with a
+    /// clickable link (for mods without a row of their own). Returns true to go on with the install. Static so the
+    /// OptiScaler cog (MainWindow) can use it too.
     /// </summary>
-    private async Task<bool> ShowClosedSourceNoticeAsync(string modName, string author, Func<bool> isDismissed, Action dismiss, XamlRoot? xamlRoot)
+    internal static async Task<bool> ShowClosedSourceNoticeAsync(string modName, string author, Func<bool> isDismissed, Action dismiss,
+        XamlRoot? xamlRoot, string? githubUrl = null)
     {
-        xamlRoot ??= _window.Content.XamlRoot;
         if (xamlRoot == null || isDismissed()) return true;
 
         var content = new StackPanel { Spacing = 8 };
@@ -30,7 +36,25 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
         Para($"{modName} is closed source: {author} publishes only the finished DLL, not its code, so nobody outside can check what it does.");
-        Para($"RHI downloads it unchanged from {author}'s GitHub releases. Only install it if you're OK with that. The Info button on its row opens its GitHub page.");
+        var line = $"RHI downloads it unchanged from {author}'s GitHub releases. Only install it if you're OK with that. ";
+        if (githubUrl == null)
+            Para(line + "The Info button on its row opens its GitHub page.");
+        else
+        {
+            var tb = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                LineHeight = 20,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            };
+            tb.Inlines.Add(new Run { Text = line + "Its GitHub page: " });
+            var link = new Hyperlink { NavigateUri = new Uri(githubUrl), Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush) };
+            link.Inlines.Add(new Run { Text = githubUrl.Replace("https://", "") });
+            tb.Inlines.Add(link);
+            tb.Inlines.Add(new Run { Text = "." });
+            content.Children.Add(tb);
+        }
         var dontShow = new CheckBox { Content = "Don't show this again", FontSize = 12, Margin = new Thickness(0, 4, 0, 0) };
         content.Children.Add(dontShow);
 
@@ -48,7 +72,7 @@ public partial class DetailPanelBuilder
         if (dontShow.IsChecked == true)
         {
             dismiss();
-            _window.ViewModel.SaveSettingsPublic();
+            App.Services.GetRequiredService<MainViewModel>().SaveSettingsPublic();
         }
         return result == ContentDialogResult.Primary;
     }

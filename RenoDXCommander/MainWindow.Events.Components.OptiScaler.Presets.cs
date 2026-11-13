@@ -79,6 +79,29 @@ public sealed partial class MainWindow
             {
                 try
                 {
+                    // ANR FG is closed source: same notice as RTX Encore before its first install. In the Spotlight panel
+                    // and Tabs the cog isn't a dialog, so the notice opens over it and it stays where it is. As a dialog
+                    // (Classic+) it has to close first (only one dialog can be open; DialogService waits for that) and
+                    // opens again afterwards.
+                    var st = ViewModel.Settings;
+                    var xamlRoot = pill.XamlRoot ?? Content.XamlRoot;
+                    bool cogHidden = false;
+                    if (p.InstallAnrFg == true && !AnrFgService.IsInstalledIn(card.InstallPath) && !st.AnrFgClosedSourceDismissed)
+                    {
+                        if (!ctx.Cog.IsEmbedded)
+                        {
+                            ctx.Cog.Hide();
+                            cogHidden = true;
+                        }
+                        bool go = await DetailPanelBuilder.ShowClosedSourceNoticeAsync("ANR FG", "Apex Compute",
+                            () => st.AnrFgClosedSourceDismissed, () => st.AnrFgClosedSourceDismissed = true, xamlRoot,
+                            "https://github.com/apex-compute/ANR");
+                        if (!go)
+                        {
+                            if (cogHidden) ReopenOsCog(ctx);
+                            return;
+                        }
+                    }
                     foreach (var b in pills.Children.OfType<Button>()) b.IsEnabled = false;
                     ShowStatus($"Applying {p.Name}...", true);
                     ApplyOsPreset(card, p);
@@ -97,7 +120,42 @@ public sealed partial class MainWindow
                     if (p.InstallAnrFg == true)
                     {
                         ShowStatus($"Applying {p.Name}: downloading and installing ANR FG...", true);
-                        var error = await ViewModel.EnsureAnrFgForPresetAsync(card);
+                        string? error;
+                        if (cogHidden)
+                        {
+                            // The cog closed for the notice: show the download in a progress dialog, errors in a dialog,
+                            // then open the cog again
+                            var progress = new ContentDialog
+                            {
+                                Title = "Installing ANR FG",
+                                Content = new StackPanel
+                                {
+                                    Spacing = 12,
+                                    Children =
+                                    {
+                                        new TextBlock { Text = $"Applying {p.Name}: downloading and installing ANR FG...", TextWrapping = TextWrapping.Wrap },
+                                        new ProgressBar { IsIndeterminate = true, Height = 6 },
+                                    },
+                                },
+                                XamlRoot = xamlRoot,
+                                RequestedTheme = ElementTheme.Dark,
+                            };
+                            await using (await DialogService.ShowProgressAsync(progress))
+                                error = await ViewModel.EnsureAnrFgForPresetAsync(card);
+                            if (error != null)
+                                await DialogService.ShowSafeAsync(new ContentDialog
+                                {
+                                    Title = "ANR FG wasn't installed",
+                                    Content = new TextBlock { Text = $"{p.Name} settings applied, but: {error}", TextWrapping = TextWrapping.Wrap },
+                                    CloseButtonText = "OK",
+                                    XamlRoot = xamlRoot,
+                                    RequestedTheme = ElementTheme.Dark,
+                                });
+                            ReopenOsCog(ctx);
+                            if (error == null) CrashReporter.Log($"[OsPreset.ApplyManifest] '{p.Name}' applied to '{card.GameName}'");
+                            return;
+                        }
+                        error = await ViewModel.EnsureAnrFgForPresetAsync(card);
                         if (error != null)
                         {
                             ShowStatus($"{p.Name} settings applied, but: {error}", false);
