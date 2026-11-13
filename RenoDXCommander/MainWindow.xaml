@@ -72,7 +72,7 @@
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
+                            ToolTipService.ToolTip="Rescan game library and fetch latest mod info. The selected game gets a full rescan (DLSS files and more)."/>
                     <Button x:Name="ShadersAddonsBtn" Content="Shaders/Addons"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
@@ -2499,7 +2499,7 @@
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Components" FontSize="18" FontWeight="Bold"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Defaults for ReLimiter and OptiScaler. Each game's ⚙ overrides these."
+                                <TextBlock Text="Defaults for ReLimiter, OptiScaler and GITC Uplift. Each game's ⚙ overrides these."
                                            FontSize="12" LineHeight="17" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}"/>
                             </StackPanel>
 

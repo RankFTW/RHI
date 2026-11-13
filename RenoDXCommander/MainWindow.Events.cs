@@ -36,7 +36,7 @@ public sealed partial class MainWindow
                           "• Re-scans DLSS/Streamline DLL paths\n" +
                           "• Re-detects graphics APIs and engine types\n" +
                           "• Rebuilds shader and addon deployment state\n\n" +
-                          "Try a normal Refresh first — it handles most issues without the full rescan. " +
+                          "Try a normal Refresh first — it handles most issues without the full rescan, and fully rescans the selected game (DLSS added or removed, for example). " +
                           "Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n" +
                           "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
                           "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",

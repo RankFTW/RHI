@@ -248,7 +248,7 @@ public sealed partial class MainWindow
         _checkedText = new TextBlock { FontSize = 12, Foreground = TabsTheme.B(TabsTheme.TextMuted), VerticalAlignment = VerticalAlignment.Center };
         var refresh = TabsTheme.MakeIconButton("", TabsTheme.IconButton, 16); // refresh
         refresh.Click += (s, e) => RefreshButton_Click(RefreshBtn, e);
-        ToolTipService.SetToolTip(refresh, ToolTipService.GetToolTip(RefreshBtn) as string ?? "Check for updates and rescan your games");
+        ToolTipService.SetToolTip(refresh, ToolTipService.GetToolTip(RefreshBtn) as string ?? "Check for updates and rescan your games. The selected game gets a full rescan (DLSS files and more).");
         _updateAllHost = new Grid();
 
         var help = new Button { Padding = new Thickness(12, 0, 12, 0) };

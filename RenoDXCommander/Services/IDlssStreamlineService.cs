@@ -152,6 +152,9 @@ public interface IDlssStreamlineService
     /// </summary>
     void RecordTrustedPath(string gameName, DlssDetectionResult detection);
 
+    /// <summary>Forgets one game's skip-cache entry and trusted paths so the next card build scans it from scratch.</summary>
+    void ForgetGame(string gameName);
+
     /// <summary>
     /// Returns the cached path for the newest DLSS SR DLL, downloading if needed.
     /// Used by OptiScaler to source its DLSS DLL.

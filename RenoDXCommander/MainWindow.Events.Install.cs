@@ -1102,9 +1102,11 @@ public sealed partial class MainWindow
 
     internal async Task RefreshWithScrollRestore()
     {
-        var selectedName = (GameList.SelectedItem as GameCardViewModel)?.GameName;
+        var selected = GameList.SelectedItem as GameCardViewModel;
+        var selectedName = selected?.GameName;
 
-        await ViewModel.RefreshAsync();
+        // The selected game also gets a full rescan (its DLSS state etc.), like Full Refresh but for one game
+        await ViewModel.RefreshAsync(selected);
 
         RestoreScrollAndSelection(selectedName);
 

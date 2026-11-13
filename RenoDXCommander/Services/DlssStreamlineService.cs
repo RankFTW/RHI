@@ -677,6 +677,25 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         return true;
     }
 
+    /// <summary>
+    /// Forgets everything RHI remembers about one game's DLSS files (its "no DLSS" count and its trusted paths),
+    /// so the next card build scans it from scratch. Full Refresh for one game (Refresh on the selected game).
+    /// </summary>
+    public void ForgetGame(string gameName)
+    {
+        bool hadSkip;
+        lock (_scanSkipCacheLock)
+        {
+            EnsureScanCacheLoaded_Unlocked();
+            hadSkip = _scanSkipCache!.Remove(gameName);
+        }
+        if (hadSkip) SaveScanCache();
+        EnsureTrustedCacheLoaded();
+        bool hadTrusted = _trustedPathCache!.Remove(gameName);
+        if (hadTrusted) SaveTrustedCache();
+        CrashReporter.Log($"[DlssStreamlineService.ForgetGame] '{gameName}' — skip entry {(hadSkip ? "removed" : "none")}, trusted paths {(hadTrusted ? "removed" : "none")}");
+    }
+
     /// <summary>Removes a game from the trusted path cache.</summary>
     public void InvalidateTrustedPath(string gameName)
     {

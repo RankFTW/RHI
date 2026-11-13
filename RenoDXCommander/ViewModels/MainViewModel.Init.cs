@@ -101,16 +101,25 @@ public partial class MainViewModel
 
     // ── Commands ──────────────────────────────────────────────────────────────────
 
-    public Task RefreshAsync() => RunLibraryOperationAsync(RefreshCoreAsync);
+    public Task RefreshAsync() => RunLibraryOperationAsync(() => RefreshCoreAsync(null));
+
+    /// <summary>
+    /// Refresh, plus a full rescan of <paramref name="rescanGame"/> (the selected game): its DLSS, engine, folder,
+    /// bitness and addon caches are forgotten first, as Full Refresh does for every game, so DLSS that was added or
+    /// removed shows straight away without a Full Refresh.
+    /// </summary>
+    public Task RefreshAsync(GameCardViewModel? rescanGame) => RunLibraryOperationAsync(() => RefreshCoreAsync(rescanGame));
 
     /// <summary>True while a scan (startup, Refresh, Full Refresh) holds the library gate; a Refresh started now waits for it.</summary>
     public bool IsLibraryOperationRunning => _libraryOperationGate.CurrentCount == 0;
 
     /// <summary>Refresh; <paramref name="onStarted"/> runs once the gate is acquired (after any scan already running).</summary>
-    public Task RefreshAsync(Action onStarted) => RunLibraryOperationAsync(() => { onStarted(); return RefreshCoreAsync(); });
+    public Task RefreshAsync(Action onStarted) => RunLibraryOperationAsync(() => { onStarted(); return RefreshCoreAsync(null); });
 
-    private async Task RefreshCoreAsync()
+    private async Task RefreshCoreAsync(GameCardViewModel? rescanGame)
     {
+        if (rescanGame != null) ForgetGameScans(rescanGame);
+
         // Re-check games in the DLSS skip cache before rebuilding cards.
         // Games confirmed as "no DLSS" after 3+ scans are skipped in BuildCards — this
         // gives them a fresh look so newly installed DLSS (e.g. game update) is detected
@@ -145,6 +154,33 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
+    /// <summary>
+    /// Full Refresh for one game: drops its entries from the scan caches (engine / folder / stamps by the library
+    /// folder, bitness / addon by the resolved folder, DLSS by name). Runs inside the library gate, so no card
+    /// build is reading them.
+    /// </summary>
+    private void ForgetGameScans(GameCardViewModel card)
+    {
+        try
+        {
+            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in new[] { card.DetectedGame?.InstallPath, card.InstallPath })
+                if (!string.IsNullOrEmpty(p)) keys.Add(p.TrimEnd('\\', '/').ToLowerInvariant());
+            int removed = 0;
+            foreach (var k in keys)
+            {
+                if (_engineTypeCache.Remove(k)) removed++;
+                if (_resolvedPathCache.Remove(k)) removed++;
+                if (_engineFolderStamps.Remove(k)) removed++;
+                if (_bitnessCache.Remove(k)) removed++;
+                if (_addonFileCache.Remove(k)) removed++;
+            }
+            _dlssStreamlineService.ForgetGame(card.GameName);
+            _crashReporter.Log($"[MainViewModel.ForgetGameScans] '{card.GameName}' — {removed} cached scan entr{(removed == 1 ? "y" : "ies")} cleared; rescanning it");
+        }
+        catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ForgetGameScans] '{card.GameName}' — {ex.Message}"); }
+    }
+
     public Task FullRefreshAsync(IProgress<string>? progress = null)
         => RunLibraryOperationAsync(() => FullRefreshCoreAsync(progress));
 

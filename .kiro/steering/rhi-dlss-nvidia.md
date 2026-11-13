@@ -33,6 +33,7 @@ fileMatchPattern: "*Dlss*,*Streamline*,*DlssPreset*,*NvidiaProfile*,*Nvidia*"
 - **Trusted path cache** (`dlss_trusted_paths.json`): Games found at same paths 3× → fast `File.Exists` + `FileVersionInfo` (~1ms).
 - `TryFastDetect` validates paths within resolved search root via `PathsAreWithin`.
 - Full Refresh selectively invalidates trusted entries with null components.
+- **Refresh rescans the selected game** (`RefreshAsync(selectedCard)` from `RefreshWithScrollRestore`): `ForgetGameScans` drops its engine / resolved-path / stamp / bitness / addon cache entries and `DlssStreamlineService.ForgetGame` its skip-cache and trusted-path entries, so BuildCards does a full scan of that game. The Check for updates button's Refresh doesn't.
 - `dlssSkipGames` manifest field skips expensive scans immediately.
 
 ### Version Display Rules
