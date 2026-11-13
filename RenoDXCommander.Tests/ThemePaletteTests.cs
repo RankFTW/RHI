@@ -95,10 +95,17 @@ public class ThemePaletteTests
     [Fact]
     public void Custom_string_round_trips()
     {
-        var p = ThemePresets.Find("Violet")!.Palette;
+        var p = ThemePresets.Find("Kiro")!.Palette;
         var back = ThemePalette.ParseCustom(p.ToCustomString(), ThemePalette.Default);
         foreach (var (key, _) in ThemePalette.CustomKeys)
             Assert.Equal(p.Get(key), back.Get(key));
+    }
+
+    [Fact]
+    public void Saved_violet_opens_as_kiro()
+    {
+        Assert.Equal("Kiro", ThemePresets.Find("Violet")!.Id);
+        Assert.Equal(ThemePresets.Find("Kiro")!.Palette, ThemePresets.Resolve("Violet", null));
     }
 
     [Fact]

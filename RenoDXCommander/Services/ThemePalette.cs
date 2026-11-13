@@ -151,8 +151,9 @@ public static class ThemePresets
             P("#161210", "#1E1814", "#3A2E26", "#8A7A6E", "#F2EAE4", "#FF9A4D", "#E8A070", "#5ECB7D", "#C8A0E8", "#E8D060", "#E87070")),
         new ThemePreset("Forest", "Forest",
             P("#0F1512", "#141C17", "#24332A", "#6E8577", "#E6F0EA", "#7FD6C2", "#9CC4A8", "#5ECB7D", "#B898E8", "#D4A856", "#E07070")),
-        new ThemePreset("Violet", "Violet",
-            P("#14111A", "#1B1623", "#2F2640", "#7E7290", "#EEE8F6", "#C08CFF", "#A99CF0", "#5ECB7D", "#E898C8", "#D4A856", "#E07070")),
+        // Kiro: the colours of the Kiro IDE's dark theme (replaced Violet; a saved "Violet" choice opens as Kiro)
+        new ThemePreset("Kiro", "Kiro",
+            P("#19161D", "#211D25", "#38343B", "#938F9B", "#F4F2F7", "#A97AF4", "#9E61FF", "#80FFB5", "#F38BC8", "#F1C587", "#E5737A")),
         new ThemePreset("Slate", "Slate",
             P("#141414", "#1C1C1C", "#303030", "#7A7A7A", "#ECECEC", "#9AB8D0", "#A8B4C4", "#5ECB7D", "#B898E8", "#D4A856", "#E07070")),
         new ThemePreset("HighContrast", "High Contrast",
@@ -161,8 +162,11 @@ public static class ThemePresets
             P("#121518", "#181D23", "#283240", "#6B7A8E", "#E8ECF2", "#4DC9E6", "#A8B4D0", "#4FA3E8", "#CC79A7", "#F0E442", "#E8743B")),
     };
 
-    public static ThemePreset? Find(string? id) =>
-        All.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+    public static ThemePreset? Find(string? id)
+    {
+        if (string.Equals(id, "Violet", StringComparison.OrdinalIgnoreCase)) id = "Kiro"; // renamed
+        return All.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+    }
 
     /// <summary>The palette for a saved theme choice (Custom uses <paramref name="customColours"/>, unknown ids fall back to Default).</summary>
     public static ThemePalette Resolve(string? id, string? customColours)

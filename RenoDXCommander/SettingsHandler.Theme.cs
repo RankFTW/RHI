@@ -223,7 +223,7 @@ public partial class SettingsHandler
             var id = ViewModel.Settings.ColorTheme;
             int idx = string.Equals(id, ThemePresets.CustomId, StringComparison.OrdinalIgnoreCase)
                 ? ThemePresets.All.Count
-                : Math.Max(0, ThemePresets.All.ToList().FindIndex(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)));
+                : Math.Max(0, ThemePresets.All.ToList().FindIndex(p => p == ThemePresets.Find(id)));
             _themeCombo.SelectedIndex = idx;
             RefreshCustomPanel();
         }
