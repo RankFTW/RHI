@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56085,
-  "generated": "2026-11-13T07:14:21Z",
+  "game_count": 56086,
+  "generated": "2026-11-13T09:14:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -176142,6 +176142,7 @@
     "Thrills & Chills - Roller Coasters": {
       "steam_appid": 520270
     },
+    "Thrillville": {},
     "Thrillville: Off the Rails": {
       "steam_appid": 6080,
       "dx9": true
