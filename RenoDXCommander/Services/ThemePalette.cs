@@ -90,6 +90,47 @@ public sealed record ThemePalette(
     public string ToCustomString() =>
         string.Join(";", CustomKeys.Select(k => $"{k.Key}={ToHex(Get(k.Key))}"));
 
+    /// <summary>Start of a theme share code.</summary>
+    public const string SharePrefix = "RHI-THEME:";
+
+    // The colours in a share code, in this order. Never reorder or remove: codes already shared depend on it.
+    private static readonly string[] ShareKeys =
+        { "Background", "Panel", "Text", "Accent", "Buttons", "Installed", "Update", "Warning", "Error" };
+
+    /// <summary>
+    /// A Custom theme as text to paste anywhere (Discord, forums):
+    /// "RHI-THEME:180213-23141B-9BE1F2-C5ACE6-D2ACDD-3CCB85-B898E8-D4A856-E07070".
+    /// </summary>
+    public string ToShareCode() =>
+        SharePrefix + string.Join("-", ShareKeys.Select(k => ToHex(Get(k))[1..]));
+
+    /// <summary>
+    /// Reads a <see cref="ToShareCode"/> code. Text around it (a pasted message) and case are ignored, and a
+    /// "#" before each colour is allowed. False when there's no code or any of its nine colours is unreadable.
+    /// </summary>
+    public static bool TryParseShareCode(string? text, out ThemePalette palette)
+    {
+        palette = Default;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        int start = text.IndexOf(SharePrefix, StringComparison.OrdinalIgnoreCase);
+        if (start < 0) return false;
+        var body = text[(start + SharePrefix.Length)..].TrimStart();
+        int end = body.IndexOfAny(new[] { ' ', '\t', '\r', '\n' });
+        if (end >= 0) body = body[..end];
+        var parts = body.Split('-');
+        if (parts.Length != ShareKeys.Length) return false;
+
+        var p = Default;
+        for (int i = 0; i < ShareKeys.Length; i++)
+        {
+            var hex = parts[i].Trim().TrimStart('#');
+            if (hex.Length != 6 || !TryHex("#" + hex, out var c)) return false;
+            p = p.With(ShareKeys[i], c);
+        }
+        palette = p.WithDerivedNeutrals();
+        return true;
+    }
+
     /// <summary>Reads <see cref="ToCustomString"/>; colours that are missing or unreadable come from <paramref name="fallback"/>.</summary>
     public static ThemePalette ParseCustom(string? saved, ThemePalette fallback)
     {

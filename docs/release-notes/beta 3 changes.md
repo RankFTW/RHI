@@ -7,6 +7,7 @@ Changes since v2.9.3 Beta 2.
 **Colour themes**
 - New Colour theme setting in Settings › General. Pick Default, OLED Black, Midnight Blue, Ember, Forest, Kiro, Slate, High Contrast or Colour-blind Friendly and RHI changes colour straight away, no restart needed.
 - Custom lets you choose your own colours: background, panels, text, accent, buttons and the status colours (installed, update available, warning, error). Start from any built-in theme and adjust it from there. RHI warns you if text would be hard to read.
+- Share a custom theme as a line of text: Share theme copies a code (RHI-THEME:...), and Import theme takes a code someone shared, pasted in, and applies their colours. No files needed.
 - Colour-blind Friendly swaps the green, purple, amber and red status colours for blue, pink, yellow and orange, which stay distinct with red-green colour blindness.
 
 **Display modes (Monitor / TV)**

@@ -97,11 +97,15 @@ public partial class SettingsHandler
             };
             _themeCustomPanel.Children.Add(_themeContrastNote);
 
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            var buttons = new Controls.WrapPanel { HorizontalSpacing = 8, VerticalSpacing = 8 };
             buttons.Children.Add(MakeThemeButton("Start from a theme...", "Replaces your custom colours with a built-in theme's colours.",
                 (btn) => ShowStartFromMenu(btn)));
             buttons.Children.Add(MakeThemeButton("Reset to default", "Sets your custom colours back to RHI's default colours.",
                 _ => SetCustom(ThemePalette.Default, save: true)));
+            buttons.Children.Add(MakeThemeButton("Share theme", "Copies a code for your colours. Anyone can paste it into Import theme to use them.",
+                (btn) => ShowShareThemeFlyout(btn)));
+            buttons.Children.Add(MakeThemeButton("Import theme...", "Paste a theme code someone shared to use their colours. Replaces your custom colours.",
+                (btn) => ShowImportThemeFlyout(btn)));
             _themeCustomPanel.Children.Add(buttons);
             outer.Children.Add(_themeCustomPanel);
 
