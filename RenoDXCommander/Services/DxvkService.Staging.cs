@@ -175,6 +175,7 @@ public partial class DxvkService
 
         // ── Write version tag ────────────────────────────────────────────
         WriteVersionTag(versionTag);
+        UpdateHistory.Record("DXVK", "DXVK (Development)", cachedVersion, versionTag);
 
         progress?.Report(("DXVK staging ready", 100));
         CrashReporter.Log("[DxvkService.EnsureStagingNightlyAsync] Staging complete");
@@ -289,6 +290,7 @@ public partial class DxvkService
 
         // ── Write version tag to version.txt ─────────────────────────────
         WriteVersionTag(tagName ?? "unknown");
+        UpdateHistory.Record("DXVK", "DXVK", cachedVersion, tagName);
 
         progress?.Report(("DXVK staging ready", 100));
         CrashReporter.Log("[DxvkService.EnsureStagingGitHubAsync] Staging complete");
@@ -408,6 +410,7 @@ public partial class DxvkService
         _selectedVariant = DxvkVariant.LiliumHdr;
         WriteVersionTag(tagName ?? "unknown");
         _selectedVariant = savedVariant;
+        UpdateHistory.Record("DXVK", "DXVK (Lilium HDR)", cachedVersion, tagName);
 
         progress?.Report(("DXVK Lilium HDR staging ready", 100));
         CrashReporter.Log("[DxvkService.EnsureStagingLiliumAsync] Staging complete");

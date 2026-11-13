@@ -188,6 +188,8 @@ Search now works much like Steam's:
 - Fixed RTX Encore missing from the Extras summary (the collapsed section header and Spotlight's Extras tile) in games where it is installed.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
 - Fixed Update History missing updates for GITC Uplift, Universal MFG Unlocker, DLSS Enabler, DLSSNR Cost Scaler, Ultimate ASI Loader, DXVK, RE Framework, UE DOF Fix, ReShade Nightly, DLSS and Streamline files and Nexus mods, and listing DLSS5 Feeder and DX11 Bridge updates as RenoDX DLSS5.
+- Fixed Reset install folder going back to a folder you had picked earlier instead of the one RHI detected, after changing and resetting a game's folder more than once. Refresh corrects games this already happened to.
+- Fixed a game's install folder showing a folder that doesn't exist while RHI starts, for games with a changed install folder.
 
 ### Manifest Updates
 

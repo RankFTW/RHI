@@ -741,6 +741,8 @@ public partial class MainViewModel
             ApplyGameRenames(detectedGames);
 
             // Apply persisted folder overrides so user-chosen paths survive Refresh.
+            // Only the freshly scanned games still hold the store's folder (cached ones carry saved paths)
+            ApplyFolderOverrides(freshGames, fromStoreScan: true);
             ApplyFolderOverrides(detectedGames);
 
             // Combine auto-detected + manual games.

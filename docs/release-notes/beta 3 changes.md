@@ -107,6 +107,8 @@ Changes since v2.9.3 Beta 2.
 - Fixed games with HSF installed showing HSF's own DLSS frame generation and Streamline files as the game's, which let DLSS updates replace them.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
 - Fixed Update History missing updates for GITC Uplift, Universal MFG Unlocker, DLSS Enabler, DLSSNR Cost Scaler, Ultimate ASI Loader, DXVK, RE Framework, UE DOF Fix, ReShade Nightly, DLSS and Streamline files and Nexus mods, and listing DLSS5 Feeder and DX11 Bridge updates as RenoDX DLSS5.
+- Fixed Reset install folder going back to a folder you had picked earlier instead of the one RHI detected, after changing and resetting a game's folder more than once. Refresh corrects games this already happened to.
+- Fixed a game's install folder showing a folder that doesn't exist while RHI starts, for games with a changed install folder.
 - Fixed OptiScaler updates deleting custom upscalers and frame generation providers in OptiScaler's custom folder.
 - Fixed OptiPatcher never updating: a change in its release notes stopped RHI reading its version, so it always showed as up to date and new game patches never arrived.
 - Fixed the OptiScaler ⚙'s FG Nvngx Override being greyed out and not saved when FG Input was DLSSG via Nvngx, where OptiScaler uses it.

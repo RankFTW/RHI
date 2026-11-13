@@ -610,9 +610,11 @@ public partial class Rtx40MfgService
                 await src.CopyToAsync(dst).ConfigureAwait(false);
             File.Move(temp, dest, overwrite: true);
 
+            var previousVersion = StagedVersion;
             File.WriteAllText(_versionFile, version);
             File.WriteAllText(Path.Combine(_stagingDir, StagingFormatFile), StagingFormat);
             HasUpdate = false;
+            UpdateHistory.Record("Frame Generation", "Universal MFG Unlocker", previousVersion, version);
             _crashReporter.Log($"[Rtx40MfgService.EnsureStaging] Staged {version} from '{dllEntry.FullName}'");
 
             // Antivirus often deletes this DLL straight away (false positive): notice and stop

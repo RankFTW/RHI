@@ -2055,8 +2055,13 @@ public partial class MainViewModel
     private void ApplyGameRenames(List<DetectedGame> games)
         => _gameNameService.ApplyGameRenames(games);
 
-    private void ApplyFolderOverrides(List<DetectedGame> games)
-        => _gameNameService.ApplyFolderOverrides(games);
+    /// <param name="fromStoreScan">True for lists from a store scan (Refresh / background scan), which still hold
+    /// each game's detected folder; corrected Reset targets are saved.</param>
+    private void ApplyFolderOverrides(List<DetectedGame> games, bool fromStoreScan = false)
+    {
+        if (_gameNameService.ApplyFolderOverrides(games, fromStoreScan) > 0)
+            SaveNameMappings();
+    }
 
     public void AddNameMapping(string detectedName, string wikiKey)
     {
@@ -2344,7 +2349,11 @@ public partial class MainViewModel
                 {
                     _crashReporter.Log($"[RunDlssAutoUpdateAsync] DLSS auto-update failed for '{card.GameName}' — {ex.Message}");
                 }
-                if (gameUpdated) dlssUpdated++;
+                if (gameUpdated)
+                {
+                    dlssUpdated++;
+                    UpdateHistory.Record("DLSS", $"{card.GameName} (DLSS)", previousDlss, newestDlss);
+                }
             }
 
             // ── Streamline Auto-Update ──
@@ -2360,6 +2369,7 @@ public partial class MainViewModel
                         card.StreamlineInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(
                             card.DlssDetection.StreamlineInterposerPath ?? ""));
                         slUpdated++;
+                        UpdateHistory.Record("DLSS", $"{card.GameName} (Streamline)", previousSl, newestSl);
                     }
                 }
                 catch (Exception ex)

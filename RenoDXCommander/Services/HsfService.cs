@@ -473,8 +473,14 @@ public class HsfService
                 LastError = null;
                 return true;
             }
+            var previousVersion = IsStagingReady ? StagedVersion : null;
             bool ok = await StageAsync(latest).ConfigureAwait(false);
-            if (ok) { HasUpdate = false; LastError = null; }
+            if (ok)
+            {
+                HasUpdate = false;
+                LastError = null;
+                UpdateHistory.Record("Frame Generation", "HSF", previousVersion, latest.Version);
+            }
             return ok || IsStagingReady;
         }
         finally { _stagingLock.Release(); }

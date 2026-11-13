@@ -139,9 +139,11 @@ public class DlssEnablerService
                 await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
             }
 
+            var previousVersion = StagedVersion;
             File.WriteAllText(_versionFile, version);
             HasUpdate = false;
             _crashReporter.Log($"[DlssEnablerService.EnsureStagingAsync] Staged v{version}");
+            UpdateHistory.Record("Component", "DLSS Enabler", previousVersion, version);
         }
         catch (Exception ex)
         {

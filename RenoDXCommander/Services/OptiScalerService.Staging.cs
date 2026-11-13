@@ -394,9 +394,7 @@ public partial class OptiScalerService
                 if (doc.RootElement.TryGetProperty("body", out var bodyEl))
                 {
                     var body = bodyEl.GetString() ?? "";
-                    var match = System.Text.RegularExpressions.Regex.Match(body, @"\*?\*?Build commit:\*?\*?\s*([0-9a-f]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    if (match.Success)
-                        version = match.Groups[1].Value.ToLowerInvariant();
+                    version = ParseOptiPatcherCommit(body) ?? version;
                 }
 
                 if (doc.RootElement.TryGetProperty("assets", out var assets))
@@ -557,9 +555,7 @@ public partial class OptiScalerService
                 if (doc.RootElement.TryGetProperty("body", out var bodyEl))
                 {
                     var body = bodyEl.GetString() ?? "";
-                    var match = System.Text.RegularExpressions.Regex.Match(body, @"\*?\*?Build commit:\*?\*?\s*([0-9a-f]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    if (match.Success)
-                        remoteVersion = match.Groups[1].Value.ToLowerInvariant();
+                    remoteVersion = ParseOptiPatcherCommit(body);
                 }
             }
             catch (Exception ex)
@@ -1886,24 +1882,21 @@ public partial class OptiScalerService
             if (_clearedStagedVersions.Remove(variant, out var cleared) && string.IsNullOrEmpty(previousVersion))
                 previousVersion = cleared;
         }
-        if (string.IsNullOrEmpty(previousVersion) || string.IsNullOrEmpty(newVersion) || newVersion == "unknown"
-            || string.Equals(previousVersion, newVersion, StringComparison.OrdinalIgnoreCase))
-            return;
-
-        try
-        {
-            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
-            {
-                Timestamp     = DateTime.UtcNow,
-                Category      = category,
-                ComponentName = componentName,
-                OldVersion    = previousVersion,
-                NewVersion    = newVersion,
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            CrashReporter.Log($"[OptiScalerService.RecordStagedUpdate] Could not write update history — {ex.Message}");
-        }
+        UpdateHistory.Record(category, componentName, previousVersion, newVersion);
     }
+
+    /// <summary>
+    /// The build commit in OptiPatcher's rolling release notes ("**Build commit:** c49dee3…"), lower case, or null.
+    /// Skips stray characters before the hash: since Nov 2026 the notes carry a literal "^G" there.
+    /// </summary>
+    internal static string? ParseOptiPatcherCommit(string? body)
+    {
+        if (string.IsNullOrEmpty(body)) return null;
+        var m = OptiPatcherCommitRegex.Match(body);
+        return m.Success ? m.Groups[1].Value.ToLowerInvariant() : null;
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex OptiPatcherCommitRegex = new(
+        @"Build commit:\**[ \t]*(?:\^.)?[^0-9a-f\r\n]*([0-9a-f]{7,40})\b",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 }

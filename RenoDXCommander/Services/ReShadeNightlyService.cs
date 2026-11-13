@@ -74,8 +74,10 @@ public class ReShadeNightlyService
 
         // Write version marker using current UTC timestamp
         var versionTag = $"nightly-{DateTime.UtcNow:yyyy-MM-dd-HHmm}";
+        var previousVersion = GetStagedVersion();
         try { File.WriteAllText(VersionFile, versionTag); }
         catch (Exception ex) { CrashReporter.Log($"[ReShadeNightlyService.EnsureLatestAsync] Version file write failed — {ex.Message}"); }
+        UpdateHistory.Record("ReShade", "ReShade (Nightly)", previousVersion, versionTag, downloadedZipSize > 0 ? downloadedZipSize : null);
 
         // Persist the zip size for future comparison
         WriteLastKnownZipSize(downloadedZipSize);

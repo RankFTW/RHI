@@ -86,6 +86,7 @@ public class AnrFgService
                 return true;
             }
 
+            var previousVersion = IsStagingReady ? StagedVersion : null;
             Directory.CreateDirectory(_stagingDir);
             var tempDir = Path.Combine(_stagingDir, "_extract");
             try
@@ -111,6 +112,7 @@ public class AnrFgService
                 Directory.Move(extracted, StagedProviderDir);
                 File.WriteAllText(_versionFile, tag);
                 CrashReporter.Log($"[AnrFgService.EnsureStaging] Staged {tag} from {zipName}");
+                UpdateHistory.Record("Frame Generation", "ANR FG", previousVersion, tag);
 
                 await AntivirusGuard.VerifyStagedAsync("ANR FG", tag,
                     new[] { Path.Combine(StagedProviderDir, ProviderDllRelPath) }).ConfigureAwait(false);

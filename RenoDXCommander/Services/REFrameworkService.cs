@@ -109,6 +109,13 @@ public class REFrameworkService : IREFrameworkService
 
             progress?.Report(("RE Framework installed!", 100));
 
+            // ── Update History (an install over an older build; first installs aren't updates) ──
+            var previousVersion = LoadRecords().FirstOrDefault(r =>
+                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))?.InstalledVersion;
+            // One name for every game, so the log's dedupe keeps one entry per build during Update All
+            UpdateHistory.Record("RE Framework", "RE Framework", previousVersion, version);
+
             // ── Persist install record ────────────────────────────────────────
             var record = new REFrameworkInstalledRecord
             {

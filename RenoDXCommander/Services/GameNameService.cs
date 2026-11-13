@@ -1268,24 +1268,45 @@ public partial class GameNameService : IGameNameService
         }
     }
 
-    public void ApplyFolderOverrides(List<DetectedGame> games)
+    public int ApplyFolderOverrides(List<DetectedGame> games, bool fromStoreScan = false)
     {
-        if (_folderOverrides.Count == 0) return;
+        if (_folderOverrides.Count == 0) return 0;
+        int corrected = 0;
         foreach (var g in games)
         {
             // Try composite key first (name|store), fall back to name-only for legacy entries
             var compositeKey = Models.GameKey.From(g.Name, g.Source ?? "").ToKey();
-            if (!_folderOverrides.TryGetValue(compositeKey, out var stored))
-                _folderOverrides.TryGetValue(g.Name, out stored);
+            var key = compositeKey;
+            if (!_folderOverrides.TryGetValue(compositeKey, out var stored)
+                && _folderOverrides.TryGetValue(g.Name, out stored))
+                key = g.Name;
 
             if (stored != null)
             {
-                var overridePath = stored.Split('|')[0];
-                if (!string.IsNullOrEmpty(overridePath))
-                    g.InstallPath = overridePath;
+                var parts = stored.Split('|');
+                var overridePath = parts[0];
+                if (string.IsNullOrEmpty(overridePath)) continue;
+
+                // A fresh store scan still has the store's own folder here (cached games already carry the
+                // override). That is the folder Reset install folder must go back to: the saved original
+                // could be a folder picked earlier (pick, reset, pick again kept copying it forward).
+                if (fromStoreScan && !string.IsNullOrEmpty(g.InstallPath)
+                    && !SameFolder(g.InstallPath, overridePath)
+                    && (parts.Length < 2 || !SameFolder(parts[1], g.InstallPath)))
+                {
+                    CrashReporter.Log($"[GameNameService.ApplyFolderOverrides] '{key}': detected folder is '{g.InstallPath}' — "
+                        + $"Reset install folder now goes back there (was '{(parts.Length > 1 ? parts[1] : "")}')");
+                    _folderOverrides[key] = $"{overridePath}|{g.InstallPath}";
+                    corrected++;
+                }
+                g.InstallPath = overridePath;
             }
         }
+        return corrected;
     }
+
+    private static bool SameFolder(string a, string b) =>
+        string.Equals(a.Replace('/', '\\').TrimEnd('\\'), b.Replace('/', '\\').TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
 
     // ── Static helpers ────────────────────────────────────────────────────────
 

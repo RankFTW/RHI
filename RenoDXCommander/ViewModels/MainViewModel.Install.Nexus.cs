@@ -253,7 +253,14 @@ public partial class MainViewModel
                 // ── Deploy to game folder ─────────────────────────────────────
                 var deployDir = ModInstallService.GetAddonDeployPath(card.InstallPath);
                 Directory.CreateDirectory(deployDir);
+                // Version of the addon being replaced, for Update History (null on a first install)
+                var oldAddonName = card.InstalledRecord?.AddonFileName;
+                string? oldAddonVersion = !string.IsNullOrEmpty(oldAddonName) && File.Exists(Path.Combine(deployDir, oldAddonName))
+                    ? AuxInstallService.ReadInstalledVersion(deployDir, oldAddonName)
+                    : null;
                 File.Copy(addonPath, Path.Combine(deployDir, addonFileName), overwrite: true);
+                UpdateHistory.Record("Nexus", card.GameName, oldAddonVersion,
+                    AuxInstallService.ReadInstalledVersion(deployDir, addonFileName));
 
                 _crashReporter.Log($"[MainViewModel.DownloadAndDeployNexusFileAsync] Deployed '{addonFileName}' to '{deployDir}' for '{card.GameName}'");
 

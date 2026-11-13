@@ -166,10 +166,13 @@ public class UltimateAsiLoaderService
             using var dest = File.Create(destPath);
             await src.CopyToAsync(dest).ConfigureAwait(false);
 
+            var previousVersion = File.Exists(versionFile) ? File.ReadAllText(versionFile).Trim() : null;
             File.WriteAllText(versionFile, version);
             ReleaseNotes  = body;
             LatestVersion = version;
             _crashReporter.Log($"[UltimateAsiLoaderService.EnsureStagingAsync] Staged v{version} ({(is32Bit ? "32" : "64")}-bit) to {stagingDir}");
+            // 32- and 64-bit share one name: the log's dedupe keeps a single entry per version
+            UpdateHistory.Record("Component", "Ultimate ASI Loader", previousVersion, version);
         }
         catch (Exception ex)
         {

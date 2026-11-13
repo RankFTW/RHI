@@ -747,7 +747,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
         // Download on-demand
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssDllName).ConfigureAwait(false);
-        return File.Exists(cachedDll) ? cachedDll : null;
+        if (!File.Exists(cachedDll)) return null;
+        RecordNewestCached("DLSS (nvngx_dlss.dll)", _manifest?.Dlss, DlssCacheDir, DlssDllName, false);
+        return cachedDll;
     }
 
     /// <summary>
@@ -765,7 +767,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return cachedDll;
 
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssdDllName).ConfigureAwait(false);
-        return File.Exists(cachedDll) ? cachedDll : null;
+        if (!File.Exists(cachedDll)) return null;
+        RecordNewestCached("DLSS RR (nvngx_dlssd.dll)", _manifest?.Dlssd, DlssdCacheDir, DlssdDllName, false);
+        return cachedDll;
     }
 
     /// <summary>
@@ -783,7 +787,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return cachedDll;
 
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssgDllName).ConfigureAwait(false);
-        return File.Exists(cachedDll) ? cachedDll : null;
+        if (!File.Exists(cachedDll)) return null;
+        RecordNewestCached("DLSS FG (nvngx_dlssg.dll)", _manifest?.Dlssg, DlssgCacheDir, DlssgDllName, false);
+        return cachedDll;
     }
 
     /// <summary>
@@ -801,7 +807,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return cachedDll;
 
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
-        return File.Exists(cachedDll) ? cachedDll : null;
+        if (!File.Exists(cachedDll)) return null;
+        RecordNewestCached("DLSS NR (nvngx_dlssnr.dll)", _manifest?.Dlssnr, DlssnrCacheDir, DlssnrDllName, true);
+        return cachedDll;
     }
 
     /// <summary>
@@ -841,7 +849,30 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return cachedDir;
 
         await DownloadAndCacheStreamlineAsync(newest.Url, cachedDir).ConfigureAwait(false);
-        return (File.Exists(indicator) || File.Exists(fallback)) ? cachedDir : null;
+        if (!File.Exists(indicator) && !File.Exists(fallback)) return null;
+        RecordNewestCached("Streamline", _manifest?.Streamline, StreamlineCacheDir, StreamlineIndicator, false);
+        return cachedDir;
+    }
+
+    /// <summary>
+    /// Update History entry when the newest manifest version has just been cached: the previous
+    /// version is the newest older manifest entry that is still cached. Nothing cached before = first download, not recorded.
+    /// </summary>
+    private static void RecordNewestCached(string componentName, List<DlssManifestEntry>? entries,
+        string cacheDir, string markerFile, bool sanitizeDir)
+    {
+        if (entries == null || entries.Count == 0) return;
+        string? previous = null;
+        try
+        {
+            previous = entries.Skip(1).FirstOrDefault(e => !string.IsNullOrEmpty(e.Version) && File.Exists(Path.Combine(cacheDir,
+                sanitizeDir ? SanitizeVersionForPath(e.Version) : e.Version, markerFile)))?.Version;
+        }
+        catch (ArgumentException ex)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.RecordNewestCached] {componentName}: could not read the cache — {ex.Message}");
+        }
+        UpdateHistory.Record("DLSS", componentName, previous, entries[0].Version);
     }
 }
 

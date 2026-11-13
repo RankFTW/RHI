@@ -561,8 +561,13 @@ public class UpliftService
                 HasUpdate = false;
                 return true;
             }
+            var previousVersion = IsStagingReady ? StagedVersion : null;
             bool ok = await StageAsync(latest, StagingDir).ConfigureAwait(false);
-            if (ok) HasUpdate = false;
+            if (ok)
+            {
+                HasUpdate = false;
+                UpdateHistory.Record("Neural Rendering", "GITC Uplift", previousVersion, latest.Version);
+            }
             return ok || IsStagingReady;
         }
         finally { _stagingLock.Release(); }
@@ -789,7 +794,12 @@ public class UpliftService
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             { _crashReporter.Log($"[UpliftService.UpdateInstalled] Marker not updated — {ex.Message}"); }
         }
-        if (changed) _crashReporter.Log($"[UpliftService.UpdateInstalled] Updated to v{StagedVersion} in '{addonDir}'");
+        if (changed)
+        {
+            _crashReporter.Log($"[UpliftService.UpdateInstalled] Updated to v{StagedVersion} in '{addonDir}'");
+            // Same component name as the staging entry, so the log's dedupe keeps one entry per version
+            UpdateHistory.Record("Neural Rendering", "GITC Uplift", installed, StagedVersion);
+        }
         return changed;
     }
 

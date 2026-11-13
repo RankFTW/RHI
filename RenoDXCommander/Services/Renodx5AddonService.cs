@@ -647,16 +647,16 @@ public class Renodx5AddonService
                 await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
             }
 
+            string? previousVersion = null;
+            try { if (File.Exists(versionFile)) previousVersion = File.ReadAllText(versionFile).Trim(); }
+            catch (IOException ex) { _crashReporter.Log($"[Renodx5AddonService.DownloadAndStageAsync] Could not read the previous version — {ex.Message}"); }
             File.WriteAllText(versionFile, version);
             onComplete(version);
             _crashReporter.Log($"[Renodx5AddonService.DownloadAndStageAsync] Staged {displayName} v{version} ({new FileInfo(destPath).Length} bytes)");
-            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
-            {
-                Timestamp     = DateTime.UtcNow,
-                Category      = displayName.Contains("ShortFuse") ? "DLSS Tool" : "RenoDX DLSS5",
-                ComponentName = displayName,
-                NewVersion    = version,
-            });
+            // Same names as EnsureVersionStagedAsync, so one update isn't listed twice under two names
+            bool shortFuse = displayName.Contains("ShortFuse", StringComparison.OrdinalIgnoreCase);
+            UpdateHistory.Record(shortFuse ? "DLSS Tool" : "RenoDX DLSS5",
+                shortFuse ? "DLSS Tool (ShortFuse)" : "RenoDX DLSS5", previousVersion, version);
         }
         catch (Exception ex)
         {
@@ -1196,14 +1196,13 @@ public class Renodx5AddonService
             }
 
             _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Staged v{version} ({addonType}) → '{destPath}' ({new FileInfo(destPath).Length} bytes)");
-            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
-            {
-                Timestamp     = DateTime.UtcNow,
-                Category      = addonType == "dlsstool" ? "DLSS Tool" : "RenoDX DLSS5",
-                ComponentName = addonType == "dlsstool" ? "DLSS Tool (ShortFuse)"
-                              : addonType == FoveatedSubDir ? "DLSS5 Tool (Foveated)" : "RenoDX DLSS5",
-                NewVersion    = version,
-            });
+            // Update History: the previous version is the newest older one still staged (the list is
+            // newest first). Nothing older staged = first download or an older pick, not recorded.
+            var idx = list.FindIndex(e => string.Equals(e.Version, version, StringComparison.OrdinalIgnoreCase));
+            var previousVersion = idx < 0 ? null
+                : list.Skip(idx + 1).Select(e => e.Version).FirstOrDefault(v => IsVersionStaged(addonType, v));
+            var (logCategory, logName) = StagedUpdateLogNames(addonType);
+            UpdateHistory.Record(logCategory, logName, previousVersion, version);
             return true;
         }
         catch (Exception ex)
@@ -1212,6 +1211,14 @@ public class Renodx5AddonService
             return false;
         }
     }
+    /// <summary>Update History category and name for a versioned staging of <paramref name="addonType"/>.</summary>
+    private static (string Category, string Name) StagedUpdateLogNames(string addonType) =>
+        addonType.Equals(DlssToolSubDir, StringComparison.OrdinalIgnoreCase) ? ("DLSS Tool", "DLSS Tool (ShortFuse)") :
+        addonType.Equals(FeederSubDir,   StringComparison.OrdinalIgnoreCase) ? ("Neural Rendering", "DLSS5 Feeder") :
+        addonType.Equals(BridgeSubDir,   StringComparison.OrdinalIgnoreCase) ? ("Neural Rendering", "DLSS5 DX11 Bridge") :
+        addonType.Equals(FoveatedSubDir, StringComparison.OrdinalIgnoreCase) ? ("RenoDX DLSS5", "DLSS5 Tool (Foveated)") :
+        ("RenoDX DLSS5", "RenoDX DLSS5");
+
     /// <summary>
     /// Checks <paramref name="bytes"/> against the "&lt;url&gt;.sha256" file published beside it
     /// ("hash  filename" format). False when the hash file is missing or doesn't match.

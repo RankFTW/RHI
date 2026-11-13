@@ -308,6 +308,10 @@ public interface IGameNameService
     /// <summary>Applies persisted game renames to a list of detected games.</summary>
     void ApplyGameRenames(List<DetectedGame> games);
 
-    /// <summary>Applies persisted folder overrides to a list of detected games.</summary>
-    void ApplyFolderOverrides(List<DetectedGame> games);
+    /// <summary>
+    /// Applies persisted folder overrides to a list of detected games. With <paramref name="fromStoreScan"/>,
+    /// a game whose path differs from its override is taken as the store's detected root and the override's
+    /// saved original (Reset install folder's target) is corrected to it. Returns how many were corrected.
+    /// </summary>
+    int ApplyFolderOverrides(List<DetectedGame> games, bool fromStoreScan = false);
 }

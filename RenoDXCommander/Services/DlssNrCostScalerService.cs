@@ -103,9 +103,11 @@ public class DlssNrCostScalerService
                 }
             }
 
+            var previousVersion = StagedVersion;
             File.WriteAllText(_versionFile, version);
             HasUpdate = false;
             _crashReporter.Log($"[DlssNrCostScalerService.EnsureStaging] Staged v{version}");
+            UpdateHistory.Record("Neural Rendering", "DLSSNR Cost Scaler", previousVersion, version);
         }
         catch (Exception ex)
         {
