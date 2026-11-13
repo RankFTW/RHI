@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56086,
-  "generated": "2026-11-13T09:14:21Z",
+  "generated": "2026-11-13T11:14:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -19083,6 +19083,7 @@
     "Bills Must Be Paid": {
       "steam_appid": 4421010,
       "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Rike Games\\Bills Must Be Paid\\",
       "engine": "Unity"
     },
     "Billy": {
@@ -80219,6 +80220,7 @@
     },
     "How to Fish": {
       "steam_appid": 4001890,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Dazed Games\\How to Fish\\",
       "engine": "Unity"
     },
     "How to Fool a Liar King": {
@@ -166273,6 +166275,7 @@
     },
     "The Climb": {
       "dx11": true,
+      "config_path": "<path-to-game>\\crytek-the-climb\\crytek_climb_wip\\user\\options\\default\\",
       "engine": "CryEngine V"
     },
     "The Climber": {
