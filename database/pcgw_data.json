@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56086,
-  "generated": "2026-11-13T11:14:21Z",
+  "game_count": 56087,
+  "generated": "2026-11-13T13:14:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -79285,6 +79285,9 @@
     },
     "Hope in Hell": {
       "steam_appid": 410040
+    },
+    "Hope in the City": {
+      "steam_appid": 3610790
     },
     "Hope is in 23": {
       "steam_appid": 724950
