@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56088,
-  "generated": "2026-11-13T15:14:21Z",
+  "game_count": 56092,
+  "generated": "2026-11-13T17:14:22Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -97675,7 +97675,11 @@
     "Luckslinger": {
       "steam_appid": 358810
     },
+    "Lucky Luke (1997)": {},
     "Lucky Luke: On the Daltons' Trail": {},
+    "Lucky Luke: The Lonesome Cowboy Collection": {
+      "steam_appid": 4934830
+    },
     "Lucky Luke: Transcontinental Railroad": {},
     "Lucky Luke: Western Fever": {
       "config_path": "<path-to-game>\\DATA\\BOARD\\BUTTONS.DAT, <path-to-game>\\DATA\\BOARD\\CONFIG.DAT"
@@ -177014,6 +177018,8 @@
       "config_path": "%USERPROFILE%\\Documents\\SavedGames\\Timespinner\\Timespinner\\AllPlayers\\Config.sav",
       "engine": "FNA"
     },
+    "TimeSplitters 2": {},
+    "TimeSplitters Future Perfect": {},
     "TimeSplitters Rewind": {
       "config_path": "%LOCALAPPDATA%\\TimeSplittersRewind\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
