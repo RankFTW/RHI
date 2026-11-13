@@ -81,6 +81,9 @@
 
 ### Changes
 
+- GITC Uplift 2.0 starts every game session with NR off. A new Start with NR on switch next to iMMERSE Launchpad in the Neural Rendering section turns it on at game start, as before 2.0.
+- New GITC Uplift card in Settings › Components with an NR on/off key: the key that turns Uplift's NR on and off in game. RHI writes it into games when it installs Uplift, and Write key to all Uplift games writes it to every game with Uplift.
+- Refresh now fully rescans the selected game, as Full Refresh does for every game: DLSS that a game update added or removed shows straight away, with no Full Refresh needed.
 **Game Pass games**
 - Game Pass games installed to an Xbox games folder (the Xbox app's default) now use that folder instead of the protected WindowsApps one. The folder no longer changes when the game updates, so installed mods stay recognised, and RHI can read the game's files to detect its graphics API and DLSS like any other game.
 - Existing installs carry over on their own: nothing is moved or reinstalled.
@@ -125,10 +128,12 @@ Search now works much like Steam's:
 - Settings › Display & HDR: new HDR button on game pages and Resolution button on game pages options hide either button on game pages. A game's own HDR and resolution choice still applies when you launch it from RHI.
 - RTX Encore's DLL name picker can recommend a different name for a game when it needs one, and lists the recommended name first. Thanks emptyes for the first version of this.
 - OptiScaler ⚙: FG Nvngx Override now lists custom frame generation providers found in OptiScaler's custom folder (such as ANR FG) by name.
-- Installing RTX Encore or 20/30 FG Unlock now first tells you the mod is closed source (its author publishes only the DLL, not the code), with Install, Cancel and Don't show this again. The row's Info button opens its GitHub page.
+- Installing RTX Encore, 20/30 FG Unlock or ANR FG (through its OptiScaler preset) now first tells you the mod is closed source (its author publishes only the DLL, not the code), with Install, Cancel and Don't show this again. The row's Info button opens its GitHub page.
 
 ### Bug Fixes
 
+- Fixed a GITC Uplift update while a game was running leaving its add-on and helper on different versions. From Uplift 2.0 the two must match, so RHI now updates both together or waits for the next check.
+- Fixed RTX Encore missing from the Extras summary (the collapsed section header and Spotlight's Extras tile) in games where it is installed.
 **HDR and resolution when a game closes**
 - Fixed HDR and resolution not going back after you refreshed or restarted RHI while a game it started was running. RHI now remembers the games it started (Launch button or an RHI shortcut): they still show as running, and HDR and resolution go back when they close. If a game closed while RHI wasn't open, RHI switches them back the next time it starts.
 - Fixed HDR and resolution never going back for games started through a launch exe from RHI's game data, and staying changed when RHI couldn't find a way to start the game.
@@ -149,7 +154,7 @@ Search now works much like Steam's:
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
-- Fixed Spotlight showing no cover or banner, and no Steam page, PCGamingWiki info or achievements, for games whose store adds the platform to the name, such as Microsoft Store games ending in - Windows, (Windows 10), (PC) or for Windows. Demos and playtests without artwork of their own now use the full game's.
+- Fixed Spotlight showing no cover or banner, and no Steam page, PCGamingWiki info or achievements, for games whose store adds the platform to the name, such as Microsoft Store games ending in - Windows, (Windows 10), (Windows PC), (PC), for Windows or just Windows. Store names with an edition (Dishonored Definitive Edition, NBA 2K26 Standard Edition) use the main game's page, and remakes PCGamingWiki lists with a year (Resident Evil 3 (2020)) are found too. Demos and playtests without artwork of their own now use the full game's.
 - Fixed removing DLSS5 Feeder deleting the game's ReShade preset when the preset was there before Feeder.
 - Fixed DLSS5 Feeder's motion vector choice being written to reshade.ini, where Feeder doesn't read it. It's now set in the preset, as Feeder's own installer does.
 - Fixed a 32-bit DLSS5 Feeder install possibly pairing the add-on with a host64 helper from another Feeder release after a 64-bit game was set to an older Feeder version. Feeder 2.0.0 refuses a mismatched pair, so RHI now downloads a matching pair if needed.

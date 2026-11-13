@@ -114,7 +114,36 @@ internal sealed class PcgwCentralData
         if (StoreNameSuffix.StripPlatform(gameName) is { } withoutPlatform)
             return TryLookup(withoutPlatform, steamAppId: null);
 
+        // 7. Edition name the store keeps ("Dishonored Definitive Edition" → "Dishonored")
+        if (StoreNameSuffix.StripEdition(stripped) is { } withoutEdition)
+            return TryLookup(withoutEdition, steamAppId: null);
+
+        // 8. PCGamingWiki adds the year to same-named games ("Resident Evil 3 (2020)"): used only when there's one
+        if (YearTitles.TryGetValue(stripped, out var yearTitles) && yearTitles.Count == 1
+            && Games.TryGetValue(yearTitles[0], out var yearEntry))
+            return (yearTitles[0], yearEntry);
+
         return (null, null);
+    }
+
+    private Dictionary<string, List<string>>? _yearTitles;
+
+    /// <summary>Base name → PCGamingWiki titles "base (year)". Built on first use (the data is loaded once).</summary>
+    private Dictionary<string, List<string>> YearTitles
+    {
+        get
+        {
+            var map = _yearTitles;
+            if (map != null) return map;
+            map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var title in Games.Keys)
+                if (StoreNameSuffix.BaseOfYearTitle(title) is { } baseName)
+                {
+                    if (!map.TryGetValue(baseName, out var list)) map[baseName] = list = new List<string>();
+                    list.Add(title);
+                }
+            return _yearTitles = map;
+        }
     }
 
     /// <summary>Converts a PcgwCentralEntry to the existing PcgwApiInfo model.</summary>
