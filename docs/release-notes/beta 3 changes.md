@@ -41,10 +41,10 @@ Changes since v2.9.3 Beta 2.
 - New Compile shaders now button in Settings › Driver Settings, under Shader pre-compile. It runs NVIDIA's shader compiler straight away (the NVIDIA App's Compile now) instead of waiting for your PC to be idle, so games stutter less the first time you play them after a driver update. It rebuilds the shaders your games have already saved, so it has nothing to do right after Clear shader cache. It uses your Shader pre-compile level, takes a few minutes, and the same button stops it.
 
 **ANR FG preset**
-- Locked for now: it unlocks once Apex Compute publishes ANR FG's source code.
 - New ANR FG preset in the OptiScaler ⚙. It installs ANR FG (Apex Neural Rendering frame generation, beta) and sets OptiScaler up to run it in place of the game's DLSS frame generation. Turn on DLSS frame generation in the game to use it.
 - Needs OptiScaler Nightly, or a fork or custom build based on a recent Nightly (RHI checks the installed build), and a game with DLSS frame generation. Works on NVIDIA RTX 20 and newer and GTX 16, AMD RX 5000 and newer, and Intel Arc.
 - RHI downloads the newest ANR FG release from Apex Compute's GitHub and checks it against the release's published hashes. Applying the preset again updates it, and your ANR settings (nr_fg.ini) are kept.
+- Warning: ANR FG is closed source. Apex Compute publishes only the DLL, not its code, so nobody outside Apex Compute can check what it does. RHI tells you this before the first install, and you decide whether to go ahead.
 
 **HSF frame generation**
 - New HSF row in Extras › MFG Unlocks. HSF (Hunter's Sloppy Frames, by Capt-Hunter) is a ReShade add-on that adds DLSS frame generation, up to 6x, to DirectX 9, 11, 12 and Vulkan games that don't have it, 32-bit games included (Vulkan: 64-bit games).
@@ -65,6 +65,8 @@ Changes since v2.9.3 Beta 2.
 - Part of a game's initials: mw3 finds Call of Duty: Modern Warfare III.
 - Small typos are fine: resident eviaa still finds Resident Evil. Longer words allow up to two letters off, short words fewer.
 - When a game's full name or whole words match, near misses are hidden: sifu shows only Sifu, clone shows only games with Clone in the name.
+- Best match first: the game whose name is what you typed, then names starting with it, then whole words, then the rest. resident evil 4 puts Resident Evil 4 at the top.
+- Stores, engines, graphics APIs and mod authors only match whole words: st no longer brings up every Steam game while you type Stellar Blade, and un no longer every Unity and Unreal game. Type steam, unreal, dx12 or vulkan to list those games.
 
 **Game settings in Spotlight**
 - New cog button beside the game's name in Spotlight (next to the screenshots button): opens Game settings in the side panel, with settings from the Settings page that apply to that game only.
@@ -95,7 +97,7 @@ Changes since v2.9.3 Beta 2.
 - Fixed choosing a Legacy version on a Vulkan game doing nothing. It now asks to apply the version to all Vulkan games, like the other channels, and switches it.
 
 **Other**
-- Fixed Spotlight showing no cover or banner, and no Steam page, PCGamingWiki info or achievements, for games whose store adds the platform to the name, such as Microsoft Store games ending in - Windows, (Windows 10), (Windows PC), (PC), for Windows or just Windows. Store names with an edition (Dishonored Definitive Edition, NBA 2K26 Standard Edition) use the main game's page, and remakes PCGamingWiki lists with a year (Resident Evil 3 (2020)) are found too. Demos and playtests without artwork of their own now use the full game's.
+- Fixed Spotlight showing no cover or banner, and no Steam page, PCGamingWiki info or achievements, for games whose store adds the platform to the name, such as Microsoft Store games ending in - Windows, (Windows 10), (Windows PC), (PC), for Windows, or just Windows or PC (Goat Simulator 3 PC). Store names with an edition (Dishonored Definitive Edition, NBA 2K26 Standard Edition) use the main game's page, and remakes PCGamingWiki lists with a year (Resident Evil 3 (2020)) are found too. Demos and playtests without artwork of their own now use the full game's.
 - Fixed removing DLSS5 Feeder deleting the game's ReShade preset when the preset was there before Feeder.
 - Fixed DLSS5 Feeder's motion vector choice being written to reshade.ini, where Feeder doesn't read it. It's now set in the preset, as Feeder's own installer does.
 - Fixed a 32-bit DLSS5 Feeder install possibly pairing the add-on with a host64 helper from another Feeder release after a 64-bit game was set to an older Feeder version. Feeder 2.0.0 refuses a mismatched pair, so RHI now downloads a matching pair if needed.
@@ -104,11 +106,15 @@ Changes since v2.9.3 Beta 2.
 - Fixed a fresh Display Commander install getting no DisplayCommander.ini since v2.8.9.
 - Fixed games with HSF installed showing HSF's own DLSS frame generation and Streamline files as the game's, which let DLSS updates replace them.
 - Fixed buttons briefly flashing bright when the pointer moved over or off them with Windows animation effects on. Thanks Hyydro for finding the cause.
+- Fixed Update History missing updates for GITC Uplift, Universal MFG Unlocker, DLSS Enabler, DLSSNR Cost Scaler, Ultimate ASI Loader, DXVK, RE Framework, UE DOF Fix, ReShade Nightly, DLSS and Streamline files and Nexus mods, and listing DLSS5 Feeder and DX11 Bridge updates as RenoDX DLSS5.
 - Fixed OptiScaler updates deleting custom upscalers and frame generation providers in OptiScaler's custom folder.
+- Fixed OptiPatcher never updating: a change in its release notes stopped RHI reading its version, so it always showed as up to date and new game patches never arrived.
 - Fixed the OptiScaler ⚙'s FG Nvngx Override being greyed out and not saved when FG Input was DLSSG via Nvngx, where OptiScaler uses it.
 
 ### Manifest Updates
 
+- Phantom Blade Zero: mods now go in the game's exe folder (platform\steam), where the ASI Loader and OptiScaler need to be. RHI moves existing installs there on its own.
+- PD-Upscaler REFramework (Resident Evil 2, 3, 4, 7 and Village) installs again. Its per-game downloads were removed, so it now uses the universal PD-Upscaler build.
 - Dead Space 2 and Dead Space 3 are no longer matched to a RenoDX mod from the wiki.
 - RTX Encore recommends winmm.dll in Euro Truck Simulator 2, which RTX Encore 1.0.0-rc.3 needs there. Already installed under another name? Reinstall it and pick winmm.dll.
 - DLSS5 Feeder's description now says it has its own motion vectors and an in-game menu (Alt+C).

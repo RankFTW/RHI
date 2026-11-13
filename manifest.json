@@ -6,7 +6,7 @@
     "nexusMods": false,
     "resolutionControl": false,
     "hsf": true,
-    "anrFg": false
+    "anrFg": true
   },
   "blacklistPrefixes": [
     "Battle.net."
@@ -267,6 +267,9 @@
     "Watch_Dogs": "bin",
     "Far Cry New Dawn": "bin",
     "Far Cry 6": "bin"
+  },
+  "installPathMigrations": {
+    "Phantom Blade Zero": "platform\\steam"
   },
   "splitGames": {
     "Diablo": [
@@ -703,13 +706,13 @@
     "Tunguska: The Visitation - Final Cut"
   ],
   "pdUpscalerGames": {
-    "Resident Evil 2": "RE2",
-    "Resident Evil 3": "RE3",
-    "Resident Evil 4": "RE4",
-    "Resident Evil 7": "RE7",
-    "Resident Evil 7 Biohazard": "RE7",
-    "RESIDENT EVIL 7 biohazard": "RE7",
-    "Resident Evil Village": "RE8"
+    "Resident Evil 2": "REFramework",
+    "Resident Evil 3": "REFramework",
+    "Resident Evil 4": "REFramework",
+    "Resident Evil 7": "REFramework",
+    "Resident Evil 7 Biohazard": "REFramework",
+    "RESIDENT EVIL 7 biohazard": "REFramework",
+    "Resident Evil Village": "REFramework"
   },
   "_comment_ue_hdr": "=== UNREAL ENGINE HDR / UE-EXTENDED ===\nnativeHdrGames and ueExtendedCompatibility force UE-Extended on regardless of whether a named mod exists.\nnoUeExtendedGames is the highest-priority block \u2014 overrides everything.\nuevExtendedGames is the lowest-priority opt-in (user toggles win).\nlumaRenodxCompat allows RenoDX and Luma to coexist. lumaDefaultGames auto-enables Luma on first detection.",
   "nativeHdrGames": [
