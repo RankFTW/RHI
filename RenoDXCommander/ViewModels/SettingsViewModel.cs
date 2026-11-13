@@ -120,8 +120,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _steamAchievements;
     /// <summary>Spotlight: show the selected Xbox game's achievements (opt-in, Settings › Achievements).</summary>
     [ObservableProperty] private bool _xboxAchievements;
-    /// <summary>RHI overlay: a full-screen RHI page over the game, opened with a hotkey (Settings › RHI overlay).</summary>
-    [ObservableProperty] private bool _rhiOverlayEnabled = true;
+    /// <summary>RHI overlay: a full-screen RHI page over the game, opened with a hotkey (Settings › RHI overlay). Opt-in: off until turned on.</summary>
+    [ObservableProperty] private bool _rhiOverlayEnabled;
     /// <summary>RHI overlay hotkey in ReShade's "vk,ctrl,shift,alt" format. Default Alt + ` (VK_OEM_3).</summary>
     [ObservableProperty] private string _rhiOverlayHotkey = DefaultRhiOverlayHotkey;
     public const string DefaultRhiOverlayHotkey = "192,0,0,1";
@@ -453,7 +453,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("ControllerSupport", out var csVal)) ControllerSupport = csVal != "false"; // default true
         if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
         if (s.TryGetValue("XboxAchievements", out var xaVal)) XboxAchievements = xaVal == "true"; // default false (opt-in)
-        if (s.TryGetValue("RhiOverlayEnabled", out var roeVal)) RhiOverlayEnabled = roeVal != "false"; // default true
+        // Opt-in from 2.9.3 (off by default). Saved under a new key: the 2.9.3 betas saved "RhiOverlayEnabled"=true for everyone (on by default then),
+        // so the old key is ignored and the overlay starts off for every user until they turn it on.
+        if (s.TryGetValue("RhiOverlayOn", out var roeVal)) RhiOverlayEnabled = roeVal == "true";
         if (s.TryGetValue("RhiOverlayHotkey", out var rohVal) && !string.IsNullOrWhiteSpace(rohVal)) RhiOverlayHotkey = rohVal;
         if (s.TryGetValue("RhiOverlayController", out var rocVal)) RhiOverlayController = rocVal != "false"; // default true
         if (s.TryGetValue("RhiOverlayPauseGame", out var ropVal)) RhiOverlayPauseGame = ropVal == "true"; // default false
@@ -646,7 +648,7 @@ public partial class SettingsViewModel : ObservableObject
         s["ControllerSupport"] = ControllerSupport ? "true" : "false";
         s["SteamAchievements"] = SteamAchievements ? "true" : "false";
         s["XboxAchievements"] = XboxAchievements ? "true" : "false";
-        s["RhiOverlayEnabled"] = RhiOverlayEnabled ? "true" : "false";
+        s["RhiOverlayOn"] = RhiOverlayEnabled ? "true" : "false";
         s["RhiOverlayHotkey"] = RhiOverlayHotkey;
         s["RhiOverlayController"] = RhiOverlayController ? "true" : "false";
         s["RhiOverlayPauseGame"] = RhiOverlayPauseGame ? "true" : "false";
