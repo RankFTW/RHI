@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56087,
-  "generated": "2026-11-13T13:14:21Z",
+  "game_count": 56088,
+  "generated": "2026-11-13T15:14:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -53832,6 +53832,9 @@
     },
     "Emoji TD": {
       "steam_appid": 1058220
+    },
+    "Emotional Labor Laboratory": {
+      "steam_appid": 4678050
     },
     "EMOTIONS": {
       "steam_appid": 1012290
