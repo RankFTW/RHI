@@ -494,8 +494,9 @@ public partial class DetailPanelBuilder
             var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
             bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
 
-            // Installed for HSF's helper (HSF_streamline\mods): reinstall in the same place, no name to pick
-            if (liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName))
+            // Installed for HSF's helper (HSF_streamline\mods), or a 32-bit game with HSF (HSF's guide: never next to
+            // a 32-bit exe): into HSF_streamline\mods, no name to pick
+            if ((liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName)) || (hasHsf && card.Is32Bit))
             {
                 installBtn.IsEnabled = false;
                 installBtn.Content   = "Installing...";
@@ -597,7 +598,7 @@ public partial class DetailPanelBuilder
                 {
                     cog.AddSection("Used with HSF");
                     cog.AddIntro(isHsfMods
-                        ? "Installed in HSF_streamline\\mods: in this game HSF runs frame generation in its helper, which loads the unlocker from there. "
+                        ? "Installed in HSF_streamline\\mods: HSF's helper loads the unlocker from there (32-bit games). "
                           + "Pick the multiplier in HSF's tab in ReShade's overlay. Removing HSF removes this copy too."
                         : "HSF is installed in this game. Pick the multiplier in HSF's tab in ReShade's overlay.");
                     cog.AddNote("No RTXMFG-XeSS folder: HSF's frame generation is DLSS, so XeMFG isn't used.");

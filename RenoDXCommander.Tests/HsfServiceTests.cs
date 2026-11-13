@@ -33,9 +33,10 @@ public class HsfServiceTests
     [InlineData("HSF-0.9.6/HSF_streamline/hsf-dlssg-helper64.exe", @"HSF_streamline\hsf-dlssg-helper64.exe")]
     [InlineData("HSF_streamline/hsf_dlssg.log", null)]
     [InlineData("HSF_streamline/", null)]
-    [InlineData("licenses/Streamline-license.txt", null)]
-    [InlineData("README.txt", null)]
-    [InlineData("LICENSE.txt", null)]
+    [InlineData("licenses/Streamline-license.txt", @"HSF_streamline\licenses\Streamline-license.txt")]
+    [InlineData("README.txt", @"HSF_streamline\README.txt")]
+    [InlineData("LICENSE.txt", @"HSF_streamline\LICENSE.txt")]
+    [InlineData("licenses/", null)]
     public void StagedPathFor_KeepsWhatGamesNeed(string entry, string? expected) =>
         Assert.Equal(expected, HsfService.StagedPathFor(entry));
 
@@ -119,6 +120,54 @@ public class HsfServiceTests
             var rel = Rtx40MfgService.HsfModsRelPath(game);
             Assert.Equal(Path.Combine(HsfService.StreamlineFolder, "mods", Rtx40MfgService.HsfModsFileName), rel);
             Assert.True(Rtx40MfgService.IsHsfModsInstall(rel));
+        }
+        finally { Directory.Delete(game, recursive: true); }
+    }
+
+    [Fact]
+    public void MergeIni_CleanFileWithThePlayersSettings()
+    {
+        const string clean = "; HSF settings, a clean start. HSF fills this in itself: do not edit it.\r\n[HSF]\r\n";
+        const string old = "[HSF]\r\nExtra=1\r\nDlssgFrames=3\r\nFpsCap=120\r\nSlBringIn=2\r\nDx9ExRun=ex\r\nPresenter=1\r\n; a note\r\n"
+                         + "[LaunchPadUndo]\r\nSaved=1\r\nQuality=2\r\n";
+        var merged = HsfService.MergeIni(clean, old);
+        Assert.StartsWith("; HSF settings, a clean start.", merged);
+        Assert.Contains("DlssgFrames=3\r\n", merged);
+        Assert.Contains("FpsCap=120\r\n", merged);
+        Assert.Contains("SlBringIn=2\r\n", merged);   // the D3D12 route stays: no restart after an update
+        Assert.DoesNotContain("Dx9ExRun", merged);    // launch-in-progress marker
+        Assert.DoesNotContain("Presenter", merged);   // retired key
+        Assert.DoesNotContain("a note", merged);
+        Assert.Contains("[LaunchPadUndo]\r\nSaved=1\r\nQuality=2\r\n", merged);
+        Assert.True(merged.IndexOf("FpsCap", StringComparison.Ordinal) < merged.IndexOf("[LaunchPadUndo]", StringComparison.Ordinal));
+        Assert.Equal("; x\r\n[HSF]\r\n", HsfService.MergeIni("; x\n[HSF]\n\n", null));
+    }
+
+    [Fact]
+    public void SetRoute_OnSetsOneKey_HsfDecidesClearsAndStopsThePreset()
+    {
+        var game = Path.Combine(Path.GetTempPath(), "rhi-hsf-route-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(game, HsfService.StreamlineFolder));
+            var ini = Path.Combine(game, HsfService.IniName);
+            File.WriteAllText(ini, "[HSF]\r\nInGameDlssg=0\r\nExtra=1\r\n");
+            var svc = new HsfService(new HttpClient(), new NullReporter(), new GitHubETagCache());
+
+            Assert.True(svc.SetRoute(game, HsfService.Route.BringIn));
+            Assert.Equal("2", Dlssg20_30Service.ReadIniValue(ini, "HSF", "SlBringIn"));
+            Assert.Null(Dlssg20_30Service.ReadIniValue(ini, "HSF", "InGameDlssg"));
+            Assert.Equal("1", Dlssg20_30Service.ReadIniValue(ini, "HSF", "Extra"));
+            Assert.True(HsfService.IsRouteSet(game));
+
+            Assert.True(svc.SetRoute(game, HsfService.Route.None));
+            Assert.False(HsfService.IsRouteSet(game));
+            Assert.True(HsfService.IsRouteOptedOut(game));
+            Assert.False(svc.PresetRoute(game, HsfService.Route.BringIn)); // the player's choice holds
+
+            Assert.True(svc.SetRoute(game, HsfService.Route.GameStreamline));
+            Assert.False(HsfService.IsRouteOptedOut(game));
+            Assert.Equal("2", Dlssg20_30Service.ReadIniValue(ini, "HSF", "InGameDlssg"));
         }
         finally { Directory.Delete(game, recursive: true); }
     }

@@ -15,7 +15,7 @@ namespace RenoDXCommander;
 public partial class DetailPanelBuilder
 {
     private const string HsfTooltip =
-        "HSF (Hunter's Sloppy Frames) — DLSS Frame Generation (up to 6x) for DirectX 9, 11 and 12 games, as a ReShade add-on. "
+        "HSF (Hunter's Sloppy Frames) — DLSS Frame Generation (up to 6x) for DirectX 9, 11, 12 and Vulkan games, as a ReShade add-on. "
         + "Uses the game's own DLSS data in DirectX 12 games that run DLSS, optical flow from iMMERSE LaunchPad everywhere else. "
         + "Needs an RTX 40 or newer GPU (RTX 20 / 30 through Universal MFG Unlocker) and ReShade with add-on support.";
 
@@ -118,8 +118,8 @@ public partial class DetailPanelBuilder
         {
             var versionNote = MainViewModel.HsfReShadeVersionNote(card);
             ToolTipService.SetToolTip(installBtn, (isInstalled
-                ? "Reinstall HSF (newest release). HSF.ini, with HSF's and your settings, is kept."
-                : "Install HSF: the add-on, its HSF_streamline folder, HSF.ini and HSF.fx, plus iMMERSE LaunchPad for optical flow.")
+                ? "Reinstall HSF (newest release). Your HSF settings are kept."
+                : "Install HSF: the add-on, its HSF_streamline folder (with HSF's licence files), HSF.ini and HSF.fx, plus iMMERSE LaunchPad for optical flow.")
                 + (versionNote != null ? "\n\n" + versionNote : ""));
         }
 
@@ -258,8 +258,8 @@ public partial class DetailPanelBuilder
     /// <summary>
     /// Asked on every HSF install: should Universal MFG Unlocker go in too (RTX 20 / 30 / 40 cards need it)?
     /// Not asked when it's already in the game, MFG Unlock (add-on) is, or the card is RTX 50 or newer.
-    /// The detected card sets the default answer. A yes in a 64-bit DirectX 12 game goes on to the DLL name
-    /// picker; other games get it in HSF_streamline\mods. Cancelled = install nothing.
+    /// The detected card sets the default answer. A yes in a 64-bit game (any API) goes on to the DLL name
+    /// picker, next to the exe; 32-bit games get it in HSF_streamline\mods. Cancelled = install nothing.
     /// </summary>
     private async Task<(bool Cancelled, bool Install, string? ProxyName)> AskHsfMfgUnlockerAsync(GameCardViewModel card, XamlRoot? xamlRoot)
     {
@@ -268,7 +268,7 @@ public partial class DetailPanelBuilder
         var gpu = GpuInfoService.Primary(await GpuInfoService.GetNvidiaGpusAsync());
         if (gpu is { Family: GpuFamily.Rtx50 or GpuFamily.Newer }) return (false, false, null);
         bool needs = gpu != null && GpuInfoService.NeedsMfgUnlocker(gpu.Family);
-        bool inGame = MainViewModel.HsfRunsInGame(card);
+        bool nextToExe = MainViewModel.HsfMfgNextToExe(card);
 
         var content = new StackPanel { Spacing = 8 };
         void Para(string text) => content.Children.Add(new TextBlock
@@ -283,9 +283,9 @@ public partial class DetailPanelBuilder
         Para(gpu == null
             ? "RHI couldn't find an NVIDIA graphics card in this PC."
             : $"Your graphics card: {gpu.Name} ({gpu.FamilyLabel}). {(needs ? "It needs the unlocker." : "It isn't an RTX card, so it can't run DLSS frame generation.")}");
-        Para(inGame
-            ? "Next you choose the DLL name it's installed as, so it doesn't clash with other mods."
-            : "In this game HSF runs frame generation in its helper, so the unlocker goes in HSF_streamline\\mods, where the helper loads it.");
+        Para(nextToExe
+            ? "It goes next to the game's exe. Next you choose the DLL name it's installed as, so it doesn't clash with other mods."
+            : "This is a 32-bit game, so the unlocker goes in HSF_streamline\\mods, where HSF's helper loads it.");
 
         var dialog = new ContentDialog
         {
@@ -301,7 +301,7 @@ public partial class DetailPanelBuilder
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result == ContentDialogResult.Secondary) return (false, false, null);
         if (result != ContentDialogResult.Primary) return (true, false, null);
-        if (!inGame) return (false, true, null);
+        if (!nextToExe) return (false, true, null);
 
         var name = await ShowMfgDllPickerAsync(card, null);
         return name == null ? (true, false, null) : (false, true, name);
@@ -337,17 +337,48 @@ public partial class DetailPanelBuilder
                 : "Installed by hand. Reinstall it with RHI to get updates.");
             cog.AddNote($"DirectX 12 route: {HsfService.RouteText(installPath)}.");
         }
+
+        // D3D12 route: HSF can only start it before the game makes its device, so on its own it asks for a restart
+        // after the first DirectX 12 run. Setting it here (RHI does it by itself for DirectX 12 games) avoids that.
+        if (isInstalled && !card.Is32Bit && !MainViewModel.HsfIsVulkan(card))
+        {
+            cog.AddSection("DirectX 12");
+            cog.AddIntro("In DirectX 12 games HSF's frame generation has to start before the game does. HSF sets it up on the first "
+                + "DirectX 12 run and then asks for a restart. RHI sets it up at install for games it knows run DirectX 12 "
+                + "(it follows the Rendering API override), so the first launch already generates. Set it here if this game runs "
+                + "DirectX 12 and RHI didn't. HSF takes it back by itself after a DirectX 11 run.");
+            bool routeOn = HsfService.IsRouteSet(installPath);
+            cog.AddCombo("Ready before launch",
+                "On: frame generation starts in DirectX 12 with no restart. HSF decides: HSF sets it up on the first DirectX 12 run and asks for one restart.",
+                new[] { "On", "HSF decides" }, routeOn ? 0 : 1,
+                i =>
+                {
+                    bool on = i == 0;
+                    _ = Task.Run(async () =>
+                    {
+                        bool ok = await _window.ViewModel.SetHsfRouteAsync(card, on);
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            if (ok) cog.SetSuccess(on ? "DirectX 12 route set: the next DirectX 12 launch generates without a restart."
+                                                      : "DirectX 12 route cleared: HSF sets it up itself.");
+                            else cog.SetError(on ? "Couldn't set the route (HSF has no DirectX 12 route for Streamline 1.x games). Check the log."
+                                                 : "Couldn't change HSF.ini. Close the game and try again.");
+                        });
+                    });
+                });
+        }
         if (MainViewModel.HsfReShadeVersionNote(card) is { } rsNote) cog.AddWarning(rsNote);
         if (MainViewModel.HsfBlockReason(card) is { } reason) cog.AddWarning(reason);
 
         cog.AddSection("Motion");
-        cog.AddIntro("DirectX 12 games that run DLSS give HSF their own motion data. Every other game needs optical flow from a ReShade effect: "
-            + "RHI installs iMMERSE LaunchPad with HSF. LumeniteFX Kernel also works; pick it in HSF's FLOW FROM row if it's in your shaders.");
+        cog.AddIntro("DirectX 12 games that run DLSS give HSF their own motion data. Every other game (DirectX 9, 11 and Vulkan) needs optical flow "
+            + "from a ReShade effect: RHI installs iMMERSE LaunchPad with HSF. LumeniteFX Kernel also works (with its include folder); "
+            + "pick it in HSF's FLOW FROM row if it's in your shaders.");
         if (rhiInstalled)
         {
             bool lpOn = HsfService.ReadMarker(installPath).LaunchpadOn;
             cog.AddCombo("iMMERSE LaunchPad",
-                "Off only if this game always gives HSF its own DLSS data, or you use LumeniteFX instead. Without a flow source, DirectX 9 and 11 games say \"no motion vectors\".",
+                "Off only if this game always gives HSF its own DLSS data, or you use LumeniteFX instead. Without a flow source, DirectX 9, 11 and Vulkan games say \"no motion vectors\".",
                 new[] { "On", "Off" }, lpOn ? 0 : 1,
                 i =>
                 {
@@ -376,7 +407,9 @@ public partial class DetailPanelBuilder
                 GpuFamily.Rtx20 or GpuFamily.Rtx30 => $"Graphics card: {gpu.Name}. It needs Universal MFG Unlocker (in the same section) for frame generation.",
                 _ => $"Graphics card: {gpu.Name}. It isn't an RTX card, so it can't run DLSS frame generation.",
             });
-        cog.AddNote("DirectX 9 and 11 games: play in windowed or borderless mode; HSF shows the generated frames in a window of its own over the game.");
+        cog.AddNote("DirectX 9, 11 and Vulkan games: play in windowed or borderless mode; HSF shows the generated frames in a window of its own over the game.");
+        if (MainViewModel.HsfIsVulkan(card))
+            cog.AddNote("Vulkan: HSF runs through ReShade's Vulkan layer. A DirectX copy of ReShade (dxgi.dll) in the game's folder keeps it out.");
         cog.AddNote("Turn off the game's own frame generation, and don't use HSF together with OptiScaler's frame generation.");
         cog.AddWarning("Never use HSF in a game with online anti-cheat.");
 

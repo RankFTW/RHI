@@ -1,4 +1,4 @@
-// MainViewModel.Hsf.cs — HSF (Hunter's Sloppy Frames): DLSS Frame Generation for DX9 / DX11 / DX12
+// MainViewModel.Hsf.cs — HSF (Hunter's Sloppy Frames): DLSS Frame Generation for DX9 / DX11 / DX12 / Vulkan
 // games through a ReShade add-on. Install / remove / LaunchPad choice from the Extras row, and keeping
 // RHI installs up to date at launch and with the 4-hour refresh (nothing is downloaded unless a game uses it).
 
@@ -14,14 +14,27 @@ public partial class MainViewModel
     public static (string Short, string Long)? HsfBlock(GameCardViewModel card)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return ("No install folder", "This game has no install folder.");
-        if (card.RequiresVulkanInstall || card.GraphicsApi is GraphicsApiType.Vulkan or GraphicsApiType.OpenGL)
-            return ("DirectX 9, 11 and 12 only", "HSF supports DirectX 9, 11 and 12 games only.");
+        if (card.GraphicsApi == GraphicsApiType.OpenGL && !card.RequiresVulkanInstall)
+            return ("Not for OpenGL", "HSF supports DirectX 9, 11, 12 and Vulkan games, not OpenGL.");
+        bool vulkan = HsfIsVulkan(card);
+        if (vulkan && card.Is32Bit)
+            return ("64-bit Vulkan only", "HSF supports 64-bit Vulkan games only.");
         if (card.IsDxvkInstalled) return ("Remove DXVK first", "DXVK is installed in this game. HSF needs the game's own DirectX; remove DXVK first.");
         if (card.IsDxvkBlacklisted) return ("Anti-cheat game", "This game is on RHI's anti-cheat list. Never use HSF in a game with online anti-cheat.");
         if (!card.IsRsInstalled) return ("Install ReShade first", "Install ReShade first: HSF is a ReShade add-on.");
         if (card.UseNormalReShade) return ("Needs ReShade with addons", "HSF needs ReShade with add-on support. Change this game's ReShade channel from No Addons.");
+        if (vulkan && File.Exists(Path.Combine(card.InstallPath, "dxgi.dll"))
+            && AuxInstallService.IsReShadeFile(Path.Combine(card.InstallPath, "dxgi.dll")))
+            return ("Remove ReShade's dxgi.dll", "A DirectX copy of ReShade (dxgi.dll) is in this game's folder. In a Vulkan game it keeps ReShade's Vulkan layer out, and HSF with it: remove that dxgi.dll first.");
         return null;
     }
+
+    /// <summary>
+    /// The game runs through ReShade's Vulkan layer (RHI installs ReShade for Vulkan here: a Vulkan game, or a dual
+    /// game set to its Vulkan path). DXVK is left out: HSF is blocked there.
+    /// </summary>
+    public static bool HsfIsVulkan(GameCardViewModel card) =>
+        card.RequiresVulkanInstall && !card.DxvkEnabled;
 
     /// <summary>Why HSF can't go into this game, or null when it can.</summary>
     public static string? HsfBlockReason(GameCardViewModel card) => HsfBlock(card)?.Long;
@@ -37,13 +50,32 @@ public partial class MainViewModel
         return $"ReShade {text} is installed here. HSF is tested with ReShade 6.8 (with add-on support); update ReShade if frame generation doesn't start.";
     }
 
-    private static bool HsfIsDx12(GameCardViewModel card) =>
-        card.GraphicsApi == GraphicsApiType.DirectX12 || card.DetectedApis.Contains(GraphicsApiType.DirectX12);
+    /// <summary>
+    /// The game runs DirectX 12 as far as RHI knows: the API set in its Rendering API override when there is one
+    /// (a game forced to DirectX 11 isn't), else DirectX 12 among the detected APIs. A dual DirectX 11 / 12 game
+    /// counts: HSF takes the route back by itself after a DirectX 11 run, while a DirectX 12 run then starts
+    /// generating with no restart.
+    /// </summary>
+    private bool HsfIsDx12(GameCardViewModel card)
+    {
+        if (HsfIsVulkan(card)) return false;
+        if (GetApiOverride(card.GameName, card.Source ?? "") is { Count: > 0 } apis)
+            return apis.Contains(nameof(GraphicsApiType.DirectX12), StringComparer.OrdinalIgnoreCase);
+        return card.GraphicsApi == GraphicsApiType.DirectX12 || card.DetectedApis.Contains(GraphicsApiType.DirectX12);
+    }
 
-    /// <summary>The D3D12 route RHI writes up front (none until the DLSS scan has run for this game).</summary>
-    private static HsfService.Route HsfRouteFor(GameCardViewModel card) =>
-        HsfService.PickRoute(HsfIsDx12(card), card.Is32Bit,
-            card.DlssDetection == null ? null : card.HasStreamline, card.StreamlineInstalledVersion);
+    /// <summary>
+    /// The D3D12 route for this game when it runs DirectX 12 (<paramref name="forceDx12"/>: the ⚙ dialog says it
+    /// does). Reads the DLSS scan, or looks for the game's Streamline itself when the scan hasn't run, so the
+    /// route is ready before the first launch. Touches the disk: call off the UI thread.
+    /// </summary>
+    public HsfService.Route HsfRouteFor(GameCardViewModel card, bool forceDx12 = false)
+    {
+        bool? hasSl = card.DlssDetection == null ? null : card.HasStreamline;
+        if (hasSl == null && !string.IsNullOrEmpty(card.InstallPath))
+            hasSl = HsfService.FindGameStreamline(card.InstallPath);
+        return HsfService.PickRoute(forceDx12 || HsfIsDx12(card), card.Is32Bit, hasSl, card.StreamlineInstalledVersion);
+    }
 
     /// <summary>
     /// Downloads (or updates) HSF and installs it into the game: add-on, HSF_streamline, HSF.ini with
@@ -54,6 +86,7 @@ public partial class MainViewModel
         if (HsfBlockReason(card) is { } reason) return reason;
         var installPath = card.InstallPath!;
         var svc = App.Services.GetRequiredService<HsfService>();
+        var route = HsfService.Route.None;
         try
         {
             var error = await Task.Run(async () =>
@@ -63,12 +96,13 @@ public partial class MainViewModel
                 if (launchpadOn && !UpliftService.LaunchpadStaged)
                     await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
                 svc.Install(installPath, card.Is32Bit, launchpadOn);
-                svc.PresetRoute(installPath, HsfRouteFor(card));
+                route = HsfRouteFor(card);
+                svc.PresetRoute(installPath, route);
                 return null;
             });
             if (error != null) return error;
             await DeployShadersForCardAsync(card.GameName);
-            _crashReporter.Log($"[MainViewModel.InstallHsf] HSF {svc.StagedVersion} installed for '{card.GameName}' (LaunchPad {(launchpadOn ? "on" : "off")}, route {HsfRouteFor(card)})");
+            _crashReporter.Log($"[MainViewModel.InstallHsf] HSF {svc.StagedVersion} installed for '{card.GameName}' (LaunchPad {(launchpadOn ? "on" : "off")}, route {route})");
             return null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -81,11 +115,24 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// True when HSF's frame generation runs in the game's own process (64-bit DirectX 12), so Universal
-    /// MFG Unlocker goes in as a proxy DLL next to the game. Otherwise HSF's helper runs it, and the mod
-    /// goes in HSF_streamline\mods, where the helper loads it.
+    /// Where Universal MFG Unlocker goes with HSF (HSF's installer guide): next to the exe of a 64-bit game, any
+    /// API (in DirectX 12 the game loads it; in DirectX 9 / 11 / Vulkan HSF's helper finds it there by its
+    /// product name). 32-bit games: in HSF_streamline\mods, never next to the 32-bit exe.
     /// </summary>
-    public static bool HsfRunsInGame(GameCardViewModel card) => HsfIsDx12(card) && !card.Is32Bit;
+    public static bool HsfMfgNextToExe(GameCardViewModel card) => !card.Is32Bit;
+
+    /// <summary>Sets the game's D3D12 route now (⚙ dialog): on = ready for the first DirectX 12 launch, off = HSF decides.</summary>
+    public async Task<bool> SetHsfRouteAsync(GameCardViewModel card, bool on)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return false;
+        var svc = App.Services.GetRequiredService<HsfService>();
+        return await Task.Run(() =>
+        {
+            var route = on ? HsfRouteFor(card, forceDx12: true) : HsfService.Route.None;
+            if (on && route == HsfService.Route.None) return false; // 32-bit, or Streamline 1.x: HSF has no D3D12 route
+            return svc.SetRoute(card.InstallPath!, route);
+        });
+    }
 
     /// <summary>
     /// Installs Universal MFG Unlocker for HSF (RTX 20 / 30 / 40 cards): as <paramref name="proxyName"/> next
@@ -160,7 +207,7 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Updates HSF in the games RHI installed it in (newest release, pre-releases included). Shaders
+    /// Updates HSF in the games RHI installed it in (newest release). Shaders
     /// follow through the shader sync hook. A game that's running keeps its files until the next check.
     /// </summary>
     private async Task RefreshHsfInstallsAsync(string caller)
@@ -183,6 +230,9 @@ public partial class MainViewModel
             int updated = 0;
             foreach (var c in cards)
             {
+                // A DirectX 12 game whose route isn't set yet (the DLSS scan hadn't run at install, or HSF took it
+                // back after a DirectX 11 run) gets it now, so its next launch generates without a restart
+                svc.PresetRoute(c.InstallPath!, HsfRouteFor(c));
                 if (!svc.UpdateInstalled(c.InstallPath!, c.Is32Bit)) continue;
                 updated++;
                 await DeployShadersForCardAsync(c.GameName).ConfigureAwait(false); // a new HSF.fx

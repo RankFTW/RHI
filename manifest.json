@@ -5,7 +5,7 @@
     "dlssNr": true,
     "nexusMods": false,
     "resolutionControl": false,
-    "hsf": false,
+    "hsf": true,
     "anrFg": false
   },
   "blacklistPrefixes": [
