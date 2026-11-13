@@ -79,6 +79,8 @@ public partial class DetailPanelBuilder
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
         if (HsfService.IsInstalledIn(installPath, card.Is32Bit))                           exSummaryEntries.Add(("HSF", "On"));
+        var encoreSvc = App.Services.GetRequiredService<RtxEncoreService>();
+        if (encoreSvc.IsInstalledIn(installPath, vm.GetRtxEncoreInstalledAs(gn, gs)))      exSummaryEntries.Add(("RTX Encore", encoreSvc.StagedVersion ?? "On"));
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
         if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
         if (dgvInstalled)                                                                   exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
