@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56093,
-  "generated": "2026-11-13T19:14:21Z",
+  "generated": "2026-11-13T21:15:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -22062,6 +22062,7 @@
     "Bodycam": {
       "steam_appid": 2406770,
       "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\Bodycam\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
     "Boet Fighter": {
@@ -139062,6 +139063,7 @@
     },
     "RuneScape": {
       "steam_appid": 1343400,
+      "vulkan": true,
       "opengl": true,
       "config_path": "%PROGRAMDATA%\\jagex\\runescape\\globalsettings.jcache, %LOCALAPPDATA%\\jagex\\runescape\\settings.jcache",
       "engine": "RuneTek 7"
@@ -162931,7 +162933,8 @@
       "steam_appid": 888910
     },
     "TANUKI: Pon's Summer": {
-      "steam_appid": 3218570
+      "steam_appid": 3218570,
+      "engine": "Unity"
     },
     "Tanzia": {
       "steam_appid": 369700,
@@ -192621,7 +192624,7 @@
     },
     "Windrose": {
       "steam_appid": 3041230,
-      "config_path": "%LOCALAPPDATA%\\R5\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\R5\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Winds Of Arcana: Ruination": {
