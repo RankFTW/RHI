@@ -373,6 +373,38 @@ public static class CrashReporter
     /// Write a crash/error report to disk. Safe to call from any thread.
     /// Swallows its own exceptions — the reporter must never cause a secondary crash.
     /// </summary>
+    // ── Crash report throttle ─────────────────────────────────────────────────────
+    // A loop that keeps failing (e.g. faulted tasks every few ms) once wrote ~700 reports a second,
+    // each building the breadcrumb trail and assembly list: 60% CPU and 32 GB RAM. Non-terminating
+    // reports are limited to one per source + error per 30 s and 10 a minute overall.
+    private static readonly object _throttleLock = new();
+    private static readonly Dictionary<string, DateTime> _lastReportByKey = new();
+    private static readonly Queue<DateTime> _recentReports = new();
+    private static int _suppressedReports;
+
+    private static bool AllowCrashReport(string source, Exception? ex)
+    {
+        var now = DateTime.UtcNow;
+        var key = $"{source}|{ex?.GetType().FullName}|{ex?.Message}";
+        lock (_throttleLock)
+        {
+            while (_recentReports.Count > 0 && now - _recentReports.Peek() > TimeSpan.FromMinutes(1))
+                _recentReports.Dequeue();
+            bool sameRecently = _lastReportByKey.TryGetValue(key, out var last) && now - last < TimeSpan.FromSeconds(30);
+            if (sameRecently || _recentReports.Count >= 10)
+            {
+                // Log the first suppression and every 1000th, never each one
+                if (_suppressedReports++ % 1000 == 0)
+                    Log($"[CrashReporter] Crash report suppressed (repeating) — {source}: {ex?.GetType().Name}: {ex?.Message} ({_suppressedReports} suppressed so far)");
+                return false;
+            }
+            if (_lastReportByKey.Count > 200) _lastReportByKey.Clear();
+            _lastReportByKey[key] = now;
+            _recentReports.Enqueue(now);
+            return true;
+        }
+    }
+
     public static void WriteCrashReport(
         string source,
         Exception? ex,
@@ -381,6 +413,8 @@ public static class CrashReporter
     {
         try
         {
+            if (!isTerminating && !AllowCrashReport(source, ex)) return;
+
             Directory.CreateDirectory(LogDir);
             PruneOldLogs();
 

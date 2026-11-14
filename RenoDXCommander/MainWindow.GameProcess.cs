@@ -31,7 +31,10 @@ public sealed partial class MainWindow
         void AddOne(string p)
         {
             var n = Path.GetFullPath(p).TrimEnd('\\').ToLowerInvariant() + "\\";
-            if (n.Length > 3 && !roots.Contains(n)) roots.Add(n); // never a bare drive root
+            // Never a bare drive root or a store library folder: UE3 games (Remember Me:
+            // ...\common\Remember Me\Binaries\Win32, no project folder) made the Unreal rule below
+            // add steamapps\common itself, so every Steam app running counted as the game.
+            if (n.Length > 3 && !IsLibraryRoot(n) && !roots.Contains(n)) roots.Add(n);
         }
         void Add(string? p)
         {
@@ -58,6 +61,15 @@ public sealed partial class MainWindow
         }
         return roots;
     }
+
+    /// <summary>True for a folder that holds many games (steamapps\common, Epic Games, GOG Games …), given lower case with a trailing backslash.</summary>
+    private static bool IsLibraryRoot(string n) =>
+        n.EndsWith(@"\steamapps\common\", StringComparison.Ordinal)
+        || n.EndsWith(@"\steamapps\", StringComparison.Ordinal)
+        || n.EndsWith(@"\epic games\", StringComparison.Ordinal)
+        || n.EndsWith(@"\gog games\", StringComparison.Ordinal)
+        || n.EndsWith(@"\gog galaxy\games\", StringComparison.Ordinal)
+        || n.EndsWith(@"\xboxgames\", StringComparison.Ordinal);
 
     /// <summary>
     /// Game processes (helpers skipped) running from the first search root that has any.
@@ -96,8 +108,7 @@ public sealed partial class MainWindow
     {
         while (procs.Count > 0)
         {
-            try { await Task.WhenAny(procs.Select(p => p.WaitForExitAsync())).ConfigureAwait(false); }
-            catch (Exception ex) { CrashReporter.Log($"[MainWindow.WaitForGameExitAsync] Wait failed — {ex.Message}"); }
+            await Task.WhenAny(procs.Select(WaitForExitSafeAsync)).ConfigureAwait(false);
 
             List<System.Diagnostics.Process> next = new();
             for (int attempt = 0; attempt < 5 && next.Count == 0; attempt++)
@@ -111,6 +122,38 @@ public sealed partial class MainWindow
             foreach (var p in procs.Except(next)) p.Dispose();
             procs = next;
         }
+    }
+
+    /// <summary>
+    /// Waits for one process to exit and never faults. WaitForExitAsync needs more access than
+    /// HasExited, so for a process running as admin (when RHI isn't) it fails at once while
+    /// HasExited still says "running": WhenAny then returned immediately and the loop above spun,
+    /// leaving faulted tasks that became hundreds of crash reports a second (60% CPU, 32 GB RAM).
+    /// Falls back to polling HasExited once a second.
+    /// </summary>
+    private static async Task WaitForExitSafeAsync(System.Diagnostics.Process p)
+    {
+        try
+        {
+            await p.WaitForExitAsync().ConfigureAwait(false);
+            return;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
+        {
+            CrashReporter.Log($"[MainWindow.WaitForExitSafeAsync] Can't wait on PID {SafePid(p)} ({ex.Message}) — polling instead");
+        }
+        while (true)
+        {
+            try { if (p.HasExited) return; }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException) { return; }
+            await Task.Delay(1000).ConfigureAwait(false);
+        }
+    }
+
+    private static string SafePid(System.Diagnostics.Process p)
+    {
+        try { return p.Id.ToString(); }
+        catch (InvalidOperationException) { return "?"; }
     }
 
     private static string DescribeProcesses(List<System.Diagnostics.Process> procs) =>
