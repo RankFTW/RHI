@@ -90,7 +90,7 @@ public partial class DialogService
                         Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
                         FontSize     = 14,
                         Text         = $"A new version of RHI is available!\n\n" +
-                                       $"Installed:  v{updateInfo.CurrentVersion}\n" +
+                                       $"Installed:  v{updateInfo.CurrentDisplayVersion ?? AppVersionInfo.Display}\n" +
                                        $"Available:  v{updateInfo.DisplayVersion ?? updateInfo.RemoteVersion.ToString()}\n\n" +
                                        "Would you like to update now?",
                     },
@@ -189,8 +189,8 @@ public partial class DialogService
             // Wait for UI to settle and any update dialog to finish
             await Task.Delay(1500, _window.LifetimeToken);
 
-            var current = _updateService.CurrentVersion;
-            var versionStr = $"{current.Major}.{current.Minor}.{current.Build}";
+            // Full version incl. beta / 4th number, so each beta and each hotfix shows its notes once
+            var versionStr = AppVersionInfo.Current.ToTagString();
             var markerFile = Path.Combine(PatchNotesDir, $"PatchNotes-{versionStr}.txt");
 
             // Clean up markers from older versions

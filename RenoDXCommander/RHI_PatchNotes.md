@@ -6,6 +6,7 @@
 ## v2.9.5 Beta
 
 ### New
+- Added "Get beta updates" in Settings › General › Updates. With it on, RHI offers test builds of the next version and moves you to the full release when it's out. Turning it off doesn't downgrade you.
 - Browse community covers and banners from SteamGridDB in the Spotlight layout: right-click a game › Artwork › Browse covers or Browse banners, then click one to use it (or Steam to go back to the game's own art). Needs your own free SteamGridDB API key, added in Settings › Accounts & Data.
 
 ### Bug Fixes

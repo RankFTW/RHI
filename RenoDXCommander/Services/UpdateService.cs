@@ -30,30 +30,32 @@ public class UpdateService : IUpdateService
     private const string LegacyReleaseApiUrl =
         "https://api.github.com/repos/RankFTW/RenoDXChecker/releases/tags/RDXC";
 
-    // GitHub API endpoint for the "RDXC-BETA" release tag.
+    // Betas are published as normal (not pre-release) releases in RankFTW/rhi-beta, which holds
+    // only release files; the code stays in RankFTW/RHI. /releases/latest skips pre-releases.
     private const string BetaReleaseApiUrl =
-        "https://api.github.com/repos/RankFTW/RenoDXChecker/releases/tags/RDXC-BETA";
+        "https://api.github.com/repos/RankFTW/rhi-beta/releases/latest";
+
+    // Website (not API) addresses of the latest releases: redirect to /releases/tag/<tag>. Not rate limited.
+    private const string LatestReleaseWebUrl = "https://github.com/RankFTW/RHI/releases/latest";
+    private const string LatestBetaWebUrl    = "https://github.com/RankFTW/rhi-beta/releases/latest";
 
     // The asset filenames to look for when updating (checked in order).
     private static readonly string[] InstallerFileNames = ["RHI-Setup.exe", "RDXC-Setup.exe"];
 
-    /// <summary>
-    /// Returns the current app version from the assembly metadata (set via .csproj AssemblyVersion).
-    /// </summary>
-    public Version CurrentVersion =>
-        Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0);
+    /// <summary>The assembly number (e.g. 2.9.5.0; the same for every beta of a version). See <see cref="AppVersionInfo"/>.</summary>
+    public Version CurrentVersion => AppVersionInfo.Number;
 
     /// <summary>
-    /// Silently checks GitHub for a newer release. When <paramref name="betaOptIn"/> is true,
-    /// queries both the stable and beta endpoints and uses <see cref="VersionResolver"/> to
-    /// pick the winning version. Returns the parsed remote version and the download URL for
-    /// the installer asset, or null if no update is available or the check fails.
+    /// Checks GitHub for a newer RHI. Looks at the latest release in RankFTW/RHI and, when
+    /// <paramref name="betaOptIn"/> is true, the latest beta in RankFTW/rhi-beta, and offers the newest
+    /// one if it's newer than this build (<see cref="VersionResolver"/>). Null when up to date or the
+    /// check fails.
     /// </summary>
     public async Task<UpdateInfo?> CheckForUpdateAsync(bool betaOptIn = false)
     {
         try
         {
-            // Always fetch the stable release — try /releases/latest first, then tag-based fallbacks
+            // Release: /releases/latest first, then the old tag-based endpoints
             var stable = await FetchReleaseAsync(LatestReleaseApiUrl).ConfigureAwait(false);
             if (stable == null)
             {
@@ -65,57 +67,40 @@ public class UpdateService : IUpdateService
                 CrashReporter.Log("[UpdateService.CheckForUpdateAsync] RHI tag returned nothing, trying legacy RDXC...");
                 stable = await FetchReleaseAsync(LegacyReleaseApiUrl).ConfigureAwait(false);
             }
-
             // The API answer can be a stale cached copy (rate limited, expired token, GitHub error):
-            // GitHubETagCache returns its saved body then, which kept users on an old version saying
-            // "Up to date". The website's /releases/latest redirect isn't rate limited, so check it too
-            // and use whichever release is newer.
-            var web = await FetchLatestViaWebAsync().ConfigureAwait(false);
-            if (web != null && (stable == null || web.Value.version.CompareTo(stable.Value.version) > 0))
-            {
-                if (stable != null)
-                    CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] API said {stable.Value.version.ToDisplayString()} (cached/stale), website says {web.Value.version.ToDisplayString()} — using the website's");
-                stable = web;
-            }
+            // GitHubETagCache returns its saved body then. The website's redirect isn't rate limited,
+            // so check it too and use whichever is newer.
+            stable = Newer(stable, await FetchLatestViaWebAsync(LatestReleaseWebUrl).ConfigureAwait(false), "release");
 
-            // Fetch beta release only when opted in; failure is non-fatal
+            // Beta: only for users who turned on "Get beta updates"; failures fall back to releases only
             (RdxcVersion version, string downloadUrl)? beta = null;
             if (betaOptIn)
             {
                 try
                 {
                     beta = await FetchReleaseAsync(BetaReleaseApiUrl).ConfigureAwait(false);
+                    beta = Newer(beta, await FetchLatestViaWebAsync(LatestBetaWebUrl).ConfigureAwait(false), "beta");
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException or InvalidOperationException)
                 {
-                    CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Beta endpoint failed — {ex.Message}");
-                    // Continue with stable-only
+                    CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Beta check failed — {ex.Message}");
                 }
             }
 
-            // Build the current version as an RdxcVersion for the resolver
-            var current = CurrentVersion;
-            var betaNum = current.Revision > 0 ? (int?)current.Revision : null;
-            var currentRdxc = new RdxcVersion(current.Major, current.Minor, current.Build, betaNum);
-
-            // Use VersionResolver to determine which update (if any) to offer
-            RdxcVersion? winner = VersionResolver.Resolve(
-                currentRdxc,
-                stable?.version,
-                beta?.version);
+            var current = AppVersionInfo.Current;
+            RdxcVersion? winner = VersionResolver.Resolve(current, stable?.version, beta?.version);
 
             if (winner == null)
             {
-                CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Up to date (local={currentRdxc.ToDisplayString()})");
+                CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Up to date (local={current.ToDisplayString()}, release={stable?.version.ToDisplayString() ?? "?"}{(betaOptIn ? $", beta={beta?.version.ToDisplayString() ?? "?"}" : "")})");
                 return null;
             }
 
-            // Determine the download URL from the winning source
-            string? winnerDownloadUrl = null;
-            if (stable.HasValue && winner.Value == stable.Value.version)
-                winnerDownloadUrl = stable.Value.downloadUrl;
-            else if (beta.HasValue && winner.Value == beta.Value.version)
-                winnerDownloadUrl = beta.Value.downloadUrl;
+            // Download URL from the source that won (a beta can't equal a release: release > beta)
+            string? winnerDownloadUrl =
+                stable.HasValue && winner.Value == stable.Value.version ? stable.Value.downloadUrl
+                : beta.HasValue && winner.Value == beta.Value.version ? beta.Value.downloadUrl
+                : null;
 
             if (string.IsNullOrEmpty(winnerDownloadUrl))
             {
@@ -123,16 +108,15 @@ public class UpdateService : IUpdateService
                 return null;
             }
 
-            var cmp = new Version(current.Major, current.Minor, current.Build);
-            var rmt = new Version(winner.Value.Major, winner.Value.Minor, winner.Value.Build);
-
-            CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Update available {currentRdxc.ToDisplayString()} → {winner.Value.ToDisplayString()}");
+            CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Update available {current.ToDisplayString()} → {winner.Value.ToDisplayString()}");
             return new UpdateInfo
             {
-                CurrentVersion = cmp,
-                RemoteVersion  = rmt,
+                CurrentVersion = new Version(current.Major, current.Minor, current.Build, current.Revision),
+                RemoteVersion  = new Version(winner.Value.Major, winner.Value.Minor, winner.Value.Build, winner.Value.Revision),
                 DownloadUrl    = winnerDownloadUrl,
                 DisplayVersion = winner.Value.ToDisplayString(),
+                CurrentDisplayVersion = current.ToDisplayString(),
+                IsBeta         = winner.Value.IsBeta,
             };
         }
         catch (Exception ex)
@@ -141,6 +125,17 @@ public class UpdateService : IUpdateService
             CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] Check failed — {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>The newer of the API answer and the website's; logs when the website's wins (API copy stale).</summary>
+    private static (RdxcVersion version, string downloadUrl)? Newer(
+        (RdxcVersion version, string downloadUrl)? api, (RdxcVersion version, string downloadUrl)? web, string what)
+    {
+        if (web == null) return api;
+        if (api != null && web.Value.version.CompareTo(api.Value.version) <= 0) return api;
+        if (api != null)
+            CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] API said {what} {api.Value.version.ToDisplayString()} (cached/stale), website says {web.Value.version.ToDisplayString()} — using the website's");
+        return web;
     }
 
     /// <summary>
@@ -199,19 +194,16 @@ public class UpdateService : IUpdateService
         return (version, downloadUrl);
     }
 
-    // Website (not API) address of the latest release: redirects to /releases/tag/<tag>. Not rate limited.
-    private const string LatestReleaseWebUrl = "https://github.com/RankFTW/RHI/releases/latest";
-
     /// <summary>
-    /// Finds the latest stable release from the website's redirect (no API call) and builds the
-    /// installer URL from its tag. Returns null on failure.
+    /// Finds the latest release of a repo (RHI or rhi-beta) from the website's redirect (no API call)
+    /// and builds the installer URL from its tag. Returns null on failure or when the repo has no release.
     /// </summary>
-    private async Task<(RdxcVersion version, string downloadUrl)?> FetchLatestViaWebAsync()
+    private async Task<(RdxcVersion version, string downloadUrl)?> FetchLatestViaWebAsync(string latestWebUrl)
     {
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            using var req = new HttpRequestMessage(HttpMethod.Get, LatestReleaseWebUrl);
+            using var req = new HttpRequestMessage(HttpMethod.Get, latestWebUrl);
             req.Headers.TryAddWithoutValidation("User-Agent", $"RHI/{CurrentVersion}");
             using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
             var finalUrl = resp.RequestMessage?.RequestUri?.AbsoluteUri ?? "";
@@ -224,8 +216,10 @@ public class UpdateService : IUpdateService
             }
             var tag = Uri.UnescapeDataString(finalUrl[(idx + marker.Length)..].TrimEnd('/'));
             if (!RdxcVersion.TryParse(tag, out var version)) return null;
-            var downloadUrl = $"https://github.com/RankFTW/RHI/releases/download/{Uri.EscapeDataString(tag)}/{InstallerFileNames[0]}";
-            CrashReporter.Log($"[UpdateService.FetchLatestViaWebAsync] Latest release on the website: {tag}");
+            // .../<owner>/<repo>/releases/latest → .../<owner>/<repo>/releases/download/<tag>/RHI-Setup.exe
+            var repoBase = latestWebUrl[..latestWebUrl.LastIndexOf("/releases/", StringComparison.OrdinalIgnoreCase)];
+            var downloadUrl = $"{repoBase}/releases/download/{Uri.EscapeDataString(tag)}/{InstallerFileNames[0]}";
+            CrashReporter.Log($"[UpdateService.FetchLatestViaWebAsync] Latest on the website ({repoBase}): {tag}");
             return (version, downloadUrl);
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
@@ -339,132 +333,8 @@ public class UpdateInfo
     public required Version RemoteVersion  { get; init; }
     public required string  DownloadUrl    { get; init; }
     public string? DisplayVersion { get; init; }
-}
-
-/// <summary>
-/// Represents a RHI version with optional beta suffix.
-/// Examples: "1.4.8", "1.4.8-beta1", "1.4.8 beta 1"
-/// </summary>
-public readonly record struct RdxcVersion(int Major, int Minor, int Build, int? BetaNumber = null)
-    : IComparable<RdxcVersion>
-{
-    /// <summary>True when this version has a beta suffix.</summary>
-    public bool IsBeta => BetaNumber.HasValue;
-
-    /// <summary>Base version tuple without beta suffix, used for priority comparison.</summary>
-    public (int, int, int) BaseVersion => (Major, Minor, Build);
-
-    /// <summary>
-    /// Compares by (Major, Minor, Build) first, then by beta status:
-    /// stable (no beta) is greater than any beta at the same base version,
-    /// and a higher beta number is greater than a lower one.
-    /// </summary>
-    public int CompareTo(RdxcVersion other)
-    {
-        int cmp = Major.CompareTo(other.Major);
-        if (cmp != 0) return cmp;
-
-        cmp = Minor.CompareTo(other.Minor);
-        if (cmp != 0) return cmp;
-
-        cmp = Build.CompareTo(other.Build);
-        if (cmp != 0) return cmp;
-
-        // Same base version — stable > beta, higher beta > lower beta
-        if (!IsBeta && !other.IsBeta) return 0;
-        if (!IsBeta && other.IsBeta) return 1;   // stable > beta
-        if (IsBeta && !other.IsBeta) return -1;  // beta < stable
-
-        // Both are beta — compare beta numbers
-        return BetaNumber!.Value.CompareTo(other.BetaNumber!.Value);
-    }
-
-    // Regex: optional leading text (e.g. "HDRX-", "v"), then Major.Minor.Build, optional beta suffix
-    private static readonly Regex VersionPattern = new(
-        @"(\d+)\.(\d+)\.(\d+)(?:[\s-]*beta[\s-]*(\d+))?",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    /// <summary>
-    /// Parses version strings such as "1.4.8", "1.4.8-beta1", "1.4.8 beta 1",
-    /// "v1.4.8-beta2", "RHI-1.4.8-beta1". Returns false and logs when input is invalid.
-    /// </summary>
-    public static bool TryParse(string? input, out RdxcVersion version)
-    {
-        version = default;
-
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            CrashReporter.Log($"[RdxcVersion.TryParse] Cannot parse null or empty version string");
-            return false;
-        }
-
-        var match = VersionPattern.Match(input);
-        if (!match.Success)
-        {
-            CrashReporter.Log($"[RdxcVersion.TryParse] Cannot parse version from '{input}'");
-            return false;
-        }
-
-        int major = int.Parse(match.Groups[1].Value);
-        int minor = int.Parse(match.Groups[2].Value);
-        int build = int.Parse(match.Groups[3].Value);
-        int? betaNumber = match.Groups[4].Success ? int.Parse(match.Groups[4].Value) : null;
-
-        version = new RdxcVersion(major, minor, build, betaNumber);
-        return true;
-    }
-
-    /// <summary>
-    /// Formats to display string: "1.4.8" for stable, "1.4.8 beta 1" for beta.
-    /// </summary>
-    public string ToDisplayString() =>
-        IsBeta ? $"{Major}.{Minor}.{Build} beta {BetaNumber}" : $"{Major}.{Minor}.{Build}";
-}
-
-/// <summary>
-/// Determines which update (if any) to offer based on current version,
-/// latest stable, and latest beta.
-/// </summary>
-internal static class VersionResolver
-{
-    /// <summary>
-    /// Returns the version to offer, or null if up to date.
-    /// Rules:
-    ///   - Stable always wins over beta at same or higher base version
-    ///   - Beta only offered when its base version exceeds both latest stable's
-    ///     and current version's base version
-    ///   - Only offer if candidate's base version > current base version
-    /// </summary>
-    public static RdxcVersion? Resolve(
-        RdxcVersion current,
-        RdxcVersion? latestStable,
-        RdxcVersion? latestBeta)
-    {
-        var currentBase = current.BaseVersion;
-
-        // Determine if stable is a valid candidate (base version > current base version)
-        bool stableValid = latestStable.HasValue
-            && latestStable.Value.BaseVersion.CompareTo(currentBase) > 0;
-
-        // Determine if beta is a valid candidate:
-        //   - base version > current base version, OR
-        //   - same base version but current is a beta with a lower beta number
-        //   - base version > latest stable base version (beta only wins when ahead of stable)
-        bool betaValid = latestBeta.HasValue
-            && (latestBeta.Value.BaseVersion.CompareTo(currentBase) > 0
-                || (latestBeta.Value.BaseVersion == currentBase
-                    && current.IsBeta
-                    && latestBeta.Value.CompareTo(current) > 0))
-            && (!latestStable.HasValue
-                || latestBeta.Value.BaseVersion.CompareTo(latestStable.Value.BaseVersion) > 0);
-
-        // Beta takes priority when it's ahead of both stable and current
-        if (betaValid)
-            return latestBeta;
-
-        if (stableValid)
-            return latestStable;
-
-        return null;
-    }
+    /// <summary>The installed version for people ("2.9.5 beta 1").</summary>
+    public string? CurrentDisplayVersion { get; init; }
+    /// <summary>True when the offered update is a beta.</summary>
+    public bool IsBeta { get; init; }
 }

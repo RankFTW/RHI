@@ -310,6 +310,7 @@ public partial class SettingsHandler
         EnsureCustomFoldersCard();
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
+        EnsureBetaUpdatesSetting();
         EnsureUpliftKeySetting();
         EnsureDisplayModesCard();
         EnsureColorThemeCard();

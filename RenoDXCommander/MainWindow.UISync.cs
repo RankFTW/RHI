@@ -316,6 +316,9 @@ public sealed partial class MainWindow
     private async Task CheckForAppUpdateAsync()
         => await _dialogService.CheckForAppUpdateAsync();
 
+    /// <summary>Settings › Get beta updates turned on: look for an update (beta included) now.</summary>
+    internal Task CheckForAppUpdateNowAsync() => _dialogService.CheckForAppUpdateAsync();
+
     private async Task ShowPatchNotesDialogAsync()
         => await _dialogService.ShowPatchNotesDialogAsync();
 

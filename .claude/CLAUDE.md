@@ -31,7 +31,8 @@ dotnet test  RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64 
 ## Git, versions, patch notes
 
 - Single developer, pushes straight to `main`. **Always ask before committing or pushing.**
-- **Never bump the version** (`AssemblyVersion`/`FileVersion` in `RenoDXCommander.csproj`). The user does it manually right before a release.
+- **Never bump the version** (`AssemblyVersion`/`FileVersion` in `RenoDXCommander.csproj`). The user does it manually right before a release. Same for `RhiBeta` (the beta number; empty = a release).
+- **Betas** go to the release-only repo RankFTW/rhi-beta via `tools/release-beta.ps1`; a beta keeps the release's number (2.9.5.0 + `RhiBeta` 1 = "2.9.5 beta 1"), and a 4th number is a real hotfix version. See `docs/beta-channel.md`.
 - Commit subjects: short, prefixed: `Fix:`, `Feat:`, `Changes:`, `Manifest:`, `DLSS manifest:`, `MOTD:`, `Release vX.Y.Z`.
 - Remotes: `origin` = RankFTW/RHI (formerly RankFTW/RenoDXChecker). `lazorr410` is a contributor fork; never push there.
 

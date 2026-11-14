@@ -16,14 +16,8 @@ public static class CrashReporter
 {
     // ── Config ────────────────────────────────────────────────────────────────────
 
-    public static string AppVersion
-    {
-        get
-        {
-            var v = Assembly.GetExecutingAssembly().GetName().Version;
-            return v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
-        }
-    }
+    /// <summary>"2.9.5", "2.9.5.1" or "2.9.5 beta 1" (see AppVersionInfo).</summary>
+    public static string AppVersion => AppVersionInfo.Display;
 
     private static readonly string LogDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -23,6 +23,14 @@
     <AssemblyTitle>RHI</AssemblyTitle>
     <AssemblyVersion>2.9.4.0</AssemblyVersion>
     <FileVersion>2.9.4.0</FileVersion>
+    <!-- Beta builds: set the beta number here (1, 2, ...) and keep the version numbers above at the
+         coming release's (2.9.5.0 for every 2.9.5 beta). Empty = a release. Shown as "2.9.5 beta 1".
+         The 4th number is a real version: 2.9.5.1 is a hotfix after 2.9.5. See docs/beta-channel.md. -->
+    <RhiBeta></RhiBeta>
+    <InformationalVersion Condition="'$(RhiBeta)' == ''">$(AssemblyVersion)</InformationalVersion>
+    <InformationalVersion Condition="'$(RhiBeta)' != ''">$(AssemblyVersion)-beta.$(RhiBeta)</InformationalVersion>
+    <!-- Keep the label clean (no "+<commit hash>" added by the SDK) -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

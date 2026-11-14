@@ -243,7 +243,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("SkipUpdateCheck", out var sucVal))
             SkipUpdateCheck = sucVal == "true";
 
-        if (s.TryGetValue("BetaOptIn", out var boVal))
+        // "Get beta updates" (rhi-beta). Saved as GetBetaUpdates: the old BetaOptIn key (RDXC-era beta
+        // channel, no UI for years) is ignored on purpose so nobody is moved to betas without choosing it.
+        if (s.TryGetValue("GetBetaUpdates", out var boVal))
             BetaOptIn = boVal == "true";
 
         if (s.TryGetValue("VerboseLogging", out var vlVal))
@@ -565,7 +567,7 @@ public partial class SettingsViewModel : ObservableObject
     public void SaveSettingsToDict(Dictionary<string, string> s)
     {
         s["SkipUpdateCheck"]   = SkipUpdateCheck ? "true" : "false";
-        s["BetaOptIn"]         = BetaOptIn ? "true" : "false";
+        s["GetBetaUpdates"]    = BetaOptIn ? "true" : "false";
         s["VerboseLogging"]    = VerboseLogging ? "true" : "false";
         s["LastSeenVersion"]   = LastSeenVersion;
         s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
