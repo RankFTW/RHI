@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56095,
-  "generated": "2026-11-13T23:16:22Z",
+  "generated": "2026-11-14T01:17:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -52535,6 +52535,7 @@
       "engine": "Unreal Engine 5"
     },
     "Edge of Nowhere": {
+      "config_path": "%USERPROFILE%\\.insomniac\\InsomniacEngine\\EdgeOfNowhere_userprefs.save",
       "engine": "Insomniac Engine"
     },
     "Edge of Reality Visual Novel": {
@@ -100802,7 +100803,7 @@
     "Marvel Rivals": {
       "steam_appid": 2767030,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Marvel\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Marvel\\Saved\\Config\\Windows\\GameUserSettings.ini, %LOCALAPPDATA%\\Marvel\\Saved\\Saved\\Config\\MarvelUserSetting.ini, %LOCALAPPDATA%\\Marvel\\Saved\\Saved\\Config\\{id}\\MarvelUserSetting.ini, %LOCALAPPDATA%\\MarvelRivals_Launcher\\meta_info",
       "engine": "Unreal Engine 5"
     },
     "Marvel Snap": {
