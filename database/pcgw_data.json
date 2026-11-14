@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56096,
-  "generated": "2026-11-14T09:19:21Z",
+  "game_count": 56100,
+  "generated": "2026-11-14T11:19:21Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -48243,6 +48243,7 @@
     "Dr. Doyle & The Mystery of the Cloche Hat": {
       "steam_appid": 574420
     },
+    "Dr. Drago's Madcap Chase": {},
     "Dr. Dungeon's Madman!": {
       "steam_appid": 684570
     },
@@ -145333,6 +145334,7 @@
       "steam_appid": 647640,
       "engine": "Unreal Engine 4"
     },
+    "Shockwave 2: Beyond the Gate": {},
     "Shockwave Assault": {},
     "Shoemaker": {
       "steam_appid": 914070
@@ -164399,6 +164401,7 @@
       "config_path": "<path-to-game>\\tdor3.cfg",
       "engine": "SurRender 3D"
     },
+    "Test Page": {},
     "Test Subject 901": {
       "steam_appid": 914450
     },
@@ -177035,6 +177038,7 @@
       "config_path": "%LOCALAPPDATA%\\TimeSplittersRewind\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
+    "TimeSplitters: Future Perfect": {},
     "TimeTekker": {
       "steam_appid": 849680
     },
