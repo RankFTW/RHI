@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56107,
-  "generated": "2026-11-14T19:22:47Z",
+  "game_count": 56108,
+  "generated": "2026-11-14T23:20:22Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -67440,6 +67440,7 @@
     },
     "Gears of War: Reloaded": {
       "steam_appid": 2523720,
+      "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Coalition\\WarGame\\Config",
       "engine": "Unreal Engine 3"
     },
@@ -162128,6 +162129,10 @@
       "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Questline\\Fall of Avalon\\, HKEY_CURRENT_USER\\Software\\Questline\\Fall of Avalon\\",
       "engine": "Unity"
+    },
+    "Tairum": {
+      "steam_appid": 5043840,
+      "vulkan": true
     },
     "Taisei Project": {
       "dx11": true,
