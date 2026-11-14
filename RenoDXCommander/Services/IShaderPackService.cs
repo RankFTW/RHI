@@ -37,6 +37,9 @@ public interface IShaderPackService
     /// <summary>Checks only already-downloaded packs for updates (used when "Download all shaders" is off).</summary>
     Task EnsureDownloadedPacksAsync(IProgress<string>? progress = null);
 
+    /// <summary>Checks packs added or changed by the manifest (call after ApplyManifestOverrides).</summary>
+    Task EnsureManifestPacksAsync(bool includeNotDownloaded, IProgress<string>? progress = null);
+
     /// <summary>
     /// Returns true if the given pack's files are already cached locally
     /// (downloaded and extracted to the staging directory).

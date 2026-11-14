@@ -22,8 +22,16 @@ public sealed class GitHubTokenHandler : DelegatingHandler
     public GitHubTokenHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
 
     /// <summary>Sets (or clears, with null/empty) the token used for GitHub requests.</summary>
-    public static void SetToken(string? token) =>
-        _token = string.IsNullOrWhiteSpace(token) ? null : token.Trim();
+    public static void SetToken(string? token)
+    {
+        lock (_tokenLock)
+        {
+            _token = string.IsNullOrWhiteSpace(token) ? null : token.Trim();
+            if (_token != null) TokenRejected = false; // a newly saved token gets a fresh chance
+        }
+    }
+
+    private static readonly object _tokenLock = new();
 
     /// <summary>True when <paramref name="uri"/> is a GitHub host that may receive the token.</summary>
     public static bool IsGitHubHost(Uri? uri) =>
@@ -57,6 +65,46 @@ public sealed class GitHubTokenHandler : DelegatingHandler
             CrashReporter.Log($"[GitHubTokenHandler.SendAsync] Stripped GitHub token from request to {request.RequestUri?.Host}");
         }
 
-        return base.SendAsync(request, cancellationToken);
+        return SendCheckingTokenAsync(request, token, cancellationToken);
+    }
+
+    /// <summary>
+    /// True once GitHub rejected the token (401: expired or revoked) this session. The token is
+    /// then dropped until a new one is saved, and Settings / the status bar tell the user.
+    /// </summary>
+    public static bool TokenRejected { get; private set; }
+
+    /// <summary>
+    /// Sends the request. If GitHub answers 401 to the token, the token is dropped for the session
+    /// and the request is sent again without it. Without this, every API call failed and callers
+    /// kept using their cached copies (manifest, release checks) for as long as the bad token stayed.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendCheckingTokenAsync(HttpRequestMessage request, string? token, CancellationToken cancellationToken)
+    {
+        var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode != System.Net.HttpStatusCode.Unauthorized
+            || token == null
+            || !IsGitHubHost(request.RequestUri)
+            || request.Content != null) // only bodiless requests (GET/HEAD) are safe to resend
+            return response;
+
+        // Drop the token (only if it's still the one we sent; a new one may have been saved meanwhile)
+        bool dropped = false;
+        lock (_tokenLock)
+        {
+            if (_token == token) { _token = null; TokenRejected = true; dropped = true; }
+        }
+        if (dropped)
+            CrashReporter.Log("[GitHubTokenHandler.SendAsync] GitHub rejected the token (401, expired or revoked) — not using it this session; add a new one in Settings");
+
+        var retry = new HttpRequestMessage(request.Method, request.RequestUri) { Version = request.Version };
+        foreach (var h in request.Headers)
+            if (!h.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+                retry.Headers.TryAddWithoutValidation(h.Key, h.Value);
+        foreach (var o in request.Options)
+            ((IDictionary<string, object?>)retry.Options)[o.Key] = o.Value;
+
+        response.Dispose();
+        return await base.SendAsync(retry, cancellationToken).ConfigureAwait(false);
     }
 }

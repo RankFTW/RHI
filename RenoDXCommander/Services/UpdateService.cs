@@ -66,6 +66,18 @@ public class UpdateService : IUpdateService
                 stable = await FetchReleaseAsync(LegacyReleaseApiUrl).ConfigureAwait(false);
             }
 
+            // The API answer can be a stale cached copy (rate limited, expired token, GitHub error):
+            // GitHubETagCache returns its saved body then, which kept users on an old version saying
+            // "Up to date". The website's /releases/latest redirect isn't rate limited, so check it too
+            // and use whichever release is newer.
+            var web = await FetchLatestViaWebAsync().ConfigureAwait(false);
+            if (web != null && (stable == null || web.Value.version.CompareTo(stable.Value.version) > 0))
+            {
+                if (stable != null)
+                    CrashReporter.Log($"[UpdateService.CheckForUpdateAsync] API said {stable.Value.version.ToDisplayString()} (cached/stale), website says {web.Value.version.ToDisplayString()} — using the website's");
+                stable = web;
+            }
+
             // Fetch beta release only when opted in; failure is non-fatal
             (RdxcVersion version, string downloadUrl)? beta = null;
             if (betaOptIn)
@@ -185,6 +197,42 @@ public class UpdateService : IUpdateService
         }
 
         return (version, downloadUrl);
+    }
+
+    // Website (not API) address of the latest release: redirects to /releases/tag/<tag>. Not rate limited.
+    private const string LatestReleaseWebUrl = "https://github.com/RankFTW/RHI/releases/latest";
+
+    /// <summary>
+    /// Finds the latest stable release from the website's redirect (no API call) and builds the
+    /// installer URL from its tag. Returns null on failure.
+    /// </summary>
+    private async Task<(RdxcVersion version, string downloadUrl)?> FetchLatestViaWebAsync()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            using var req = new HttpRequestMessage(HttpMethod.Get, LatestReleaseWebUrl);
+            req.Headers.TryAddWithoutValidation("User-Agent", $"RHI/{CurrentVersion}");
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+            var finalUrl = resp.RequestMessage?.RequestUri?.AbsoluteUri ?? "";
+            const string marker = "/releases/tag/";
+            var idx = finalUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (!resp.IsSuccessStatusCode || idx < 0)
+            {
+                CrashReporter.Log($"[UpdateService.FetchLatestViaWebAsync] No release tag (HTTP {(int)resp.StatusCode}, url '{finalUrl}')");
+                return null;
+            }
+            var tag = Uri.UnescapeDataString(finalUrl[(idx + marker.Length)..].TrimEnd('/'));
+            if (!RdxcVersion.TryParse(tag, out var version)) return null;
+            var downloadUrl = $"https://github.com/RankFTW/RHI/releases/download/{Uri.EscapeDataString(tag)}/{InstallerFileNames[0]}";
+            CrashReporter.Log($"[UpdateService.FetchLatestViaWebAsync] Latest release on the website: {tag}");
+            return (version, downloadUrl);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            CrashReporter.Log($"[UpdateService.FetchLatestViaWebAsync] Failed — {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>

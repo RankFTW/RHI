@@ -1127,6 +1127,8 @@ vngx_dlssnr.dll` as the game's NR file (gives the DLSS section NR version / pres
 
 ## DevUnlockService — GitHub API Token
 
+- **Expired / revoked token = silently stale data (fixed v2.9.4)**: the PAT in `github_api.txt` is only validated when saved in Settings. Once it expired, every api.github.com call returned 401 and `GitHubETagCache` returned its cached body for any error, so the manifest (and GhRelease checks) stayed at the last good copy forever while the log still said "Fetched via GitHub API" (user saw no HSF row: old manifest without `featureFlags.hsf`). Fix: `GitHubTokenHandler` drops the token for the session on a 401 and resends the request without it (`TokenRejected` drives the status bar notice and the Settings PAT status). Look for `Unauthorized for ... returning cached body` in user logs. Note: the dev unlock and an installed component both force some feature rows on, so test flags on a game without the component and without `unlock.txt`.
+
 - `DevUnlockService.GitHubApiToken` — reads `github_api=KEY` line from `unlock.txt`. Cached after first read. Used in `AddonPackService.ResolveDownloadUrlFromApiAsync` to authenticate GitHub API calls.
 - Pattern: add `github_api=ghp_yourtoken` as a line in `%LocalAppData%\RHI\unlock.txt`.
 

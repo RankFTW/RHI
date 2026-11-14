@@ -528,6 +528,7 @@ public partial class ShaderPackService : IShaderPackService
 
     // Active packs — starts as DefaultPacks, may be overridden by manifest
     private ShaderPack[] _packs = DefaultPacks;
+    private string[] _manifestPackIds = Array.Empty<string>();
 
     // ── AvailablePacks ───────────────────────────────────────────────────────────
 
@@ -561,6 +562,7 @@ public partial class ShaderPackService : IShaderPackService
     {
         if (manifest?.ShaderPacks == null || manifest.ShaderPacks.Count == 0)
         {
+            _manifestPackIds = Array.Empty<string>();
             _packs = DefaultPacks;
             RebuildAvailablePacks();
             return;
@@ -618,6 +620,9 @@ public partial class ShaderPackService : IShaderPackService
         }
 
         _packs = merged.ToArray();
+        // Packs the manifest added or changed. The startup update check runs before the manifest
+        // is loaded, so it only sees DefaultPacks; these get their own check (EnsureManifestPacksAsync).
+        _manifestPackIds = _packs.Where(p => !DefaultPacks.Contains(p)).Select(p => p.Id).ToArray();
         RebuildAvailablePacks();
     }
 

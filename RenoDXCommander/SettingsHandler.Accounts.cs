@@ -209,7 +209,13 @@ public partial class SettingsHandler
         bool hasPat = System.IO.File.Exists(patPath);
 
         // Update the PAT status text to show file state
-        if (hasPat)
+        if (hasPat && GitHubTokenHandler.TokenRejected)
+        {
+            _window.GitHubPatStatusText.Text = "GitHub rejected this token (expired or revoked), so RHI isn't using it. Generate a new one and save it here.";
+            _window.GitHubPatStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush);
+            _window.GitHubPatStatusText.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+        }
+        else if (hasPat)
         {
             _window.GitHubPatStatusText.Text = "PAT file active — 5,000 req/hr (persists across restarts)";
             _window.GitHubPatStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);

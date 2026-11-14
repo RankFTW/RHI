@@ -67,6 +67,11 @@ public sealed partial class MainWindow
                             ShowStatusBarMessage("⚠ GitHub sign-in expired — add a token in Settings → Accounts & Data to restore the download rate limit",
                                 TimeSpan.FromSeconds(15));
                         }
+                        else if (RenoDXCommander.Services.GitHubTokenHandler.TokenRejected)
+                        {
+                            ShowStatusBarMessage("⚠ GitHub rejected your token (expired or revoked) — add a new one in Settings → Accounts & Data",
+                                TimeSpan.FromSeconds(15));
+                        }
                         // On Refresh (silent=true), the ListView still has its old item selected
                         // so SelectionChanged never fires and PopulateDetailPanel never runs.
                         // Force a panel rebuild for the currently displayed card.

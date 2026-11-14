@@ -76,6 +76,26 @@ public partial class ShaderPackService
     }
 
     /// <summary>
+    /// Checks the packs the manifest added or changed (call after ApplyManifestOverrides).
+    /// The startup check runs before the manifest loads, so without this a manifest-only pack
+    /// downloaded once never updates. With <paramref name="includeNotDownloaded"/> false
+    /// ("Download all shaders" off), only packs already downloaded are checked.
+    /// </summary>
+    public async Task EnsureManifestPacksAsync(bool includeNotDownloaded, IProgress<string>? progress = null)
+    {
+        var ids = new HashSet<string>(_manifestPackIds, StringComparer.OrdinalIgnoreCase);
+        var packs = _packs.Where(p => ids.Contains(p.Id) && (includeNotDownloaded || IsPackCached(p.Id))).ToList();
+        CrashReporter.Log($"[ShaderPackService.EnsureManifestPacksAsync] Checking {packs.Count} manifest pack(s) for updates");
+        var tasks = packs.Select(pack => Task.Run(async () =>
+        {
+            try { await EnsurePackAsync(pack, progress); }
+            catch (Exception ex)
+            { CrashReporter.Log($"[ShaderPackService.EnsureManifestPacksAsync] Unexpected error for '{pack.Id}' — {ex.Message}"); }
+        }));
+        await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
     /// Returns true if the given pack's files are already cached locally.
     /// </summary>
     public bool IsPackCached(string packId)

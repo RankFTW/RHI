@@ -1034,4 +1034,26 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Store the background shader-pack download task so InitializeAsync can await it.</summary>
     public void SetShaderPackReadyTask(Task task) => _shaderPackReadyTask = task;
 
+    /// <summary>
+    /// After ApplyManifestOverrides: checks manifest-added/changed shader packs for updates.
+    /// Chained after the startup check (so the per-pack locks don't skip anything) and folded into
+    /// _shaderPackReadyTask so SyncShaders deploys the updated files.
+    /// </summary>
+    private void QueueManifestShaderPackCheck()
+    {
+        var previous = _shaderPackReadyTask;
+        var includeAll = Settings.CacheAllShaders;
+        var task = Task.Run(async () =>
+        {
+            if (previous != null)
+            {
+                try { await previous; }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.QueueManifestShaderPackCheck] Startup shader check failed — {ex.Message}"); }
+            }
+            try { await _shaderPackService.EnsureManifestPacksAsync(includeAll); }
+            catch (Exception ex) { _crashReporter.Log($"[MainViewModel.QueueManifestShaderPackCheck] Manifest shader pack check failed — {ex.Message}"); }
+        });
+        _shaderPackReadyTask = task;
+    }
+
 }

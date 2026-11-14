@@ -3,6 +3,16 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.4
+
+### New
+- Added "Block Steam updates" to the Game settings cog (beside a Steam game's title). It makes the game's Steam app manifest read-only so Steam can't update the game, which keeps mods working until they're updated for the new version. Turn it off to let Steam update again.
+
+### Bug Fixes
+- Fixed RHI saying it's up to date when a newer version is out, after GitHub's hourly request limit was reached (automatic and manual update checks).
+- Fixed an expired or revoked GitHub token silently stopping RHI from getting new data and updates (game fixes, newly unlocked features such as HSF, component and shader updates). RHI now stops using a token GitHub rejects, carries on without it, and asks you to add a new one in Settings › Accounts & Data.
+- Fixed shader packs added through the online manifest (such as SD Shaders by Starodubysko, Zenteon+ and UltrawideSideGlass) never updating after their first download.
+
 ## v2.9.3
 
 ### New

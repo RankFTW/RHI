@@ -585,6 +585,7 @@ public partial class MainViewModel
 
             // Apply manifest-driven shader pack and addon pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
+            if (!forceRescan) QueueManifestShaderPackCheck(); // once per launch, not on every Refresh
             (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
 
             // First launch without a saved library takes this full-scan path instead of the

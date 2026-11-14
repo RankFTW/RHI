@@ -248,6 +248,7 @@ public partial class MainViewModel
 
             // Apply manifest-driven shader pack and addon pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
+            QueueManifestShaderPackCheck();
             (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
 

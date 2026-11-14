@@ -17,13 +17,57 @@ internal sealed partial class DetailLayoutHost
     {
         if (_window.ViewModel.SelectedGame is not { } card) return null;
         var root = new StackPanel { Spacing = 14 };
-        root.Children.Add(MutedText("Settings from the Settings page that apply to this game only."));
+        root.Children.Add(MutedText("Settings that apply to this game only."));
 
         var rows = new StackPanel { Spacing = 16 };
         AddOverlayRow(rows, card);
         AddDisplayModeRow(rows, card);
+        AddSteamUpdateBlockRow(rows, card);
         root.Children.Add(TabsTheme.MakeCard(rows, 16));
         return root;
+    }
+
+    /// <summary>
+    /// Steam games only: makes the game's appmanifest_&lt;appid&gt;.acf read-only so Steam can't update it.
+    /// The file's attribute is the state (nothing saved), so the toggle matches the file.
+    /// </summary>
+    private void AddSteamUpdateBlockRow(StackPanel rows, GameCardViewModel card)
+    {
+        if (!string.Equals(card.Source, "Steam", StringComparison.OrdinalIgnoreCase)) return;
+        var acf = SteamUpdateBlocker.FindAppManifest(card.InstallPath, card.DetectedGame?.SteamAppId);
+        if (acf == null) return;
+
+        const string baseDesc = "Makes the game's Steam app manifest read-only so Steam can't update it. "
+            + "Steam may show the game as needing an update, and may not launch it until updates are allowed again. Turn off before verifying or uninstalling in Steam.";
+        var toggle = new ToggleSwitch
+        {
+            IsOn = SteamUpdateBlocker.IsBlocked(acf),
+            OnContent = "On",
+            OffContent = "Off",
+            MinWidth = 0,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(toggle, "Block Steam updates");
+        var status = new TextBlock
+        {
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = TabsTheme.B(TabsTheme.TextSecondary),
+            Visibility = Visibility.Collapsed,
+        };
+        bool reverting = false;
+        toggle.Toggled += (s, e) =>
+        {
+            if (reverting) return;
+            var error = SteamUpdateBlocker.SetBlocked(acf, toggle.IsOn);
+            if (error == null) { status.Visibility = Visibility.Collapsed; return; }
+            reverting = true;
+            toggle.IsOn = !toggle.IsOn;
+            reverting = false;
+            status.Text = $"Couldn't change the app manifest: {error}";
+            status.Visibility = Visibility.Visible;
+        };
+        AddGameSettingRow(rows, "Block Steam updates", baseDesc, toggle);
+        rows.Children.Add(status);
     }
 
     private void AddOverlayRow(StackPanel rows, GameCardViewModel card)
