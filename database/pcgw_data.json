@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56100,
-  "generated": "2026-11-14T11:19:21Z",
+  "generated": "2026-11-14T13:19:22Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -78640,7 +78640,7 @@
     "Hogwarts Legacy": {
       "steam_appid": 990080,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Hogwarts Legacy\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\HogwartsLegacy\\Saved\\Config\\WindowsNoEditor, %LOCALAPPDATA%\\Hogwarts\\Saved\\Config\\WindowNoEditor<user-id>, %LOCALAPPDATA%\\Phoenix\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Hogwash": {},
