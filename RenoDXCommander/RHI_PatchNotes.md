@@ -3,6 +3,15 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.5 Beta
+
+### New
+- Browse community covers and banners from SteamGridDB in the Spotlight layout: right-click a game › Artwork › Browse covers or Browse banners, then click one to use it (or Steam to go back to the game's own art). Needs your own free SteamGridDB API key, added in Settings › Accounts & Data.
+
+### Bug Fixes
+- Fixed RHI using very high CPU and memory (up to tens of GB) after launching some Unreal Engine 3 games such as Remember Me. RHI treated every app running from the Steam library folder as the game, and kept waiting for ones it couldn't watch (apps running as admin).
+- Fixed a repeating error filling the logs folder with crash reports; the same error is now reported once.
+
 ## v2.9.4
 
 ### New

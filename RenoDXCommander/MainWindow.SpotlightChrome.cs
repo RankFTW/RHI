@@ -597,7 +597,7 @@ public sealed partial class MainWindow
 
     // ── Custom artwork (game menu › Artwork) ──────────────────────────────────
 
-    /// <summary>"Artwork" submenu for the game menu: set or reset the cover and the banner.</summary>
+    /// <summary>"Artwork" submenu for the game menu: set, browse (SteamGridDB) or reset the cover and the banner.</summary>
     private MenuFlyoutSubItem BuildArtworkMenu(GameCardViewModel card)
     {
         var key = ArtKey(card);
@@ -610,6 +610,9 @@ public sealed partial class MainWindow
         }
         Add("Set custom cover...", () => _ = PickCustomArtAsync(card, SteamArtworkService.Kind.Cover));
         Add("Set custom banner...", () => _ = PickCustomArtAsync(card, SteamArtworkService.Kind.Hero));
+        sub.Items.Add(new MenuFlyoutSeparator());
+        Add("Browse covers...", () => _detailPanelBuilder.Layout.OpenArtworkPicker(card, SteamArtworkService.Kind.Cover));
+        Add("Browse banners...", () => _detailPanelBuilder.Layout.OpenArtworkPicker(card, SteamArtworkService.Kind.Hero));
         bool customCover = SteamArtworkService.TryGetCustom(key, SteamArtworkService.Kind.Cover) != null;
         bool customHero = SteamArtworkService.TryGetCustom(key, SteamArtworkService.Kind.Hero) != null;
         if (customCover || customHero) sub.Items.Add(new MenuFlyoutSeparator());
@@ -683,7 +686,10 @@ public sealed partial class MainWindow
         ShowArtChange(card, kind);
     }
 
-    private void ShowArtChange(GameCardViewModel card, SteamArtworkService.Kind kind)
+    /// <summary>Opens Settings at a section (e.g. the artwork picker's "Add an API key" button → Accounts).</summary>
+    internal void OpenSettingsSection(string key) => _settingsHandler.OpenAtSection(key);
+
+    internal void ShowArtChange(GameCardViewModel card, SteamArtworkService.Kind kind)
     {
         if (kind == SteamArtworkService.Kind.Cover) ReloadCover(card);
         else if (ReferenceEquals(ViewModel.SelectedGame, card)) _detailPanelBuilder.Layout.ReloadHeroArt();
