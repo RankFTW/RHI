@@ -955,6 +955,10 @@
     "Phoenix Point": {
       "reshade": "d3d11.dll",
       "dc": ""
+    },
+    "Phantom Blade Zero": {
+      "reshade": "d3d12.dll",
+      "dc": ""
     }
   },
   "rtxEncoreDllNames": {
