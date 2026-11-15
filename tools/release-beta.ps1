@@ -67,7 +67,10 @@ if (-not $SkipPublish) {
     Write-Host 'Running publish.bat...'
     # publish.bat uses paths relative to the repo, so run it from there
     # Full path: with NoDefaultCurrentDirectoryInExePath set, cmd doesn't look in the current folder
-    $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "`"$(Join-Path $Repo 'publish.bat')`"" -WorkingDirectory $Repo -NoNewWindow -Wait -PassThru
+    # Wait for publish.bat only: Start-Process -Wait also waits for every process it started, including
+    # the .NET build server that stays running for minutes after the build (made the script hang)
+    $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "`"$(Join-Path $Repo 'publish.bat')`"" -WorkingDirectory $Repo -NoNewWindow -PassThru
+    $proc.WaitForExit()
     if ($proc.ExitCode -ne 0) { Fail "publish.bat failed (exit $($proc.ExitCode))" }
 }
 
