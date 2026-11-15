@@ -1183,10 +1183,10 @@ public partial class MainViewModel
             foreach (var candidate in preferenceOrder)
             {
                 var candidatePath = System.IO.Path.Combine(installPath, candidate);
-                bool takenByOther = System.IO.File.Exists(candidatePath)
-                    && !string.Equals(rsRecord?.InstalledAs, candidate, StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(card.OsInstalledFile, candidate, StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(card.DcInstalledFile, candidate, StringComparison.OrdinalIgnoreCase);
+                // A name another RHI component holds (RE Framework's dinput8.dll, ...) is never used;
+                // ASI Loader would refuse it anyway
+                if (UltimateAsiLoaderService.FixedRhiDllOwner(card, candidate) != null) continue;
+                bool takenByOther = System.IO.File.Exists(candidatePath);
                 if (!takenByOther) { chosenName = candidate; break; }
             }
 
@@ -2341,7 +2341,7 @@ public partial class MainViewModel
                         && string.Equals(card.DlssnrInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase))
                     {
                         await _dlssStreamlineService.SwapDlssnrAsync(card.DlssDetection.DlssnrPath, newestDlss);
-                        card.DlssnrInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssnrPath));
+                        card.DlssnrInstalledVersion = DlssStreamlineService.FormatVersion(_dlssStreamlineService.GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(card.DlssDetection.DlssnrPath)));
                         gameUpdated = true;
                     }
                 }

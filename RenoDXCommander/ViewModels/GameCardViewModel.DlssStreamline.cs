@@ -163,7 +163,7 @@ public partial class GameCardViewModel
         if (DlssDetection.DlssgPath != null)
             DlssgInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.DlssgPath));
         if (DlssDetection.DlssnrPath != null)
-            DlssnrInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.DlssnrPath));
+            DlssnrInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(DlssDetection.DlssnrPath)));
         if (DlssDetection.StreamlineInterposerPath != null || DlssDetection.StreamlineFolder != null)
         {
             var folder = DlssDetection.StreamlineFolder

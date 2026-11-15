@@ -160,27 +160,7 @@ public partial class MainViewModel
         {
             foreach (var wikiName in card.EmulatorAddonNames)
             {
-                // Resolve URL: manifest addonUrls takes priority, then wiki-scraped mod list
-                string? resolvedUrl = null;
-                string? fileName = null;
-
-                if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuCfgInstall) == true
-                    && emuCfgInstall.AddonUrls?.TryGetValue(wikiName, out var manifestUrl) == true
-                    && !string.IsNullOrEmpty(manifestUrl))
-                {
-                    resolvedUrl = manifestUrl;
-                    fileName = Path.GetFileName(manifestUrl);
-                }
-                else
-                {
-                    var mod = _allMods.FirstOrDefault(m =>
-                        m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
-                    if (mod?.SnapshotUrl != null)
-                    {
-                        resolvedUrl = mod.SnapshotUrl;
-                        fileName = Path.GetFileName(mod.SnapshotUrl);
-                    }
-                }
+                var (resolvedUrl, fileName) = ResolveEmulatorAddon(wikiName);
 
                 if (resolvedUrl == null || fileName == null)
                 {
@@ -246,6 +226,35 @@ public partial class MainViewModel
     }
 
     /// <summary>
+    /// URL and file name of one emulator bundle addon: manifest <c>addonUrls</c> first, then the
+    /// wiki-scraped mod list. Install, uninstall and the update check must all use this, or
+    /// uninstall misses files installed from a manifest URL.
+    /// </summary>
+    private (string? Url, string? FileName) ResolveEmulatorAddon(string wikiName)
+    {
+        if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuCfg) == true
+            && emuCfg.AddonUrls?.TryGetValue(wikiName, out var manifestUrl) == true
+            && !string.IsNullOrEmpty(manifestUrl))
+            return (manifestUrl, EmulatorAddonFileName(manifestUrl));
+
+        var mod = _allMods.FirstOrDefault(m =>
+            m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+        return mod?.SnapshotUrl != null ? (mod.SnapshotUrl, EmulatorAddonFileName(mod.SnapshotUrl)) : (null, null);
+    }
+
+    /// <summary>
+    /// File name part of a remote URL (query string / fragment dropped); null when it has none.
+    /// Not URL-decoded, as before: existing installs from a URL with %xx in the name were saved
+    /// under the raw name, and decoding would make them look missing (and install a second copy).
+    /// </summary>
+    internal static string? EmulatorAddonFileName(string url)
+    {
+        var cut = url.IndexOfAny(new[] { '?', '#' });
+        var name = Path.GetFileName(cut >= 0 ? url[..cut] : url);
+        return string.IsNullOrWhiteSpace(name) ? null : name;
+    }
+
+    /// <summary>
     /// Uninstalls all emulator addons by removing addon files from the deploy path.
     /// </summary>
     private void UninstallEmulatorAddons(GameCardViewModel card)
@@ -258,11 +267,13 @@ public partial class MainViewModel
 
         foreach (var wikiName in card.EmulatorAddonNames)
         {
-            var mod = _allMods.FirstOrDefault(m =>
-                m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
-            if (mod?.SnapshotUrl == null) continue;
+            var (_, fileName) = ResolveEmulatorAddon(wikiName);
+            if (fileName == null)
+            {
+                _crashReporter.Log($"[UninstallEmulatorAddons] '{wikiName}' — not found in manifest addonUrls or wiki; can't tell its file name");
+                continue;
+            }
 
-            var fileName = Path.GetFileName(mod.SnapshotUrl);
             var filePath = Path.Combine(deployPath, fileName);
             if (File.Exists(filePath))
             {

@@ -27,7 +27,7 @@ paths:
 
 ### Install Flow (DX8/DX9)
 1. Remove existing legacy proxy + `[PROXY]` section if present (migration)
-2. Remove local ReShade `d3d9.dll` (backed up as `.reshade_backup`)
+2. Clear `d3d9.dll` with `PrepareDx9Target`: DXVK's own (reinstall; "own" = the DXVK record lists `d3d9.dll`, `RecordOwnsD3d9`; a hand-installed or other mod's DXVK is a foreign file) = replaced, backups kept; ReShade = moved to `.reshade_backup` (an existing one is never replaced); anything else = `.original` + `BackedUpFiles` (refused when `.original` already exists). Reinstalls merge the old record's `BackedUpFiles` (`MergeBackedUpFiles`, standard mode too). Before Nov 2026 a reinstall copied DXVK over `.reshade_backup`. A failure before the record is saved puts the moved file back (`UndoDx9Target`)
 3. Deploy DXVK as `d3d9.dll`
 4. Deploy `dxvk.conf` (Lilium: HDR preset content, Dev/Stable: `DefaultDxvkConfContent`)
 5. Ensure Vulkan layer ReShade installed (`VulkanLayerService.InstallLayer()`)
@@ -37,8 +37,9 @@ paths:
 
 ### Uninstall Flow (DX9)
 1. Delete DXVK `d3d9.dll` + `dxvk.conf`
-2. Reinstall ReShade as local `d3d9.dll` (from `.reshade_backup` or staging)
-3. Delete reshade.ini entirely, then recreate via `MergeRsIni` (standard DX mode)
+0. `UninstallPreflight` first: any record file a running game holds = nothing changed, record kept, `UninstallAsync` returns the reason (null = done)
+2. Reinstall ReShade as local `d3d9.dll` (from `.reshade_backup` or staging; a `.reshade_backup` that is DXVK is deleted, not restored). An RsRecord is only made when `d3d9.dll` is ReShade (step 3 may have put the game's own file back)
+3. Delete reshade.ini entirely, then recreate via `MergeRsIni` (standard DX mode) only when `d3d9.dll` is ReShade; when the game's own `d3d9.dll` came back, no reshade.ini is written and saved ReShade records for `d3d9.dll` are removed
 4. Remove Vulkan footprint
 5. Lilium only: Clear NVIDIA profile settings
 6. Re-resolve `GraphicsApi` back to DirectX9
@@ -104,3 +105,6 @@ Uses `LiliumGitHubApi` when `_selectedVariant == LiliumHdr`, not always `Standar
 
 ## Lilium HDR Shaders Limitation
 Most Lilium HDR shaders don't work on DX9 (require SM4+, DX9 ReShade compiles SM3). Only `lilium__sdr_trc_fix.fx`, `lilium__cas_hdr.fx`, `lilium__filmgrain.fx`, `lilium__rcas_hdr.fx` work. Use PumboAutoHDR for DX9 HDR shaders.
+
+## OptiScaler Coexistence (DX10/DX11)
+- When OptiScaler uses one of DXVK's names (usually `dxgi.dll`), that DLL goes in OptiScaler's plugins folder, which OptiScaler then loads: `OptiScaler\plugins` on OptiScaler 10 builds, `<game>\plugins` on 0.9 Stable (`OptiScalerService.GetPluginsDir`; never create `OptiScaler\` for 0.9). Listed in `DxvkInstalledRecord.PluginFolderDlls`; found with `DxvkService.FindPluginCopy` (installed build's folder first, then the other; a root `plugins\` copy only counts when it's a DXVK file, because that folder can be the game's). Install refuses, and update skips, when a same-name file there isn't DXVK (`CanWritePluginCopy`). Install, update, uninstall, preflight (checks both folders), detection and the folder mover (Inventory: root copy only; `OptiScaler\` moves whole) all go through these helpers. Details: OptiScaler "DXVK coexistence" in `rhi-install.md`.

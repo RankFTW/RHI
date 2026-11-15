@@ -565,13 +565,36 @@ public partial class DetailPanelBuilder
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase)
                     && (string.IsNullOrEmpty(card.Source) || c.Source == card.Source));
-                if (targetCard != null && (targetCard.DxvkEnabled
+                bool dxvkInstalled = targetCard != null && (targetCard.DxvkEnabled
                     || targetCard.DxvkStatus == GameStatus.Installed
-                    || targetCard.DxvkStatus == GameStatus.UpdateAvailable))
-                    _ = _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+                    || targetCard.DxvkStatus == GameStatus.UpdateAvailable);
+                var dxvkResetName  = ctx.CapturedName;
+                var dxvkResetStore = ctx.Card.Source;
+                // The variant and Lilium preset describe the installed DXVK: clear them only once it's gone,
+                // or Update would deploy another variant's DLLs over a kept (game running) install
+                _ = ResetDxvkOverridesAsync();
+                async Task ResetDxvkOverridesAsync()
+                {
+                    try
+                    {
+                        if (dxvkInstalled && targetCard != null)
+                        {
+                            await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+                            if (targetCard.DxvkStatus is GameStatus.Installed or GameStatus.UpdateAvailable)
+                            {
+                                CrashReporter.Log($"[DetailPanelBuilder.ResetOverrides] '{dxvkResetName}': DXVK not uninstalled — variant and Lilium preset kept");
+                                return;
+                            }
+                        }
+                        _window.ViewModel.SetDxvkVariantOverride(dxvkResetName, null, dxvkResetStore);
+                        _window.ViewModel.SetLiliumPreset(dxvkResetName, 0, dxvkResetStore);
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[DetailPanelBuilder.ResetOverrides] '{dxvkResetName}': DXVK reset failed — {ex.Message}");
+                    }
+                }
             }
-            _window.ViewModel.SetDxvkVariantOverride(ctx.CapturedName, null, ctx.Card.Source);
-            _window.ViewModel.SetLiliumPreset(ctx.CapturedName, 0, ctx.Card.Source);
 
             // Reset DXVK update exclusion via the shared Update Inclusion system
             if (_window.ViewModel.IsUpdateAllExcludedDxvk(ctx.CapturedName, card.Source))

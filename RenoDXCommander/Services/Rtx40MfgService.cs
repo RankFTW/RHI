@@ -709,7 +709,9 @@ public partial class Rtx40MfgService
         foreach (var (installPath, installedAs) in list)
         {
             if (!IsOutdatedIn(installPath, installedAs)) continue;
-            if (Install(installPath, installedAs))
+            // IsOutdatedIn is true for any file that differs from staging, so it can't tell RHI's copy from
+            // another mod's: Install treats it as RHI's only when its version info matches (SameProductName).
+            if (Install(installPath, installedAs, replacesOwnCopy: false))
             {
                 updated++;
                 _crashReporter.Log($"[Rtx40MfgService.UpdateInstalledGames] Updated '{installedAs}' in '{installPath}' to {StagedVersion}");
@@ -740,9 +742,10 @@ public partial class Rtx40MfgService
 
     /// <summary>
     /// Deploys RTXMFG.dll to the game folder renamed to <paramref name="dllName"/>.
-    /// Writes a sentinel so uninstall knows whether to restore or delete.
+    /// Writes a sentinel so uninstall knows whether to restore or delete. <paramref name="replacesOwnCopy"/>:
+    /// the file there is RHI's earlier copy (update), never saved as the game's original.
     /// </summary>
-    public bool Install(string installPath, string dllName)
+    public bool Install(string installPath, string dllName, bool replacesOwnCopy = false)
     {
         if (string.IsNullOrEmpty(installPath) || !IsStagingReady) return false;
         try
@@ -750,7 +753,9 @@ public partial class Rtx40MfgService
             var src  = Path.Combine(_stagingDir, StagedDllName);
             var dest = Path.Combine(installPath, dllName);
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!); // OptiScaler\plugins for plugin installs
-            AuxInstallService.SentinelBackup(dest);
+            // A reinstall / update over RHI's own copy (same mod by version info) with no sentinel, from old installs:
+            // don't save the mod as the game's original
+            AuxInstallService.SentinelBackupReplacingOwn(dest, replacesOwnCopy || AuxInstallService.SameProductName(dest, src));
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[Rtx40MfgService.Install] Deployed as '{dllName}' to '{installPath}'");
             // XeSS runtime for standalone XeMFG. Not fatal: DLSS frame generation works without it.

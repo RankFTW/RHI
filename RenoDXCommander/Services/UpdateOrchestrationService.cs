@@ -282,6 +282,12 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 dispatcherQueue?.TryEnqueue(() => card.RsActionMessage = "❌ ReShade DLL not found — see Custom ReShade folder");
                 _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Skipped '{card.GameName}' — {ex.Message.Replace('\n', ' ')}");
             }
+            catch (ReShadeInstallRefusedException ex)
+            {
+                // Name held by another RHI component, or a foreign DLL that can't be backed up: nothing changed
+                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Skipped '{card.GameName}' — {ex.Message}");
+                dispatcherQueue?.TryEnqueue(() => card.RsActionMessage = $"Skipped: {ex.Message}");
+            }
             catch (Exception ex)
             {
                 card.RsActionMessage = $"❌ Failed: {ex.Message}";

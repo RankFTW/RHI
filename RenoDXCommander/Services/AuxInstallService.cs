@@ -44,6 +44,20 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static Func<string, string, bool>? RsAsiModeResolver { get; set; }
 
+    /// <summary>
+    /// (gameName, installPath, dllName) → the RHI component other than ReShade that holds that DLL
+    /// name in the game, or null. Set by MainViewModel. OptiScaler / Display Commander are handled by
+    /// <see cref="ResolveReShadeDestName"/> (ReShade64.dll) and DXVK by its own ReShade switch, so the
+    /// resolver leaves them out.
+    /// </summary>
+    public static Func<string, string, string, string?>? OtherDllOwnerResolver { get; set; }
+
+    /// <summary>
+    /// Delegate (gameName, store) → true when the game's reshade.ini is locked ("Keep reshade.ini
+    /// updated" off). Set during app initialization. ReShade uninstall then leaves reshade.ini alone.
+    /// </summary>
+    public static Func<string, string, bool>? RsIniLockedResolver { get; set; }
+
     /// <summary>ReShade's file name when loaded by an ASI loader.</summary>
     public static string RsAsiName(bool use32Bit) => use32Bit ? "ReShade32.asi" : "ReShade64.asi";
 
@@ -544,6 +558,52 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
         catch (Exception ex)
         {
             CrashReporter.Log($"[SentinelBackup] Failed for '{Path.GetFileName(destPath)}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// <see cref="SentinelBackup"/> for a target that may already hold RHI's own copy of the component
+    /// (an update or reinstall). When <paramref name="existingIsRhiCopy"/> is true and there is no
+    /// <c>.original</c> (installs from before RHI wrote sentinels, or a deleted sentinel), the file there is
+    /// the mod itself, not the game's: a 0-byte sentinel is written instead of saving it as the "original",
+    /// which uninstall would put back (leaving the mod in the game). Otherwise the same as SentinelBackup.
+    /// </summary>
+    public static void SentinelBackupReplacingOwn(string destPath, bool existingIsRhiCopy)
+    {
+        var backup = destPath + ".original";
+        if (existingIsRhiCopy && File.Exists(destPath) && !File.Exists(backup))
+        {
+            try
+            {
+                File.WriteAllBytes(backup, Array.Empty<byte>());
+                CrashReporter.Log($"[AuxInstallService.SentinelBackupReplacingOwn] '{Path.GetFileName(destPath)}' is RHI's own copy with no sentinel — wrote one instead of a backup");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                CrashReporter.Log($"[AuxInstallService.SentinelBackupReplacingOwn] Failed for '{Path.GetFileName(destPath)}' — {ex.Message}");
+            }
+            return;
+        }
+        SentinelBackup(destPath);
+    }
+
+    /// <summary>
+    /// True when both files exist and have the same non-empty version-info ProductName
+    /// (identifies a mod's DLL against its staged copy across versions).
+    /// </summary>
+    public static bool SameProductName(string path, string referencePath)
+    {
+        try
+        {
+            if (!File.Exists(path) || !File.Exists(referencePath)) return false;
+            var a = FileVersionInfo.GetVersionInfo(path).ProductName?.Trim();
+            var b = FileVersionInfo.GetVersionInfo(referencePath).ProductName?.Trim();
+            return !string.IsNullOrEmpty(a) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[AuxInstallService.SameProductName] Could not read '{path}' — {ex.Message}");
+            return false;
         }
     }
 

@@ -293,6 +293,10 @@ public partial class MainViewModel
 
         // Wire up per-game "Load ReShade as ASI"
         AuxInstallService.RsAsiModeResolver = (gameName, store) => GetRsAsiMode(gameName, store);
+        // ReShade never takes a DLL name another RHI component holds (ASI Loader, RE Framework, extras)
+        AuxInstallService.OtherDllOwnerResolver = OtherReShadeDllOwner;
+        // ReShade uninstall keeps reshade.ini when the game's ini is locked
+        AuxInstallService.RsIniLockedResolver = (gameName, store) => !GetKeepRsIniUpdated(gameName, store);
         UpdateOrchestrationService.AfterSourceAddonUpdate = ApplySourceSetupAsync;
 
         // Universal MFG Unlocker moves in and out of OptiScaler\plugins with OptiScaler 10 builds

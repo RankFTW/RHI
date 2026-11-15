@@ -133,7 +133,13 @@ public static class InstallFolderMover
         foreach (var d in plan.Deletes) if (File.Exists(d)) yield return d;
     }
 
-    private static string? TryOpenExclusive(string path)
+    internal static string? TryOpenExclusive(string path) => TryOpenExclusiveError(path)?.Message;
+
+    /// <summary>
+    /// <see cref="TryOpenExclusive"/> returning the exception: <see cref="UnauthorizedAccessException"/> = no
+    /// permission, <see cref="IOException"/> = held by another process (or another I/O error).
+    /// </summary>
+    internal static Exception? TryOpenExclusiveError(string path)
     {
         try
         {
@@ -144,9 +150,9 @@ public static class InstallFolderMover
         {
             // Read-only files still move; check nothing else holds them.
             try { using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None); return null; }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ex.Message; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ex; }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ex.Message; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ex; }
     }
 
     private static bool IsReadOnly(string path)

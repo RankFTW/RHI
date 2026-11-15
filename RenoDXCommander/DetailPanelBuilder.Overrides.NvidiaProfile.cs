@@ -238,7 +238,11 @@ public partial class DetailPanelBuilder
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (tc?.DlssDetection?.DlssPath == null) return;
-                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase)) dlssService.Restore(tc.DlssDetection.DlssPath);
+                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!dlssService.Restore(tc.DlssDetection.DlssPath, tc.InstallPath))
+                            await ShowDlssRestoreRefusedAsync(tc.DlssDetection.DlssPath, tc.InstallPath);
+                    }
                     else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssPath);
                     else await dlssService.SwapDlssAsync(tc.DlssDetection.DlssPath, version);
                     await Task.Run(() => tc.RefreshDlssVersions(dlssService)); // sync disk I/O — keep off UI thread
@@ -265,7 +269,11 @@ public partial class DetailPanelBuilder
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (tc?.DlssDetection?.DlssdPath == null) return;
-                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase)) dlssService.Restore(tc.DlssDetection.DlssdPath);
+                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!dlssService.Restore(tc.DlssDetection.DlssdPath, tc.InstallPath))
+                            await ShowDlssRestoreRefusedAsync(tc.DlssDetection.DlssdPath, tc.InstallPath);
+                    }
                     else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssdPath);
                     else await dlssService.SwapDlssdAsync(tc.DlssDetection.DlssdPath, version);
                     await Task.Run(() => tc.RefreshDlssVersions(dlssService)); // sync disk I/O — keep off UI thread
@@ -293,7 +301,11 @@ public partial class DetailPanelBuilder
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (tc?.DlssDetection?.DlssgPath == null) return;
-                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase)) dlssService.Restore(tc.DlssDetection.DlssgPath);
+                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!dlssService.Restore(tc.DlssDetection.DlssgPath, tc.InstallPath))
+                            await ShowDlssRestoreRefusedAsync(tc.DlssDetection.DlssgPath, tc.InstallPath);
+                    }
                     else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssgPath);
                     else await dlssService.SwapDlssgAsync(tc.DlssDetection.DlssgPath, version);
                     await Task.Run(() => tc.RefreshDlssVersions(dlssService)); // sync disk I/O — keep off UI thread
@@ -376,7 +388,7 @@ public partial class DetailPanelBuilder
                 {
                     nrInstalledVersion = (card.DlssnrIsCustom)
                         ? "Custom"
-                        : DlssStreamlineService.FormatVersion(dlssService.GetFileVersion(nrDllPath));
+                        : DlssStreamlineService.FormatVersion(dlssService.GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(nrDllPath)));
                 }
                 else
                 {
@@ -393,7 +405,13 @@ public partial class DetailPanelBuilder
                         if (tc?.DlssDetection?.DlssnrPath == null) return; // no NR DLL in the game: the Neural Rendering section deploys it
                         if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
                         {
-                            dlssService.Restore(tc.DlssDetection.DlssnrPath);
+                            if (!dlssService.Restore(tc.DlssDetection.DlssnrPath, tc.InstallPath))
+                            {
+                                // Left alone for another component: keep the NR version choice and the custom marker
+                                await ShowDlssRestoreRefusedAsync(tc.DlssDetection.DlssnrPath, tc.InstallPath);
+                                _window.DispatcherQueue?.TryEnqueue(() => BuildNvidiaProfileSection(tc, tc.GameName));
+                                return;
+                            }
                             // Clean up custom marker on restore
                             try { File.Delete(tc.DlssDetection.DlssnrPath + ".rhi_custom"); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.BuildNvidiaProfileBody] Failed to delete .rhi_custom marker — {ex.Message}"); }
                         }
@@ -442,7 +460,11 @@ public partial class DetailPanelBuilder
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (tc?.DlssDetection?.StreamlineFolder == null) return;
-                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase)) dlssService.RestoreStreamline(tc.DlssDetection.StreamlineFolder);
+                    if (version.StartsWith("Default", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (dlssService.RestoreStreamline(tc.DlssDetection.StreamlineFolder, tc.InstallPath) > 0)
+                            await ShowDlssSwapErrorAsync("Some Streamline files were left as they are because another RHI component placed or uses them. Uninstall that component to put the game's own files back.");
+                    }
                     else if (version == "Custom") await dlssService.SwapStreamlineCustomAsync(tc.DlssDetection.StreamlineFolder);
                     else await dlssService.SwapStreamlineAsync(tc.DlssDetection.StreamlineFolder, version);
                     await Task.Run(() => tc.RefreshDlssVersions(dlssService)); // sync disk I/O — keep off UI thread
@@ -485,7 +507,7 @@ public partial class DetailPanelBuilder
                 {
                     var tc = targetCard;
                     var hasDlssnrForReset = FeatureFlags.DlssNr && tc.HasDlssnr;
-                    dlssService.RestoreAll(tc.DlssDetection);
+                    dlssService.RestoreAll(tc.DlssDetection, tc.InstallPath);
                     _ = Task.Run(() =>
                     {
                         presetService.SetSrPreset(tc.GameName, tc.InstallPath, 0);

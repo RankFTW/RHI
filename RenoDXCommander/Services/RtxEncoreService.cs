@@ -158,11 +158,11 @@ public class RtxEncoreService
         if (!File.Exists(dest) || GetNrDllCachedPath() == null) return false;
         var owners = RhiInstallManifest.GetSharedFileOwners(installPath, rel);
         if (owners.Count != 1 || !owners[0].Equals(NrOwnerName, StringComparison.OrdinalIgnoreCase)) return false;
-        var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(dest);
+        var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(DlssNrCostScalerService.ResolveRealNrDllPath(dest));
         var ver = $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}";
         if (ver == NrRequiredVer || !ver.StartsWith("310.8.", StringComparison.Ordinal)) return false;
         _crashReporter.Log($"[RtxEncoreService.UpgradeNrDllIfOlder] '{installPath}': {ver} → {NrRequiredVer}");
-        return DeployNrDll(installPath, installedAs);
+        return DeployNrDll(installPath, installedAs, replacesOwnCopy: true);
     }
 
     /// <summary>
@@ -211,7 +211,7 @@ public class RtxEncoreService
     /// Deploys nvngx_dlssnr.dll 310.9.16 beside RTX Encore (see <see cref="NrRelPath"/>) using the sentinel
     /// pattern and registers RtxEncore as a SharedFile owner in rhi_install.txt.
     /// </summary>
-    public bool DeployNrDll(string installPath, string? installedAs)
+    public bool DeployNrDll(string installPath, string? installedAs, bool replacesOwnCopy = false)
     {
         var src = GetNrDllCachedPath();
         if (src == null)
@@ -224,8 +224,13 @@ public class RtxEncoreService
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-            AuxInstallService.SentinelBackup(dest);
-            File.Copy(src, dest, overwrite: true);
+            // With the NR Cost Scaler installed there, nvngx_dlssnr.dll is its proxy: replace the real DLL behind it
+            if (!DlssNrCostScalerService.ReplaceRealNrDll(dest, src))
+            {
+                // replacesOwnCopy: RTX Encore is the file's only owner (upgrade), so it's RHI's copy, never the game's original
+                AuxInstallService.SentinelBackupReplacingOwn(dest, replacesOwnCopy);
+                File.Copy(src, dest, overwrite: true);
+            }
             RhiInstallManifest.AddSharedFileOwner(installPath, rel, NrOwnerName);
             _crashReporter.Log($"[RtxEncoreService.DeployNrDll] Deployed {NrDllName} {NrRequiredVer} to '{dest}'");
             return true;
@@ -250,6 +255,12 @@ public class RtxEncoreService
         if (!safeToDelete) return;
 
         var dest = Path.Combine(installPath, rel);
+        if (!string.Equals(DlssNrCostScalerService.ResolveRealNrDllPath(dest), dest, StringComparison.OrdinalIgnoreCase))
+        {
+            // The NR Cost Scaler proxy needs the real DLL behind it; its own uninstall puts it back first
+            _crashReporter.Log($"[RtxEncoreService.RemoveNrDll] Kept '{rel}' in '{installPath}' — the NR Cost Scaler is installed there");
+            return;
+        }
         try
         {
             AuxInstallService.SentinelRestore(dest);
@@ -319,9 +330,8 @@ public class RtxEncoreService
                     return;
                 }
 
-                using (var src = entry.Open())
-                using (var dst = File.Create(destDll))
-                    await src.CopyToAsync(dst).ConfigureAwait(false);
+                // Through a temp file: a failed extraction never leaves a partial DLL that IsStagingReady accepts
+                await FileHelper.WriteStreamAtomicAsync(entry.Open, destDll, entry.Length).ConfigureAwait(false);
 
                 // The separate ASI build, for the plugins\ install (the docs say to use it rather than renaming the DLL)
                 var asiEntry = zip.Entries.FirstOrDefault(e =>
@@ -330,9 +340,7 @@ public class RtxEncoreService
                 var noAsi = Path.Combine(_stagingDir, NoAsiMarker);
                 if (asiEntry != null)
                 {
-                    using (var src = asiEntry.Open())
-                    using (var dst = File.Create(destAsi))
-                        await src.CopyToAsync(dst).ConfigureAwait(false);
+                    await FileHelper.WriteStreamAtomicAsync(asiEntry.Open, destAsi, asiEntry.Length).ConfigureAwait(false);
                     if (File.Exists(noAsi)) File.Delete(noAsi);
                 }
                 else
@@ -409,7 +417,10 @@ public class RtxEncoreService
         try
         {
             if (IsBinkName(dllName)) KeepGameBinkAsHooked(dest);
-            else AuxInstallService.SentinelBackup(dest);
+            // A reinstall / update over RHI's own copy with no sentinel (old installs): don't save the mod as the original
+            else AuxInstallService.SentinelBackupReplacingOwn(dest,
+                string.Equals(existingInstalledAs, dllName, StringComparison.OrdinalIgnoreCase)
+                || AuxInstallService.SameProductName(dest, src));
             File.Copy(src, dest, overwrite: true);
             RhiInstallManifest.SetComponent(installPath, ComponentName, new[] { dest });
             _crashReporter.Log($"[RtxEncoreService.InstallAsync] Installed as '{dllName}' in '{installPath}' (v{StagedVersion})");
@@ -478,7 +489,8 @@ public class RtxEncoreService
         IProgress<(string message, double percent)>? progress = null)
     {
         // Re-install under the same name (no name change)
-        return await InstallAsync(installPath, installedAs, null, progress).ConfigureAwait(false);
+        // Passing the same name as the existing install marks the file there as RHI's own copy
+        return await InstallAsync(installPath, installedAs, installedAs, progress).ConfigureAwait(false);
     }
 
     // ── Private ───────────────────────────────────────────────────────────────

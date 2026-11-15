@@ -17,7 +17,10 @@ public class DxvkInstalledRecord
     /// <summary>DXVK DLLs deployed to the Game_Directory root.</summary>
     public List<string> InstalledDlls { get; set; } = new();
 
-    /// <summary>DXVK DLLs deployed to OptiScaler/plugins/ folder.</summary>
+    /// <summary>
+    /// DXVK DLLs deployed to OptiScaler's plugins folder (name clash with OptiScaler): OptiScaler\plugins on
+    /// OptiScaler 10 builds, &lt;game&gt;\plugins on 0.9. Find them with <c>DxvkService.FindPluginCopy</c>.
+    /// </summary>
     public List<string> PluginFolderDlls { get; set; } = new();
 
     /// <summary>Original files backed up with .original extension.</summary>

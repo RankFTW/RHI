@@ -887,7 +887,10 @@ public class AddonPackService : IAddonPackService
         foreach (var packageName in activeSelection)
         {
             var safeName = SanitizeFileName(packageName);
-            var stagingFile = Path.Combine(StagingDir, safeName + bitnessExt);
+            // Per addon: the DLSS5 / ShortFuse tools switch to .addon64 for themselves only
+            // (changing the shared value made later addons in a 32-bit game deploy as .addon64)
+            var ext = bitnessExt;
+            var stagingFile = Path.Combine(StagingDir, safeName + ext);
             var isCustom = false;
 
             if (!File.Exists(stagingFile))
@@ -903,7 +906,7 @@ public class AddonPackService : IAddonPackService
                         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — rdx5 staging not ready.");
                         continue;
                     }
-                    bitnessExt = ".addon64"; // always deploy as .addon64 regardless of game bitness
+                    ext = ".addon64"; // always deploy as .addon64 regardless of game bitness
                 }
                 else if (packageName.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase))
                 {
@@ -914,12 +917,12 @@ public class AddonPackService : IAddonPackService
                         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'DLSS Tool (ShortFuse)' — SF staging not ready.");
                         continue;
                     }
-                    bitnessExt = ".addon64"; // always deploy as .addon64 regardless of game bitness
+                    ext = ".addon64"; // always deploy as .addon64 regardless of game bitness
                 }
                 else
                 {
                 // Check if this is a custom addon (deployed directly from Custom\Addons folder)
-                var customPath = Path.Combine(CustomAddonsDir, packageName + bitnessExt);
+                var customPath = Path.Combine(CustomAddonsDir, packageName + ext);
                 if (File.Exists(customPath))
                 {
                     stagingFile = customPath;
@@ -927,7 +930,7 @@ public class AddonPackService : IAddonPackService
                 }
                 else
                 {
-                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — no {bitnessExt} variant in staging or custom folder.");
+                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — no {ext} variant in staging or custom folder.");
                     continue;
                 }
                 } // end else (non-rdx5 path)
@@ -983,7 +986,7 @@ public class AddonPackService : IAddonPackService
                 deployName = packageName;
             }
 
-            var destFile = Path.Combine(deployDir, deployName + bitnessExt);
+            var destFile = Path.Combine(deployDir, deployName + ext);
             try
             {
                 // File.Copy keeps the source's modified time, so same size + time means this copy is already current.
@@ -991,18 +994,18 @@ public class AddonPackService : IAddonPackService
                 var dst = new FileInfo(destFile);
                 if (dst.Exists && dst.Length == src.Length && dst.LastWriteTimeUtc == src.LastWriteTimeUtc)
                 {
-                    deployedFileNames.Add(deployName + bitnessExt);
+                    deployedFileNames.Add(deployName + ext);
                 }
                 else
                 {
                     File.Copy(stagingFile, destFile, overwrite: true);
-                    deployedFileNames.Add(deployName + bitnessExt);
-                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployed '{deployName}{bitnessExt}' to '{deployDir}'.");
+                    deployedFileNames.Add(deployName + ext);
+                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployed '{deployName}{ext}' to '{deployDir}'.");
                 }
             }
             catch (Exception ex)
             {
-                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to copy '{deployName}{bitnessExt}' — {ex.Message}");
+                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to copy '{deployName}{ext}' — {ex.Message}");
             }
         }
 
@@ -1190,8 +1193,13 @@ public class AddonPackService : IAddonPackService
                 }
             }
 
-            if (File.Exists(destPath)) File.Delete(destPath);
-            File.Move(tempPath, destPath);
+            // A connection that closes early ends the stream without an error: never stage a cut-off file
+            if (total > 0 && received != total)
+                throw new IOException($"Download of {displayName} was cut off ({received} of {total} bytes)");
+            if (received == 0)
+                throw new IOException($"Download of {displayName} was empty");
+
+            File.Move(tempPath, destPath, overwrite: true);
         }
         catch
         {
@@ -1199,6 +1207,13 @@ public class AddonPackService : IAddonPackService
             throw;
         }
     }
+
+    /// <summary>
+    /// Extracts one archive entry to <paramref name="destPath"/> through a temp file, so a failed or cut-off
+    /// extraction never leaves a partial file that later checks (<c>File.Exists</c>) would accept.
+    /// </summary>
+    private static Task ExtractEntryAtomicAsync(SharpCompress.Archives.IArchiveEntry entry, string destPath)
+        => FileHelper.WriteStreamAtomicAsync(entry.OpenEntryStream, destPath, entry.Size);
 
     /// <summary>
     /// Downloads a zip from <paramref name="url"/>, extracts .addon32/.addon64 files
@@ -1230,9 +1245,7 @@ public class AddonPackService : IAddonPackService
                         && key.Contains("host64", StringComparison.OrdinalIgnoreCase))
                     {
                         var exeDestPath = Path.Combine(StagingDir, safeName + "_host64.exe");
-                        using var exeStream = archiveEntry.OpenEntryStream();
-                        using var exeFile = File.Create(exeDestPath);
-                        await exeStream.CopyToAsync(exeFile);
+                        await ExtractEntryAtomicAsync(archiveEntry, exeDestPath);
                         CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted host64 exe '{fileName}' → '{exeDestPath}'");
                     }
                     // Also extract DLSS5_Feed.fx from Feeder zips into the DLSS5Feeder shader pack staging folder
@@ -1241,9 +1254,7 @@ public class AddonPackService : IAddonPackService
                         var feederShadersDir = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
                         Directory.CreateDirectory(feederShadersDir);
                         var fxDestPath = Path.Combine(feederShadersDir, "DLSS5_Feed.fx");
-                        using var fxStream = archiveEntry.OpenEntryStream();
-                        using var fxFile = File.Create(fxDestPath);
-                        await fxStream.CopyToAsync(fxFile);
+                        await ExtractEntryAtomicAsync(archiveEntry, fxDestPath);
                         CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted DLSS5_Feed.fx → '{fxDestPath}'");
                         // Register the file in the DLSS5Feeder pack so GetPackShaderFiles returns it
                         // and EnsurePackAsync stops trying to re-download the pack.
@@ -1254,9 +1265,7 @@ public class AddonPackService : IAddonPackService
                 }
 
                 var destPath = Path.Combine(StagingDir, safeName + ext);
-                using var entryStream = archiveEntry.OpenEntryStream();
-                using var fileStream = File.Create(destPath);
-                await entryStream.CopyToAsync(fileStream);
+                await ExtractEntryAtomicAsync(archiveEntry, destPath);
 
                 // Store the original filename from inside the zip for deploy naming
                 var originalName = Path.GetFileNameWithoutExtension(fileName);

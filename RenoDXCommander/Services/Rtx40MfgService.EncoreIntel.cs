@@ -101,6 +101,7 @@ public partial class Rtx40MfgService
             Directory.CreateDirectory(dir);
             var (privateFiles, nativeFiles) = ReadEncoreMarker(marker);
             var natives = FindGameIntelFiles(gameRoot);
+            bool allOk = true;
 
             foreach (var f in EncoreIntelDlls)
             {
@@ -110,17 +111,14 @@ public partial class Rtx40MfgService
 
                 if (gameCopies.Count > 0)
                 {
+                    bool replacedAll = true;
                     foreach (var p in gameCopies)
                     {
                         nativeFiles.Add(Path.GetRelativePath(gameRoot, p));
                         if (SameContent(p, staged)) continue; // already 3.0.2
-                        // The game's file (its original, or a newer one a game update put back) becomes the backup
-                        var backup = p + EncoreBackupSuffix;
-                        if (File.Exists(backup)) File.Delete(backup);
-                        File.Move(p, backup);
-                        File.Copy(staged, p);
-                        _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Replaced the game's '{p}' ({FileVersionOf(backup)}) with XeSS SDK {XessSdkTag}");
+                        if (!ReplaceGameIntelFile(p, staged)) replacedAll = false;
                     }
+                    if (!replacedAll) { allOk = false; continue; } // the game's own file is still in place
                     // The game has its own copy now: RHI's duplicate in the private folder goes
                     if (privateFiles.Remove(f.File) && File.Exists(privatePath))
                     {
@@ -143,14 +141,61 @@ public partial class Rtx40MfgService
             File.Copy(Path.Combine(XessStagingDir, EncoreIntelLicense.File), Path.Combine(dir, EncoreLicenseName), overwrite: true);
             privateFiles.Add(EncoreLicenseName);
             WriteEncoreMarker(marker, privateFiles, nativeFiles);
-            _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Intel runtimes for RTX Encore: {privateFiles.Count - 1} in '{dir}', {nativeFiles.Count} in the game's own folders");
-            return true;
+            _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Intel runtimes for RTX Encore: {privateFiles.Count - 1} in '{dir}', {nativeFiles.Count} in the game's own folders{(allOk ? "" : " (some game files couldn't be replaced)")}");
+            return allOk;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Failed for '{installPath}' — {ex.Message}");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Replaces the game's own Intel file <paramref name="path"/> with <paramref name="staged"/>, keeping the game's
+    /// file (its original, or a newer one a game update put back) as <c>.encore-original</c>. The new file is
+    /// copied beside it first and swapped in with renames; on any failure the game's file and the previous backup
+    /// are put back, so the game is never left without the DLL. Returns false on failure (logged).
+    /// </summary>
+    internal bool ReplaceGameIntelFile(string path, string staged)
+    {
+        var backup  = path + EncoreBackupSuffix;
+        var temp    = path + ".encore-new";
+        var oldBack = backup + ".old";
+        bool movedOldBackup = false, movedGameFile = false;
+        try
+        {
+            File.Copy(staged, temp, overwrite: true);
+            if (File.Exists(backup)) { File.Move(backup, oldBack, overwrite: true); movedOldBackup = true; }
+            File.Move(path, backup);
+            movedGameFile = true;
+            File.Move(temp, path);
+            _crashReporter.Log($"[Rtx40MfgService.ReplaceGameIntelFile] Replaced the game's '{path}' ({FileVersionOf(backup)}) with XeSS SDK {XessSdkTag}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[Rtx40MfgService.ReplaceGameIntelFile] Couldn't replace '{path}' — {ex.Message}; putting the game's file back");
+            try
+            {
+                if (movedGameFile && !File.Exists(path)) File.Move(backup, path);
+                if (movedOldBackup && !File.Exists(backup)) File.Move(oldBack, backup);
+            }
+            catch (Exception ex2) when (ex2 is IOException or UnauthorizedAccessException)
+            {
+                _crashReporter.Log($"[Rtx40MfgService.ReplaceGameIntelFile] Rollback failed for '{path}' — {ex2.Message}");
+            }
+            DeleteQuietly(temp);
+            return false;
+        }
+        if (movedOldBackup) DeleteQuietly(oldBack);
+        return true;
+    }
+
+    private void DeleteQuietly(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { _crashReporter.Log($"[Rtx40MfgService.DeleteQuietly] Couldn't delete '{path}' — {ex.Message}"); }
     }
 
     /// <summary>

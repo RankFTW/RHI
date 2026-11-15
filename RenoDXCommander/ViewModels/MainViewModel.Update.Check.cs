@@ -466,17 +466,17 @@ public partial class MainViewModel
 
                 foreach (var wikiName in emuCard.EmulatorAddonNames!)
                 {
-                    var mod = _allMods.FirstOrDefault(m => m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
-                    if (mod?.SnapshotUrl == null) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — no wiki match or no SnapshotUrl"); continue; }
+                    // Same resolution as install / uninstall (manifest addonUrls, then wiki)
+                    var (addonUrl, fileName) = ResolveEmulatorAddon(wikiName);
+                    if (addonUrl == null || fileName == null) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — no manifest URL or wiki SnapshotUrl"); continue; }
 
-                    var fileName = Path.GetFileName(mod.SnapshotUrl);
                     var localFile = Path.Combine(deployPath, fileName);
                     if (!File.Exists(localFile)) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — file missing: {fileName}"); anyUpdate = true; break; }
 
                     // Check remote size
                     try
                     {
-                        using var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, mod.SnapshotUrl)).ConfigureAwait(false);
+                        using var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, addonUrl)).ConfigureAwait(false);
                         if (headResp.IsSuccessStatusCode && headResp.Content.Headers.ContentLength.HasValue)
                         {
                             var localSize = new FileInfo(localFile).Length;

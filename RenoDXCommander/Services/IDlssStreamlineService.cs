@@ -88,19 +88,23 @@ public interface IDlssStreamlineService
     // ── Restore ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Restores a single DLL from its .original backup.
+    /// Restores a single DLL from its .original backup (undoes a version swap). Leaves the file alone
+    /// and returns false when another RHI component placed or owns it; <paramref name="installPath"/>
+    /// is the game folder holding rhi_install.txt.
     /// </summary>
-    void Restore(string dllPath);
+    bool Restore(string dllPath, string? installPath = null);
 
     /// <summary>
-    /// Restores all Streamline .original backups in the given folder.
+    /// Restores all Streamline .original backups in the given folder. Returns how many
+    /// sl.*.dll files were left alone because another RHI component placed or owns them.
     /// </summary>
-    void RestoreStreamline(string gameFolder);
+    int RestoreStreamline(string gameFolder, string? installPath = null);
 
     /// <summary>
-    /// Restores all DLSS and Streamline .original backups for a game.
+    /// Restores all DLSS and Streamline .original backups for a game. Returns how many files were
+    /// left alone because another RHI component placed or owns them (0 = everything restored).
     /// </summary>
-    void RestoreAll(DlssDetectionResult detection);
+    int RestoreAll(DlssDetectionResult detection, string? installPath = null);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

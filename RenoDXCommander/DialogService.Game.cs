@@ -17,20 +17,22 @@ public partial class DialogService
     {
         var fileSize = new System.IO.FileInfo(dxgiPath).Length;
         var sizeKB   = fileSize / 1024.0;
+        var dllName  = System.IO.Path.GetFileName(dxgiPath);
 
         var dlg = new ContentDialog
         {
-            Title               = "⚠ Unknown dxgi.dll Detected",
+            Title               = $"⚠ Unknown {dllName} Detected",
             Content             = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
                 Foreground   = Brush(ResourceKeys.AccentAmberBrush),
                 FontSize     = 13,
-                Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
+                Text         = $"A {dllName} file was found in:\n{card.InstallPath}\n\n" +
                                $"File size: {sizeKB:N0} KB\n\n" +
                                "RHI cannot identify this file as ReShade or Display Commander. " +
                                "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
+                               "Overwriting it may break the existing mod. RHI keeps it as " +
+                               $"{dllName}.original and puts it back when ReShade is uninstalled. Do you want to proceed?",
             },
             PrimaryButtonText   = "Overwrite",
             CloseButtonText     = "Cancel",

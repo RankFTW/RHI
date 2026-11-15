@@ -11,6 +11,9 @@ fileMatchPattern: "*Dlss*,*Streamline*,*DlssPreset*,*NvidiaProfile*,*Nvidia*"
 - **Storage**: `%LocalAppData%\RHI\DLSS\{version}\`, `DLSS-D\{version}\`, `DLSS-G\{version}\`, `Streamline\{version}\`
 - **Manifest**: `dlss_manifest.json` (separate from main manifest). Fetched with ETag caching.
 - **Backup**: `.original` extension per game. Never overwrite existing `.original` — first backup is always the true game original.
+- **"Default" / Restore vs shared-file owners** (`DlssStreamlineService.RestoreBlockedReason`): a bare file name in `rhi_install.txt` means the file in that manifest's own folder, except for ShortFuse and DLSS5 Tool (`DetectedPathOwners`), which deploy over the detected DLL in any subfolder but record it by bare name. Relative keys (RTX Encore `plugins
+vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folder" made OptiScaler's root `nvngx_dlss.dll` block Default for a UE game's own DLSS in `Engine\Plugins`. `Restore` returns false when refused, `RestoreStreamline` / `RestoreAll` return how many files were kept; callers show a message and must not clear the user's version choice on a refusal. `RestoreStreamline` still restores the rest from the AppData zip when some sl.*.dll are kept, skipping the kept ones.
+- **NR Cost Scaler**: every read of the NR version (detection, trusted cache, cache load, card refresh, auto-update) goes through `DlssNrCostScalerService.ResolveRealNrDllPath`, or the proxy's version shows and auto-update compares against it.
 - **Streamline deployment rule**: Only replace `sl.*.dll` files that already exist in the game folder.
 
 ### Service & ViewModel

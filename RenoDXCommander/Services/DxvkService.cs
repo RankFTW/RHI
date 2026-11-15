@@ -552,7 +552,8 @@ public partial class DxvkService : IDxvkService
     /// <param name="installPath">The game's resolved install directory.</param>
     /// <returns>
     /// A tuple of (rootDlls, pluginDlls) where rootDlls go to the game
-    /// directory and pluginDlls go to OptiScaler/plugins/.
+    /// directory and pluginDlls go to OptiScaler's plugins folder
+    /// (<see cref="OptiScalerService.GetPluginsDir"/>).
     /// </returns>
     internal (List<string> rootDlls, List<string> pluginDlls) ResolveDeploymentPaths(
         List<string> requiredDlls, string installPath)
@@ -579,6 +580,67 @@ public partial class DxvkService : IDxvkService
 
         return (rootDlls, pluginDlls);
     }
+
+    /// <summary>
+    /// Where DXVK's copy of <paramref name="dll"/> that was moved aside for OptiScaler now is: the plugins
+    /// folder of the installed OptiScaler build first (<see cref="OptiScalerService.GetPluginsDir"/>:
+    /// OptiScaler\plugins on 10 builds, &lt;game&gt;\plugins on 0.9), then the other one (an older RHI put
+    /// it in OptiScaler\plugins on 0.9 too, or the OptiScaler version changed). A copy in the root plugins
+    /// folder only counts when it's a DXVK file: that folder can belong to the game. Null when there's none.
+    /// </summary>
+    internal static string? FindPluginCopy(string gameDir, string dll)
+    {
+        foreach (var dir in PluginCopyDirs(gameDir))
+        {
+            var path = FileHelper.SafeCombine(dir, dll);
+            if (path == null || !File.Exists(path)) continue;
+            if (IsRootPluginsDir(gameDir, dir) && !IsDxvkFileStatic(path)) continue;
+            return path;
+        }
+        return null;
+    }
+
+    /// <summary>Both folders a DXVK coexistence copy can be in, the installed OptiScaler build's first.</summary>
+    internal static string[] PluginCopyDirs(string gameDir)
+    {
+        var osPlugins   = Path.Combine(gameDir, "OptiScaler", "plugins");
+        var rootPlugins = Path.Combine(gameDir, "plugins");
+        return IsRootPluginsDir(gameDir, OptiScalerService.GetPluginsDir(gameDir))
+            ? new[] { rootPlugins, osPlugins }
+            : new[] { osPlugins, rootPlugins };
+    }
+
+    /// <summary>
+    /// After DXVK's copy at <paramref name="removedPath"/> left the root plugins folder, removes that folder
+    /// when it's now empty (as OptiScaler's uninstall does). OptiScaler\plugins is left to OptiScaler.
+    /// </summary>
+    internal static void RemoveEmptyRootPlugins(string gameDir, string removedPath)
+    {
+        var dir = Path.GetDirectoryName(removedPath);
+        if (dir == null || !IsRootPluginsDir(gameDir, dir)) return;
+        try
+        {
+            if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                Directory.Delete(dir);
+                CrashReporter.Log($"[DxvkService.RemoveEmptyRootPlugins] Removed empty plugins folder in '{gameDir}'");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DxvkService.RemoveEmptyRootPlugins] Couldn't remove empty plugins folder in '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    internal static bool IsRootPluginsDir(string gameDir, string dir) =>
+        string.Equals(Path.TrimEndingDirectorySeparator(dir), Path.Combine(gameDir, "plugins"), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// False when <paramref name="pluginPath"/> holds a file that isn't DXVK (the game's or another mod's):
+    /// DXVK must not overwrite it. A missing file or an earlier DXVK copy is fine.
+    /// </summary>
+    internal static bool CanWritePluginCopy(string pluginPath) =>
+        !File.Exists(pluginPath) || IsDxvkFileStatic(pluginPath);
 
     // ── Stub methods (implemented in partial files) ───────────────────
     // Real implementations live in:

@@ -864,7 +864,7 @@ public partial class MainViewModel
                 if (detection.DlssgPath != null && File.Exists(detection.DlssgPath))
                     detection.DlssgVersion = _dlssStreamlineService.GetFileVersion(detection.DlssgPath);
                 if (detection.DlssnrPath != null && File.Exists(detection.DlssnrPath))
-                    detection.DlssnrVersion = _dlssStreamlineService.GetFileVersion(detection.DlssnrPath);
+                    detection.DlssnrVersion = _dlssStreamlineService.GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(detection.DlssnrPath)); // real DLL behind an NR Cost Scaler proxy
                 if (detection.StreamlineInterposerPath != null && File.Exists(detection.StreamlineInterposerPath))
                     detection.StreamlineVersion = _dlssStreamlineService.GetFileVersion(detection.StreamlineInterposerPath);
 

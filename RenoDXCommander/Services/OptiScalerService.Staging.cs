@@ -85,6 +85,7 @@ public partial class OptiScalerService
                 && IsStagingReady)
             {
                 CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] Already up to date ({tagName})");
+                HasUpdate = false; // the staged build is the latest
                 progress?.Report(("OptiScaler up to date", 100));
                 return;
             }
@@ -207,20 +208,9 @@ public partial class OptiScalerService
 
                     var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
 
-                    // Clear existing staging contents before copying new files
-                    foreach (var existingFile in Directory.GetFiles(StagingDir))
-                    {
-                        try { File.Delete(existingFile); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] Failed to delete old staging file — {ex.Message}"); }
-                    }
-
-                    // Copy all files from the source directory to staging
-                    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
-                    {
-                        var relativePath = Path.GetRelativePath(sourceDir, file);
-                        var destPath = Path.Combine(StagingDir, relativePath);
-                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                        File.Copy(file, destPath, overwrite: true);
-                    }
+                    // The old build's subfolders go (their files would keep being copied into games);
+                    // RHI's own saved-inis and ini-reference in this folder are kept (RhiStagingDataDirs)
+                    ReplaceStagedBuild(StagingDir, sourceDir, VersionFilePath, deleteSubdirs: true, "EnsureStagingAsync");
 
                     CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] Extracted to staging from {sourceDir}");
                 }
@@ -262,6 +252,65 @@ public partial class OptiScalerService
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Folders in the stable staging folder (%LocalAppData%\RHI\optiscaler) that hold RHI's own data, not
+    /// OptiScaler files: the saved OptiScaler.ini library (OsIniLibrary) and per-game reference inis (OsIniEditor).
+    /// Never deleted with the build, never copied into games, recorded or removed as OptiScaler folders.
+    /// </summary>
+    internal static readonly string[] RhiStagingDataDirs = ["saved-inis", "ini-reference"];
+
+    internal static bool IsRhiStagingDataDir(string? dirName) =>
+        !string.IsNullOrEmpty(dirName) && RhiStagingDataDirs.Any(d => d.Equals(dirName, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Replaces the build in <paramref name="stagingDir"/> with the extracted, checked build in <paramref name="sourceDir"/>.
+    /// The new files are copied to <c>&lt;staging&gt;.new</c> first, so a failed copy (disk full, antivirus) leaves the
+    /// current build untouched. Then version.txt is removed (an interrupted swap reads as "not staged" rather than a
+    /// mix of two builds), the old build files go, and the new ones are moved in; the caller writes version.txt last.
+    /// <paramref name="deleteSubdirs"/> false keeps every subfolder; true removes the old build's subfolders except
+    /// RHI's own data folders (<see cref="RhiStagingDataDirs"/>, which live in the stable staging folder).
+    /// Throws on failure (callers log it).
+    /// </summary>
+    internal static void ReplaceStagedBuild(string stagingDir, string sourceDir, string versionFile, bool deleteSubdirs, string caller)
+    {
+        var newDir = stagingDir.TrimEnd('\\', '/') + ".new";
+        if (Directory.Exists(newDir)) Directory.Delete(newDir, recursive: true);
+        foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var dest = Path.Combine(newDir, Path.GetRelativePath(sourceDir, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            File.Copy(file, dest, overwrite: true);
+        }
+
+        Directory.CreateDirectory(stagingDir);
+        if (File.Exists(versionFile)) File.Delete(versionFile);
+        foreach (var existingFile in Directory.GetFiles(stagingDir))
+        {
+            try { File.Delete(existingFile); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { CrashReporter.Log($"[OptiScalerService.{caller}] Failed to delete old staging file — {ex.Message}"); }
+        }
+        if (deleteSubdirs)
+        {
+            foreach (var existingDir in Directory.GetDirectories(stagingDir))
+            {
+                if (IsRhiStagingDataDir(Path.GetFileName(existingDir))) continue; // RHI's data, not the build
+                try { Directory.Delete(existingDir, recursive: true); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { CrashReporter.Log($"[OptiScalerService.{caller}] Failed to delete old staging dir — {ex.Message}"); }
+            }
+        }
+        foreach (var file in Directory.GetFiles(newDir, "*", SearchOption.AllDirectories))
+        {
+            var dest = Path.Combine(stagingDir, Path.GetRelativePath(newDir, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            File.Move(file, dest, overwrite: true);
+        }
+        try { Directory.Delete(newDir, recursive: true); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { CrashReporter.Log($"[OptiScalerService.{caller}] Couldn't remove '{newDir}' — {ex.Message}"); }
+    }
 
     /// <inheritdoc />
     public async Task CheckForUpdateAsync()
@@ -326,8 +375,8 @@ public partial class OptiScalerService
             if (!Directory.Exists(StagingDir))
                 return;
 
-            // Delete all files in the staging directory
-            foreach (var file in Directory.GetFiles(StagingDir, "*", SearchOption.AllDirectories))
+            // Delete the build's files (top level; subfolders below), keeping RHI's own data folders
+            foreach (var file in Directory.GetFiles(StagingDir, "*", SearchOption.TopDirectoryOnly))
             {
                 try { File.Delete(file); }
                 catch (Exception ex)
@@ -339,6 +388,7 @@ public partial class OptiScalerService
             // Delete all subdirectories in the staging directory
             foreach (var dir in Directory.GetDirectories(StagingDir))
             {
+                if (IsRhiStagingDataDir(Path.GetFileName(dir))) continue; // saved-inis / ini-reference
                 try { Directory.Delete(dir, recursive: true); }
                 catch (Exception ex)
                 {
@@ -739,20 +789,28 @@ public partial class OptiScalerService
 
         try
         {
-            // Get all version subdirectories, find the one with the DLL, pick the newest
-            // (alphabetical sort works for version numbers like "310.6.0" > "310.5.3" > "3.8.10")
-            var versionDirs = Directory.GetDirectories(cacheDir)
-                .Where(d => File.Exists(Path.Combine(d, dllFileName)))
-                .OrderByDescending(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)
-                .FirstOrDefault();
+            // Get all version subdirectories, find the one with the DLL, pick the newest by version number
+            var newestDir = PickNewestVersionDir(Directory.GetDirectories(cacheDir)
+                .Where(d => File.Exists(Path.Combine(d, dllFileName))));
 
-            if (versionDirs != null)
-                return Path.Combine(versionDirs, dllFileName);
+            if (newestDir != null)
+                return Path.Combine(newestDir, dllFileName);
         }
         catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.FindNewestDllInCache] Cache scan failed — {ex.Message}"); }
 
         return null;
     }
+
+    /// <summary>
+    /// The folder whose name is the highest version ("310.10.0" beats "310.9.16"; a string sort would
+    /// pick "310.9.16"). Folders whose names aren't versions come last, newest-looking name first.
+    /// </summary>
+    internal static string? PickNewestVersionDir(IEnumerable<string> dirs) =>
+        dirs.Select(d => (Dir: d, Name: Path.GetFileName(d.TrimEnd('\\', '/'))))
+            .OrderByDescending(x => Version.TryParse(x.Name, out var v) ? v : null)
+            .ThenByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Dir)
+            .FirstOrDefault();
 
     // ── OptiScaler Nightly staging and update ─────────────────────────────────
 
@@ -1473,6 +1531,7 @@ public partial class OptiScalerService
             if (cachedVersion != null && string.Equals(cachedVersion, tagName, StringComparison.Ordinal) && IsStagingReadyDlssNr)
             {
                 CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Already up to date ({tagName})");
+                HasUpdateDlssNr = false; // the staged build is the latest
                 progress?.Report(("OptiScaler DLSS NR up to date", 100));
                 return;
             }
@@ -1541,24 +1600,7 @@ public partial class OptiScalerService
 
                     var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
 
-                    // Clear existing staging files before copying fresh
-                    foreach (var existingFile in Directory.GetFiles(DlssNrStagingDir))
-                    {
-                        try { File.Delete(existingFile); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Failed to delete old staging file — {ex.Message}"); }
-                    }
-                    // Clear existing staging subdirs
-                    foreach (var existingDir in Directory.GetDirectories(DlssNrStagingDir))
-                    {
-                        try { Directory.Delete(existingDir, recursive: true); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Failed to delete old staging dir — {ex.Message}"); }
-                    }
-
-                    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
-                    {
-                        var relativePath = Path.GetRelativePath(sourceDir, file);
-                        var destPath = Path.Combine(DlssNrStagingDir, relativePath);
-                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                        File.Copy(file, destPath, overwrite: true);
-                    }
+                    ReplaceStagedBuild(DlssNrStagingDir, sourceDir, DlssNrVersionFilePath, deleteSubdirs: true, "EnsureDlssNrStagingAsync");
 
                     CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Extracted to DLSS NR staging from {sourceDir}");
                 }
@@ -1715,6 +1757,7 @@ public partial class OptiScalerService
             if (cachedVersion != null && string.Equals(cachedVersion, tagName, StringComparison.Ordinal) && IsStagingReadyF5)
             {
                 CrashReporter.Log($"[OptiScalerService.EnsureF5StagingAsync] Already up to date ({tagName})");
+                HasUpdateF5 = false; // the staged build is the latest
                 progress?.Report(("OptiScaler F5 DLSSNR up to date", 100));
                 return;
             }
@@ -1772,18 +1815,7 @@ public partial class OptiScalerService
                     }
                     var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
 
-                    foreach (var existingFile in Directory.GetFiles(F5StagingDir))
-                        try { File.Delete(existingFile); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureF5StagingAsync] Failed to delete old staging file — {ex.Message}"); }
-                    foreach (var existingDir in Directory.GetDirectories(F5StagingDir))
-                        try { Directory.Delete(existingDir, recursive: true); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureF5StagingAsync] Failed to delete old staging dir — {ex.Message}"); }
-
-                    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
-                    {
-                        var relativePath = Path.GetRelativePath(sourceDir, file);
-                        var destPath = Path.Combine(F5StagingDir, relativePath);
-                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                        File.Copy(file, destPath, overwrite: true);
-                    }
+                    ReplaceStagedBuild(F5StagingDir, sourceDir, F5VersionFilePath, deleteSubdirs: true, "EnsureF5StagingAsync");
                     CrashReporter.Log($"[OptiScalerService.EnsureF5StagingAsync] Extracted to F5 staging from {sourceDir}");
                 }
                 finally

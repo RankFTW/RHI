@@ -255,11 +255,9 @@ public partial class DetailPanelBuilder
         }
         catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.ShowUalDllPickerAsync] Failed to list DLLs in '{card.InstallPath}' — {ex.Message}"); }
 
-        // RHI-managed filenames to flag as conflict
-        var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
+        // RHI-managed filenames to flag as conflict (ReShade, OptiScaler, DC, RE Framework, DXVK, dgVoodoo2)
+        var rhiOwned = new HashSet<string>(UltimateAsiLoaderService.FixedRhiDllOwners(card).Keys, StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(currentDllName)) rhiOwned.Remove(currentDllName);
 
         string? chosen = null;
 
@@ -440,7 +438,11 @@ public partial class DetailPanelBuilder
                     {
                         var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
                         if (await svc.EnsureNrDllCachedAsync(dlssS) != null)
-                            await Task.Run(() => svc.DeployNrDll(installPath, chosen));
+                        {
+                            // A game with no DLSS of its own may be in the scan skip cache: un-skip it so the NR DLL shows
+                            if (await Task.Run(() => svc.DeployNrDll(installPath, chosen)))
+                                dlssS.RecordDlssFound(gameName);
+                        }
                         else
                             CrashReporter.Log($"[RtxEncoreInstall] NR DLL {RtxEncoreService.NrRequiredVer} not available — skipping NR deploy");
                     }

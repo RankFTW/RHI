@@ -72,6 +72,16 @@ public sealed partial class MainWindow
 
             FrameworkElement? liliumPresetRow = null;
             ComboBox? variantCombo = null;
+            // The variant in effect; a change DXVK's uninstall refused puts the dropdown back on it
+            string committedVariant = variantItems[variantIdx];
+            bool revertingVariant = false;
+            async Task ApplyVariantAsync(ComboBox combo, string selected)
+            {
+                if (await DxvkCogChangeVariantAsync(cog, card, combo, selected)) { committedVariant = selected; return; }
+                revertingVariant = true;
+                try { combo.SelectedIndex = variantItems.IndexOf(committedVariant); }
+                finally { revertingVariant = false; }
+            }
             variantCombo = cog.AddCombo("Variant",
                 "Lilium HDR (default) is an HDR-focused build. Development is the latest nightly build, Stable the last release. " +
                 "Changing it on a game with DXVK installed uninstalls DXVK so you can install the new variant.",
@@ -80,8 +90,9 @@ public sealed partial class MainWindow
                     var selected = variantItems[i];
                     if (liliumPresetRow != null)
                         liliumPresetRow.Visibility = selected == "Lilium HDR" ? Visibility.Visible : Visibility.Collapsed;
+                    if (revertingVariant) return true;
                     if (variantCombo != null)
-                        _ = DxvkCogChangeVariantAsync(cog, card, variantCombo, selected);
+                        _ = ApplyVariantAsync(variantCombo, selected);
                     return true;
                 });
 
@@ -190,9 +201,11 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// Saves the per-game DXVK variant override. If DXVK is installed it's uninstalled first so the
-    /// user can install the new variant; the detail panel is rebuilt either way.
+    /// user can install the new variant, and the override is saved only once that uninstall succeeded
+    /// (a kept install keeps its variant, or Update would deploy another variant's DLLs over it).
+    /// The detail panel is rebuilt either way. False when the variant wasn't changed.
     /// </summary>
-    private async Task DxvkCogChangeVariantAsync(CogDialog cog, GameCardViewModel card, ComboBox variantCombo, string selected)
+    private async Task<bool> DxvkCogChangeVariantAsync(CogDialog cog, GameCardViewModel card, ComboBox variantCombo, string selected)
     {
         var gameName = card.GameName;
         var store    = card.Source ?? "";
@@ -206,15 +219,22 @@ public sealed partial class MainWindow
         variantCombo.IsEnabled = false;
         try
         {
-            ViewModel.SetDxvkVariantOverride(gameName, variantValue, store);
-
             bool wasInstalled = card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable;
             if (wasInstalled)
             {
                 // Already installed — uninstall first so user can install the new variant
                 cog.SetStatus("Uninstalling DXVK...");
                 await ViewModel.HandleDxvkToggleAsync(card, false, Content.XamlRoot);
+                if (card.DxvkStatus is GameStatus.Installed or GameStatus.UpdateAvailable)
+                {
+                    // Not removed (game running): the installed variant stays, so its override does too
+                    cog.SetError(card.DxvkActionMessage is { Length: > 0 } m ? m : "DXVK couldn't be uninstalled.");
+                    CrashReporter.Log($"[MainWindow.DxvkCogChangeVariantAsync] '{gameName}' uninstall refused — variant left unchanged");
+                    PopulateDetailPanel(card);
+                    return false;
+                }
             }
+            ViewModel.SetDxvkVariantOverride(gameName, variantValue, store);
             card.DxvkVariantPending = true;
             card.NotifyAll();
             PopulateDetailPanel(card);
@@ -224,11 +244,13 @@ public sealed partial class MainWindow
                 ? $"Variant set to {selected}. DXVK was uninstalled; install it again to use the new variant."
                 : $"Variant set to {selected}. It will be used when you install DXVK.");
             CrashReporter.Log($"[MainWindow.DxvkCogChangeVariantAsync] '{gameName}' variant → {variantValue} (wasInstalled={wasInstalled})");
+            return true;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[MainWindow.DxvkCogChangeVariantAsync] Failed for '{gameName}' — {ex.Message}\n{ex.StackTrace}");
             cog.SetError($"Couldn't change the variant: {ex.Message}");
+            return false;
         }
         finally
         {

@@ -99,4 +99,38 @@ public static class FileHelper
             try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
         }
     }
+
+    /// <summary>
+    /// Writes a staged file (download or archive entry) to <paramref name="path"/> through <c>path.tmp</c> and
+    /// moves it into place only when complete, so a failed or cut-off write never leaves a partial file that a
+    /// later <c>File.Exists</c> check would accept. <paramref name="expectedLength"/> &gt; 0 is checked.
+    /// Throws on failure (the temp file is removed; an existing file at <paramref name="path"/> is kept).
+    /// </summary>
+    public static async Task WriteStreamAtomicAsync(Func<Stream> open, string path, long expectedLength = -1)
+    {
+        var tmp = path + ".tmp";
+        try
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            using (var src = open())
+            using (var dst = File.Create(tmp))
+                await src.CopyToAsync(dst).ConfigureAwait(false);
+            var len = new FileInfo(tmp).Length;
+            if (expectedLength > 0 && len != expectedLength)
+                throw new IOException($"'{Path.GetFileName(path)}' was written as {len} of {expectedLength} bytes");
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { CrashReporter.Log($"[FileHelper.WriteStreamAtomicAsync] Couldn't delete '{tmp}' — {ex.Message}"); }
+            throw;
+        }
+    }
+
+    /// <summary><see cref="WriteStreamAtomicAsync"/> for bytes already in memory.</summary>
+    public static Task WriteBytesAtomicAsync(string path, byte[] bytes)
+        => WriteStreamAtomicAsync(() => new MemoryStream(bytes, writable: false), path, bytes.LongLength);
 }

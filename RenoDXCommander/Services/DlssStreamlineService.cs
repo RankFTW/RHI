@@ -520,7 +520,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         }
         if (entry.DlssnrPath != null)
         {
-            if (File.Exists(entry.DlssnrPath)) { result.DlssnrPath = entry.DlssnrPath; result.DlssnrVersion = GetFileVersion(entry.DlssnrPath); anyValid = true; }
+            if (File.Exists(entry.DlssnrPath)) { result.DlssnrPath = entry.DlssnrPath; result.DlssnrVersion = GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(entry.DlssnrPath)); anyValid = true; } // real DLL behind an NR Cost Scaler proxy
             else { InvalidateTrustedPath(gameName); return null; }
         }
         if (entry.StreamlineFolder != null)

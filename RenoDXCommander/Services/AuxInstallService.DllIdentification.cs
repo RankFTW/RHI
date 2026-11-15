@@ -31,44 +31,86 @@ public partial class AuxInstallService
 
     // ── Foreign DLL backup / restore ──────────────────────────────────────────
 
+    /// <summary>Outcome of <see cref="BackupForeignDllChecked"/>.</summary>
+    public enum ForeignBackupResult
+    {
+        /// <summary>No file there, or it's ReShade / a file ReShade may replace (DXVK, OptiScaler as dxgi.dll).</summary>
+        NotNeeded,
+        /// <summary>The foreign file was moved to .original.</summary>
+        BackedUp,
+        /// <summary>A non-empty .original already holds an earlier file; nothing was moved.</summary>
+        Blocked,
+        /// <summary>The move failed; the foreign file is still there.</summary>
+        Failed,
+    }
+
     /// <summary>
-    /// If <paramref name="dllPath"/> exists and is a foreign (unrecognised) DLL,
-    /// renames it to <c>dllPath + ".original"</c> so it is preserved.
-    /// Only applies to <c>dxgi.dll</c> and <c>winmm.dll</c>.
-    /// Returns true if a backup was made.
+    /// True when <paramref name="dllPath"/> exists and is a file ReShade must not overwrite without
+    /// keeping a backup: for dxgi.dll anything not identified as ReShade / OptiScaler / DXVK; for
+    /// DXVK's names (d3d8/9/10core/11) anything not DXVK or ReShade; for every other name
+    /// (opengl32, d3d12, version, winmm, dinput8, the .asi, ...) anything that isn't ReShade.
     /// </summary>
-    public static bool BackupForeignDll(string dllPath)
+    public static bool IsForeignForReShade(string dllPath)
     {
         if (!File.Exists(dllPath)) return false;
-
         var name = Path.GetFileName(dllPath);
-        bool isForeign;
         if (name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
-            isForeign = IdentifyDxgiFile(dllPath) == DxgiFileType.Unknown;
-        else if (IsDxvkManagedDllName(name))
-            // For DXVK-managed filenames (d3d8, d3d9, d3d10core, d3d11),
-            // only treat as foreign if it's NOT a DXVK file AND NOT a ReShade file.
+            return IdentifyDxgiFile(dllPath) == DxgiFileType.Unknown;
+        if (IsDxvkManagedDllName(name))
             // ReShade can be installed as d3d9.dll for DX9 games — don't back that up.
-            isForeign = !DxvkService.IsDxvkFileStatic(dllPath) && !IsReShadeFile(dllPath);
-        else
-            return false;
+            return !DxvkService.IsDxvkFileStatic(dllPath) && !IsReShadeFile(dllPath);
+        return !IsReShadeFile(dllPath);
+    }
 
-        if (!isForeign) return false;
-
+    /// <summary>True when <c>dllPath.original</c> exists and is not empty (a real backup).</summary>
+    public static bool HasRealBackup(string dllPath)
+    {
         var backupPath = dllPath + ".original";
-        try
+        try { return File.Exists(backupPath) && new FileInfo(backupPath).Length > 0; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            if (File.Exists(backupPath)) File.Delete(backupPath);
-            File.Move(dllPath, backupPath);
-            CrashReporter.Log($"[AuxInstallService.BackupForeignDll] {name} → {name}.original in {Path.GetDirectoryName(dllPath)}");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[AuxInstallService.BackupForeignDll] Failed for '{dllPath}' — {ex.Message}");
-            return false;
+            CrashReporter.Log($"[AuxInstallService.HasRealBackup] Can't read '{backupPath}' — {ex.Message}");
+            return true; // can't tell: treat as a real backup so it's never replaced
         }
     }
+
+    /// <summary>
+    /// If <paramref name="dllPath"/> holds a foreign DLL (<see cref="IsForeignForReShade"/>), moves it
+    /// to <c>dllPath + ".original"</c> so ReShade's uninstall can put it back. A non-empty
+    /// .original is never replaced (it's the game's first file): the result is then
+    /// <see cref="ForeignBackupResult.Blocked"/> and the foreign file stays where it is.
+    /// A 0-byte .original (another component's "nothing was here" sentinel) is replaced.
+    /// </summary>
+    public static ForeignBackupResult BackupForeignDllChecked(string dllPath)
+    {
+        if (!IsForeignForReShade(dllPath)) return ForeignBackupResult.NotNeeded;
+
+        var name = Path.GetFileName(dllPath);
+        var backupPath = dllPath + ".original";
+        if (HasRealBackup(dllPath))
+        {
+            CrashReporter.Log($"[AuxInstallService.BackupForeignDll] {name} isn't ReShade and {name}.original already holds a backup in {Path.GetDirectoryName(dllPath)}; not replacing either");
+            return ForeignBackupResult.Blocked;
+        }
+        try
+        {
+            if (File.Exists(backupPath)) File.Delete(backupPath); // 0-byte sentinel only (checked above)
+            File.Move(dllPath, backupPath);
+            CrashReporter.Log($"[AuxInstallService.BackupForeignDll] {name} → {name}.original in {Path.GetDirectoryName(dllPath)}");
+            return ForeignBackupResult.BackedUp;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[AuxInstallService.BackupForeignDll] Failed for '{dllPath}' — {ex.Message}");
+            return ForeignBackupResult.Failed;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="BackupForeignDllChecked"/> as a bool: true if a backup was made.
+    /// </summary>
+    public static bool BackupForeignDll(string dllPath) =>
+        BackupForeignDllChecked(dllPath) == ForeignBackupResult.BackedUp;
 
     /// <summary>
     /// Returns true if the given DLL filename is one that DXVK may deploy
@@ -82,14 +124,20 @@ public partial class AuxInstallService
         || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// If a <c>.original</c> backup exists for <paramref name="dllPath"/> and the
-    /// slot is now vacant, restores the backup to its original name.
+    /// If a non-empty <c>.original</c> backup exists for <paramref name="dllPath"/> and the
+    /// slot is now vacant, restores the backup to its original name. A 0-byte .original is
+    /// another component's sentinel, not a DLL, and is left alone.
     /// </summary>
     public static void RestoreForeignDll(string dllPath)
     {
         var backupPath = dllPath + ".original";
         if (!File.Exists(backupPath)) return;
         if (File.Exists(dllPath)) return;   // slot still occupied — don't overwrite
+        if (!HasRealBackup(dllPath))
+        {
+            CrashReporter.Log($"[AuxInstallService.RestoreForeignDll] {Path.GetFileName(backupPath)} is empty (a sentinel); not restoring it");
+            return;
+        }
 
         try
         {

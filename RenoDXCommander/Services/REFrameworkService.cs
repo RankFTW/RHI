@@ -13,7 +13,7 @@ public class REFrameworkService : IREFrameworkService
 {
     // ── Constants ──────────────────────────────────────────────────────────────────
 
-    private const string DllFileName = "dinput8.dll";
+    public const string DllFileName = "dinput8.dll";
     private const string DownloadBaseUrl = "https://github.com/praydog/REFramework-nightly/releases/latest/download/";
     private const string LatestReleasePageUrl = "https://github.com/praydog/REFramework-nightly/releases/latest";
     private const string ReleasesApiUrl ="https://api.github.com/repos/praydog/REFramework-nightly/releases";

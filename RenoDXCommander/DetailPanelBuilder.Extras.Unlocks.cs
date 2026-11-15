@@ -641,7 +641,12 @@ public partial class DetailPanelBuilder
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
-            deSvc.UninstallStandalone(installPath, currentDllName);
+            if (!deSvc.UninstallStandalone(installPath, currentDllName))
+            {
+                // Kept: the file there isn't DLSS Enabler any more, or it's in use. The record stays.
+                _window.ShowStatusBarMessage($"Couldn't remove DLSS Enabler: {currentDllName} isn't DLSS Enabler or is in use (close the game and try again)", TimeSpan.FromSeconds(8));
+                return;
+            }
             _window.ViewModel.SetDeInstalledAs(gameName, null, store);
             RequestExtrasRebuild(card);
         };

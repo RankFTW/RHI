@@ -76,35 +76,51 @@ public partial class MainViewModel
             return;
         }
 
-        // Check for foreign dxgi.dll before overwriting
+        var rsFilenameOverride = forceFilename
+                ?? (card.DllOverrideEnabled
+                    ? (GetDllOverride(card.GameName)?.ReShadeFileName)
+                    : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
+                        ? mRs
+                        : card.Mod?.IsGenericSource == true
+                            ? SourceEngineSetup.ReShadeDll // Source mod: ReShade proxies DXVK's d3d9.dll
+                            : ResolveAutoReShadeFilename(card.DetectedApis)));
+
+        // Check for a foreign DLL at the name ReShade will actually use (after the ASI mode and
+        // the OptiScaler / Display Commander coexistence renames), before overwriting it.
         {
-            var dxgiPath = Path.Combine(card.InstallPath, "dxgi.dll");
-            if (File.Exists(dxgiPath))
+            var destName = _auxInstaller.ResolveReShadeDestName(card.GameName, card.InstallPath,
+                               rsFilenameOverride, card.Is32Bit, card.Source)
+                           ?? (string.IsNullOrWhiteSpace(rsFilenameOverride) ? AuxInstallService.RsNormalName : rsFilenameOverride);
+            var destPath = Path.Combine(card.InstallPath, destName);
+            var otherOwner = OtherReShadeDllOwner(card.GameName, card.InstallPath, destName);
+            if (otherOwner != null)
             {
-                // Skip the warning entirely if OptiScaler is installed for this game —
-                // the dxgi.dll is OptiScaler's and ReShade will be deployed as ReShade64.dll
-                var osRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, OptiScalerService.AddonType);
-                if (osRecord == null)
+                _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: '{destName}' is used by {otherOwner} — not installing");
+                card.RsActionMessage = $"Skipped: {destName} is used by {otherOwner}. Choose another DLL name for ReShade, or remove {otherOwner} first.";
+                return;
+            }
+            if (AuxInstallService.IsForeignForReShade(destPath))
+            {
+                if (AuxInstallService.HasRealBackup(destPath))
                 {
-                    var fileType = AuxInstallService.IdentifyDxgiFile(dxgiPath);
-                    // Skip the warning for known managed files (ReShade, OptiScaler)
-                    if (fileType == AuxInstallService.DxgiFileType.Unknown)
+                    // The install would refuse anyway: it never replaces a real .original backup
+                    _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: foreign '{destName}' and a non-empty '{destName}.original' — not installing");
+                    card.RsActionMessage = $"⚠ Skipped — {destName} isn't ReShade and {destName}.original already exists. Move one of them out of the game folder.";
+                    return;
+                }
+                if (ConfirmForeignDxgiOverwrite != null)
+                {
+                    var confirmed = await ConfirmForeignDxgiOverwrite(card, destPath);
+                    if (!confirmed)
                     {
-                        if (ConfirmForeignDxgiOverwrite != null)
-                        {
-                            var confirmed = await ConfirmForeignDxgiOverwrite(card, dxgiPath);
-                            if (!confirmed)
-                            {
-                                card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found. Use Overrides to proceed.";
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found.";
-                            return;
-                        }
+                        card.RsActionMessage = $"⚠ Skipped — unknown {destName} found. Use Overrides to proceed.";
+                        return;
                     }
+                }
+                else
+                {
+                    card.RsActionMessage = $"⚠ Skipped — unknown {destName} found.";
+                    return;
                 }
             }
         }
@@ -123,14 +139,6 @@ public partial class MainViewModel
             if (selectedPacks != null)
                 await _shaderPackService.EnsurePacksAsync(selectedPacks);
 
-            var rsFilenameOverride = forceFilename
-                    ?? (card.DllOverrideEnabled
-                        ? (GetDllOverride(card.GameName)?.ReShadeFileName)
-                        : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
-                            ? mRs
-                            : card.Mod?.IsGenericSource == true
-                                ? SourceEngineSetup.ReShadeDll // Source mod: ReShade proxies DXVK's d3d9.dll
-                                : ResolveAutoReShadeFilename(card.DetectedApis)));
             var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName, card.Source ?? "");
             var filenameSource = forceFilename != null ? "Forced"
                 : (card.DllOverrideEnabled ? "UserDllOverride"
@@ -170,6 +178,12 @@ public partial class MainViewModel
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
             });
+        }
+        catch (ReShadeInstallRefusedException ex)
+        {
+            // Nothing was changed; not a crash
+            _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: refused — {ex.Message}");
+            card.RsActionMessage = $"Skipped: {ex.Message}";
         }
         catch (Exception ex)
         {
@@ -434,8 +448,9 @@ public partial class MainViewModel
                 AuxInstallService.UninstallGacSymlink(card.InstallPath, gacPath!, card.RsInstalledFile);
             }
 
-            // Remove reshade.ini from the game folder (GAC games stage it there)
-            if (isGacGame && !string.IsNullOrEmpty(card.InstallPath))
+            // Remove reshade.ini from the game folder (GAC games stage it there), unless the user locked it
+            if (isGacGame && !string.IsNullOrEmpty(card.InstallPath)
+                && GetKeepRsIniUpdated(card.GameName, card.Source ?? ""))
             {
                 var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
                 try
@@ -475,11 +490,13 @@ public partial class MainViewModel
 
         try
         {
-            // 1. Delete reshade.ini from the game folder
+            // 1. Delete reshade.ini from the game folder (kept when the user locked it)
             var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
             try
             {
-                if (File.Exists(iniPath))
+                if (!GetKeepRsIniUpdated(card.GameName, card.Source ?? ""))
+                    _crashReporter.Log($"[UninstallVulkanReShade] '{card.GameName}': reshade.ini is locked — keeping it");
+                else if (File.Exists(iniPath))
                     File.Delete(iniPath);
             }
             catch (Exception ex)
@@ -527,6 +544,17 @@ public partial class MainViewModel
         if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
         {
             card.RefActionMessage = "No install path — use 📁 to pick the game folder.";
+            return;
+        }
+
+        // RE Framework is dinput8.dll: never take that name from another RHI component (ASI Loader,
+        // 20/30 FG Unlock, Universal MFG Unlocker, ...). Its .original would hold that component's file
+        // and the two would overwrite or delete each other.
+        if (GetRhiDllOwners(card).TryGetValue(REFrameworkService.DllFileName, out var dinputOwner)
+            && !dinputOwner.Equals("RE Framework", StringComparison.OrdinalIgnoreCase))
+        {
+            card.RefActionMessage = $"dinput8.dll is used by {dinputOwner}. Move {dinputOwner} to another DLL name or uninstall it, then install RE Framework.";
+            _crashReporter.Log($"[MainViewModel.InstallREFrameworkAsync] '{card.GameName}': dinput8.dll is used by {dinputOwner} — not installing");
             return;
         }
 
@@ -808,15 +836,31 @@ public partial class MainViewModel
                 // (handles cases where record was lost or never saved)
                 try
                 {
-                    var rsDir = Path.Combine(card.InstallPath, "reshade-shaders");
-                    if (Directory.Exists(rsDir))
+                    // reshade-shaders and reshade.ini belong to ReShade while it's installed, and a
+                    // reshade-shaders folder without an RHI marker is the user's: leave those alone.
+                    bool rsInstalled = card.RsRecord != null
+                        || _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShade) != null
+                        || _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShadeNormal) != null;
+                    var rsDir = Path.Combine(card.InstallPath, ShaderPackService.GameReShadeShaders);
+                    if (rsInstalled)
+                        _crashReporter.Log($"[MainViewModel.ToggleLumaMode] '{card.GameName}': ReShade is installed — keeping reshade-shaders and reshade.ini");
+                    else
                     {
-                        _shaderPackService.RemoveFromGameFolder(card.InstallPath);
                         if (Directory.Exists(rsDir))
-                            Directory.Delete(rsDir, true);
+                        {
+                            if (_shaderPackService.IsManagedByRdxc(card.InstallPath)
+                                || File.Exists(Path.Combine(rsDir, ".rdxc-managed")))
+                            {
+                                Directory.Delete(rsDir, true);
+                                _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
+                            }
+                            else
+                                _crashReporter.Log($"[MainViewModel.ToggleLumaMode] '{card.GameName}': reshade-shaders has no RHI marker — leaving it");
+                        }
+                        var rsIni = Path.Combine(card.InstallPath, "reshade.ini");
+                        if (File.Exists(rsIni) && GetKeepRsIniUpdated(card.GameName, card.Source ?? ""))
+                            File.Delete(rsIni);
                     }
-                    var rsIni = Path.Combine(card.InstallPath, "reshade.ini");
-                    if (File.Exists(rsIni)) File.Delete(rsIni);
 
                     // Try to find and remove Luma dll files (common names)
                     foreach (var pattern in new[] { "dxgi.dll", "d3d11.dll", "Luma*.dll", "Luma*.addon*" })
@@ -1101,6 +1145,7 @@ public partial class MainViewModel
                 var targetDlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
                 AuxInstallService.SentinelBackup(targetDlssPath);
                 File.Copy(newestDlssPath, targetDlssPath, overwrite: true);
+                _dlssStreamlineService.RecordDlssFound(card.GameName); // so the DLSS skip cache doesn't hide it
                 _crashReporter.Log($"[ApplyLumaPostInstall] Deployed newest DLSS to '{targetDlssPath}'");
             }
         }

@@ -33,6 +33,19 @@ public class InstallEventHandler
 
     private MainViewModel ViewModel => _window.ViewModel;
 
+    /// <summary>
+    /// The game's dinput8.dll can be swapped for the PD-Upscaler REFramework build only when it isn't
+    /// another RHI component's file (ASI Loader, 20/30 FG Unlock, ...): RE Framework or untracked.
+    /// </summary>
+    private bool DinputIsReFramework(GameCardViewModel card)
+    {
+        if (!ViewModel.GetRhiDllOwners(card).TryGetValue("dinput8.dll", out var owner)
+            || owner.Equals("RE Framework", StringComparison.OrdinalIgnoreCase))
+            return true;
+        CrashReporter.Log($"[InstallEventHandler.DinputIsReFramework] '{card.GameName}': dinput8.dll is used by {owner} — PD-Upscaler swap skipped");
+        return false;
+    }
+
     public async void InstallButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -270,7 +283,8 @@ public class InstallEventHandler
                 // ── PD-Upscaler REFramework swap for compatible RE Engine games ──
                 if (ViewModel.Manifest?.PdUpscalerGames != null
                     && ViewModel.Manifest.PdUpscalerGames.TryGetValue(card.GameName, out var pdArtifact)
-                    && File.Exists(Path.Combine(card.InstallPath, "dinput8.dll")))
+                    && File.Exists(Path.Combine(card.InstallPath, "dinput8.dll"))
+                    && DinputIsReFramework(card))
                 {
                     try
                     {

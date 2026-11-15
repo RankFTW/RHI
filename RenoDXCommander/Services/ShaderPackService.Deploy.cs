@@ -185,20 +185,9 @@ public partial class ShaderPackService
     {
         var rsDir = Path.Combine(gameDir, GameReShadeShaders);
 
-        // If an existing reshade-shaders folder is NOT ours, preserve it
-        if (Directory.Exists(rsDir) && !IsManagedByRdxc(gameDir))
-        {
-            var origDir = Path.Combine(gameDir, GameReShadeOriginal);
-            try
-            {
-                if (!Directory.Exists(origDir))
-                    Directory.Move(rsDir, origDir);
-                else
-                    CrashReporter.Log($"[ShaderPackService.DeployToGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
-            }
-            catch (Exception ex)
-            { CrashReporter.Log($"[ShaderPackService.DeployToGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
-        }
+        // If an existing reshade-shaders folder is NOT ours, preserve it; if it can't be moved
+        // aside, leave it alone (deploying into it would make it look RHI-managed).
+        if (!PreserveUnmanagedFolder(gameDir, "DeployToGameFolder")) return;
 
         if (packIds != null)
             DeployPacksIfAbsent(packIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
@@ -234,6 +223,39 @@ public partial class ShaderPackService
             else
                 CrashReporter.Log($"[ShaderPackService.RemoveFromGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename of user folder");
         }
+    }
+
+    /// <summary>
+    /// Before RHI deploys into gameDir\reshade-shaders: when the folder exists and has no RHI
+    /// marker (the user's or the game's own), move it to reshade-shaders-original. Returns false
+    /// when it's still there afterwards (an -original already exists, or the move failed): the
+    /// caller must then not deploy, mirror or write the marker, or the user's files are lost.
+    /// An empty unmanaged folder holds nothing to lose and is taken over.
+    /// </summary>
+    internal bool PreserveUnmanagedFolder(string gameDir, string caller)
+    {
+        var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+        if (!Directory.Exists(rsDir) || IsManagedByRdxc(gameDir)) return true;
+
+        var origDir = Path.Combine(gameDir, GameReShadeOriginal);
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(rsDir, "*", SearchOption.AllDirectories)
+                    .Any(e => File.Exists(e)))
+                return true;
+            if (!Directory.Exists(origDir))
+            {
+                Directory.Move(rsDir, origDir);
+                CrashReporter.Log($"[ShaderPackService.{caller}] Moved the existing reshade-shaders to reshade-shaders-original in {gameDir}");
+                return true;
+            }
+            CrashReporter.Log($"[ShaderPackService.{caller}] {gameDir} has its own reshade-shaders and a reshade-shaders-original already; leaving both alone and not deploying shaders");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[ShaderPackService.{caller}] Couldn't move the existing reshade-shaders in {gameDir} aside; not deploying shaders — {ex.Message}");
+        }
+        return false;
     }
 
     // ── Global sync (called on Refresh) ──────────────────────────────────────────
@@ -275,19 +297,8 @@ public partial class ShaderPackService
         // First time RHI manages this folder: preserve a user's own reshade-shaders as
         // reshade-shaders-original (checked BEFORE the marker is written — WriteMarker creates
         // the directory, which would otherwise make a clean install look like a user folder).
-        if (!IsManagedByRdxc(gameDir) && Directory.Exists(rsDir))
-        {
-            var origDir = Path.Combine(gameDir, GameReShadeOriginal);
-            try
-            {
-                if (!Directory.Exists(origDir))
-                    Directory.Move(rsDir, origDir);
-                else
-                    CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
-        }
+        // If it can't be moved aside, stop: the mirror deletes every file not in its plan.
+        if (!PreserveUnmanagedFolder(gameDir, "SyncGameFolder")) return;
 
         // Work out exactly which files the folder should hold, then mirror it (copy missing or
         // changed files, delete the rest). Same result as the old wipe-and-redeploy, but no

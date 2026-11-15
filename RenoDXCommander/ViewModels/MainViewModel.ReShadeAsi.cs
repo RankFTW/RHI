@@ -81,6 +81,15 @@ public partial class MainViewModel
         if (string.IsNullOrEmpty(current) || current.Equals(target, StringComparison.OrdinalIgnoreCase))
             return null;
 
+        // Another RHI component's proxy (ASI Loader, RE Framework, 20/30 FG, Universal MFG Unlocker,
+        // RTX Encore, ...): moving it aside would break that component and delete its sentinel.
+        var owner = OtherReShadeDllOwner(rsRecord.GameName, installPath, target);
+        if (owner != null)
+        {
+            CrashReporter.Log($"[MainViewModel.RenameInstalledReShade] '{target}' is used by {owner} in '{installPath}' — not renaming ReShade");
+            return $"{target} is used by {owner} in this game. Choose another DLL name for ReShade, or remove {owner} first.";
+        }
+
         var src  = Path.Combine(installPath, current);
         var dest = Path.Combine(installPath, target);
         if (!File.Exists(src))

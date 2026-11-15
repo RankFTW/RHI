@@ -270,47 +270,160 @@ public class DlssEnablerService
             return false;
         }
 
+        var src  = Path.Combine(_stagingDir, StagedFileName);
+        var dest = Path.Combine(installPath, dllName);
+        var backup = dest + ".original";
+
+        // A file of that name that isn't DLSS Enabler (the game's own, or another mod's) is kept as .original and
+        // put back on uninstall. A real .original is never replaced: then the name is refused.
+        bool destIsOurs = IsOurDll(dest);
+        try
+        {
+            if (File.Exists(dest) && !destIsOurs && File.Exists(backup))
+            {
+                // Either backup kind blocks it: a real one can't be replaced, and an empty one says the game had no
+                // file of that name, so this one came from something else since (a game update, another mod)
+                _crashReporter.Log(new FileInfo(backup).Length > 0
+                    ? $"[DlssEnablerService.InstallStandaloneAsync] '{dllName}' in '{installPath}' isn't DLSS Enabler and '{dllName}.original' already holds a backup — not installed"
+                    : $"[DlssEnablerService.InstallStandaloneAsync] '{dllName}' in '{installPath}' isn't DLSS Enabler and was put there after RHI's empty '{dllName}.original' marker (another program's file) — not installed");
+                return false;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Couldn't check '{backup}' — {ex.Message}");
+            return false;
+        }
+
         // Remove old install if renaming
         if (!string.IsNullOrEmpty(existingInstalledAs) &&
             !existingInstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase))
-        {
-            var oldPath = Path.Combine(installPath, existingInstalledAs);
-            try { if (File.Exists(oldPath)) File.Delete(oldPath); }
-            catch (Exception ex) { _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Old file cleanup failed — {ex.Message}"); }
-        }
+            RemoveStandaloneFile(installPath, existingInstalledAs, "InstallStandaloneAsync");
 
-        var src  = Path.Combine(_stagingDir, StagedFileName);
-        var dest = Path.Combine(installPath, dllName);
-
+        bool hadBackup = File.Exists(backup);
         try
         {
+            AuxInstallService.SentinelBackupReplacingOwn(dest, destIsOurs);
+            if (File.Exists(dest) && !destIsOurs)
+            {
+                // The other file couldn't be moved aside: don't overwrite it
+                _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Couldn't back up '{dest}' — not installed");
+                return false;
+            }
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Installed as '{dllName}' in '{installPath}'");
             return true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Copy failed — {ex.Message}");
+            if (!hadBackup) UndoNewBackup(dest, backup);
             return false;
         }
     }
 
-    /// <summary>Removes the standalone DLSS Enabler DLL from the game folder.</summary>
+    /// <summary>
+    /// True when <paramref name="path"/> is RHI's DLSS Enabler: its version info says DLSS Enabler, or it is the
+    /// staged copy (in case a build's ProductName is ever different).
+    /// </summary>
+    internal bool IsOurDll(string path)
+        => IsDlssEnablerDll(path) || MatchesFile(path, Path.Combine(_stagingDir, StagedFileName));
+
+    /// <summary>
+    /// True when both files exist and are the same build: same size and same non-empty FileVersion, or, without a
+    /// FileVersion, the same bytes.
+    /// </summary>
+    internal static bool MatchesFile(string path, string referencePath)
+    {
+        try
+        {
+            if (!File.Exists(path) || !File.Exists(referencePath)) return false;
+            if (new FileInfo(path).Length != new FileInfo(referencePath).Length) return false;
+            var a = System.Diagnostics.FileVersionInfo.GetVersionInfo(path).FileVersion?.Trim();
+            var b = System.Diagnostics.FileVersionInfo.GetVersionInfo(referencePath).FileVersion?.Trim();
+            if (!string.IsNullOrEmpty(a) || !string.IsNullOrEmpty(b))
+                return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            return File.ReadAllBytes(path).AsSpan().SequenceEqual(File.ReadAllBytes(referencePath));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DlssEnablerService.MatchesFile] Couldn't compare '{path}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>True when <paramref name="path"/> is a DLSS Enabler DLL (version-info ProductName).</summary>
+    internal static bool IsDlssEnablerDll(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return false;
+            var product = System.Diagnostics.FileVersionInfo.GetVersionInfo(path).ProductName ?? "";
+            return product.Trim().Equals("DLSS Enabler", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DlssEnablerService.IsDlssEnablerDll] Couldn't read '{path}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Removes a standalone DLSS Enabler at <paramref name="dllName"/>: restores the file it replaced (sentinel
+    /// pattern), or deletes it (installs from before RHI wrote sentinels). A file there that isn't DLSS Enabler
+    /// (something replaced it since) is left alone, with its backup.
+    /// False when the file was kept (not DLSS Enabler, or it couldn't be removed).
+    /// </summary>
+    internal bool RemoveStandaloneFile(string installPath, string dllName, string caller)
+    {
+        var path = Path.Combine(installPath, dllName);
+        try
+        {
+            if (File.Exists(path) && !IsOurDll(path))
+            {
+                _crashReporter.Log($"[DlssEnablerService.{caller}] Kept '{path}' — it isn't DLSS Enabler");
+                return false;
+            }
+            if (File.Exists(path + ".original")) AuxInstallService.SentinelRestore(path);
+            else if (File.Exists(path)) File.Delete(path);
+            if (File.Exists(path) && IsOurDll(path))
+            {
+                _crashReporter.Log($"[DlssEnablerService.{caller}] '{path}' is still there after removal");
+                return false;
+            }
+            _crashReporter.Log($"[DlssEnablerService.{caller}] Removed '{dllName}' from '{installPath}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[DlssEnablerService.{caller}] Couldn't remove '{path}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Reverses a backup made by this install after the copy failed.</summary>
+    private void UndoNewBackup(string dest, string backup)
+    {
+        try
+        {
+            if (!File.Exists(backup) || File.Exists(dest)) return;
+            if (new FileInfo(backup).Length > 0) File.Move(backup, dest);
+            else File.Delete(backup);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[DlssEnablerService.UndoNewBackup] Couldn't restore '{dest}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes the standalone DLSS Enabler DLL from the game folder. False when the file was kept (it isn't
+    /// DLSS Enabler, or it couldn't be removed): the caller keeps its record then.
+    /// </summary>
     public bool UninstallStandalone(string installPath, string dllName)
     {
         if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(dllName)) return false;
-        var filePath = Path.Combine(installPath, dllName);
-        try
-        {
-            if (File.Exists(filePath)) File.Delete(filePath);
-            _crashReporter.Log($"[DlssEnablerService.UninstallStandalone] Removed '{dllName}' from '{installPath}'");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[DlssEnablerService.UninstallStandalone] Failed — {ex.Message}");
-            return false;
-        }
+        return RemoveStandaloneFile(installPath, dllName, "UninstallStandalone");
     }
 
     /// <summary>Returns true if the standalone DLL is installed (the tracked DLL name exists on disk).</summary>
@@ -334,6 +447,12 @@ public class DlssEnablerService
             if (string.IsNullOrEmpty(installedAs)) continue;
             var dest = Path.Combine(card.InstallPath, installedAs);
             if (!File.Exists(dest)) continue; // only update if already deployed
+            if (!IsOurDll(dest))
+            {
+                // Another file took the name since (a game update, another mod): never overwrite it
+                _crashReporter.Log($"[DlssEnablerService.AutoUpdateStandaloneInstalls] Skipped '{card.GameName}' — '{installedAs}' isn't DLSS Enabler");
+                continue;
+            }
             try
             {
                 File.Copy(src, dest, overwrite: true);

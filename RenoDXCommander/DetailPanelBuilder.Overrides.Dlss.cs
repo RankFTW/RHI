@@ -352,6 +352,16 @@ public partial class DetailPanelBuilder
         return divider;
     }
 
+    /// <summary>Tells the user "Default" left a DLL alone because another RHI component placed or uses it.</summary>
+    private Task ShowDlssRestoreRefusedAsync(string dllPath, string? installPath)
+    {
+        var reason = DlssStreamlineService.RestoreBlockedReason(dllPath, installPath);
+        CrashReporter.Log($"[DetailPanelBuilder.ShowDlssRestoreRefusedAsync] Default refused for '{dllPath}' — {reason ?? "no reason found"}");
+        return ShowDlssSwapErrorAsync(
+            $"{Path.GetFileName(dllPath)} was left as it is because another RHI component placed or uses it ({reason ?? "unknown"}). "
+            + "Uninstall that component to put the game's own file back.");
+    }
+
     /// <summary>Tells the user why a DLSS / Streamline swap couldn't be applied.</summary>
     private async Task ShowDlssSwapErrorAsync(string message)
     {

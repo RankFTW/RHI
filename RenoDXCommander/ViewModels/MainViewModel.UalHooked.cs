@@ -25,15 +25,31 @@ public partial class MainViewModel
     /// <summary>Every DLL name an RHI component uses in this game, mapped to the component's name.</summary>
     public Dictionary<string, string> GetRhiDllOwners(GameCardViewModel card)
     {
-        var owners = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile)) owners[card.RsInstalledFile] = "ReShade";
-        if (!string.IsNullOrEmpty(card.OsInstalledFile)) owners[card.OsInstalledFile] = "OptiScaler";
-        if (!string.IsNullOrEmpty(card.DcInstalledFile)) owners[card.DcInstalledFile] = "Display Commander";
+        // ReShade, OptiScaler, Display Commander, RE Framework, DXVK, dgVoodoo2
+        var owners = UltimateAsiLoaderService.FixedRhiDllOwners(card);
         var ual = GetUalInstalledAs(card.GameName, card.Source ?? "");
-        if (!string.IsNullOrEmpty(ual)) owners[ual] = "ASI Loader";
+        if (!string.IsNullOrEmpty(ual) && !owners.ContainsKey(ual)) owners[ual] = "ASI Loader";
         foreach (var e in ExtraDllRecords(card))
             if (!string.IsNullOrEmpty(e.InstalledAs) && !owners.ContainsKey(e.InstalledAs)) owners[e.InstalledAs] = e.Label;
         return owners;
+    }
+
+    /// <summary>
+    /// The RHI component other than ReShade holding <paramref name="dllName"/> in this game, for
+    /// <see cref="AuxInstallService.OtherDllOwnerResolver"/>. Leaves out ReShade itself, OptiScaler and
+    /// Display Commander (ReShade moves to ReShade64.dll for those) and DXVK (its own ReShade switch).
+    /// Null when no card has this install folder.
+    /// </summary>
+    private string? OtherReShadeDllOwner(string gameName, string installPath, string dllName)
+    {
+        static string Norm(string p) => p.Replace('/', '\\').TrimEnd('\\');
+        var card = _allCards.ToArray().FirstOrDefault(c =>
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(c.InstallPath)
+            && Norm(c.InstallPath).Equals(Norm(installPath), StringComparison.OrdinalIgnoreCase));
+        if (card == null) return null;
+        if (!GetRhiDllOwners(card).TryGetValue(dllName, out var owner)) return null;
+        return owner is "ReShade" or "OptiScaler" or "Display Commander" or "DXVK" ? null : owner;
     }
 
     /// <summary>

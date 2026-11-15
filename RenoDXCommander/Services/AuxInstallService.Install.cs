@@ -26,49 +26,19 @@ public partial class AuxInstallService
     {
         Directory.CreateDirectory(DownloadPaths.Misc);
 
-        var destName = !string.IsNullOrWhiteSpace(filenameOverride)
-            ? filenameOverride
-            : RsNormalName;
-
-        // "Load ReShade as ASI" wins over any DLL name (the DLL name dropdown is greyed out while it's on)
-        if (RsAsiModeResolver?.Invoke(gameName, store ?? "") == true)
-        {
-            destName = RsAsiName(use32Bit);
-            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] '{gameName}' loads ReShade as ASI — deploying as '{destName}'");
-        }
-
-        // ── OptiScaler coexistence: deploy as ReShade64.dll only when filenames actually conflict ──
-        // Only rename when RS and OS would use the same DLL name (e.g. both want dxgi.dll).
-        // If they use different names (e.g. OS=d3d12.dll, RS=dxgi.dll), no rename is needed.
-        var osRecord = FindRecord(gameName, installPath, OptiScalerService.AddonType);
-        if (osRecord != null && string.Equals(osRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
-        {
-            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] OptiScaler occupies '{destName}' — deploying ReShade as '{OptiScalerService.ReShadeCoexistName}'");
-            destName = OptiScalerService.ReShadeCoexistName;
-        }
-
-        // ── DC occupancy check: avoid overwriting a DC file at the target name ──
-        var dcRecord = FindRecord(gameName, installPath, "DisplayCommander");
-        if (dcRecord != null &&
-            string.Equals(dcRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
-        {
-            destName = use32Bit ? RsStaged32 : RsStaged64;
-            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Target '{dcRecord.InstalledAs}' occupied by DC — falling back to '{destName}'");
-        }
-
+        var destName = ResolveReShadeDestName(gameName, installPath, filenameOverride, use32Bit, store, log: true);
         var destPath = Path.Combine(installPath, destName);
 
-        // ── Record-aware cleanup: remove old non-standard DLL if InstalledAs differs ─
         var addonType = useNormalReShade ? TypeReShadeNormal : TypeReShade;
-        var existingRecord = FindRecord(gameName, installPath, TypeReShade)
-                          ?? FindRecord(gameName, installPath, TypeReShadeNormal);
-        if (existingRecord != null &&
-            !string.Equals(existingRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
+
+        // Refuse before anything changes: a name another RHI component holds, or a foreign file
+        // whose .original already holds a backup. (The old ReShade is only removed further down,
+        // once the new name is known to be usable, so a refusal never leaves the game without it.)
+        var refusal = ReShadeTargetBlockedReason(gameName, installPath, destName);
+        if (refusal != null)
         {
-            var oldPath = Path.Combine(installPath, existingRecord.InstalledAs);
-            if (File.Exists(oldPath))
-                try { File.Delete(oldPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Failed to delete old RS file '{oldPath}' — {ex.Message}"); }
-            RestoreForeignDll(oldPath);
+            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] '{gameName}': not installing as '{destName}' — {refusal}");
+            throw new ReShadeInstallRefusedException(refusal);
         }
 
         // ── Ensure staged DLLs exist (downloaded from reshade.me) ────────────────
@@ -118,7 +88,30 @@ public partial class AuxInstallService
         }
 
         // ── Back up foreign DLL at destination ──────────────────────────────────
-        BackupForeignDll(destPath);
+        // Never overwrite a file that isn't ReShade unless it's safely kept as .original.
+        switch (BackupForeignDllChecked(destPath))
+        {
+            case ForeignBackupResult.Blocked:
+                throw new ReShadeInstallRefusedException(
+                    $"{destName} in the game folder isn't ReShade, and {destName}.original already holds a backup of an earlier file. " +
+                    "RHI won't overwrite either. Move one of them out of the game folder and try again.");
+            case ForeignBackupResult.Failed:
+                throw new ReShadeInstallRefusedException(
+                    $"Couldn't back up the existing {destName} in the game folder (is the game running?). Nothing was changed.");
+        }
+
+        // ── Record-aware cleanup: remove old non-standard DLL if InstalledAs differs ─
+        // After the backup above, so a refused or failed backup leaves the old ReShade in place.
+        var existingRecord = FindRecord(gameName, installPath, TypeReShade)
+                          ?? FindRecord(gameName, installPath, TypeReShadeNormal);
+        if (existingRecord != null &&
+            !string.Equals(existingRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
+        {
+            var oldPath = Path.Combine(installPath, existingRecord.InstalledAs);
+            if (File.Exists(oldPath))
+                try { File.Delete(oldPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Failed to delete old RS file '{oldPath}' — {ex.Message}"); }
+            RestoreForeignDll(oldPath);
+        }
 
         // ── Copy staged DLL to game folder ────────────────────────────────────────
         progress?.Report(("Installing ReShade...", 80));
@@ -153,6 +146,69 @@ public partial class AuxInstallService
         };
         SaveRecord(record);
         return record;
+    }
+
+    /// <summary>
+    /// Why ReShade can't be installed as <paramref name="destName"/> in <paramref name="installPath"/>,
+    /// or null when it can. Changes nothing. Refused: a name another RHI component holds
+    /// (<see cref="OtherDllOwnerResolver"/>: ASI Loader, RE Framework, 20/30 FG, Universal MFG
+    /// Unlocker, RTX Encore, ...), or a foreign file there whose <c>.original</c> already holds a backup.
+    /// </summary>
+    public static string? ReShadeTargetBlockedReason(string gameName, string installPath, string destName)
+    {
+        string? owner = null;
+        try { owner = OtherDllOwnerResolver?.Invoke(gameName, installPath, destName); }
+        catch (InvalidOperationException ex) // card list changed while it was read
+        { CrashReporter.Log($"[AuxInstallService.ReShadeTargetBlockedReason] Owner lookup failed for '{gameName}' — {ex.Message}"); }
+        if (owner != null)
+            return $"{destName} is used by {owner} in this game. RHI won't install ReShade over it. " +
+                   $"Choose another DLL name for ReShade, or remove {owner} first.";
+
+        var destPath = Path.Combine(installPath, destName);
+        if (IsForeignForReShade(destPath) && HasRealBackup(destPath))
+            return $"{destName} in the game folder isn't ReShade, and {destName}.original already holds a backup of an earlier file. " +
+                   "RHI won't overwrite either. Move one of them out of the game folder and try again.";
+        return null;
+    }
+
+    /// <summary>
+    /// The file name ReShade will be deployed as: <paramref name="filenameOverride"/> (or dxgi.dll),
+    /// then "Load ReShade as ASI", then ReShade64.dll / ReShade32.dll when OptiScaler or Display
+    /// Commander already holds that name. Used by the install and by the foreign-DLL check before it.
+    /// </summary>
+    public string ResolveReShadeDestName(string gameName, string installPath, string? filenameOverride,
+        bool use32Bit, string? store, bool log = false)
+    {
+        var destName = !string.IsNullOrWhiteSpace(filenameOverride)
+            ? filenameOverride
+            : RsNormalName;
+
+        // "Load ReShade as ASI" wins over any DLL name (the DLL name dropdown is greyed out while it's on)
+        if (RsAsiModeResolver?.Invoke(gameName, store ?? "") == true)
+        {
+            destName = RsAsiName(use32Bit);
+            if (log) CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] '{gameName}' loads ReShade as ASI — deploying as '{destName}'");
+        }
+
+        // ── OptiScaler coexistence: deploy as ReShade64.dll only when filenames actually conflict ──
+        // Only rename when RS and OS would use the same DLL name (e.g. both want dxgi.dll).
+        // If they use different names (e.g. OS=d3d12.dll, RS=dxgi.dll), no rename is needed.
+        var osRecord = FindRecord(gameName, installPath, OptiScalerService.AddonType);
+        if (osRecord != null && string.Equals(osRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
+        {
+            if (log) CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] OptiScaler occupies '{destName}' — deploying ReShade as '{OptiScalerService.ReShadeCoexistName}'");
+            destName = OptiScalerService.ReShadeCoexistName;
+        }
+
+        // ── DC occupancy check: avoid overwriting a DC file at the target name ──
+        var dcRecord = FindRecord(gameName, installPath, "DisplayCommander");
+        if (dcRecord != null &&
+            string.Equals(dcRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
+        {
+            destName = use32Bit ? RsStaged32 : RsStaged64;
+            if (log) CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Target '{dcRecord.InstalledAs}' occupied by DC — falling back to '{destName}'");
+        }
+        return destName;
     }
 
     // ── Update detection ──────────────────────────────────────────────────────────
@@ -409,19 +465,31 @@ public partial class AuxInstallService
         if (!string.IsNullOrEmpty(record.InstallPath))
             _shaderPackService.RestoreOriginalIfPresent(record.InstallPath);
 
-        // ── ReShade cleanup: remove associated INI/log files ──────────────────
+        // ── ReShade cleanup: remove associated INI files ──────────────────────
         if (!string.IsNullOrEmpty(record.InstallPath)
             && (record.AddonType == TypeReShade || record.AddonType == TypeReShadeNormal))
         {
-            var installDir = record.InstallPath;
-            foreach (var file in new[] { "reshade.ini", "ReShade2.ini", "ReShadePreset.ini" })
+            bool iniLocked = RsIniLockedResolver?.Invoke(record.GameName, record.Store ?? "") == true;
+            foreach (var file in ReShadeUninstallCleanupFiles(iniLocked))
             {
-                var filePath = Path.Combine(installDir, file);
-                if (File.Exists(filePath))
-                    try { File.Delete(filePath); } catch { /* best effort */ }
+                var filePath = Path.Combine(record.InstallPath, file);
+                if (!File.Exists(filePath)) continue;
+                try { File.Delete(filePath); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { CrashReporter.Log($"[AuxInstallService.Uninstall] Couldn't delete '{filePath}' — {ex.Message}"); }
             }
+            CrashReporter.Log($"[AuxInstallService.Uninstall] '{record.GameName}': kept ReShadePreset.ini{(iniLocked ? ", reshade.ini and ReShade2.ini (locked)" : "")}");
         }
     }
+
+    /// <summary>
+    /// Config files ReShade uninstall deletes from the game folder. ReShadePreset.ini is never
+    /// deleted: RHI doesn't record whether it put it there (the ⚙ button, a dropped preset) or the
+    /// user made it, so it's kept. reshade.ini and ReShade2.ini (the second runtime's config, Source
+    /// engine games) are kept when the game's ini is locked.
+    /// </summary>
+    internal static IReadOnlyList<string> ReShadeUninstallCleanupFiles(bool iniLocked) =>
+        iniLocked ? Array.Empty<string>() : new[] { "reshade.ini", "ReShade2.ini" };
 
     // ── DB ────────────────────────────────────────────────────────────────────────
 
@@ -506,4 +574,13 @@ public partial class AuxInstallService
 
     private void SaveDb(List<AuxInstalledRecord> db) =>
         SafeJsonFile.Write(DbPath, db, "AuxInstallService.SaveDb", SafeJsonFile.Indented);
+}
+
+/// <summary>
+/// ReShade wasn't installed and nothing in the game folder was changed: the DLL name is held by
+/// another RHI component, or a foreign file there can't be backed up safely. The message is for the user.
+/// </summary>
+public sealed class ReShadeInstallRefusedException : IOException
+{
+    public ReShadeInstallRefusedException(string message) : base(message) { }
 }

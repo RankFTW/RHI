@@ -264,8 +264,10 @@ public class Dlssg20_30Service
     /// <summary>
     /// Deploys the proxy for <paramref name="dllName"/>, the ini and the dlssg_sm86\ folder.
     /// An existing dlssg_sm86.ini keeps the settings RHI manages (see <see cref="ManagedKeys"/>).
+    /// <paramref name="replacesOwnCopy"/>: the file there is RHI's earlier copy of the proxy (reinstall under the
+    /// same name), never saved as the game's original.
     /// </summary>
-    public bool Install(string installPath, string dllName)
+    public bool Install(string installPath, string dllName, bool replacesOwnCopy = false)
     {
         if (string.IsNullOrEmpty(installPath) || !IsStagingReady) return false;
         if (!IsSupportedProxyName(dllName))
@@ -283,7 +285,9 @@ public class Dlssg20_30Service
             }
 
             var dllDest = Path.Combine(installPath, dllName);
-            AuxInstallService.SentinelBackup(dllDest);
+            // The proxies have no version info: RHI's copy is known from the caller, or by matching the staged build.
+            // Installs from before RHI wrote sentinels have none; the mod itself must not become the "original".
+            AuxInstallService.SentinelBackupReplacingOwn(dllDest, replacesOwnCopy || FilesIdentical(source, dllDest));
             File.Copy(source, dllDest, overwrite: true);
 
             DeployIni(installPath);
@@ -312,9 +316,16 @@ public class Dlssg20_30Service
             var name = installedAs;
             if (!IsSupportedProxyName(name))
             {
-                // Old installs renamed version.dll to any name; that name has no matching build now
+                // Old installs renamed version.dll to any name; that name has no matching build now.
+                // Switch to a proxy name no file uses: version.dll can be ReShade, ASI Loader, RTX Encore or another mod.
+                var free = PickFreeProxyName(installPath);
+                if (free == null)
+                {
+                    _crashReporter.Log($"[Dlssg20_30Service.Update] '{installedAs}' is no longer supported and {string.Join(", ", AutoProxyNames)} are all in use in '{installPath}' — left as it is");
+                    return null;
+                }
                 AuxInstallService.SentinelRestore(Path.Combine(installPath, installedAs));
-                name = "version.dll";
+                name = free;
                 _crashReporter.Log($"[Dlssg20_30Service.Update] '{installedAs}' is no longer supported — switching to {name}");
                 return Install(installPath, name) ? name : null;
             }
@@ -354,6 +365,30 @@ public class Dlssg20_30Service
         catch (Exception ex)
         {
             _crashReporter.Log($"[Dlssg20_30Service.NeedsUpdate] {installPath} — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Proxy names an automatic switch may use: the non-render proxies, in the README's order (dxgi / d3d12 need the user's choice).</summary>
+    internal static readonly string[] AutoProxyNames = { "version.dll", "winmm.dll", "dbghelp.dll", "dinput8.dll" };
+
+    /// <summary>The first of <see cref="AutoProxyNames"/> with no file (or backup) in the folder, or null.</summary>
+    internal static string? PickFreeProxyName(string installPath)
+        => AutoProxyNames.FirstOrDefault(n =>
+            !File.Exists(Path.Combine(installPath, n)) && !File.Exists(Path.Combine(installPath, n + ".original")));
+
+    /// <summary>Byte-for-byte equal (both present).</summary>
+    private bool FilesIdentical(string a, string b)
+    {
+        try
+        {
+            if (!File.Exists(a) || !File.Exists(b)) return false;
+            if (new FileInfo(a).Length != new FileInfo(b).Length) return false;
+            return File.ReadAllBytes(a).AsSpan().SequenceEqual(File.ReadAllBytes(b));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[Dlssg20_30Service.FilesIdentical] Could not compare '{b}' — {ex.Message}");
             return false;
         }
     }

@@ -288,6 +288,14 @@ public partial class InstallFolderMigrationService
         {
             var g = b.Group("DXVK", dxvks.Any(r => IsNew(r.InstallPath)));
             foreach (var dll in dxvkOld.InstalledDlls) b.File(g, dll, requireBackup: false);
+            // A DLL moved aside for OptiScaler 0.9 sits in the root plugins\ (only that file, never the folder:
+            // it can be the game's); one in OptiScaler\plugins moves with OptiScaler\ above.
+            foreach (var dll in dxvkOld.PluginFolderDlls)
+            {
+                var copy = DxvkService.FindPluginCopy(oldDir, dll);
+                if (copy != null && DxvkService.IsRootPluginsDir(oldDir, Path.GetDirectoryName(copy)!))
+                    b.File(g, Path.Combine("plugins", Path.GetFileName(copy)), suffix: null, requireBackup: false);
+            }
             if (dxvkOld.DeployedConf) b.File(g, "dxvk.conf");
             b.File(g, "d3d9.dll.reshade_backup", suffix: null);
         }

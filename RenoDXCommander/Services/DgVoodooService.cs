@@ -18,8 +18,8 @@ public class DgVoodooService
 {
     private const string D3D9Entry32 = "MS/x86/D3D9.dll";
     private const string D3D9Entry64 = "MS/x64/D3D9.dll";
-    private const string D3D9Dll     = "d3d9.dll";
-    private const string ConfFile    = "dgVoodoo.conf";
+    internal const string D3D9Dll     = "d3d9.dll";
+    internal const string ConfFile    = "dgVoodoo.conf";
 
     private static readonly string CacheDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -180,18 +180,27 @@ public class DgVoodooService
     public void RemoveFromGame(string installPath)
     {
         var d3d9Path = Path.Combine(installPath, D3D9Dll);
-        if (File.Exists(d3d9Path) || File.Exists(d3d9Path + ".original"))
+        bool confPresent = File.Exists(Path.Combine(installPath, ConfFile));
+        bool isDgVoodoo = IsDgVoodooDll(d3d9Path);
+        // Only dgVoodoo2's own D3D9.dll is removed (callers run this for any Feeder / Luma uninstall).
+        // With D3D9.dll gone and dgVoodoo.conf still there, its .original / sentinel is dgVoodoo2's to restore.
+        if (isDgVoodoo || (!File.Exists(d3d9Path) && confPresent && File.Exists(d3d9Path + ".original")))
         {
             try
             {
                 if (File.Exists(d3d9Path)) File.Delete(d3d9Path);
+                AuxInstallService.SentinelRestore(d3d9Path);
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Removed/restored {D3D9Dll} in '{installPath}'");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {D3D9Dll} — {ex.Message}");
+                // Still in place (game running): leave the backup so a later removal can restore it
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {D3D9Dll} — {ex.Message}; backup kept");
             }
-            AuxInstallService.SentinelRestore(d3d9Path);
-            CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Removed/restored {D3D9Dll} in '{installPath}'");
+        }
+        else if (File.Exists(d3d9Path))
+        {
+            CrashReporter.Log($"[DgVoodooService.RemoveFromGame] {D3D9Dll} in '{installPath}' isn't dgVoodoo2 — left alone");
         }
 
         var confPath = Path.Combine(installPath, ConfFile);
@@ -216,8 +225,29 @@ public class DgVoodooService
     /// removed by ReShade's foreign DLL restore step.
     /// </summary>
     public bool IsDeployed(string installPath)
-        => File.Exists(Path.Combine(installPath, ConfFile))
-        || File.Exists(Path.Combine(installPath, D3D9Dll + ".original"));
+        => !string.IsNullOrEmpty(installPath)
+        && (File.Exists(Path.Combine(installPath, ConfFile))
+            || IsDgVoodooDll(Path.Combine(installPath, D3D9Dll)));
+
+    /// <summary>
+    /// True when <paramref name="path"/> is a dgVoodoo2 DLL (ProductName "dgVoodoo" in its version info).
+    /// A <c>d3d9.dll.original</c> alone proves nothing: ReShade, DXVK and others make one too.
+    /// </summary>
+    internal static bool IsDgVoodooDll(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return false;
+            var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(path);
+            return (vi.ProductName?.Contains("dgVoodoo", StringComparison.OrdinalIgnoreCase) ?? false)
+                || (vi.FileDescription?.Contains("dgVoodoo", StringComparison.OrdinalIgnoreCase) ?? false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DgVoodooService.IsDgVoodooDll] Couldn't read '{path}' — {ex.Message}");
+            return false;
+        }
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

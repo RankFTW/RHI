@@ -167,6 +167,21 @@ public class GitHubETagCache
 
         if (!response.IsSuccessStatusCode)
         {
+            // 404 / 410: the thing is gone (e.g. a deleted release). Never answer with the saved copy:
+            // after the only rhi-beta release was deleted, RHI kept offering it every hour and the
+            // download 404'd. Drop the entry so the caller sees "nothing there".
+            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone)
+            {
+                if (_cache.TryRemove(url, out var _removedEntry))
+                {
+                    _savedUtc.TryRemove(url, out var _removedSaved);
+                    _checkedUtc.TryRemove(url, out var _removedChecked);
+                    Persist();
+                    CrashReporter.Log($"[GitHubETagCache] {(int)response.StatusCode} for {TruncateUrl(url)} — removed its saved copy (no longer exists)");
+                }
+                return null;
+            }
+
             // Detect rate limiting: only set session-wide flag when GitHub explicitly reports
             // remaining=0, not on every 403. A transient 403 (auth scope, IP block, etc.)
             // should not kill all API calls for the rest of the session.

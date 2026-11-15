@@ -207,7 +207,9 @@ public partial class DetailPanelBuilder
                 {
                     if (!svc.IsStagingReady || svc.HasUpdate)
                         await svc.EnsureStagingAsync().ConfigureAwait(false);
-                    return svc.Install(installPath, chosen);
+                    // Same name as the current install: the file there is RHI's own proxy
+                    return svc.Install(installPath, chosen,
+                        replacesOwnCopy: isInstalled && string.Equals(currentDllName, chosen, StringComparison.OrdinalIgnoreCase));
                 });
 
                 if (ok)

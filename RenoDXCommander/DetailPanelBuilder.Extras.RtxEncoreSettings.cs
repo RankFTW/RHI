@@ -374,7 +374,8 @@ public partial class DetailPanelBuilder
                 {
                     if (svc.GetNrDllCachedPath() == null)
                         cog.SetStatus($"Downloading nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer}...");
-                    var cached = await svc.EnsureNrDllCachedAsync(App.Services.GetRequiredService<IDlssStreamlineService>());
+                    var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
+                    var cached = await svc.EnsureNrDllCachedAsync(dlssS);
                     if (cached == null)
                     {
                         CrashReporter.Log($"[RtxEncoreCog] NR {RtxEncoreService.NrRequiredVer} not available — not deployed");
@@ -386,6 +387,8 @@ public partial class DetailPanelBuilder
                     var installedAs = _window.ViewModel.GetRtxEncoreInstalledAs(gameName, store);
                     if (await Task.Run(() => svc.DeployNrDll(installPath, installedAs)))
                     {
+                        // A game with no DLSS of its own may be in the scan skip cache: un-skip it so the NR DLL shows
+                        dlssS.RecordDlssFound(gameName);
                         nrOn = true;
                         cog.SetSuccess($"Deployed nvngx_dlssnr.dll {RtxEncoreService.NrRequiredVer} beside RTX Encore.");
                     }

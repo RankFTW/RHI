@@ -23,6 +23,10 @@ public interface IAuxInstallService
         string? store = null,
         bool mergeIni = true);
 
+    /// <summary>The file name ReShade will be deployed as (DLL override, ASI mode, OptiScaler / DC coexistence).</summary>
+    string ResolveReShadeDestName(string gameName, string installPath, string? filenameOverride,
+        bool use32Bit, string? store, bool log = false);
+
     Task<bool> CheckForUpdateAsync(AuxInstalledRecord record);
 
     void Uninstall(AuxInstalledRecord record);

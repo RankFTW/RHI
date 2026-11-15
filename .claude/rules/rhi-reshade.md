@@ -78,9 +78,9 @@ paths:
 - Drag-drop runs BEFORE generic addon handler. File watcher fuzzy-matches filename.
 - `LumaService.InstallFromArchiveAsync` handles zip (native) and 7z (bundled exe)
 - Multi-folder archives: folders starting with `(` filtered out. Multiple valid → folder picker dialog.
-- If no `dxgi.dll` in archive → deploy cached stable addon ReShade as fallback
+- The archive's ReShade DLLs are skipped; ReShade is installed afterwards by `ApplyLumaPostInstallAsync` (guarded install path), never copied over `dxgi.dll` by the archive install
 - `AddonFileWatcher` only triggers for archives with "renodx" or "luma" in filename
-- Post-install: enable Luma mode, set `RsStatus = Installed`, save settings, delete source from watch folder
+- Post-install: enable Luma mode, `ApplyLumaPostInstallAsync` (its ReShade install sets `RsStatus`), save settings, delete source from watch folder
 
 ### Luma + RenoDX Coexistence
 - Manifest field `lumaRenodxCompat`: games where RenoDX can coexist with Luma
@@ -88,7 +88,7 @@ paths:
 
 ### Luma Uninstall Order
 - `RemoveFromGameFolder` BEFORE deleting individual tracked files (marker check)
-- Also delete `reshade-shaders-original` after uninstall
+- Never delete `reshade-shaders-original` (the user's own shaders, moved aside when RHI first deployed): after removing the managed folder, uninstall restores it with `RestoreOriginalIfPresent`, as ReShade uninstall does. (Until Nov 2026 Luma uninstall deleted it, a leftover from before Luma shaders were managed, `cda50d4`.)
 
 ### Luma Install reshade.ini Ordering
 - Skip extracting `reshade.ini` from zip. Pass screenshot/hotkey/game params to `MergeRsIni`.

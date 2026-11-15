@@ -25,7 +25,8 @@ public partial class DlssStreamlineService
         TryDll(exactFolderPath, DlssDllName,  (p, v) => { result.DlssPath  = p; result.DlssVersion  = v; });
         TryDll(exactFolderPath, DlssdDllName, (p, v) => { result.DlssdPath = p; result.DlssdVersion = v; });
         TryDll(exactFolderPath, DlssgDllName, (p, v) => { result.DlssgPath = p; result.DlssgVersion = v; });
-        TryDll(exactFolderPath, DlssnrDllName,(p, v) => { result.DlssnrPath = p; result.DlssnrVersion = v; });
+        // With the NR Cost Scaler installed nvngx_dlssnr.dll is its proxy: read the real DLL's version
+        TryDll(exactFolderPath, DlssnrDllName,(p, _) => { result.DlssnrPath = p; result.DlssnrVersion = GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(p)); });
 
         // Check Streamline — use dedicated path if provided, else check DLSS folder
         var slFolder = (!string.IsNullOrEmpty(streamlineFolderPath) && Directory.Exists(streamlineFolderPath))
@@ -84,8 +85,8 @@ public partial class DlssStreamlineService
             result.DlssdVersion = GetFileVersion(result.DlssdPath);
         if (result.DlssgPath != null)
             result.DlssgVersion = GetFileVersion(result.DlssgPath);
-        if (result.DlssnrPath != null)
-            result.DlssnrVersion = GetFileVersion(result.DlssnrPath);
+        if (result.DlssnrPath != null) // the real DLL behind an NR Cost Scaler proxy
+            result.DlssnrVersion = GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(result.DlssnrPath));
         if (result.StreamlineInterposerPath != null)
         {
             result.StreamlineVersion = GetFileVersion(result.StreamlineInterposerPath);

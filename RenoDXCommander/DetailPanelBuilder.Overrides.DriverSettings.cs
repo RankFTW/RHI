@@ -871,7 +871,7 @@ public partial class DetailPanelBuilder
                         if (refreshCard.DlssDetection != null)
                         {
                             var dlssSvc = _dlssStreamlineService;
-                            dlssSvc.RestoreAll(refreshCard.DlssDetection);
+                            dlssSvc.RestoreAll(refreshCard.DlssDetection, refreshCard.InstallPath);
                             refreshCard.RefreshDlssVersions(dlssSvc);
                         }
                         _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(refreshCard));

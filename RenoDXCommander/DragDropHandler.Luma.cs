@@ -237,8 +237,8 @@ public partial class DragDropHandler
 
             card.LumaRecord = record;
             card.LumaStatus = GameStatus.Installed;
-            if (card.RsStatus == GameStatus.NotInstalled || card.RsStatus == GameStatus.Available)
-                card.RsStatus = GameStatus.Installed;
+            // RsStatus is set by the ReShade install in ApplyLumaPostInstallAsync (which can stop at the
+            // foreign-dxgi.dll prompt), not here.
 
             // Ensure the card has a LumaMod so the Luma row becomes visible.
             // For bespoke drag-dropped mods (not on the wiki), synthesize a minimal entry.

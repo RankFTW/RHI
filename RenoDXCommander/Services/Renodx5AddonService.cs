@@ -636,15 +636,14 @@ public class Renodx5AddonService
                         File.Delete(tempZip);
                         return;
                     }
-                    using var es = entry.Open();
-                    using var os = File.Create(destPath);
-                    await es.CopyToAsync(os).ConfigureAwait(false);
+                    // Through a temp file: a failed extraction never leaves a partial add-on that File.Exists accepts
+                    await FileHelper.WriteStreamAtomicAsync(entry.Open, destPath, entry.Length).ConfigureAwait(false);
                 }
                 File.Delete(tempZip);
             }
             else
             {
-                await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
+                await FileHelper.WriteBytesAtomicAsync(destPath, bytes).ConfigureAwait(false);
             }
 
             string? previousVersion = null;
@@ -1151,9 +1150,8 @@ public class Renodx5AddonService
                         File.Delete(tempZip);
                         return false;
                     }
-                    using var es = zipEntry.Open();
-                    using var os = File.Create(destPath);
-                    await es.CopyToAsync(os).ConfigureAwait(false);
+                    // Through temp files: a failed extraction never leaves a partial file that File.Exists accepts
+                    await FileHelper.WriteStreamAtomicAsync(zipEntry.Open, destPath, zipEntry.Length).ConfigureAwait(false);
 
                     // Also extract DLSS5_Feed.fx if present — it lives inside the Feeder zip
                     var feedFxEntry = zip.Entries.FirstOrDefault(e =>
@@ -1163,9 +1161,7 @@ public class Renodx5AddonService
                         var feederShadersDir = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
                         Directory.CreateDirectory(feederShadersDir);
                         var fxDestPath = Path.Combine(feederShadersDir, "DLSS5_Feed.fx");
-                        using var fxStream = feedFxEntry.Open();
-                        using var fxOut = File.Create(fxDestPath);
-                        await fxStream.CopyToAsync(fxOut).ConfigureAwait(false);
+                        await FileHelper.WriteStreamAtomicAsync(feedFxEntry.Open, fxDestPath, feedFxEntry.Length).ConfigureAwait(false);
                         _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Extracted DLSS5_Feed.fx v{version} → '{fxDestPath}'");
                         await Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder")).ConfigureAwait(false);
                     }
@@ -1178,9 +1174,7 @@ public class Renodx5AddonService
                     {
                         // Stage in versioned dir
                         var hostExeVersioned = Path.Combine(versionDir, "dlss5-feed-host64.exe");
-                        using (var hexStreamV = hostExeEntry.Open())
-                        using (var hexOutV = File.Create(hostExeVersioned))
-                            await hexStreamV.CopyToAsync(hexOutV).ConfigureAwait(false);
+                        await FileHelper.WriteStreamAtomicAsync(hostExeEntry.Open, hostExeVersioned, hostExeEntry.Length).ConfigureAwait(false);
 
                         // Not copied to the shared addon staging (DLSS5 Feeder_host64.exe): that copy must stay
                         // from the same download as DLSS5 Feeder.addon32, or a 32-bit install would pair this
@@ -1192,7 +1186,7 @@ public class Renodx5AddonService
             }
             else
             {
-                await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
+                await FileHelper.WriteBytesAtomicAsync(destPath, bytes).ConfigureAwait(false);
             }
 
             _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Staged v{version} ({addonType}) → '{destPath}' ({new FileInfo(destPath).Length} bytes)");

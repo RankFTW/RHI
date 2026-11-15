@@ -161,10 +161,9 @@ public class UltimateAsiLoaderService
                 return;
             }
 
+            // Through a temp file: a failed extraction never leaves a partial DLL that IsStagingReady accepts
             var destPath = Path.Combine(stagingDir, DefaultDllName);
-            using var src  = entry.Open();
-            using var dest = File.Create(destPath);
-            await src.CopyToAsync(dest).ConfigureAwait(false);
+            await FileHelper.WriteStreamAtomicAsync(entry.Open, destPath, entry.Length).ConfigureAwait(false);
 
             var previousVersion = File.Exists(versionFile) ? File.ReadAllText(versionFile).Trim() : null;
             File.WriteAllText(versionFile, version);
@@ -210,8 +209,27 @@ public class UltimateAsiLoaderService
         var src        = Path.Combine(stagingDir, DefaultDllName);
         var destPath   = Path.Combine(card.InstallPath, dllName);
 
-        // If reinstalling under a different name, clean up the old installation first
         var existingRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AddonType);
+        bool reinstallSameName = existingRecord != null
+            && existingRecord.InstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase);
+        // A name another RHI component holds (ReShade, OptiScaler, RE Framework, DXVK, ...) is never
+        // replaced or chained: that component's uninstall / update would then remove or overwrite ASI Loader.
+        // Checked before the old install is removed, so a refusal leaves ASI Loader where it was.
+        var fixedOwner = FixedRhiDllOwner(card, dllName);
+        if (!reinstallSameName && fixedOwner != null)
+        {
+            _crashReporter.Log($"[UltimateAsiLoaderService.InstallAsync] '{dllName}' is used by {fixedOwner} in '{card.InstallPath}' — not installing over it");
+            return (false, null);
+        }
+        // Same for the "both X.dll and XHooked.dll exist" refusal below
+        if (!reinstallSameName && File.Exists(destPath)
+            && File.Exists(Path.Combine(card.InstallPath, HookedDllNames.ToHooked(dllName))))
+        {
+            _crashReporter.Log($"[UltimateAsiLoaderService.InstallAsync] '{dllName}' and '{HookedDllNames.ToHooked(dllName)}' both exist in '{card.InstallPath}' — not installing over them");
+            return (false, null);
+        }
+
+        // If reinstalling under a different name, clean up the old installation first
         if (existingRecord != null && !existingRecord.InstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase))
         {
             var oldPath    = Path.Combine(card.InstallPath, existingRecord.InstalledAs);
@@ -236,9 +254,7 @@ public class UltimateAsiLoaderService
         // Hooked chaining — if the target DLL exists and is NOT ours, rename it first
         // (a reinstall under the same name replaces ASI Loader's own file, it isn't chained)
         string? hookedOriginal = null;
-        bool reinstallSameName = existingRecord != null
-            && existingRecord.InstalledAs.Equals(dllName, StringComparison.OrdinalIgnoreCase);
-        if (File.Exists(destPath) && !reinstallSameName && !IsRhiManagedFile(card, dllName))
+        if (File.Exists(destPath) && !reinstallSameName)
         {
             var hookedName = HookedDllNames.ToHooked(dllName);     // "versionHooked.dll"
             var hookedPath = Path.Combine(card.InstallPath, hookedName);
@@ -383,6 +399,13 @@ public class UltimateAsiLoaderService
             if (dest == null || !File.Exists(src)) continue;
             // Never re-create a file the user removed.
             if (!File.Exists(dest)) continue;
+            // Another RHI component took this name since (e.g. RE Framework as dinput8.dll): its file, not ours
+            var fixedOwner = FixedRhiDllOwner(card, record.InstalledAs);
+            if (fixedOwner != null)
+            {
+                _crashReporter.Log($"[UltimateAsiLoaderService.AutoUpdate] Skipping '{card.GameName}': '{record.InstalledAs}' is used by {fixedOwner}");
+                continue;
+            }
 
             var srcInfo  = new FileInfo(src);
             var destInfo = new FileInfo(dest);
@@ -410,17 +433,34 @@ public class UltimateAsiLoaderService
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /// <summary>Returns true if the given DLL name at this game's path is managed by RHI (ReShade/OptiScaler/DC).</summary>
-    private static bool IsRhiManagedFile(GameCardViewModel card, string dllName)
+    /// <summary>
+    /// DLL names held by RHI components that track the name themselves and can't be chained as
+    /// &lt;name&gt;Hooked.dll: ReShade, OptiScaler, Display Commander, RE Framework (dinput8.dll),
+    /// DXVK (its game-root DLLs) and dgVoodoo2 (d3d9.dll, with dgVoodoo.conf beside it).
+    /// ASI Loader must never replace or chain these, and a component must not take one of them.
+    /// </summary>
+    public static Dictionary<string, string> FixedRhiDllOwners(GameCardViewModel card)
     {
-        if (!string.IsNullOrEmpty(card.RsInstalledFile)
-            && card.RsInstalledFile.Equals(dllName, StringComparison.OrdinalIgnoreCase)) return true;
-        if (!string.IsNullOrEmpty(card.OsInstalledFile)
-            && card.OsInstalledFile.Equals(dllName, StringComparison.OrdinalIgnoreCase)) return true;
-        if (!string.IsNullOrEmpty(card.DcInstalledFile)
-            && card.DcInstalledFile.Equals(dllName, StringComparison.OrdinalIgnoreCase)) return true;
-        return false;
+        var owners = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? name, string owner)
+        {
+            if (!string.IsNullOrEmpty(name) && !owners.ContainsKey(name)) owners[name] = owner;
+        }
+        Add(card.RsRecord?.InstalledAs ?? card.RsInstalledFile, "ReShade");
+        Add(card.OsInstalledFile, "OptiScaler");
+        Add(card.DcInstalledFile, "Display Commander");
+        if (card.RefRecord != null || card.IsRefInstalled) Add(REFrameworkService.DllFileName, "RE Framework");
+        if (card.DxvkRecord != null)
+            foreach (var dll in card.DxvkRecord.InstalledDlls) Add(dll, "DXVK");
+        if (!string.IsNullOrEmpty(card.InstallPath)
+            && File.Exists(Path.Combine(card.InstallPath, DgVoodooService.ConfFile)))
+            Add(DgVoodooService.D3D9Dll, "dgVoodoo2");
+        return owners;
     }
+
+    /// <summary>The RHI component (see <see cref="FixedRhiDllOwners"/>) holding <paramref name="dllName"/>, or null.</summary>
+    public static string? FixedRhiDllOwner(GameCardViewModel card, string dllName)
+        => FixedRhiDllOwners(card).TryGetValue(dllName, out var owner) ? owner : null;
 
     private async Task<(string? version, Dictionary<string, string>? assets, string? body)> FetchLatestReleaseInfoAsync()
     {

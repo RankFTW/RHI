@@ -251,7 +251,7 @@ public class MassDlssDeployDialog
         int dlssCount = 0, dlssdCount = 0, dlssgCount = 0, slCount = 0;
         int srPresetCount = 0, rrPresetCount = 0, fgPresetCount = 0, presetMissedCount = 0;
         int srDriverCount = 0, rrDriverCount = 0, fgDriverCount = 0;
-        int skippedNoComponent = 0, skippedAlreadyAtVersion = 0;
+        int skippedNoComponent = 0, skippedAlreadyAtVersion = 0, skippedOwned = 0;
         var failedGames = new List<string>();
         // Set auto-create flag on preset service
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
@@ -342,7 +342,7 @@ public class MassDlssDeployDialog
                     else if (dlssVersion == DefaultOption)
                     {
                         if (_dlssService.HasBackup(detection.DlssPath))
-                        { _dlssService.Restore(detection.DlssPath); dlssCount++; }
+                        { if (_dlssService.Restore(detection.DlssPath, card.InstallPath)) dlssCount++; else skippedOwned++; }
                     }
                     else if (dlssVersion == CustomOption)
                     {
@@ -368,7 +368,7 @@ public class MassDlssDeployDialog
                     else if (dlssdVersion == DefaultOption)
                     {
                         if (_dlssService.HasBackup(detection.DlssdPath))
-                        { _dlssService.Restore(detection.DlssdPath); dlssdCount++; }
+                        { if (_dlssService.Restore(detection.DlssdPath, card.InstallPath)) dlssdCount++; else skippedOwned++; }
                     }
                     else if (dlssdVersion == CustomOption)
                     {
@@ -394,7 +394,7 @@ public class MassDlssDeployDialog
                     else if (dlssgVersion == DefaultOption)
                     {
                         if (_dlssService.HasBackup(detection.DlssgPath))
-                        { _dlssService.Restore(detection.DlssgPath); dlssgCount++; }
+                        { if (_dlssService.Restore(detection.DlssgPath, card.InstallPath)) dlssgCount++; else skippedOwned++; }
                     }
                     else if (dlssgVersion == CustomOption)
                     {
@@ -415,7 +415,7 @@ public class MassDlssDeployDialog
                 {
                     if (slVersion == DefaultOption)
                     {
-                        _dlssService.RestoreStreamline(detection.StreamlineFolder); slCount++;
+                        if (_dlssService.RestoreStreamline(detection.StreamlineFolder, card.InstallPath) == 0) slCount++; else skippedOwned++;
                     }
                     else if (slVersion == CustomOption)
                     {
@@ -493,6 +493,7 @@ public class MassDlssDeployDialog
             report.AppendLine($"NVIDIA profiles created: {presetService.ProfilesCreatedCount}");
         if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nSkipped: {skippedAlreadyAtVersion} (already at selected version)");
         if (skippedNoComponent > 0) report.AppendLine($"Skipped: {skippedNoComponent} (component not present)");
+        if (skippedOwned > 0) report.AppendLine($"Left as they are: {skippedOwned} (placed or used by another RHI component)");
         if (presetMissedCount > 0) report.AppendLine($"Presets missed: {presetMissedCount} game(s) (no NVIDIA profile found)");
         if (failedGames.Count > 0)
         {
@@ -517,6 +518,7 @@ public class MassDlssDeployDialog
     private async Task ExecuteRestoreAllAsync(List<GameCardViewModel> eligibleCards, List<CheckBox> checkBoxes)
     {
         int restoredCount = 0;
+        int keptCount = 0;
         int presetsResetCount = 0;
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
 
@@ -568,10 +570,11 @@ public class MassDlssDeployDialog
             // Restore DLL backups
             if (card.HasAnyDlssBackup)
             {
-                _dlssService.RestoreAll(detection);
+                // Files another RHI component placed or uses are left alone: don't count those games as restored
+                if (_dlssService.RestoreAll(detection, card.InstallPath) == 0) restoredCount++;
+                else keptCount++;
                 card.RefreshDlssVersions(_dlssService);
                 card.NotifyAll();
-                restoredCount++;
             }
 
             // Reset presets to Default (0x0) and clear driver overrides
@@ -588,8 +591,9 @@ public class MassDlssDeployDialog
 
         var reportText = new System.Text.StringBuilder();
         if (restoredCount > 0) reportText.AppendLine($"Restored {restoredCount} game(s) to default DLLs.");
+        if (keptCount > 0) reportText.AppendLine($"Left some DLLs as they are in {keptCount} game(s): another RHI component placed or uses them.");
         if (presetsResetCount > 0) reportText.AppendLine($"Reset presets to Default on {presetsResetCount} game(s).");
-        if (restoredCount == 0 && presetsResetCount == 0) reportText.Append("No games had backups to restore or presets to reset.");
+        if (restoredCount == 0 && keptCount == 0 && presetsResetCount == 0) reportText.Append("No games had backups to restore or presets to reset.");
 
         var resultDialog = new ContentDialog
         {
