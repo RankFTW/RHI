@@ -6,74 +6,76 @@
 ## v2.9.5 Beta
 
 ### New
-- Added "Get beta updates" in Settings › General › Updates. With it on, RHI offers test builds of the next version and moves you to the full release when it's out. Turning it off doesn't downgrade you.
-- Browse community covers and banners from SteamGridDB in the Spotlight layout: right-click a game › Artwork › Browse covers or Browse banners, then click one to use it (or Steam to go back to the game's own art). Needs your own free SteamGridDB API key, added in Settings › Accounts & Data.
+- Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
+- Browse SteamGridDB covers and banners in Spotlight (right-click a game › Artwork). Needs your own free SteamGridDB API key (Settings › Accounts & Data).
+- Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes
-- Game settings (RHI overlay, display modes, Block Steam updates) are now in every layout: the ⚙ beside the game's name shows in Classic+ (opens a window) and Tabs (opens under the header), not just Spotlight.
-- Extras' frame generation tools are now grouped by what the game needs: "Frame Gen for Any Game" (HSF, RTX Encore) and "Games With DLSS Frame Gen" (DLSS Enabler, Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock). Each one now lists the GPUs it supports, what the game must already have and which graphics APIs work (shown under the name in Tabs and Spotlight, in the tooltip in Classic+), checked against each project's current page.
-- RTX Encore in games that ship no DLSS now gets the NVIDIA files it needs automatically: DLSS for upscaling, and Streamline with DLSS Frame Generation for frame generation. RHI adds them only where the game has none of its own, never over an existing file, and removes them with RTX Encore. Its ⚙ has a new Games without DLSS section to turn on upscaling (DLSS, XeSS, NIS or FSR 1) and frame generation, and to pick the output and motion estimation. Where ReShade is installed as dxgi.dll, RHI warns that RTX Encore's in-game menu may not open (set it up in RHI instead) and that choosing DLSS-FG currently crashes games with their own FSR frame generation at startup (an RTX Encore issue), with a Don't show this again option; the warning also stays in the ⚙.
-- DLSS Enabler's ⚙ now has its frame generation settings: forced FG activation, multiplier, Dynamic MFG and its target FPS, MFG hotkeys, generator (DLSS-G or FSR only), HUD detection, GhostBuster, the status bar and the menu key. They're saved in dlss-enabler.ini, so you can set them before starting the game. Installing DLSS Enabler creates that file with its defaults (an existing one is kept).
-- Corrected the descriptions of several frame generation tools: DLSS Enabler (standalone) needs a DirectX 12 game with DLSS Frame Generation and works on any DirectX 12 GPU, from GTX 10 to RTX 50, AMD and Intel (it doesn't add DLSS or frame generation to games without them), Universal MFG Unlocker's RTX 20 support is no longer experimental, and 20/30 FG Unlock is DirectX 12 only, staying at 2x in games with an older Streamline. DLSS Enabler's row now says it is the standalone install, with OptiScaler's Streamline/DLSS Enabler option as the other way to use it, and its name list starts with dxgi.dll as DLSS Enabler recommends.
+- The Game settings ⚙ beside the game's name (RHI overlay, display modes, Block Steam updates) is now in every layout, not just Spotlight.
+- Extras' frame generation tools are grouped by what the game needs: "Frame Gen for Any Game" and "Games With DLSS Frame Gen". Each one lists its supported GPUs, game requirements and graphics APIs.
+- RTX Encore now gets the NVIDIA files it needs in games without DLSS (DLSS for upscaling, Streamline and DLSS Frame Generation for frame gen), never over the game's own files. Turn them on in its ⚙'s new Games without DLSS section.
+- RTX Encore warns where ReShade is dxgi.dll: its in-game menu may not open, and DLSS-FG can crash games with their own FSR frame generation (an RTX Encore issue).
+- DLSS Enabler's ⚙ now has its frame generation settings, so you can set them before starting the game. Installing it creates dlss-enabler.ini with defaults.
+- The generic Unity RenoDX addon now downloads a newer build from its new location (64-bit for now). Installed copies show an update.
+- Corrected the descriptions of DLSS Enabler, Universal MFG Unlocker and 20/30 FG Unlock. DLSS Enabler (standalone) needs a DirectX 12 game with DLSS Frame Generation; OptiScaler is the other way to use it.
 
 ### Bug Fixes
 
 **General**
-- Fixed launching Epic Games Store games from RHI doing nothing while the Epic launcher was running as administrator (seen with the new Epic launcher). In Admin Mode, RHI now opens Epic and Steam launch links without admin rights, so it no longer starts the store as administrator.
-- Fixed RHI using very high CPU and memory (up to tens of GB) after launching some Unreal Engine 3 games such as Remember Me. RHI treated every app running from the Steam library folder as the game, and kept waiting for ones it couldn't watch (apps running as admin).
-- Fixed a repeating error filling the logs folder with crash reports; the same error is now reported once.
-- Fixed RHI repeatedly offering an update (or a component release) that had been withdrawn from GitHub, which then failed to download.
-- Fixed RHI's install list in a game folder (rhi_install.txt) losing entries when two installs wrote it at once, or being replaced by an empty one when it couldn't be read.
-- Fixed an interrupted download of OptiScaler, ReShade add-ons, the DLSS5 Tool, RTX Encore, the NR Cost Scaler, DLSS / Streamline files or ASI Loader leaving a broken file that RHI then installed into games.
-- Fixed RHI skipping GitHub update checks until it was restarted after hitting GitHub's hourly request limit once. It now checks again when the limit resets, or straight away when you add or change your GitHub token.
-- Fixed your overlay notes and RHI's playtime counts, saved shader profiles and OptiScaler preset slots being wiped when their file couldn't be read: RHI now keeps the file, falls back to its backup copy, and doesn't save over it.
+- Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.
+- Fixed very high CPU and memory use after launching some Unreal Engine 3 games, such as Remember Me.
+- Fixed a repeating error filling the logs folder with crash reports.
+- Fixed RHI offering updates that had been withdrawn from GitHub.
+- Fixed an interrupted download leaving a broken file that RHI then installed into games.
+- Fixed update checks stopping until a restart after hitting GitHub's hourly limit.
+- Fixed RHI losing track of what it installed in a game when two installs ran at once.
+- Fixed overlay notes, playtime, saved shader profiles and OptiScaler preset slots being wiped when their file couldn't be read.
 
 **OptiScaler**
-- Fixed RHI showing OptiScaler as installed in games with DLSS Enabler installed standalone, and treating another mod's DLL there (such as ReShade's dxgi.dll) as OptiScaler, so removing "OptiScaler" could have removed it. DLSS Enabler writes its own OptiScaler.ini, which RHI took as a sign of OptiScaler. Games already affected are corrected automatically.
-- Fixed uninstalling OptiScaler deleting the game's own DLSS files when RHI had never replaced them, and OptiScaler updates replacing the game's DLSS files (or other game files a new OptiScaler version also uses) without a backup, so uninstall couldn't put them back.
-- Fixed OptiScaler updates deleting the OptiScaler.ini files you saved with Save ini.
-- Fixed installing OptiScaler in a game that has DXVK from RHI replacing DXVK's dxgi.dll instead of moving it to OptiScaler's plugins folder (OptiScaler\plugins for Nightly, DLSS NR and F5, the game's plugins folder for Stable). Uninstalling DXVK afterwards could also delete OptiScaler, and uninstalling OptiScaler could delete the game's own dxgi.dll.
-- Fixed uninstalling OptiScaler deleting the backup of a Special K or ENB dxgi.dll, so uninstalling ReShade later couldn't restore it.
-- Fixed installing, updating or uninstalling OptiScaler making RHI forget other things it installed in the same game: a DLSS5 Tool Foveated build was then replaced by the standard add-on, and Neural Rendering, RTX Encore and HSF files were no longer tracked for uninstall.
-- Fixed installing OptiScaler failing when a newer OptiScaler release couldn't be downloaded. RHI now installs the version it already has, and an update that can't be downloaded leaves the game as it is.
-- Fixed OptiScaler sometimes deploying an older downloaded DLSS version instead of the newest (for example 310.9 instead of 310.10).
-- Fixed installing OptiScaler sometimes stopping at the end without saving its file list, so uninstalling it left OptiScaler's files (libxess, fakenvapi, FSR files and others) in the game folder. This mostly happened when switching OptiScaler versions.
+- Fixed games with DLSS Enabler (standalone) showing OptiScaler as installed. Affected games are corrected automatically.
+- Fixed OptiScaler deleting or replacing the game's own DLSS files without a backup.
+- Fixed OptiScaler updates deleting ini files saved with Save ini.
+- Fixed OptiScaler and DXVK overwriting or deleting each other's dxgi.dll.
+- Fixed uninstalling OptiScaler deleting the backup of a Special K or ENB dxgi.dll.
+- Fixed OptiScaler installs making RHI forget other mods in the same game (DLSS5 Tool Foveated, Neural Rendering, RTX Encore, HSF).
+- Fixed installing OptiScaler failing when a newer release couldn't be downloaded.
+- Fixed OptiScaler sometimes deploying an older DLSS version instead of the newest.
+- Fixed uninstalling OptiScaler leaving files behind, mostly after switching versions.
 
 **ReShade and shaders**
-- Fixed changing ReShade's DLL name to dxgi.dll in Game Overrides not renaming the installed file in games without OptiScaler (the setting showed dxgi.dll while the file kept its old name).
-- Fixed RHI sometimes deleting your own reshade-shaders folder when it couldn't move it aside (for example when a reshade-shaders-original folder was already there). RHI now leaves the folder alone and doesn't deploy shaders into it.
-- Fixed installing ReShade under a name other than dxgi.dll (for example opengl32.dll, d3d12.dll, version.dll, winmm.dll or as an .asi) overwriting another mod's file with that name without asking. RHI now asks, keeps the file as a backup and puts it back when ReShade is uninstalled. A second mod's file can no longer replace the backup of the game's original file.
-- Fixed uninstalling ReShade deleting your ReShadePreset.ini, and deleting reshade.ini (and ReShade2.ini in Source engine games) in games where you locked it.
-- Fixed "Deploy ReShade.ini" for all games changing games whose reshade.ini you locked (Keep reshade.ini updated off) and hidden games. The other "deploy ini to all games" buttons also skip hidden games now.
+- Fixed renaming ReShade to dxgi.dll in Game Overrides not renaming the file.
+- Fixed RHI sometimes deleting your own reshade-shaders folder.
+- Fixed installing ReShade under another name (opengl32, d3d12, version, winmm, .asi) overwriting another mod's file without asking. RHI now asks and keeps a backup.
+- Fixed uninstalling ReShade deleting ReShadePreset.ini, and reshade.ini in games where you locked it.
+- Fixed "Deploy ReShade.ini" to all games changing locked and hidden games.
 
 **Luma**
-- Fixed uninstalling Luma deleting your own shaders that RHI had set aside (the reshade-shaders-original folder). They are now put back as reshade-shaders, as uninstalling ReShade does.
-- Fixed turning Luma off in some games deleting the reshade-shaders folder and reshade.ini while ReShade was still installed, or deleting a reshade-shaders folder RHI didn't create.
-- Fixed installing a Luma archive (dropped on RHI or from Nexus) replacing OptiScaler, DXVK, Special K or ENB in dxgi.dll without a warning or backup. ReShade is now installed the normal way, which asks first and keeps a backup.
-- Fixed a Nexus or Luma archive whose extraction timed out or failed being installed half-extracted. The install now stops and says so.
+- Fixed uninstalling or turning off Luma deleting your own shaders, or reshade.ini while ReShade was still installed.
+- Fixed installing a Luma archive replacing OptiScaler, DXVK, Special K or ENB without a warning or backup.
+- Fixed half-extracted Nexus or Luma archives being installed.
 
 **DLSS, Streamline and Neural Rendering**
-- Fixed "Restore" / "Default" in the DLSS & Streamline section deleting DLSS files that the DLSS5 Tool, DLSS5 Feeder, RTX Encore, the DLSS Tool (ShortFuse), Luma or OptiScaler installed, while those still showed as installed. It now only undoes a DLSS version change, and can no longer leave an empty Streamline file behind.
-- Fixed changing the Neural Rendering DLSS version, choosing "Default", RTX Encore or the DLSS auto-update replacing the NR Cost Scaler, so it stopped working while RHI still showed it as installed. The new version now goes behind the Cost Scaler. Cost Scaler updates also no longer reset your nvngx_dlssnr.ini settings.
-- Fixed changing a game's Streamline version replacing its files even when RHI couldn't back them up first, and "Default" later putting back outdated Streamline files from before a game update. The change now stops with a message when the backup fails, and the backup is refreshed after each restore.
-- Fixed a game's DLSS file installed with a Luma mod or RTX Encore's Neural Rendering file sometimes not showing in RHI until the next full scan.
+- Fixed "Restore" / "Default" in DLSS & Streamline deleting DLSS files that other mods installed.
+- Fixed DLSS version changes and auto-update replacing the NR Cost Scaler. Cost Scaler updates also keep your nvngx_dlssnr.ini settings.
+- Fixed Streamline version changes going ahead without a backup, and "Default" restoring outdated files after a game update.
+- Fixed some DLSS files from Luma or RTX Encore not showing until the next full scan.
 
 **DXVK and dgVoodoo2**
-- Fixed uninstalling DXVK while the game was running removing it only half-way: RHI forgot DXVK was installed and, in DirectX 9 games, deleted its ReShade backup. RHI now changes nothing, keeps DXVK as installed and asks you to close the game first.
-- Fixed reinstalling DXVK in a DirectX 9 game replacing RHI's backup of ReShade with DXVK itself, so uninstalling DXVK put DXVK back as ReShade. A d3d9.dll that isn't ReShade (the game's own or another mod's) is now kept as a backup and put back on uninstall instead of being treated as ReShade; uninstall also repairs a backup the old bug had already overwritten.
-- Fixed a failed DXVK install showing "DXVK installed!" and switching the game's ReShade to the Vulkan setup anyway. RHI now shows why it failed and leaves the game as it was.
-- Fixed reinstalling DXVK in a DirectX 10 / 11 game making RHI forget the game's own DLL it had backed up, so uninstalling DXVK didn't put it back.
-- Fixed installing DXVK in a game with OptiScaler Stable putting DXVK's dxgi.dll in an OptiScaler\plugins folder that Stable doesn't read, so Stable never loaded DXVK's dxgi.dll, and OptiPatcher and Universal MFG Unlocker then went to the wrong folder. It now goes in the game's plugins folder, where Stable loads it, and a file there that isn't DXVK is never replaced.
-- Fixed RHI showing dgVoodoo2 as installed in DirectX 9 games that only had a backup of ReShade's or DXVK's d3d9.dll, and removing dgVoodoo2 (also when uninstalling the DLSS5 Feeder) deleting a d3d9.dll that wasn't dgVoodoo2, such as ReShade or DXVK.
+- Fixed uninstalling DXVK while the game was running leaving it half-removed. RHI now asks you to close the game.
+- Fixed DXVK in DirectX 9 games overwriting RHI's backup of ReShade or the game's d3d9.dll. Uninstall repairs affected backups.
+- Fixed a failed DXVK install showing as installed.
+- Fixed reinstalling DXVK in DirectX 10 / 11 games forgetting the game's own backed-up DLL.
+- Fixed DXVK with OptiScaler Stable going in a folder Stable doesn't read.
+- Fixed dgVoodoo2 showing as installed in some DirectX 9 games, and removing it deleting ReShade's or DXVK's d3d9.dll.
 
 **Other mods**
-- Fixed RE Framework replacing ASI Loader, 20/30 FG Unlock or another mod RHI installed as dinput8.dll, after which the two kept overwriting or deleting each other. RE Framework now says which mod uses dinput8.dll, ASI Loader no longer installs over or updates a file RE Framework, DXVK, dgVoodoo2, ReShade, OptiScaler or Display Commander uses, and the DLL name pickers show those names as in use.
-- Fixed installing DLSS Enabler on its own replacing a game file with the same name (for example the game's own version.dll or winhttp.dll) without a backup, and uninstalling it deleting that file. RHI now keeps the game's file and puts it back on uninstall, and no longer removes or updates a file that isn't DLSS Enabler.
-- Fixed the 20/30 FG Unlock update for installs from before version 0.4.0 replacing another mod's version.dll (for example ReShade or ASI Loader). It now uses a free name.
-- Fixed uninstalling Universal MFG Unlocker, RTX Encore or 20/30 FG Unlock leaving the mod in the game when it was first installed by an older RHI version and later updated or reinstalled.
-- Fixed installing RTX Encore sometimes leaving a game without its own XeSS files when one of them couldn't be replaced. The game's file is now put back.
-- Fixed add-ons in a 32-bit game installing as the 64-bit version when the DLSS5 Tool or DLSS Tool (ShortFuse) was also selected.
-- Fixed uninstalling the Ryubing emulator add-ons leaving some of them behind, and its update check looking at the wrong file for those add-ons.
+- Fixed RE Framework, ASI Loader and other mods using dinput8.dll overwriting each other. DLL name pickers now show names in use.
+- Fixed DLSS Enabler (standalone) replacing a game file without a backup and deleting it on uninstall.
+- Fixed the 20/30 FG Unlock update for pre-0.4.0 installs replacing another mod's version.dll.
+- Fixed uninstalling Universal MFG Unlocker, RTX Encore or 20/30 FG Unlock leaving the mod behind on installs from older RHI versions.
+- Fixed installing RTX Encore sometimes leaving a game without its own XeSS files.
+- Fixed 32-bit games getting 64-bit add-ons when the DLSS5 Tool or DLSS Tool (ShortFuse) was selected.
+- Fixed uninstalling the Ryubing emulator add-ons leaving some behind, and its update check reading the wrong file.
 
 ## v2.9.4
 

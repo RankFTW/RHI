@@ -54,7 +54,7 @@ public sealed class GlobalEditor
             "prefixes" => StringListEditor(new[] { "blacklistPrefixes" }, "Prefix, e.g. Battle.net.", "Not case-sensitive."),
             "profileExe" => StringListEditor(new[] { "profileExeExclusions" }, "Exe name, e.g. launcher.exe", "Added to RHI's built-in list."),
             "components" => KeyValueEditor(new[] { "componentUrls" }, "Component", "Link", JsonDoc.Placement.Auto,
-                "Known components: ueExtended (UE-Extended addon) and ueDofFix (DOF Fix addon)."),
+                "Known components: ueExtended (UE-Extended addon), ueDofFix (DOF Fix addon), dc (Display Commander releases API), unity64 / unity32 (generic Unity addon, 64 / 32-bit)."),
             "misc" => Misc(),
             "raw" => RawEditor(),
             _ => Ui.T("?"),

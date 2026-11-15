@@ -424,6 +424,7 @@ public partial class MainViewModel
         DlssPresetService.ApplyManifestPresets(cachedManifest);
         FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
         OsForkService.SetDefinitions(cachedManifest?.OsForks); // recommended OptiScaler forks
+        WikiService.ApplyManifestUnityUrls(cachedManifest?.ComponentUrls); // generic Unity addon links
         SetRtxEncoreDllNames(cachedManifest); // RTX Encore picker's recommended name
 
         // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder

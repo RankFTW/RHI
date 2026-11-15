@@ -264,6 +264,7 @@ public partial class MainViewModel
                 _dofFixService.ManifestUrlOverride = dofFixUrl2;
             if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl2) == true && !string.IsNullOrEmpty(dcApiUrl2))
                 DcReleasesApiUrlOverride = dcApiUrl2;
+            WikiService.ApplyManifestUnityUrls(_manifest?.ComponentUrls); // generic Unity addon links
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

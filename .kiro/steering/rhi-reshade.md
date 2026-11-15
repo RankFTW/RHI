@@ -46,6 +46,8 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - DX games with RDR2 template: `StripPreprocessorDefinitions` removes Vulkan-only line
 - Hotkey deployment skips these games when hotkey is default (Home)
 
+- **Built-in add-ons** (Settings › ReShade › Keys and screenshots, `Settings.RsShippedAddonsEnabled`, default false): the templates disable Generic Depth + Effect Runtime Sync (`[ADDON] DisabledAddons`), and template keys always win in `MergeRsIni` / `MergeRsVulkanIni` / `CopyRsIni`. With the setting on, those three call `ApplyShippedAddonsSettingToGame` afterwards (`AuxInstallService.ShippedAddons.cs`, resolver wired in Init), which removes just those two names (other disabled add-ons and `name@file` entries kept) from reshade.ini and ReShadeN.ini, never ReShadePreset.ini. "Write these to all games" writes it both ways (`WriteShippedAddonsSetting`). Pure edit `SetShippedAddonsInText`, tests `ShippedAddonsTests`.
+
 ## ReShade Hotkey Format
 - KeyOverlay INI format: `vk,ctrl,shift,alt` (NOT `vk,shift,ctrl,alt`)
 - Second position is Ctrl, third is Shift

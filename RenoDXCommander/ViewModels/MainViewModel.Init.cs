@@ -297,6 +297,8 @@ public partial class MainViewModel
         AuxInstallService.OtherDllOwnerResolver = OtherReShadeDllOwner;
         // ReShade uninstall keeps reshade.ini when the game's ini is locked
         AuxInstallService.RsIniLockedResolver = (gameName, store) => !GetKeepRsIniUpdated(gameName, store);
+        // Settings > ReShade: keep Generic Depth / Effect Runtime Sync enabled (templates disable them)
+        AuxInstallService.ShippedAddonsEnabledResolver = () => _settingsViewModel.RsShippedAddonsEnabled;
         UpdateOrchestrationService.AfterSourceAddonUpdate = ApplySourceSetupAsync;
 
         // Universal MFG Unlocker moves in and out of OptiScaler\plugins with OptiScaler 10 builds
@@ -621,6 +623,7 @@ public partial class MainViewModel
                 _dofFixService.ManifestUrlOverride = dofFixUrl;
             if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl) == true && !string.IsNullOrEmpty(dcApiUrl))
                 DcReleasesApiUrlOverride = dcApiUrl;
+            WikiService.ApplyManifestUnityUrls(_manifest?.ComponentUrls); // generic Unity addon links
 
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

@@ -345,6 +345,8 @@ Recommended OptiScaler forks. Each appears as an OptiScaler version (`"Fork:<id>
 Override base download URLs for components. Active keys:
 - `"ueExtended"` → UE-Extended addon download URL (`MainViewModel.Install.UeExtendedUrl`)
 - `"ueDofFix"` → DOF Fix URL override (`DofFixService.ManifestUrlOverride`, set at Init/BackgroundScan)
+- `"dc"` → Display Commander releases API URL (`DcReleasesApiUrlOverride`, set at Init/BackgroundScan)
+- `"unity64"` / `"unity32"` → generic Unity addon links (`WikiService.ApplyManifestUnityUrls`, applied in the cache, Init and BackgroundScan paths; absolute http(s) only, otherwise the built-in link). `ModInstallService.ResolveSnapshotUrl` maps `renodx-unityengine.addon64/32` to these by file name, so installs, update checks, old records and per-game `snapshotOverrides` with that file name all follow them. Built-in defaults (Nov 2026): 64-bit `https://notvoosh.github.io/renodx/renodx-unityengine.addon64`, 32-bit the old release link (the Pages 32-bit file was 404).
 
 ---
 

@@ -40,10 +40,9 @@ public class ModInstallService : IModInstallService
     {
         // Extended UE addon maintained by marat569 at a separate repo
         ["renodx-ue-extended.addon64"] = "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
-        // Unity addon — GitHub Releases returns reliable Content-Length; GitHub Pages does not,
-        // causing the cache to be bypassed and the file re-downloaded on every install.
-        ["renodx-unityengine.addon64"] = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
-        ["renodx-unityengine.addon32"] = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon32",
+        // Unity addon: not here, ResolveSnapshotUrl uses WikiService.GenericUnityUrl64/32 (manifest-overridable).
+        // GitHub Pages gives the exact Content-Length as long as the request doesn't ask for gzip, and RHI's
+        // HttpClient doesn't (checked 15 Nov 2026: 152008704 plain, 28547907 only with Accept-Encoding: gzip).
     };
 
     /// <summary>
@@ -57,6 +56,12 @@ public class ModInstallService : IModInstallService
             var fileName = Path.GetFileName(new Uri(url).LocalPath);
             if (_addonUrlOverrides.TryGetValue(fileName, out var overrideUrl))
                 return overrideUrl;
+            // Generic Unity addon: always the current link (built-in, or manifest componentUrls unity64 / unity32),
+            // so installs and records made from an older link follow a move
+            if (fileName.Equals(WikiService.GenericUnityFile64, StringComparison.OrdinalIgnoreCase))
+                return WikiService.GenericUnityUrl64;
+            if (fileName.Equals(WikiService.GenericUnityFile32, StringComparison.OrdinalIgnoreCase))
+                return WikiService.GenericUnityUrl32;
         }
         catch (Exception ex) { CrashReporter.Log($"[ModInstallService.ResolveSnapshotUrl] Failed to resolve URL '{url}' — {ex.Message}"); }
         return url;
@@ -155,13 +160,18 @@ public class ModInstallService : IModInstallService
                 var uri = new Uri(resolvedUrl);
                 var fn  = Path.GetFileName(uri.LocalPath);
 
-                // Unity fallbacks: try NotVoosh GitHub Pages, then clshortfuse GitHub Pages
-                if (fn.Equals("renodx-unityengine.addon64", StringComparison.OrdinalIgnoreCase)
-                 || fn.Equals("renodx-unityengine.addon32", StringComparison.OrdinalIgnoreCase))
+                // Unity fallbacks: Voosh's new GitHub Pages location, his old release, his old Pages repo, clshortfuse's Pages
+                if (fn.Equals(WikiService.GenericUnityFile64, StringComparison.OrdinalIgnoreCase)
+                 || fn.Equals(WikiService.GenericUnityFile32, StringComparison.OrdinalIgnoreCase))
                 {
-                    candidates.Add($"https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/{fn}");
-                    candidates.Add($"https://notvoosh.github.io/renodx-unity/{fn}");
-                    candidates.Add($"https://clshortfuse.github.io/renodx/{fn}");
+                    foreach (var alt in new[]
+                    {
+                        $"https://notvoosh.github.io/renodx/{fn}",
+                        $"https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/{fn}",
+                        $"https://notvoosh.github.io/renodx-unity/{fn}",
+                        $"https://clshortfuse.github.io/renodx/{fn}",
+                    })
+                        if (!candidates.Contains(alt, StringComparer.OrdinalIgnoreCase)) candidates.Add(alt);
                 }
 
                 // Unreal fallbacks: try GitHub Releases, then GitHub Pages

@@ -30,7 +30,7 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 | `donationUrls` | Maps author names → Ko-fi links |
 | `patreonUrls` | Maps author names → Patreon links (Donate dialog shows Ko-fi and Patreon buttons). Never put a list into `donationUrls`: older versions would fail to read the manifest |
 | `pcgwUrlOverrides` | Game name → direct PCGW wiki URL |
-| `componentUrls` | Base URL overrides (`ueExtended`, `ueDofFix`) |
+| `componentUrls` | Base URL overrides (`ueExtended`, `ueDofFix`, `dc`, `unity64` / `unity32` = generic Unity addon; Unity links resolve by file name, so they also replace older links in records and `snapshotOverrides`) |
 | `dlssPresets` | SR/RR/FG preset arrays for manifest-driven presets |
 | `shaderPacks` | Dict keyed by pack ID — add/override/disable packs |
 | `addonPacks` | Dict keyed by SectionId — add/override/disable addons |
