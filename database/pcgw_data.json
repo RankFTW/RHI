@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56111,
-  "generated": "2026-11-15T07:20:24Z",
+  "generated": "2026-11-15T11:20:25Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -13130,7 +13130,7 @@
     "Atomic Heart": {
       "steam_appid": 668580,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\AtomicHeart\\Saved\\Config\\",
+      "config_path": "%LOCALAPPDATA%\\AtomicHeart\\Saved\\Config",
       "engine": "Unreal Engine 4"
     },
     "Atomic Heart 2": {
@@ -191218,7 +191218,7 @@
     },
     "WendyQuest: Legend of the Four Corner Stones": {
       "steam_appid": 3339970,
-      "engine": "Godot"
+      "engine": "RPG Maker"
     },
     "Wenjia": {
       "steam_appid": 933450
