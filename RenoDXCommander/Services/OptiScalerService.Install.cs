@@ -90,7 +90,7 @@ public partial class OptiScalerService
             }
             else if (isPinned)
             {
-                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None).ConfigureAwait(false) ?? "";
+                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None) ?? "";
                 if (effectiveStagingDir.Length == 0)
                 {
                     CrashReporter.Log($"[OptiScalerService] {card.GameName}: pinned release {nightlyBuildHint} of {variant} unavailable — aborting");
@@ -106,7 +106,7 @@ public partial class OptiScalerService
             else if (fork != null)
             {
                 // Downloads the fork's newest release when it isn't staged or is out of date
-                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None).ConfigureAwait(false) ?? fork.Dir;
+                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None) ?? fork.Dir;
                 fork = OsForkService.Get(variant) ?? fork;
                 isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
             }
@@ -123,10 +123,10 @@ public partial class OptiScalerService
             if (!isFixedDir && !(isNightly && !string.IsNullOrEmpty(nightlyBuildHint)))
             {
                 progress?.Report(("Checking for a newer OptiScaler release...", 6));
-                if (isF5) await CheckForF5UpdateAsync().ConfigureAwait(false);
-                else if (isDlssNr) await CheckForDlssNrUpdateAsync().ConfigureAwait(false);
-                else if (isNightly) await CheckForNightlyUpdateAsync().ConfigureAwait(false);
-                else await CheckForUpdateAsync().ConfigureAwait(false);
+                if (isF5) await CheckForF5UpdateAsync();
+                else if (isDlssNr) await CheckForDlssNrUpdateAsync();
+                else if (isNightly) await CheckForNightlyUpdateAsync();
+                else await CheckForUpdateAsync();
             }
 
             // ── 3b. If updating, download the new build below. The staged build is kept until the new
@@ -519,7 +519,7 @@ public partial class OptiScalerService
                 progress?.Report(("Deploying DLSS NR runtime...", 72));
                 try
                 {
-                    var cachedNrDll = await GetNrRuntimeForAsync(card).ConfigureAwait(false);
+                    var cachedNrDll = await GetNrRuntimeForAsync(card);
                     if (cachedNrDll != null)
                     {
                         var gameNrPath = Path.Combine(card.InstallPath, "nvngx_dlssnr.dll");
@@ -559,55 +559,10 @@ public partial class OptiScalerService
             osRecordSaved = true;
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Saved tracking record for {card.GameName}");
 
-            // ── 7. Deploy OptiPatcher (all GPU types) ────────────────────────
-            {
-                try
-                {
-                    progress?.Report(("Downloading OptiPatcher...", 85));
-                    await EnsureOptiPatcherStagingAsync(progress);
-
-                    var stagedAsi = Path.Combine(OptiPatcherStagingDir, OptiPatcherFileName);
-                    if (File.Exists(stagedAsi))
-                    {
-                        // OptiScaler\plugins for OptiScaler 10 builds, plugins\ for 0.9 stable
-                        var pluginsDir = GetPluginsDir(card.InstallPath);
-                        Directory.CreateDirectory(pluginsDir);
-                        var destAsi = Path.Combine(pluginsDir, OptiPatcherFileName);
-                        File.Copy(stagedAsi, destAsi, overwrite: true);
-                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed OptiPatcher.asi to '{Path.GetRelativePath(card.InstallPath, pluginsDir)}'");
-                        // A copy left in the root plugins\ by an older RHI is never read by OptiScaler 10
-                        var staleAsi = Path.Combine(card.InstallPath, "plugins", OptiPatcherFileName);
-                        if (!staleAsi.Equals(destAsi, StringComparison.OrdinalIgnoreCase) && File.Exists(staleAsi))
-                        {
-                            File.Delete(staleAsi);
-                            var rootPlugins = Path.GetDirectoryName(staleAsi)!;
-                            if (!Directory.EnumerateFileSystemEntries(rootPlugins).Any()) Directory.Delete(rootPlugins);
-                        }
-                        progress?.Report(("OptiPatcher deployed", 90));
-                    }
-                    else
-                    {
-                        CrashReporter.Log("[OptiScalerService.InstallAsync] OptiPatcher staging not available — skipping deployment");
-                    }
-                }
-                catch (Exception opEx)
-                {
-                    CrashReporter.Log($"[OptiScalerService.InstallAsync] OptiPatcher deployment failed — {opEx.Message}");
-                }
-            }
-
-            // ── 8. Update card VM properties ─────────────────────────────────
-            card.OsInstalledFile = effectiveDllName;
-            card.OsInstalledVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
-            card.OsStatus = GameStatus.Installed;
-            if (isFixedDir) { /* custom builds have no update flag; forks clear theirs when staged */ }
-            else if (updateNotDownloaded) { /* the newer build wasn't staged: the update is still pending */ }
-            else if (isF5) HasUpdateF5 = false;
-            else if (isDlssNr) HasUpdateDlssNr = false;
-            else if (isNightly) HasUpdateNightly = false;
-            else HasUpdate = false;
-
-            // ── 10. Write rhi_install.txt manifest to game folder ────────────
+            // ── 6b. Write rhi_install.txt manifest to game folder ────────────
+            // Written as soon as the files and record are in place: a later step that throws (Nov 2026: a
+            // background-thread card update after the release check) left uninstall with no file list, so
+            // OptiScaler's root files stayed in the game folder.
             // Records the exact version, variant, and deployed file/folder list so that
             // RHI always knows what version is installed (not the current staging version)
             // and always knows which files to clean up on uninstall, regardless of whether
@@ -669,6 +624,54 @@ public partial class OptiScalerService
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: rhi_install.txt not updated");
             }
 
+            // ── 7. Deploy OptiPatcher (all GPU types) ────────────────────────
+            {
+                try
+                {
+                    progress?.Report(("Downloading OptiPatcher...", 85));
+                    await EnsureOptiPatcherStagingAsync(progress);
+
+                    var stagedAsi = Path.Combine(OptiPatcherStagingDir, OptiPatcherFileName);
+                    if (File.Exists(stagedAsi))
+                    {
+                        // OptiScaler\plugins for OptiScaler 10 builds, plugins\ for 0.9 stable
+                        var pluginsDir = GetPluginsDir(card.InstallPath);
+                        Directory.CreateDirectory(pluginsDir);
+                        var destAsi = Path.Combine(pluginsDir, OptiPatcherFileName);
+                        File.Copy(stagedAsi, destAsi, overwrite: true);
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed OptiPatcher.asi to '{Path.GetRelativePath(card.InstallPath, pluginsDir)}'");
+                        // A copy left in the root plugins\ by an older RHI is never read by OptiScaler 10
+                        var staleAsi = Path.Combine(card.InstallPath, "plugins", OptiPatcherFileName);
+                        if (!staleAsi.Equals(destAsi, StringComparison.OrdinalIgnoreCase) && File.Exists(staleAsi))
+                        {
+                            File.Delete(staleAsi);
+                            var rootPlugins = Path.GetDirectoryName(staleAsi)!;
+                            if (!Directory.EnumerateFileSystemEntries(rootPlugins).Any()) Directory.Delete(rootPlugins);
+                        }
+                        progress?.Report(("OptiPatcher deployed", 90));
+                    }
+                    else
+                    {
+                        CrashReporter.Log("[OptiScalerService.InstallAsync] OptiPatcher staging not available — skipping deployment");
+                    }
+                }
+                catch (Exception opEx)
+                {
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] OptiPatcher deployment failed — {opEx.Message}");
+                }
+            }
+
+            // ── 8. Update card VM properties ─────────────────────────────────
+            card.OsInstalledFile = effectiveDllName;
+            card.OsInstalledVersion = isPinned ? nightlyBuildHint! : customBuild != null ? customBuild.Name : fork != null ? (fork.StagedTag ?? fork.Label) : isF5 ? StagedVersionF5 : isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
+            card.OsStatus = GameStatus.Installed;
+            if (isFixedDir) { /* custom builds have no update flag; forks clear theirs when staged */ }
+            else if (updateNotDownloaded) { /* the newer build wasn't staged: the update is still pending */ }
+            else if (isF5) HasUpdateF5 = false;
+            else if (isDlssNr) HasUpdateDlssNr = false;
+            else if (isNightly) HasUpdateNightly = false;
+            else HasUpdate = false;
+
             progress?.Report(("OptiScaler installed!", 100));
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Install complete for {card.GameName}");
 
@@ -676,7 +679,7 @@ public partial class OptiScalerService
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName} — {ex.Message}");
+            CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName} — {ex.GetType().Name}: {ex.Message}");
             progress?.Report(($"Install failed: {ex.Message}", 0));
             if (ranV10Hook)
             {
@@ -798,7 +801,9 @@ public partial class OptiScalerService
             var deployedFileNames  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var deployedFolderNames = new List<string>();
 
-            if (gameManifest != null)
+            // A manifest without OptiScaler's file list (only shared-file owners, e.g. an install that failed
+            // before writing it) would delete nothing: use the staging scan instead.
+            if (gameManifest != null && gameManifest.Files.Count > 0)
             {
                 // ── Manifest path (preferred) ────────────────────────────────
                 // Remove the main DLL and INI from the file list — they are handled
@@ -816,7 +821,7 @@ public partial class OptiScalerService
             else
             {
                 // ── Staging-scan fallback (legacy installs without manifest) ─
-                CrashReporter.Log($"[OptiScalerService.Uninstall] No rhi_install.txt found for {card.GameName} — falling back to staging dir scan");
+                CrashReporter.Log($"[OptiScalerService.Uninstall] No OptiScaler file list in rhi_install.txt for {card.GameName} — falling back to staging dir scan");
                 var effectiveStagingDir = (installedVariant == "F5"     && IsStagingReadyF5)     ? F5StagingDir
                     : (installedVariant == "DlssNr"  && IsStagingReadyDlssNr)  ? DlssNrStagingDir
                     : (installedVariant == "Nightly" && IsStagingReadyNightly) ? NightlyStagingDir
@@ -1318,7 +1323,7 @@ public partial class OptiScalerService
             }
             else if (isPinned)
             {
-                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None).ConfigureAwait(false) ?? "";
+                effectiveStagingDir = await OsReleaseService.EnsurePinnedAsync(variant, nightlyBuildHint!, progress, CancellationToken.None) ?? "";
                 if (effectiveStagingDir.Length == 0)
                 {
                     CrashReporter.Log($"[OptiScalerService] {card.GameName}: pinned release {nightlyBuildHint} of {variant} unavailable — aborting");
@@ -1334,7 +1339,7 @@ public partial class OptiScalerService
             else if (fork != null)
             {
                 // Downloads the fork's newest release when it isn't staged or is out of date
-                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None).ConfigureAwait(false) ?? fork.Dir;
+                effectiveStagingDir = await OsForkService.EnsureStagedAsync(variant, progress, CancellationToken.None) ?? fork.Dir;
                 fork = OsForkService.Get(variant) ?? fork;
                 isOs10Build = Directory.Exists(Path.Combine(effectiveStagingDir, "OptiScaler"));
             }
@@ -1639,7 +1644,7 @@ public partial class OptiScalerService
             {
                 try
                 {
-                    var cachedNrDll = await GetNrRuntimeForAsync(card).ConfigureAwait(false);
+                    var cachedNrDll = await GetNrRuntimeForAsync(card);
                     if (cachedNrDll != null)
                     {
                         var gameNrPath = Path.Combine(gameDir, "nvngx_dlssnr.dll");

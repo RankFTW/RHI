@@ -1,5 +1,6 @@
-// DetailLayoutHost.GameSettings.cs -- Spotlight's Game settings panel (the cog beside the game's title): per-game
-// versions of Settings-page options that the Tune this game sections don't cover. A built panel, like Screenshots.
+// DetailLayoutHost.GameSettings.cs -- Game settings (the cog beside the game's title): per-game versions of
+// Settings-page options that the Tune this game sections don't cover. Spotlight = a built side panel, like
+// Screenshots; Tabs = in place under the header (CogDialog host); Classic+ = a dialog (Settings button in the header).
 // Rows are label + one-line description + control (AddGameSettingRow); add new settings there.
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -19,12 +20,32 @@ internal sealed partial class DetailLayoutHost
         var root = new StackPanel { Spacing = 14 };
         root.Children.Add(MutedText("Settings that apply to this game only."));
 
+        root.Children.Add(TabsTheme.MakeCard(BuildGameSettingsRows(card, openDisplayModes: null), 16));
+        return root;
+    }
+
+    /// <summary>
+    /// Tabs and Classic+: the same settings as a cog (in place under the header in Tabs, a dialog in Classic+).
+    /// Display modes opens its own dialog, so the cog closes first (only one dialog can be open).
+    /// </summary>
+    internal async Task ShowGameSettingsCogAsync(XamlRoot? xamlRoot)
+    {
+        if (_window.ViewModel.SelectedGame is not { } card || xamlRoot == null) return;
+        bool openDisplayModes = false;
+        var cog = new CogDialog("Game", xamlRoot);
+        cog.AddIntro("Settings that apply to this game only.");
+        cog.AddContent(BuildGameSettingsRows(card, () => { openDisplayModes = true; cog.Hide(); }));
+        await cog.ShowAsync();
+        if (openDisplayModes) await _window.ShowDisplayModeGameDialogAsync(card);
+    }
+
+    private StackPanel BuildGameSettingsRows(GameCardViewModel card, Action? openDisplayModes)
+    {
         var rows = new StackPanel { Spacing = 16 };
         AddOverlayRow(rows, card);
-        AddDisplayModeRow(rows, card);
+        AddDisplayModeRow(rows, card, openDisplayModes);
         AddSteamUpdateBlockRow(rows, card);
-        root.Children.Add(TabsTheme.MakeCard(rows, 16));
-        return root;
+        return rows;
     }
 
     /// <summary>
@@ -99,7 +120,7 @@ internal sealed partial class DetailLayoutHost
         AddGameSettingRow(rows, "RHI overlay", desc, toggle);
     }
 
-    private void AddDisplayModeRow(StackPanel rows, GameCardViewModel card)
+    private void AddDisplayModeRow(StackPanel rows, GameCardViewModel card, Action? openDisplayModes)
     {
         var vm = _window.ViewModel;
         var btn = new Button { Content = "Choose...", Padding = new Thickness(14, 0, 14, 0) };
@@ -107,6 +128,7 @@ internal sealed partial class DetailLayoutHost
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(btn, "Display mode settings");
         btn.Click += async (s, e) =>
         {
+            if (openDisplayModes != null) { openDisplayModes(); return; } // a cog: it closes, then the dialog opens
             try { await _window.ShowDisplayModeGameDialogAsync(card); }
             catch (Exception ex) when (ex is InvalidOperationException) { CrashReporter.Log($"[DetailLayoutHost.GameSettings] Display modes — {ex.Message}"); }
         };

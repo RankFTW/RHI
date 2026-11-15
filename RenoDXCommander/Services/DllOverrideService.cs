@@ -223,9 +223,12 @@ public class DllOverrideService : IDllOverrideService
             {
                 if (File.Exists(oldPath) && !File.Exists(newPath))
                 {
-                    // Collision guard: skip RS rename if the target name is occupied by OptiScaler
-                    var osEffectiveName = GetEffectiveOsName(name);
-                    if (newRsName.Equals(osEffectiveName, StringComparison.OrdinalIgnoreCase))
+                    // Collision guard: skip RS rename if the target name is occupied by OptiScaler.
+                    // Only when OptiScaler is installed: its default name (dxgi.dll) blocked renaming
+                    // ReShade to dxgi.dll in games without OptiScaler.
+                    var osEffectiveName = !string.IsNullOrEmpty(card.OsInstalledFile) ? card.OsInstalledFile
+                        : card.OsStatus != GameStatus.NotInstalled ? GetEffectiveOsName(name) : null;
+                    if (osEffectiveName != null && newRsName.Equals(osEffectiveName, StringComparison.OrdinalIgnoreCase))
                     {
                         CrashReporter.Log($"[DllOverrideService.UpdateDllOverrideNames] Skipping RS rename — '{newRsName}' collides with OptiScaler name for '{name}'.");
                     }

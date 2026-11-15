@@ -326,6 +326,7 @@ public partial class DetailPanelBuilder
         // no filesystem I/O happens here on the UI thread.
         _window.DetailAppDataBtn.Tag = card;
         _window.DetailAppDataBtn.Visibility = card.GameConfigRootPath != null ? Visibility.Visible : Visibility.Collapsed;
+        _window.EnsureClassicGameSettingsButton(); // Classic+ Game settings (Tabs / Spotlight have the header cog)
 
         // PCGW link button
         _window.DetailPcgwBtn.Tag = card;

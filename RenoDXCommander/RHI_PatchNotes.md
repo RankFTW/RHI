@@ -9,6 +9,9 @@
 - Added "Get beta updates" in Settings › General › Updates. With it on, RHI offers test builds of the next version and moves you to the full release when it's out. Turning it off doesn't downgrade you.
 - Browse community covers and banners from SteamGridDB in the Spotlight layout: right-click a game › Artwork › Browse covers or Browse banners, then click one to use it (or Steam to go back to the game's own art). Needs your own free SteamGridDB API key, added in Settings › Accounts & Data.
 
+### Changes
+- Game settings (RHI overlay, display modes, Block Steam updates) are now in every layout: the ⚙ beside the game's name shows in Classic+ (opens a window) and Tabs (opens under the header), not just Spotlight.
+
 ### Bug Fixes
 
 **General**
@@ -26,8 +29,10 @@
 - Fixed installing, updating or uninstalling OptiScaler making RHI forget other things it installed in the same game: a DLSS5 Tool Foveated build was then replaced by the standard add-on, and Neural Rendering, RTX Encore and HSF files were no longer tracked for uninstall.
 - Fixed installing OptiScaler failing when a newer OptiScaler release couldn't be downloaded. RHI now installs the version it already has, and an update that can't be downloaded leaves the game as it is.
 - Fixed OptiScaler sometimes deploying an older downloaded DLSS version instead of the newest (for example 310.9 instead of 310.10).
+- Fixed installing OptiScaler sometimes stopping at the end without saving its file list, so uninstalling it left OptiScaler's files (libxess, fakenvapi, FSR files and others) in the game folder. This mostly happened when switching OptiScaler versions.
 
 **ReShade and shaders**
+- Fixed changing ReShade's DLL name to dxgi.dll in Game Overrides not renaming the installed file in games without OptiScaler (the setting showed dxgi.dll while the file kept its old name).
 - Fixed RHI sometimes deleting your own reshade-shaders folder when it couldn't move it aside (for example when a reshade-shaders-original folder was already there). RHI now leaves the folder alone and doesn't deploy shaders into it.
 - Fixed installing ReShade under a name other than dxgi.dll (for example opengl32.dll, d3d12.dll, version.dll, winmm.dll or as an .asi) overwriting another mod's file with that name without asking. RHI now asks, keeps the file as a backup and puts it back when ReShade is uninstalled. A second mod's file can no longer replace the backup of the game's original file.
 - Fixed uninstalling ReShade deleting your ReShadePreset.ini, and deleting reshade.ini (and ReShade2.ini in Source engine games) in games where you locked it.
