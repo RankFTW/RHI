@@ -17,29 +17,15 @@ public static class ShaderProfileService
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     /// <summary>
-    /// Loads all saved shader profiles from disk.
-    /// Returns an empty list on missing or corrupt file.
+    /// Loads all saved shader profiles from disk. Empty list when there are none or the file is unusable.
+    /// Goes through SafeJsonFile: a corrupt file is kept aside and the .bak used, and an unreadable file
+    /// blocks saves (callers load, edit and save the whole list, so an empty load used to wipe every profile).
     /// </summary>
     public static List<ShaderProfile> Load()
     {
-        try
-        {
-            if (File.Exists(FilePath))
-            {
-                var json = File.ReadAllText(FilePath);
-                var loaded = JsonSerializer.Deserialize<List<ShaderProfile>>(json);
-                if (loaded != null)
-                {
-                    CrashReporter.Log($"[ShaderProfileService.Load] Loaded {loaded.Count} profile(s)");
-                    return loaded;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderProfileService.Load] Failed to load profiles: {ex.Message}");
-        }
-        return new List<ShaderProfile>();
+        var loaded = SafeJsonFile.Read<List<ShaderProfile>>(FilePath, out var status);
+        if (loaded != null) CrashReporter.Log($"[ShaderProfileService.Load] Loaded {loaded.Count} profile(s){(status == SafeJsonFile.LoadStatus.Recovered ? " from the backup" : "")}");
+        return loaded ?? new List<ShaderProfile>();
     }
 
     /// <summary>
@@ -47,19 +33,9 @@ public static class ShaderProfileService
     /// </summary>
     public static void Save(List<ShaderProfile> profiles)
     {
-        try
-        {
-            var dir = Path.GetDirectoryName(FilePath)!;
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            var json = JsonSerializer.Serialize(profiles, JsonOptions);
-            File.WriteAllText(FilePath, json);
+        // Atomic, keeps a .bak; refused (and logged) while the file couldn't be read
+        if (SafeJsonFile.Write(FilePath, profiles, "ShaderProfileService.Save", JsonOptions))
             CrashReporter.Log($"[ShaderProfileService.Save] Saved {profiles.Count} profile(s)");
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderProfileService.Save] Failed to save profiles: {ex.Message}");
-        }
     }
 
     /// <summary>

@@ -24,12 +24,19 @@ public sealed class GitHubTokenHandler : DelegatingHandler
     /// <summary>Sets (or clears, with null/empty) the token used for GitHub requests.</summary>
     public static void SetToken(string? token)
     {
+        bool changed;
         lock (_tokenLock)
         {
-            _token = string.IsNullOrWhiteSpace(token) ? null : token.Trim();
+            var newToken = string.IsNullOrWhiteSpace(token) ? null : token.Trim();
+            changed = newToken != _token;
+            _token = newToken;
             if (_token != null) TokenRejected = false; // a newly saved token gets a fresh chance
         }
+        if (changed) TokenChanged?.Invoke();
     }
+
+    /// <summary>Raised after the token is set to a different value or cleared.</summary>
+    public static event Action? TokenChanged;
 
     private static readonly object _tokenLock = new();
 

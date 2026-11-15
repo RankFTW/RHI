@@ -36,6 +36,8 @@ public class GitHubETagCache
 
     public GitHubETagCache()
     {
+        // A token saved or removed changes the limit (60 vs 5,000 an hour): check GitHub again
+        GitHubTokenHandler.TokenChanged += () => ClearRateLimit("token changed");
         var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(CachePath, out _);
         if (saved == null) return;
         var cutoff = DateTime.UtcNow - MaxAge;
@@ -74,11 +76,42 @@ public class GitHubETagCache
         SafeJsonFile.Write(CachePath, snapshot, "GitHubETagCache.Persist");
     }
 
-    /// <summary>Session-scoped flag — set when GitHub returns 403 (rate limited).</summary>
+    /// <summary>Set when GitHub returns 403 with X-RateLimit-Remaining=0; cleared at the reset time.</summary>
     private volatile bool _rateLimited;
+    // UTC ticks when GitHub's limit resets (X-RateLimit-Reset). RHI runs in the tray for days: the flag
+    // used to stay on until restart, so every API call returned stale data and update checks skipped GitHub.
+    private long _rateLimitResetTicks;
+    private static readonly TimeSpan DefaultRateLimitWait = TimeSpan.FromHours(1);
 
-    /// <summary>True if a 403 Forbidden response has been received this session.</summary>
-    public bool IsRateLimited => _rateLimited;
+    /// <summary>True while GitHub's API rate limit is used up (until its reset time).</summary>
+    public bool IsRateLimited
+    {
+        get
+        {
+            if (!_rateLimited) return false;
+            if (DateTime.UtcNow.Ticks < Interlocked.Read(ref _rateLimitResetTicks)) return true;
+            ClearRateLimit("reset time reached");
+            return false;
+        }
+    }
+
+    private void ClearRateLimit(string why)
+    {
+        if (!_rateLimited) return;
+        _rateLimited = false;
+        CrashReporter.Log($"[GitHubETagCache] Rate limit cleared ({why}) — GitHub API calls resume");
+    }
+
+    /// <summary>Reset time from X-RateLimit-Reset (Unix seconds), else an hour from now; at most 2 hours ahead.</summary>
+    internal static DateTime RateLimitResetUtc(string? resetHeader, DateTime nowUtc)
+    {
+        if (long.TryParse(resetHeader, out var secs) && secs > 0)
+        {
+            var reset = DateTimeOffset.FromUnixTimeSeconds(secs).UtcDateTime.AddSeconds(5);
+            if (reset > nowUtc && reset - nowUtc <= TimeSpan.FromHours(2)) return reset;
+        }
+        return nowUtc + DefaultRateLimitWait;
+    }
 
     /// <summary>
     /// Removes the cached ETag and body for <paramref name="url"/> so the next
@@ -118,7 +151,7 @@ public class GitHubETagCache
     private async Task<string?> FetchAsync(HttpClient http, string url, string? userAgent)
     {
         // ── Rate-limit guard (api.github.com only): return cached body or null ──
-        if (_rateLimited && IsApiUrl(url))
+        if (IsApiUrl(url) && IsRateLimited)
         {
             if (_cache.TryGetValue(url, out var stale) && stale.body != null)
                 return stale.body;
@@ -194,8 +227,11 @@ public class GitHubETagCache
 
                 if (actuallyRateLimited && !_rateLimited && IsApiUrl(url))
                 {
+                    var resetHeader = response.Headers.TryGetValues("X-RateLimit-Reset", out var rv) ? rv.FirstOrDefault() : null;
+                    var resetUtc = RateLimitResetUtc(resetHeader, DateTime.UtcNow);
+                    Interlocked.Exchange(ref _rateLimitResetTicks, resetUtc.Ticks);
                     _rateLimited = true;
-                    CrashReporter.Log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}");
+                    CrashReporter.Log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}, until {resetUtc.ToLocalTime():HH:mm:ss}");
                 }
                 else if (!actuallyRateLimited)
                 {

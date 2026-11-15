@@ -2,7 +2,6 @@
 // playtime count (minutes the game was the window in front, for games whose store doesn't give one).
 // Saved in %LocalAppData%\RHI\game_journal.json, keyed "GameName|Store" (GameKey). Thread-safe.
 // Game renames call MigrateGameRename (GameNameService.RenameGame).
-using System.Text.Json;
 
 namespace RenoDXCommander.Services;
 
@@ -19,55 +18,56 @@ internal static class GameJournalStore
     private static readonly object Gate = new();
     private static Data? _data;
     private static bool _dirty;
+    // The file exists but couldn't be read (locked, access denied): SafeJsonFile blocks saves so it isn't
+    // overwritten, and each access tries again; what was added meanwhile is merged onto the loaded data.
+    private static bool _retryLoad;
 
     internal static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "game_journal.json");
 
+    // Call under Gate. Reads through SafeJsonFile: a corrupt file is kept aside and the .bak used, and an
+    // unreadable one blocks saves. (Before Nov 2026 any read error started empty, and the next save, every
+    // minute while a game runs, overwrote all notes and playtime.)
     private static Data Load()
     {
-        if (_data != null) return _data;
-        _data = new Data();
-        try
+        if (_data != null && !_retryLoad) return _data;
+        var loaded = SafeJsonFile.Read<Data>(FilePath, out var status);
+        if (status == SafeJsonFile.LoadStatus.Unreadable)
         {
-            if (File.Exists(FilePath))
-            {
-                var loaded = JsonSerializer.Deserialize<Data>(File.ReadAllText(FilePath));
-                if (loaded != null)
-                {
-                    _data.Notes = new(loaded.Notes ?? new(), StringComparer.OrdinalIgnoreCase);
-                    _data.PlaytimeSeconds = new(loaded.PlaytimeSeconds ?? new(), StringComparer.OrdinalIgnoreCase);
-                    _data.CountingSince = loaded.CountingSince;
-                }
-            }
+            if (_data == null) CrashReporter.Log("[GameJournalStore.Load] game_journal.json couldn't be read — notes and playtime aren't saved until it can");
+            _retryLoad = true;
+            return _data ??= new Data();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        var fresh = new Data();
+        if (loaded != null)
         {
-            CrashReporter.Log($"[GameJournalStore.Load] {ex.Message} — starting empty");
+            fresh.Notes = new(loaded.Notes ?? new(), StringComparer.OrdinalIgnoreCase);
+            fresh.PlaytimeSeconds = new(loaded.PlaytimeSeconds ?? new(), StringComparer.OrdinalIgnoreCase);
+            fresh.CountingSince = loaded.CountingSince;
         }
-        return _data;
+        if (_data != null) // retry succeeded: keep what was added while the file was unreadable
+        {
+            foreach (var (k, v) in _data.Notes) fresh.Notes[k] = v;
+            foreach (var (k, v) in _data.PlaytimeSeconds)
+                fresh.PlaytimeSeconds[k] = (fresh.PlaytimeSeconds.TryGetValue(k, out var s) ? s : 0) + v;
+            fresh.CountingSince ??= _data.CountingSince;
+            CrashReporter.Log("[GameJournalStore.Load] game_journal.json readable again — merged this session's changes");
+        }
+        _retryLoad = false;
+        return _data = fresh;
     }
 
     /// <summary>Writes the file if anything changed since the last save.</summary>
+    // Written under Gate, so a background save (playtime, every minute) and a notes save can't finish in
+    // the wrong order. SafeJsonFile writes atomically, keeps a .bak, and refuses while the file is unreadable.
     internal static void Save()
     {
-        string json;
         lock (Gate)
         {
             if (!_dirty || _data == null) return;
-            json = JsonSerializer.Serialize(_data, new JsonSerializerOptions { WriteIndented = true });
-            _dirty = false;
-        }
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            var tmp = FilePath + ".tmp";
-            File.WriteAllText(tmp, json);
-            File.Move(tmp, FilePath, overwrite: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            CrashReporter.Log($"[GameJournalStore.Save] {ex.Message}");
-            lock (Gate) _dirty = true;
+            if (_retryLoad) Load(); // still unreadable = SafeJsonFile skips the write and it stays dirty
+            if (SafeJsonFile.Write(FilePath, _data, "GameJournalStore.Save", SafeJsonFile.Indented))
+                _dirty = false;
         }
     }
 

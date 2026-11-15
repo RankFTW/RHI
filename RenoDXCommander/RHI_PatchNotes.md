@@ -20,6 +20,8 @@
 - Fixed RHI repeatedly offering an update (or a component release) that had been withdrawn from GitHub, which then failed to download.
 - Fixed RHI's install list in a game folder (rhi_install.txt) losing entries when two installs wrote it at once, or being replaced by an empty one when it couldn't be read.
 - Fixed an interrupted download of OptiScaler, ReShade add-ons, the DLSS5 Tool, RTX Encore, the NR Cost Scaler, DLSS / Streamline files or ASI Loader leaving a broken file that RHI then installed into games.
+- Fixed RHI skipping GitHub update checks until it was restarted after hitting GitHub's hourly request limit once. It now checks again when the limit resets, or straight away when you add or change your GitHub token.
+- Fixed your overlay notes and RHI's playtime counts, saved shader profiles and OptiScaler preset slots being wiped when their file couldn't be read: RHI now keeps the file, falls back to its backup copy, and doesn't save over it.
 
 **OptiScaler**
 - Fixed uninstalling OptiScaler deleting the game's own DLSS files when RHI had never replaced them, and OptiScaler updates replacing the game's DLSS files (or other game files a new OptiScaler version also uses) without a backup, so uninstall couldn't put them back.

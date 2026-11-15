@@ -21,26 +21,19 @@ public static class OsPresetService
     /// </summary>
     public static OsPreset?[] Load()
     {
-        try
+        // SafeJsonFile: a corrupt file is kept aside and the .bak used; an unreadable one blocks saves.
+        // (Any read error used to give the defaults, and the next Save replaced all four slots.)
+        var loaded = SafeJsonFile.Read<OsPreset?[]>(FilePath, out var status);
+        if (loaded != null)
         {
-            if (File.Exists(FilePath))
-            {
-                var json = File.ReadAllText(FilePath);
-                var loaded = JsonSerializer.Deserialize<OsPreset?[]>(json);
-                if (loaded != null)
-                {
-                    // Ensure exactly 4 slots
-                    var result = new OsPreset?[4];
-                    for (int i = 0; i < 4 && i < loaded.Length; i++)
-                        result[i] = loaded[i];
-                    return result;
-                }
-            }
+            // Ensure exactly 4 slots
+            var result = new OsPreset?[4];
+            for (int i = 0; i < 4 && i < loaded.Length; i++)
+                result[i] = loaded[i];
+            return result;
         }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[OsPresetService.Load] {ex.Message}");
-        }
+        if (status != SafeJsonFile.LoadStatus.Missing)
+            CrashReporter.Log($"[OsPresetService.Load] os_presets.json {status} — showing the default slots");
 
         // First-run default: slot 0 = DLSS Enabler
         return new OsPreset?[]
@@ -65,23 +58,12 @@ public static class OsPresetService
     /// </summary>
     public static void Save(OsPreset?[] presets)
     {
-        try
-        {
-            var dir = Path.GetDirectoryName(FilePath)!;
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            // Always write exactly 4 entries
-            var toWrite = new OsPreset?[4];
-            for (int i = 0; i < 4; i++)
-                toWrite[i] = i < presets.Length ? presets[i] : null;
-
-            var json = JsonSerializer.Serialize(toWrite, JsonOptions);
-            File.WriteAllText(FilePath, json);
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[OsPresetService.Save] {ex.Message}");
-        }
+        // Always write exactly 4 entries
+        var toWrite = new OsPreset?[4];
+        for (int i = 0; i < 4; i++)
+            toWrite[i] = i < presets.Length ? presets[i] : null;
+        // Atomic, keeps a .bak; refused (and logged) while the file couldn't be read
+        SafeJsonFile.Write(FilePath, toWrite, "OsPresetService.Save", JsonOptions);
     }
 
     // ── Ready-made presets (optiscaler_presets.json) ──────────────────────────────
