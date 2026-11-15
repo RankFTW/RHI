@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56112,
-  "generated": "2026-11-15T15:21:10Z",
+  "game_count": 56113,
+  "generated": "2026-11-15T17:21:11Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -75792,6 +75792,7 @@
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\JetCat Games\\Heliborne"
     },
+    "Helicops": {},
     "Helicopter 2015: Natural Disasters": {
       "steam_appid": 350540
     },
@@ -83844,7 +83845,6 @@
     "Informaticus": {},
     "INFRA": {
       "steam_appid": 251110,
-      "dx9": true,
       "config_path": "<path-to-game>\\infra\\cfg\\",
       "engine": "Source"
     },
