@@ -400,7 +400,10 @@ public partial class DetailPanelBuilder
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
 
         var label = new TextBlock { Text = "RTX Encore", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-        ToolTipService.SetToolTip(label, "RTX Encore — frame generation X2-X6, Smooth Motion and Neural Rendering for RTX 20/30/40.");
+        ToolTipService.SetToolTip(label, "RTX Encore — frame generation (2x to 6x), Smooth Motion and Neural Rendering for RTX 20, 30 and 40, in games with or without DLSS.\n"
+            + "GPU: RTX 30 and 40 (RTX 20 experimental). In games without DLSS: RTX 20 to 50 (tested on RTX 4090 only).\n"
+            + "Game: works with or without DLSS. In games without DLSS, RHI installs the NVIDIA files it needs; turn the features on in its settings or in-game menu (Insert).\n"
+            + "API: DirectX 11, 12 and Vulkan. No ReShade needed.");
         Grid.SetColumn(label, 0); row.Children.Add(label);
 
         var statusBlock = new TextBlock { Text = statusText, FontSize = 12, Foreground = UIFactory.GetBrush(statusColor), VerticalAlignment = VerticalAlignment.Center, HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center, TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None };
@@ -463,7 +466,19 @@ public partial class DetailPanelBuilder
                     if (!xessOk)
                         CrashReporter.Log($"[RtxEncoreInstall] XeSS files not deployed for '{installPath}' (download failed or folder not writable)");
 
+                    // NVIDIA files for games without DLSS (DLSS upscaling + frame generation), only where the game has
+                    // none of its own; never over an existing file. Not fatal. Deliberately no RecordDlssFound: these
+                    // are RTX Encore's pinned builds, hidden from DLSS detection so swaps / auto-update never touch them.
+                    installBtn.Content = "Installing NVIDIA files...";
+                    var noDlss = await Task.Run(() => svc.DeployNoDlssRuntimesAsync(installPath, card.Is32Bit, card.IsOsInstalled,
+                        App.Services.GetRequiredService<IDlssStreamlineService>()));
+                    CrashReporter.Log($"[RtxEncoreInstall] NVIDIA files for games without DLSS in '{installPath}': upscaling {(noDlss.Upscaling.Installed ? "installed" : noDlss.Upscaling.Reason)}, frame generation {(noDlss.FrameGeneration.Installed ? "installed" : noDlss.FrameGeneration.Reason)}");
+
                     RequestExtrasRebuild(card);
+
+                    // DLSS-FG with ReShade as dxgi.dll crashes the game at startup (RTX Encore #133): warn, don't block
+                    if (noDlss.FrameGeneration.Installed && IsReShadeDxgi(card))
+                        await ShowEncoreDlssFgReShadeWarningAsync(installBtn.XamlRoot);
                 }
                 else { installBtn.Content = "Install failed"; installBtn.IsEnabled = true; }
             }
@@ -488,6 +503,7 @@ public partial class DetailPanelBuilder
             svc.Uninstall(installPath, currentDllName, removeNrDll: nrDeployed);
             var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
             _ = Task.Run(() => mfgSvc.RemoveEncoreIntelFiles(installPath, modDir));
+            _ = Task.Run(() => svc.RemoveNoDlssRuntimes(installPath));
             _window.ViewModel.SetRtxEncoreInstalledAs(gameName, null, store);
             if (nrDeployed) _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
             RequestExtrasRebuild(card);

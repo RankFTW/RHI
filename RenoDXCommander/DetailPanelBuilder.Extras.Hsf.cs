@@ -15,9 +15,10 @@ namespace RenoDXCommander;
 public partial class DetailPanelBuilder
 {
     private const string HsfTooltip =
-        "HSF (Hunter's Sloppy Frames) — DLSS Frame Generation (up to 6x) for DirectX 9, 11, 12 and Vulkan games, as a ReShade add-on. "
-        + "Uses the game's own DLSS data in DirectX 12 games that run DLSS, optical flow from iMMERSE LaunchPad everywhere else. "
-        + "Needs an RTX 40 or newer GPU (RTX 20 / 30 through Universal MFG Unlocker) and ReShade with add-on support.";
+        "HSF (Hunter's Sloppy Frames) — DLSS Frame Generation (up to 6x) in games that don't have it, as a ReShade add-on.\n"
+        + "GPU: RTX 50 (up to 6x) and RTX 40. RTX 20 and 30 need Universal MFG Unlocker as well, which also adds multi frame generation on RTX 40.\n"
+        + "Game: needs no frame generation of its own. Uses the game's DLSS data in DirectX 12 games that run DLSS, optical flow from iMMERSE LaunchPad everywhere else. Single-player games only.\n"
+        + "API: DirectX 9, 11, 12 and Vulkan. Needs ReShade with add-on support.";
 
     private void BuildHsfRow(GameCardViewModel card, StackPanel body)
     {

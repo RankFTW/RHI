@@ -25,7 +25,7 @@ namespace RenoDXCommander.Services;
 /// The file is tracked via RhiInstallManifest SharedFiles so it is only deleted when no other
 /// component still owns it.
 /// </summary>
-public class RtxEncoreService
+public partial class RtxEncoreService
 {
     // ── Constants ─────────────────────────────────────────────────────────────
 

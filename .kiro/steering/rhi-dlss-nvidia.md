@@ -29,6 +29,7 @@ vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folde
 - OptiScaler detection: skip DLLs in directories containing `OptiScaler.ini`.
 
 ### Mod-owned DLSS copies
+- **Per-file exclusion**: DLLs listed in `rtx-encore-runtimes\nvidia\rhi_installed.txt` in their own folder (RTX Encore's NVIDIA files for games without DLSS, `RtxEncoreNvidiaMarker`) with a matching size are never counted (`SearchDirectory`, `DetectFromExactPath`; `TryFastDetect` rescans if a cached path is one). They sit beside the exe, so a folder exclusion can't be used. RTX Encore pins them by hash: a swap or auto-update would break it.
 - `SearchDirectory` skips folders in `DlssStreamlineService.ModOwnedFolderNames` (`HSF_streamline`): HSF's bundled Streamline 2.14 / DLSS-G aren't the game's. Counting them showed DLSS-G for games without it and let swaps / auto-update replace HSF's files. `PathsAreWithin` rejects trusted-cache entries inside such a folder (forces a rescan). Add other mods' private DLSS folders to that list.
 
 ### Caching

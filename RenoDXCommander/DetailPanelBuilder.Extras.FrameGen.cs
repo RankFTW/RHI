@@ -109,7 +109,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "20/30 FG Unlock — enables DLSS Frame Generation (up to 6X) on RTX 20 and 30 series GPUs. D3D12. Needs NVIDIA driver R580 or newer. No ASI Loader or ReShade required.");
+        ToolTipService.SetToolTip(label, "20/30 FG Unlock — turns on a game's greyed-out DLSS Frame Generation on RTX 20 and 30 (up to 6x where the game allows it).\n"
+            + "GPU: RTX 30 (RTX 20 experimental). Needs NVIDIA driver R580 or newer.\n"
+            + "Game: must already have DLSS Frame Generation. Games with an older Streamline stay at 2x.\n"
+            + "API: DirectX 12 only. No ASI Loader or ReShade needed. Use one frame generation unlock per game.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -399,7 +402,10 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
             TextWrapping = TextWrapping.Wrap, // long name; wraps instead of clipping in the 120 px column
         };
-        ToolTipService.SetToolTip(label, "Universal MFG Unlocker (formerly RTX 40 MFG Unlock) — DLSS Multi Frame Generation beyond 2x (up to 6x) on RTX 40 and RTX 30 Series GPUs (RTX 20 experimental), plus XeSS frame generation (XeMFG) on any GPU. Standalone DLL, no ASI Loader required. RHI also installs Intel's XeSS files that XeMFG needs.");
+        ToolTipService.SetToolTip(label, "Universal MFG Unlocker (formerly RTX 40 MFG Unlock) — DLSS Multi Frame Generation (up to 6x) on RTX 20, 30 and 40, plus XeSS frame generation (XeMFG) on any GPU.\n"
+            + "GPU: RTX 20, 30 and 40 for DLSS MFG (RTX 50 has it natively). XeMFG on NVIDIA, AMD and Intel (experimental).\n"
+            + "Game: must already have DLSS Frame Generation. Not for games with anti-cheat.\n"
+            + "API: standalone DLL, no ReShade or ASI Loader needed. RHI also installs the XeSS files XeMFG needs.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 

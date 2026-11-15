@@ -52,6 +52,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _hsfNoticeDismissed;
     /// <summary>"Don't show this again" on the closed-source notices before installing RTX Encore / 20/30 FG Unlock.</summary>
     [ObservableProperty] private bool _rtxEncoreClosedSourceDismissed;
+    /// <summary>"Don't show this again" on the RTX Encore DLSS-FG + ReShade dxgi.dll warning (RTX Encore issue #133).</summary>
+    [ObservableProperty] private bool _encoreDlssFgReShadeWarningDismissed;
     [ObservableProperty] private bool _dlssg2030ClosedSourceDismissed;
     [ObservableProperty] private bool _anrFgClosedSourceDismissed;
     /// <summary>GITC Uplift's NR on/off key ([Uplift] EnableKey, a Win32 virtual-key code; 0 = none, Uplift's default).</summary>
@@ -361,6 +363,8 @@ public partial class SettingsViewModel : ObservableObject
             HsfNoticeDismissed = hsfndVal == "true";
         if (s.TryGetValue("RtxEncoreClosedSourceDismissed", out var recsVal))
             RtxEncoreClosedSourceDismissed = recsVal == "true";
+        if (s.TryGetValue("EncoreDlssFgReShadeWarningDismissed", out var edrwVal))
+            EncoreDlssFgReShadeWarningDismissed = edrwVal == "true";
         if (s.TryGetValue("Dlssg2030ClosedSourceDismissed", out var d23csVal))
             Dlssg2030ClosedSourceDismissed = d23csVal == "true";
         if (s.TryGetValue("AnrFgClosedSourceDismissed", out var anrcsVal))
@@ -601,6 +605,7 @@ public partial class SettingsViewModel : ObservableObject
         s["UmfgReShadeWarningDismissed"] = UmfgReShadeWarningDismissed ? "true" : "false";
         s["HsfNoticeDismissed"] = HsfNoticeDismissed ? "true" : "false";
         s["RtxEncoreClosedSourceDismissed"] = RtxEncoreClosedSourceDismissed ? "true" : "false";
+        s["EncoreDlssFgReShadeWarningDismissed"] = EncoreDlssFgReShadeWarningDismissed ? "true" : "false";
         s["Dlssg2030ClosedSourceDismissed"] = Dlssg2030ClosedSourceDismissed ? "true" : "false";
         s["AnrFgClosedSourceDismissed"] = AnrFgClosedSourceDismissed ? "true" : "false";
         s["UpliftEnableKey"] = UpliftEnableKey.ToString(System.Globalization.CultureInfo.InvariantCulture);

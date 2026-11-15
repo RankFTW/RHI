@@ -11,10 +11,14 @@
 
 ### Changes
 - Game settings (RHI overlay, display modes, Block Steam updates) are now in every layout: the ⚙ beside the game's name shows in Classic+ (opens a window) and Tabs (opens under the header), not just Spotlight.
+- Extras' frame generation tools are now grouped by what the game needs: "Frame Gen for Any Game" (RTX Encore, HSF), "Frame Gen for Games With DLSS" (DLSS Enabler) and "Games With DLSS Frame Gen" (Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock). Each one now lists the GPUs it supports, what the game must already have and which graphics APIs work (shown under the name in Tabs and Spotlight, in the tooltip in Classic+), checked against each project's current page.
+- RTX Encore in games that ship no DLSS now gets the NVIDIA files it needs automatically: DLSS for upscaling, and Streamline with DLSS Frame Generation for frame generation. RHI adds them only where the game has none of its own, never over an existing file, and removes them with RTX Encore. Its ⚙ has a new Games without DLSS section to turn on upscaling (DLSS, XeSS, NIS or FSR 1) and frame generation, and to pick the output and motion estimation. Where ReShade is installed as dxgi.dll, RHI warns that RTX Encore's in-game menu may not open (set it up in RHI instead) and that choosing DLSS-FG currently crashes games with their own FSR frame generation at startup (an RTX Encore issue), with a Don't show this again option; the warning also stays in the ⚙.
+- Corrected the descriptions of several frame generation tools: DLSS Enabler adds frame generation on any GPU to games with DLSS upscaling (it doesn't add DLSS to games without it), Universal MFG Unlocker's RTX 20 support is no longer experimental, and 20/30 FG Unlock is DirectX 12 only, staying at 2x in games with an older Streamline.
 
 ### Bug Fixes
 
 **General**
+- Fixed launching Epic Games Store games from RHI doing nothing while the Epic launcher was running as administrator (seen with the new Epic launcher). In Admin Mode, RHI now opens Epic and Steam launch links without admin rights, so it no longer starts the store as administrator.
 - Fixed RHI using very high CPU and memory (up to tens of GB) after launching some Unreal Engine 3 games such as Remember Me. RHI treated every app running from the Steam library folder as the game, and kept waiting for ones it couldn't watch (apps running as admin).
 - Fixed a repeating error filling the logs folder with crash reports; the same error is now reported once.
 - Fixed RHI repeatedly offering an update (or a component release) that had been withdrawn from GitHub, which then failed to download.

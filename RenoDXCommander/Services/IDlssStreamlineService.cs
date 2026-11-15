@@ -190,6 +190,15 @@ public interface IDlssStreamlineService
     /// Returns the cached directory path for the newest Streamline version, downloading if needed.
     /// </summary>
     Task<string?> EnsureNewestStreamlineCachedAsync();
+
+    /// <summary>Cached path of an exact DLSS SR version from the manifest (e.g. "310.9.16"), downloading if needed; null if absent or failed.</summary>
+    Task<string?> EnsureSpecificDlssCachedAsync(string version);
+
+    /// <summary>Cached path of an exact DLSS FG version from the manifest, downloading if needed; null if absent or failed.</summary>
+    Task<string?> EnsureSpecificDlssgCachedAsync(string version);
+
+    /// <summary>Cached folder of an exact Streamline version from the manifest (e.g. "2.14.16.0"), downloading if needed; null if absent or failed.</summary>
+    Task<string?> EnsureSpecificStreamlineCachedAsync(string version);
 }
 
 /// <summary>

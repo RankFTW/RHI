@@ -123,6 +123,7 @@ internal sealed partial class DetailLayoutHost
         label.TextWrapping = TextWrapping.Wrap;
         nameCol.Children.Add(label);
         if (TooltipText(label) is { Length: > 0 } tip)
+        {
             nameCol.Children.Add(new TextBlock
             {
                 Text = FirstSentence(tip),
@@ -130,6 +131,14 @@ internal sealed partial class DetailLayoutHost
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = TabsTheme.B(TabsTheme.TextSecondary),
             });
+            // Requirement lines from the tooltip ("GPU: …", "Game: …", "API: …"), so what each
+            // frame generation tool needs is visible without hovering
+            if (RequirementLines(tip) is { } req)
+            {
+                nameCol.Children.Add(req);
+                req.Margin = new Thickness(0, 2, 0, 0);
+            }
+        }
 
         var grid = new Grid { ColumnSpacing = 8 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -221,6 +230,31 @@ internal sealed partial class DetailLayoutHost
         if (r.EndsWith(" installed", StringComparison.OrdinalIgnoreCase))
             return $"Can't be used while {r[..^" installed".Length]} is installed.";
         return r + ".";
+    }
+
+    /// <summary>
+    /// The tooltip's "GPU: …", "Game: …" and "API: …" lines as one block (label in the control
+    /// colour, text muted), or null when the tooltip has none.
+    /// </summary>
+    private static TextBlock? RequirementLines(string tip)
+    {
+        string[] keys = { "GPU", "Game", "API" };
+        var lines = tip.Replace("\r", "").Split('\n')
+            .Select(l => l.Trim())
+            .Select(l => (Line: l, Key: keys.FirstOrDefault(k => l.StartsWith(k + ": ", StringComparison.Ordinal))))
+            .Where(x => x.Key != null)
+            .ToList();
+        if (lines.Count == 0) return null;
+
+        var tb = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, LineHeight = 18 };
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (i > 0) tb.Inlines.Add(new LineBreak());
+            var (line, key) = lines[i];
+            tb.Inlines.Add(new Run { Text = key + ": ", Foreground = TabsTheme.B(TabsTheme.TextControl), FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+            tb.Inlines.Add(new Run { Text = line[(key!.Length + 2)..], Foreground = TabsTheme.B(TabsTheme.TextMuted) });
+        }
+        return tb;
     }
 
     private static string FirstSentence(string text)

@@ -499,6 +499,19 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return null;
         }
 
+        // A cached path that is now one of RTX Encore's NVIDIA files (games without DLSS) isn't the game's:
+        // full scan, which skips them
+        var encoreMarkers = new Dictionary<string, List<RtxEncoreNvidiaMarker.Entry>>(StringComparer.OrdinalIgnoreCase);
+        if ((entry.DlssPath != null && RtxEncoreNvidiaMarker.IsOwnedFile(entry.DlssPath, encoreMarkers))
+            || (entry.DlssgPath != null && RtxEncoreNvidiaMarker.IsOwnedFile(entry.DlssgPath, encoreMarkers))
+            || (entry.StreamlineFolder != null
+                && RtxEncoreNvidiaMarker.IsOwnedFile(Path.Combine(entry.StreamlineFolder, StreamlineIndicator), encoreMarkers)))
+        {
+            CrashReporter.Log($"[DlssStreamlineService.TryFastDetect] Cached paths for '{gameName}' include RTX Encore's NVIDIA files — rescanning");
+            InvalidateTrustedPath(gameName);
+            return null;
+        }
+
         // Verify cached paths still exist
         var result = new DlssDetectionResult();
         bool anyValid = false;

@@ -57,7 +57,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Unlock — unlocks DLSS Multi Frame Generation (3x/4x/6x) on RTX 40 Series GPUs, brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series (experimental), and runs Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50 Series. Requires ReShade.");
+        ToolTipService.SetToolTip(label, "MFG Unlock — DLSS Multi Frame Generation (up to 6x) on RTX 40, and Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50, as a ReShade add-on.\n"
+            + "GPU: RTX 40 and 50 for DLSS frame generation (RTX 20 and 30 experimental). XeMFG on RTX 20 to 50.\n"
+            + "Game: DLSS MFG needs the game's own DLSS Frame Generation. XeMFG can also use the game's XeSS or FSR 3.1 frame generation (DirectX 12) or DLSS upscaling (Vulkan).\n"
+            + "API: DirectX 12, Vulkan experimental. Needs ReShade with add-on support.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -485,7 +488,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "DLSS Enabler — standalone proxy DLL that enables DLSS in games that don't natively support it.");
+        ToolTipService.SetToolTip(label, "DLSS Enabler — adds frame generation to games that have DLSS upscaling but no frame generation of their own, on any GPU.\n"
+            + "GPU: any: NVIDIA RTX and GTX, AMD and Intel.\n"
+            + "Game: needs DLSS upscaling. Doesn't need frame generation of its own.\n"
+            + "API: DirectX 12. With OptiScaler installed, use its Streamline/DLSS Enabler option instead (OptiScaler includes it).");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 

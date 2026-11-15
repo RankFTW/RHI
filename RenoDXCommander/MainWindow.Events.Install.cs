@@ -817,14 +817,14 @@ public sealed partial class MainWindow
                         // Fallback: use URL protocol (args may not pass reliably)
                         var steamUri = $"steam://rungameid/{steamAppId}";
                         _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam URL (args may not apply): {steamUri}");
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                        Services.StoreLinkLauncher.Open(steamUri, "MainWindow.LaunchGameAsync");
                     }
                 }
                 else
                 {
                     var steamUri = $"steam://rungameid/{steamAppId}";
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam: {steamUri}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                    Services.StoreLinkLauncher.Open(steamUri, "MainWindow.LaunchGameAsync");
                 }
                 MonitorLaunch(null, session);
                 return;
@@ -836,7 +836,7 @@ public sealed partial class MainWindow
                 var dg = card.DetectedGame;
                 var epicUri = Services.GameDetectionService.EpicLaunchUri(dg.EpicCatalogNamespace, dg.EpicCatalogItemId, dg.EpicAppName!);
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Epic protocol: {epicUri}");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
+                Services.StoreLinkLauncher.Open(epicUri, "MainWindow.LaunchGameAsync");
                 MonitorLaunch(null, session);
                 return;
             }

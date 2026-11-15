@@ -192,6 +192,15 @@ public partial class InstallFolderMigrationService
                 b.File(g, Path.Combine(modRel, "rtx-encore.jsonc"));
                 b.Dir(g, Path.Combine(modRel, "rtx-encore-runtimes"));
                 AddEncoreMarkerRebase(plan, oldDir, newDir, Path.Combine(modRel, Rtx40MfgService.EncoreRuntimeRelDir, EncoreMarker));
+                // NVIDIA files for games without DLSS: always in the install folder (beside the exe), listed in
+                // rtx-encore-runtimes\nvidia\rhi_installed.txt there (moved with the folder above for proxy installs)
+                var nvidiaRecord = RtxEncoreNvidiaMarker.Read(oldDir);
+                if (nvidiaRecord.Count > 0)
+                {
+                    if (modRel.Length > 0)
+                        b.Dir(g, Path.Combine(RtxEncoreNvidiaMarker.RuntimesFolder, RtxEncoreNvidiaMarker.NvidiaFolder));
+                    foreach (var e in nvidiaRecord) b.File(g, e.Name, requireBackup: false);
+                }
             }
         }
 

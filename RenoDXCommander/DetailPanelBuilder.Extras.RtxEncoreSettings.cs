@@ -18,6 +18,24 @@ public partial class DetailPanelBuilder
     private static readonly string[] RtxOffOn = { "Off", "On" };
     private static readonly string[] RtxOffOnValues = { "false", "true" };
 
+    /// <summary>The Games without DLSS status line: which NVIDIA files RHI put in for RTX Encore, or why not.</summary>
+    private static string RtxEncoreNoDlssStatusText(RtxEncoreService svc, string installPath, bool encoreInstalled)
+    {
+        if (!encoreInstalled)
+            return "RHI installs the NVIDIA files when RTX Encore is installed in a game that ships no DLSS.";
+        var st = svc.ReadNoDlssRuntimeStatus(installPath);
+        string Part(string what, bool installed, bool missing, RtxEncoreService.NoDlssUnitState? last)
+        {
+            if (installed) return $"{what}: installed by RHI.";
+            if (missing) return $"{what}: {RtxEncoreService.ReasonUserRemoved}.";
+            if (last?.Reason is { Length: > 0 } r) return $"{what}: not installed ({r}).";
+            return $"{what}: not installed yet (RHI checks when RTX Encore is installed and when RHI starts).";
+        }
+        return "NVIDIA files RTX Encore needs here. " +
+               Part("DLSS upscaling file", st.UpscalingInstalled, st.UpscalingMissing, st.LastResult?.Upscaling) + " " +
+               Part("Frame generation files", st.FrameGenInstalled, st.FrameGenMissing, st.LastResult?.FrameGeneration);
+    }
+
     /// <summary>⚙ dialog for RTX Encore. Every change is saved as soon as it's made.</summary>
     private async Task ShowRtxEncoreSettingsAsync(GameCardViewModel card, RtxEncoreService svc,
         string installPath, bool isInstalled, bool nrDeployed)
@@ -79,7 +97,8 @@ public partial class DetailPanelBuilder
         var engineCell = Choice("Engine",
             "Game keeps the game's own frame generation. XeFG replaces the game's DLSS frame generation with Intel XeSS frame generation. " +
             "DLSS-FG replaces a game's own Intel frame generation with DLSS frame generation; it uses Fixed mode (Game decides runs it at 2x, Dynamic isn't available). " +
-            "None of them adds frame generation to a game that has none. Don't combine XeFG with Neural Rendering or Smooth Motion. Restart the game to apply.",
+            "For games that ship no frame generation, turn on Frame generation under Games without DLSS; Game or DLSS-FG then adds DLSS Frame Generation, XeFG adds Intel XeFG. "
+            + "Don't combine XeFG with Neural Rendering or Smooth Motion. Restart the game to apply.",
             "renderingEngines", "frameGenerationEngine",
             new[] { "Game", "DLSS-FG", "XeFG" }, new[] { "game", "dlss-fg", "xefg" }, "game",
             i => SetXefgEnabled(i == 2));
@@ -140,6 +159,49 @@ public partial class DetailPanelBuilder
         SetXefgEnabled(((ComboBox)engineCell.Control).SelectedIndex == 2);
         cog.AddCompactGrid(tensorCell, pacingCell, uiCell, alphaCell);
         cog.AddNote("These only apply when Engine is XeFG.");
+
+        // ── Games without DLSS (RTX Encore 2.0+: DLSS / XeSS, frame generation on the displayed image) ──
+        cog.AddSection("Games without DLSS");
+        cog.AddNote(RtxEncoreNoDlssStatusText(svc, installPath, canEdit));
+        // Always shown here (the install dialog can be dismissed): DLSS-FG + ReShade as dxgi.dll crashes at startup (RTX Encore #133)
+        if (canEdit && IsReShadeDxgi(card) && svc.ReadNoDlssRuntimeStatus(installPath).FrameGenInstalled)
+            cog.AddWarning(EncoreDlssFgReShadeWarningText);
+        var noDlssEngines = new[] { "dlss", "xess", "nis", "fsr1" };
+        int upIdx = 0;
+        if (canEdit && string.Equals(RtxEncoreConfig.Get(cfgPath!, "dlssSuperResolution", "dlssWithoutGameDlss"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            var eng = RtxEncoreConfig.Get(cfgPath!, "dlssSuperResolution", "dlssWithoutGameDlssEngine") ?? "dlss";
+            int e = Array.FindIndex(noDlssEngines, v => v.Equals(eng, StringComparison.OrdinalIgnoreCase));
+            upIdx = (e < 0 ? 0 : e) + 1;
+        }
+        var upscalingCell = cog.CompactCombo("Upscaling",
+            "Games without DLSS: DLAA or upscaling on the displayed image. XeSS needs the Intel files; NIS and FSR 1 need no runtime. Experimental.",
+            new[] { "None", "DLSS", "XeSS", "NIS", "FSR 1" }, upIdx, i =>
+            {
+                if (!canEdit) return false;
+                // The in-game menu's Engine: None = off, otherwise on with that engine (no separate switch)
+                RtxEncoreConfig.SetBool(cfgPath!, "dlssSuperResolution", "dlssWithoutGameDlss", i > 0);
+                if (i > 0) RtxEncoreConfig.SetString(cfgPath!, "dlssSuperResolution", "dlssWithoutGameDlssEngine", noDlssEngines[i - 1]);
+                CrashReporter.Log($"[RtxEncoreCog] '{gameName}': dlssSuperResolution.dlssWithoutGameDlss = {(i > 0 ? "true, engine " + noDlssEngines[i - 1] : "false")}");
+                MarkSaved();
+                cog.SetSuccess("Saved. Restart the game if it's running.");
+                return true;
+            }, isEnabled: canEdit);
+        cog.AddCompactGrid(
+            upscalingCell,
+            Choice("Output",
+                "Game resolution (DLAA): native resolution. Screen resolution: run the game windowed at a lower resolution; RTX Encore upscales it to the screen.",
+                "dlssSuperResolution", "dlssWithoutGameDlssOutput",
+                new[] { "Game resolution (DLAA)", "Screen resolution" }, new[] { "game", "screen" }, "game"),
+            Choice("Motion estimation",
+                "How RTX Encore measures motion for the upscaler, Neural Rendering and frame generation. Game motion vectors uses the game's when available, otherwise RTX Encore's own estimation.",
+                "dlssSuperResolution", "presentOpticalFlow",
+                new[] { "Game motion vectors", "RTX Encore", "Shader (vort)", "Optical Flow (Quality)", "Optical Flow (Fast)" },
+                new[] { "game", "encore", "shader", "quality", "fast" }, "game"),
+            Choice("Frame generation",
+                "Adds frame generation to games that ship none. Uses Engine above: Game or DLSS-FG = DLSS Frame Generation, XeFG = Intel XeFG. Needs Smooth Motion off. Experimental. Restart the game to apply.",
+                "frameGeneration", "frameGenerationWithoutGameFg", RtxOffOn, RtxOffOnValues, "false"));
+        cog.AddNote("Only used in games that ship no DLSS; games with DLSS keep theirs. Neural Rendering in a game without DLSS is turned on in RTX Encore's menu (Insert) › Image quality › Neural Rendering.");
 
         // ── Image quality ───────────────────────────────────────────────────────
         cog.AddSection("Generated frame quality");
