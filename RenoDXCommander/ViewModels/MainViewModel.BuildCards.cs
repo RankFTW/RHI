@@ -1195,6 +1195,16 @@ public partial class MainViewModel
                     _auxInstaller.SaveAuxRecord(osRec);
                 }
 
+                // A record the old OptiScaler.ini fallback made for another mod's DLL (DLSS Enabler's ini +
+                // ReShade's dxgi.dll): drop it, so uninstalling "OptiScaler" can't touch that file
+                if (osRec != null && File.Exists(Path.Combine(osRec.InstallPath, osRec.InstalledAs))
+                    && OptiScalerService.IsMisdetectedRecord(osRec.InstallPath, osRec.InstalledAs, out var osWrongProduct))
+                {
+                    _crashReporter.Log($"[BuildCards] '{game.Name}': OptiScaler record pointed at '{osRec.InstalledAs}', which is {osWrongProduct} — record removed");
+                    _auxInstaller.RemoveRecord(osRec);
+                    osRec = null;
+                }
+
                 if (osRec != null && File.Exists(Path.Combine(osRec.InstallPath, osRec.InstalledAs)))
                 {
                     newCard.OsStatus = GameStatus.Installed;

@@ -312,6 +312,7 @@ public class DlssEnablerService
             }
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Installed as '{dllName}' in '{installPath}'");
+            EnsureStandaloneConfig(installPath);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -319,6 +320,24 @@ public class DlssEnablerService
             _crashReporter.Log($"[DlssEnablerService.InstallStandaloneAsync] Copy failed — {ex.Message}");
             if (!hadBackup) UndoNewBackup(dest, backup);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Writes DLSS Enabler's default dlss-enabler.ini beside the standalone DLL when the game has none, so its
+    /// settings can be changed in RHI before the first launch. An existing file (the user's settings) is never replaced.
+    /// Not removed on uninstall: it holds the user's settings, like RTX Encore's rtx-encore.jsonc.
+    /// </summary>
+    public void EnsureStandaloneConfig(string installPath)
+    {
+        try
+        {
+            if (DlssEnablerConfig.CreateIfMissing(installPath))
+                _crashReporter.Log($"[DlssEnablerService.EnsureStandaloneConfig] Created {DlssEnablerConfig.FileName} in '{installPath}'");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[DlssEnablerService.EnsureStandaloneConfig] Couldn't create {DlssEnablerConfig.FileName} in '{installPath}' — {ex.Message}");
         }
     }
 

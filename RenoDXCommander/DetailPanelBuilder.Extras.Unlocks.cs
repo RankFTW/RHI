@@ -297,7 +297,7 @@ public partial class DetailPanelBuilder
     }
 
     private static readonly string[] DeDllNames =
-        { "version.dll", "dxgi.dll", "winmm.dll", "dbghelp.dll", "psapi.dll", "winhttp.dll" };
+        { "dxgi.dll", "version.dll", "winmm.dll", "dbghelp.dll", "psapi.dll", "winhttp.dll" }; // the Nexus page's order: dxgi usual, the rest fallbacks
 
     /// <summary>
     /// After installing MFG Ada Unlock into a reshade.ini AddonPath folder, removes the copy older
@@ -488,10 +488,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "DLSS Enabler — adds frame generation to games that have DLSS upscaling but no frame generation of their own, on any GPU.\n"
-            + "GPU: any: NVIDIA RTX and GTX, AMD and Intel.\n"
-            + "Game: needs DLSS upscaling. Doesn't need frame generation of its own.\n"
-            + "API: DirectX 12. With OptiScaler installed, use its Streamline/DLSS Enabler option instead (OptiScaler includes it).");
+        ToolTipService.SetToolTip(label, "DLSS Enabler — standalone install: multi frame generation (2x to 6x) on any DirectX 12 GPU in games with DLSS Frame Generation (the other way to use DLSS Enabler is through OptiScaler).\n"
+            + "GPU: RTX 50 (native MFG, plus forced 5x / 6x), RTX 40 (hybrid MFG), RTX 20 and 30, GTX 10 and 16 (DP4a), AMD Radeon RDNA1 and newer, Intel Arc.\n"
+            + "Game: DirectX 12 with native DLSS Frame Generation (it answers the game's DLSS-G calls). 5x and 6x need the game's Streamline 2.11 or newer. Games with only DLSS upscaling need the OptiScaler route instead.\n"
+            + "API: DirectX 12. In game: ~ opens its menu, Insert the OptiScaler menu built into it, Ctrl+1 to Ctrl+6 switch the multiplier. Two separate ways to use it: this standalone install (one DLL; dxgi.dll is the usual name), or OptiScaler's Streamline/DLSS Enabler option. Use one or the other: with OptiScaler installed, the standalone install isn't offered.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -616,9 +616,7 @@ public partial class DetailPanelBuilder
         {
             try
             {
-                var cog = new CogDialog("DLSS Enabler", _window.Content.XamlRoot);
-                cog.AddEmpty();
-                await cog.ShowAsync();
+                await ShowDlssEnablerSettingsAsync(card, deSvc, installPath, isInstalled);
             }
             catch (Exception ex)
             {

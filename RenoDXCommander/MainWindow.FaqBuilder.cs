@@ -91,7 +91,7 @@ public sealed partial class MainWindow
         // Extras
         panel.Children.Add(BuildFaqSpecialSection("X", "AccentAmberBrush",
             "Extras (Optional)",
-            "The Extras section holds optional tools:\n• Frame gen for any game: RTX Encore (RTX 20–40) and HSF (RTX 40/50, ReShade add-on) add frame generation to games without it.\n• Frame gen for games with DLSS: DLSS Enabler (any GPU) adds frame generation to games that have DLSS upscaling but no frame generation.\n• Games with DLSS frame gen: Universal MFG Unlocker (RTX 20–40), MFG Unlock (RTX 40/50, ReShade add-on) and 20/30 FG Unlock (RTX 20/30, DX12) raise the multiplier or unlock it on older cards.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
+            "The Extras section holds optional tools:\n• Frame gen for any game: RTX Encore (RTX 20–40) and HSF (RTX 40/50, ReShade add-on) add frame generation to games without it.\n• Games with DLSS frame gen: DLSS Enabler (any DX12 GPU, including AMD, Intel and GTX), Universal MFG Unlocker (RTX 20–40), MFG Unlock (RTX 40/50, ReShade add-on) and 20/30 FG Unlock (RTX 20/30, DX12) raise the multiplier or unlock it on other cards.\n• ASI Loader: loads .asi plugins.\n• DXVK: runs DX8–DX11 games through Vulkan. The Lilium HDR variant gives older games HDR.\n• dgVoodoo2: runs DX9 games through DX11.",
             "Most of these ask which file name to use when you install them. Names already used by RHI's other components are disabled, and any game file that gets replaced is backed up."));
 
         // NVIDIA Driver Settings

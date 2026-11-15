@@ -2211,16 +2211,30 @@ public partial class OptiScalerService
             var iniPath = Path.Combine(installPath, IniFileName);
             if (File.Exists(iniPath))
             {
+                // DLSS Enabler 4.x has OptiScaler built in and writes its own OptiScaler.ini: that ini isn't
+                // OptiScaler's. Taking it as a marker recorded ReShade's dxgi.dll as OptiScaler (Townfall, Nov 2026).
+                var deDll = SupportedDllNames.FirstOrDefault(n => DlssEnablerService.IsDlssEnablerDll(Path.Combine(installPath, n)));
+                if (deDll != null)
+                {
+                    CrashReporter.Log($"[OptiScalerService.DetectInstallation] OptiScaler.ini in '{installPath}' belongs to DLSS Enabler ('{deDll}') — not OptiScaler");
+                    return null;
+                }
+
                 // INI exists but no supported DLL matched — check supported DLL names
-                // by existence only (in case the binary signature scan missed it)
+                // by existence only (in case the binary signature scan missed it), skipping
+                // DLLs that say they are another mod (ReShade, ASI Loader, RTX Encore, ...)
                 foreach (var dllName in SupportedDllNames)
                 {
                     var candidatePath = Path.Combine(installPath, dllName);
-                    if (File.Exists(candidatePath))
+                    if (!File.Exists(candidatePath)) continue;
+                    var other = OtherProxyProduct(candidatePath);
+                    if (other != null)
                     {
-                        CrashReporter.Log($"[OptiScalerService.DetectInstallation] OptiScaler.ini found with candidate DLL '{dllName}' in '{installPath}'");
-                        return dllName;
+                        CrashReporter.Log($"[OptiScalerService.DetectInstallation] OptiScaler.ini found, but '{dllName}' is {other} — skipped");
+                        continue;
                     }
+                    CrashReporter.Log($"[OptiScalerService.DetectInstallation] OptiScaler.ini found with candidate DLL '{dllName}' in '{installPath}'");
+                    return dllName;
                 }
             }
         }
@@ -2229,6 +2243,53 @@ public partial class OptiScalerService
             CrashReporter.Log($"[OptiScalerService.DetectInstallation] Error scanning '{installPath}' — {ex.Message}");
         }
         return null;
+    }
+
+    /// <summary>Product names (or parts of them) of other mods that use the same proxy DLL names as OptiScaler.</summary>
+    private static readonly string[] OtherProxyProducts =
+    {
+        "ReShade", "DLSS Enabler", "ASI Loader", "ASI-Loader", "RTX Encore", "UE4SS", "Special K",
+        "DXVK", "dgVoodoo", "MFG Unlocker", "MFGUnlocker", "Display Commander", "ENBSeries",
+    };
+
+    /// <summary>
+    /// The product name a DLL reports when it is a known other mod (ReShade, DLSS Enabler, Ultimate ASI Loader,
+    /// RTX Encore, ...), or null (OptiScaler, a custom OptiScaler build, unknown, or unreadable).
+    /// </summary>
+    public static string? OtherProxyProduct(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(path);
+            foreach (var s in new[] { fvi.ProductName, fvi.FileDescription })
+            {
+                if (string.IsNullOrWhiteSpace(s)) continue;
+                if (s.Contains("OptiScaler", StringComparison.OrdinalIgnoreCase)) return null;
+                if (OtherProxyProducts.Any(p => s.Contains(p, StringComparison.OrdinalIgnoreCase))) return s.Trim();
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[OptiScalerService.OtherProxyProduct] Couldn't read '{path}' — {ex.Message}");
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// True when an OptiScaler record points at a DLL that is really another mod and RHI never installed OptiScaler
+    /// there (rhi_install.txt has no OptiScaler install). Such records came from the old OptiScaler.ini fallback
+    /// in <see cref="DetectInstallation"/> (DLSS Enabler's ini + ReShade's dxgi.dll). <paramref name="product"/> = what the DLL is.
+    /// </summary>
+    public static bool IsMisdetectedRecord(string installPath, string installedAs, out string? product)
+    {
+        product = null;
+        var m = RhiInstallManifest.Read(installPath);
+        if (m != null && string.Equals(m.Component, AddonType, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(m.InstalledAs))
+            return false; // RHI installed OptiScaler here
+        product = OtherProxyProduct(Path.Combine(installPath, installedAs));
+        return product != null;
     }
 
     /// <inheritdoc />

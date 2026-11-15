@@ -116,25 +116,23 @@ public partial class DetailPanelBuilder
         // Frame gen for any game: adds frame generation itself (no DLSS-G of its own needed)
         exBody.Children.Add(MakeExtrasSeparator("Frame Gen for Any Game"));
 
-        __t0 = __exSw.ElapsedMilliseconds;
-        BuildRtxEncoreRow(card, exBody);
-        CrashReporter.Log($"[BuildExtrasSection] RtxEncoreRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
-
         // HSF row (manifest flag "hsf"; always shown where HSF is already installed, so it can be removed)
         __t0 = __exSw.ElapsedMilliseconds;
         if (FeatureFlags.Hsf || HsfService.IsInstalledIn(installPath, card.Is32Bit))
             BuildHsfRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] HsfRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
-        // Games with DLSS upscaling: adds frame generation on any GPU (needs the game's DLSS, not its DLSS-G)
-        exBody.Children.Add(MakeExtrasSeparator("Frame Gen for Games With DLSS"));
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildRtxEncoreRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] RtxEncoreRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // Games with DLSS frame gen: unlock more multipliers / older RTX cards / other GPUs in the game's own DLSS-G.
+        // DLSS Enabler standalone belongs here: it answers the game's DLSS Frame Generation calls (Nexus page, 4.x).
+        exBody.Children.Add(MakeExtrasSeparator("Games With DLSS Frame Gen"));
 
         __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssEnablerRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] DlssEnablerRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
-
-        // Games with DLSS frame gen: unlock more multipliers / older RTX cards in the game's own DLSS-G
-        exBody.Children.Add(MakeExtrasSeparator("Games With DLSS Frame Gen"));
 
         __t0 = __exSw.ElapsedMilliseconds;
         BuildRtx40MfgRow(card, exBody);
