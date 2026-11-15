@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56110,
-  "generated": "2026-11-15T03:20:24Z",
+  "game_count": 56111,
+  "generated": "2026-11-15T05:20:24Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -57589,6 +57589,9 @@
     "F-22: Air Dominance Fighter": {
       "steam_appid": 3146140,
       "config_path": "<path-to-game>\\PROGRAM\\game.cfg"
+    },
+    "F-Zero X (G-Diffuser)": {
+      "engine": "libultraship"
     },
     "F.D.N.Y. Firefighter: American Hero": {
       "config_path": "<path-to-game>\\FDNYFireFighter.cfg",
