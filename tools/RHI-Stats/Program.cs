@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 var repos = new[]
 {
     ("RHI", "https://api.github.com/repos/RankFTW/RHI/releases"),
+    ("RHI Beta", "https://api.github.com/repos/RankFTW/rhi-beta/releases"),
     ("ReLimiter", "https://api.github.com/repos/RankFTW/ReLimiter/releases"),
     ("RHI Repo", "https://api.github.com/repos/RankFTW/rhi-repo/releases"),
 };
