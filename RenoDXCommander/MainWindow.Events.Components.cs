@@ -69,15 +69,27 @@ public sealed partial class MainWindow
             var hotkeyString = currentHotkey;
             var screenshotHotkeyString = currentScreenshotHotkey;
 
-            TextBox MakeHotkeyBox(Func<string> getValue, Action<string> setValue)
+            // PreviewKeyDown, as on the Settings page: a TextBox uses Insert, Delete, Home and End itself (caret moves,
+            // editing) before KeyDown, so those keys could never be set here. Modifiers alone, Tab / Enter / Esc are never
+            // captured; Backspace means "none" for the screenshot key only (allowClear).
+            TextBox MakeHotkeyBox(Func<string> getValue, Action<string> setValue, bool allowClear)
             {
                 var box = CogDialog.MakeTextBox(HotkeyManager.FormatHotkeyDisplay(getValue()), "Click then press a key...");
                 box.IsReadOnly = true;
                 box.GotFocus += (s, ev) => box.Text = "Press a key...";
-                box.KeyDown += (s, ev) =>
+                box.PreviewKeyDown += (s, ev) =>
                 {
-                    var vk = (int)ev.Key;
-                    if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return;
+                    var key = ev.Key;
+                    if (key is Windows.System.VirtualKey.None
+                        or Windows.System.VirtualKey.Shift or Windows.System.VirtualKey.Control or Windows.System.VirtualKey.Menu
+                        or Windows.System.VirtualKey.LeftShift or Windows.System.VirtualKey.RightShift
+                        or Windows.System.VirtualKey.LeftControl or Windows.System.VirtualKey.RightControl
+                        or Windows.System.VirtualKey.LeftMenu or Windows.System.VirtualKey.RightMenu
+                        or Windows.System.VirtualKey.LeftWindows or Windows.System.VirtualKey.RightWindows
+                        or Windows.System.VirtualKey.Tab or Windows.System.VirtualKey.Enter or Windows.System.VirtualKey.Escape)
+                        return;
+                    if (key == Windows.System.VirtualKey.Back && !allowClear) { ev.Handled = true; return; }
+                    var vk = (int)key;
                     bool shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
                     bool ctrl  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
                     bool alt   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
@@ -126,7 +138,7 @@ public sealed partial class MainWindow
                 _crashReporter.Log($"[RsCogButton_Click] Applied {keyLabel.ToLowerInvariant()} '{hotkey}' to {count} ini file(s) for '{card.GameName}'");
             }
 
-            var hotkeyBox = MakeHotkeyBox(() => hotkeyString, v => hotkeyString = v);
+            var hotkeyBox = MakeHotkeyBox(() => hotkeyString, v => hotkeyString = v, allowClear: false);
             var applyKeyBtn = CogDialog.StyledButton("Apply", CogButtonKind.Secondary, compact: true);
             applyKeyBtn.Click += async (s, ev) =>
             {
@@ -140,7 +152,7 @@ public sealed partial class MainWindow
             cog.AddRow("Overlay Key", CogDialog.Inline(hotkeyBox, applyKeyBtn),
                 "Opens the ReShade overlay in game. Click the box, press a key, then Apply. Saved to every reshade*.ini in the game folder.");
 
-            var screenshotHotkeyBox = MakeHotkeyBox(() => screenshotHotkeyString, v => screenshotHotkeyString = v);
+            var screenshotHotkeyBox = MakeHotkeyBox(() => screenshotHotkeyString, v => screenshotHotkeyString = v, allowClear: true);
             var applyScreenshotKeyBtn = CogDialog.StyledButton("Apply", CogButtonKind.Secondary, compact: true);
             applyScreenshotKeyBtn.Click += async (s, ev) =>
             {

@@ -6,43 +6,59 @@
 ## v2.9.5 Beta 3
 
 ### New
-- Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
-- Browse SteamGridDB covers and banners in Spotlight (right-click a game › Artwork). Needs your own free SteamGridDB API key (Settings › Accounts & Data).
 - BFI Presenter is now in Extras, under Motion Clarity, installed per game instead of from the add-on list (where turning it on for all games strobed every ReShade game). RHI picks the right version for the game: the ReShade add-on for DirectX 12, 11 and 9 and OpenGL games, or the Vulkan layer for Vulkan games and games run through DXVK. The install can set the game's NVIDIA profile the way BFI Presenter needs it (G-SYNC off, vertical sync on, no frame rate limit, maximum performance), and turns on full brightness or LCD protection if you want. Its ⚙ checks the game's setup (G-SYNC, vertical sync, frame limiters, Smooth Motion) with Fix buttons, shows the game's entry in BFI Presenter's tested-games list, and has its main settings. Games that need it get "Resize to start BFI" from that list automatically. Games that already had it from the add-on list keep it.
+- Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
 - RTX Encore's ⚙ has a Presets panel at the top: save a game's RTX Encore settings into one of six slots, name them, and apply them to any other game. Presets are shared by all games.
+- Browse SteamGridDB covers and banners in Spotlight (right-click a game › Artwork). Needs your own free SteamGridDB API key (Settings › Accounts & Data).
 - Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes
+
+**Updates**
 - Updating RHI from inside the app no longer shows the installer's pages: it installs with a small progress window, keeps your install folder and shortcuts, reopens RHI and says it was updated. Windows still asks for permission unless Admin Mode is on.
-- The Game settings ⚙ beside the game's name (RHI overlay, display modes, Block Steam updates) is now in every layout, not just Spotlight.
+
+**Extras**
 - Extras' frame generation tools are grouped by what the game needs: "Frame Gen for Any Game" and "Games With DLSS Frame Gen". Each one lists its supported GPUs, game requirements and graphics APIs.
 - Extras that can't be used together can no longer be installed in the same game: OptiScaler and DLSS Enabler, DLSS Enabler and HSF or the three MFG unlocks (Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock), the MFG unlocks with each other, and RTX Encore with any of those. The install button says what to remove first.
-- Tidied Settings: interface, top bar and game list sizes are now beside the colour theme in a new Appearance card (General). Removed games sits with Custom game folders in a Game library card (Tools & Maintenance). Achievements and RHI overlay are one section, Overlay & Achievements.
-- Custom colour themes have two new colours: Button text, so text on buttons such as Install no longer has to be a lighter shade of the button colour, and Footer text for the bottom bar (last checked, version, Patch Notes, MOTD, Updates). Left unset, they look as before. Share codes include them.
-- Picking a Custom theme colour now shows a small preview of a game page beside the colour picker (game list, component rows with their buttons, status, warning and error text), so you can see the result without leaving Settings.
 - RTX Encore now gets the NVIDIA files it needs in games without DLSS (DLSS for upscaling, Streamline and DLSS Frame Generation for frame gen), never over the game's own files. Turn them on in its ⚙'s new Games without DLSS section.
 - RTX Encore warns where ReShade is dxgi.dll: its in-game menu may not open, and DLSS-FG can crash games with their own FSR frame generation (an RTX Encore issue).
 - DLSS Enabler's ⚙ now has its frame generation settings, so you can set them before starting the game. Installing it creates dlss-enabler.ini with defaults.
-- The generic Unity RenoDX addon now downloads a newer build from its new location (64-bit for now). Installed copies show an update.
 - Corrected the descriptions of DLSS Enabler, Universal MFG Unlocker and 20/30 FG Unlock. DLSS Enabler (standalone) needs a DirectX 12 game with DLSS Frame Generation; OptiScaler is the other way to use it.
+
+**Look and Settings**
+- The Game settings ⚙ beside the game's name (RHI overlay, display modes, Block Steam updates) is now in every layout, not just Spotlight.
+- Tidied Settings: interface, top bar and game list sizes are now beside the colour theme in a new Appearance card (General). Removed games sits with Custom game folders in a Game library card (Tools & Maintenance). Achievements and RHI overlay are one section, Overlay & Achievements.
+- Custom colour themes have two new colours: Button text, so text on buttons such as Install no longer has to be a lighter shade of the button colour, and Footer text for the bottom bar (last checked, version, Patch Notes, MOTD, Updates). Left unset, they look as before. Share codes include them.
+- Picking a Custom theme colour now shows a small preview of a game page beside the colour picker (game list, component rows with their buttons, status, warning and error text), so you can see the result without leaving Settings.
+
+**RenoDX**
+- The generic Unity RenoDX addon now downloads a newer build from its new location (64-bit for now). Installed copies show an update.
 
 ### Bug Fixes
 
 **General**
-- Fixed Microsoft Store apps that aren't games showing in the game list as Xbox games. RHI now lists only what Xbox Gaming Services has registered as a game, the same list the Xbox app uses. Thanks to the Special K team, whose SKIF launcher showed how.
 - Fixed RHI not opening at all with Admin Mode on when Admin Mode had been set up for another copy of RHI (after a reinstall in another folder, or the portable version), or when it couldn't start RHI as administrator. RHI now opens without admin rights and says how to set Admin Mode up again. Uninstalling RHI also removes Admin Mode's scheduled task.
-- Fixed Unreal Engine games played from both Steam and Game Pass getting UE-Extended's Engine.ini changes in the other store's settings folder, so they had no effect. Each copy now uses its own store's folder.
-- Fixed ReShade not starting in some DirectX 9 games with the DLSS5 Feeder method: in games where RHI also detected another API, ReShade could be installed under the same name as the dgVoodoo2 file Feeder adds, which then replaced it. Reinstall the Feeder add-on in an affected game.
-- Fixed the Neural Rendering DLL (nvngx_dlssnr.dll) not being put back once it had gone missing (for example removed by an antivirus), and not changing when a different NR version was picked. Reinstalling now copies it again, and a new NR version replaces RHI's copy.
-- Fixed Discord links: Help › Discord opened an empty server for anyone not already in The Ultra Place (it now opens an invite), the FAQ's Ultra+ Discord invite had expired, and the old HDR Den Discord link (HDR Den is now part of the RenoDX Discord) was removed.
+- Fixed Microsoft Store apps that aren't games showing in the game list as Xbox games. RHI now lists only what Xbox Gaming Services has registered as a game, the same list the Xbox app uses. Thanks to the Special K team, whose SKIF launcher showed how.
 - Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.
 - Fixed very high CPU and memory use after launching some Unreal Engine 3 games, such as Remember Me.
-- Fixed a repeating error filling the logs folder with crash reports.
 - Fixed RHI offering updates that had been withdrawn from GitHub.
-- Fixed an interrupted download leaving a broken file that RHI then installed into games.
 - Fixed update checks stopping until a restart after hitting GitHub's hourly limit.
+- Fixed an interrupted download leaving a broken file that RHI then installed into games.
 - Fixed RHI losing track of what it installed in a game when two installs ran at once.
 - Fixed overlay notes, playtime, saved shader profiles and OptiScaler preset slots being wiped when their file couldn't be read.
+- Fixed a repeating error filling the logs folder with crash reports.
+- Fixed Discord links: Help › Discord opened an empty server for anyone not already in The Ultra Place (it now opens an invite), the FAQ's Ultra+ Discord invite had expired, and the old HDR Den Discord link (HDR Den is now part of the RenoDX Discord) was removed.
+
+**RenoDX and UE-Extended**
+- Fixed Unreal Engine games played from both Steam and Game Pass getting UE-Extended's Engine.ini changes in the other store's settings folder, so they had no effect. Each copy now uses its own store's folder.
+
+**ReShade and shaders**
+- Fixed renaming ReShade to dxgi.dll in Game Overrides not renaming the file.
+- Fixed RHI sometimes deleting your own reshade-shaders folder.
+- Fixed installing ReShade under another name (opengl32, d3d12, version, winmm, .asi) overwriting another mod's file without asking. RHI now asks and keeps a backup.
+- Fixed uninstalling ReShade deleting ReShadePreset.ini, and reshade.ini in games where you locked it.
+- Fixed "Deploy ReShade.ini" to all games changing locked and hidden games.
+- Fixed the ReShade ⚙'s Overlay Key and Screenshot Key boxes ignoring Insert, Delete, Home and End. Backspace now only clears the screenshot key, as on the Settings page.
 
 **OptiScaler**
 - Fixed games with DLSS Enabler (standalone) showing OptiScaler as installed. Affected games are corrected automatically.
@@ -55,19 +71,14 @@
 - Fixed OptiScaler sometimes deploying an older DLSS version instead of the newest.
 - Fixed uninstalling OptiScaler leaving files behind, mostly after switching versions.
 
-**ReShade and shaders**
-- Fixed renaming ReShade to dxgi.dll in Game Overrides not renaming the file.
-- Fixed RHI sometimes deleting your own reshade-shaders folder.
-- Fixed installing ReShade under another name (opengl32, d3d12, version, winmm, .asi) overwriting another mod's file without asking. RHI now asks and keeps a backup.
-- Fixed uninstalling ReShade deleting ReShadePreset.ini, and reshade.ini in games where you locked it.
-- Fixed "Deploy ReShade.ini" to all games changing locked and hidden games.
-
 **Luma**
 - Fixed uninstalling or turning off Luma deleting your own shaders, or reshade.ini while ReShade was still installed.
 - Fixed installing a Luma archive replacing OptiScaler, DXVK, Special K or ENB without a warning or backup.
 - Fixed half-extracted Nexus or Luma archives being installed.
 
 **DLSS, Streamline and Neural Rendering**
+- Fixed the Neural Rendering DLL (nvngx_dlssnr.dll) not being put back once it had gone missing (for example removed by an antivirus), and not changing when a different NR version was picked. Reinstalling now copies it again, and a new NR version replaces RHI's copy.
+- Fixed ReShade not starting in some DirectX 9 games with the DLSS5 Feeder method: in games where RHI also detected another API, ReShade could be installed under the same name as the dgVoodoo2 file Feeder adds, which then replaced it. Reinstall the Feeder add-on in an affected game.
 - Fixed "Restore" / "Default" in DLSS & Streamline deleting DLSS files that other mods installed.
 - Fixed DLSS version changes and auto-update replacing the NR Cost Scaler. Cost Scaler updates also keep your nvngx_dlssnr.ini settings.
 - Fixed Streamline version changes going ahead without a backup, and "Default" restoring outdated files after a game update.
@@ -94,6 +105,7 @@
 ### Manifest Updates
 - Added the BaBa Shaders pack by Barbatos (global illumination, ambient occlusion, SSR, sharpening, deband, anti-aliasing and more) to the shader packs.
 - Added NVIDIA's original DLSS Neural Rendering 310.9.16 to the NR version lists, as "310.9.16". The modified "310.9.16 (20/30/40/50)" build stays the default.
+- Death Stranding Director's Cut now finds its RenoDX mod, and the original Death Stranding no longer shows the Director's Cut mod.
 
 ## v2.9.4
 
