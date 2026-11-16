@@ -35,21 +35,33 @@ public static class RtxEncoreConfig
     public static void SetInt(string path, string section, string key, int value) => Set(path, section, key, value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
     /// <summary>Sets <c>section.key</c> to a JSON token (already quoted for strings), keeping everything else.</summary>
-    public static void Set(string path, string section, string key, string token)
+    public static void Set(string path, string section, string key, string token) =>
+        SetMany(path, new[] { (section, key, token) });
+
+    /// <summary>The JSON token for a value as <see cref="Get"/> returns it: true/false and whole numbers raw, the rest quoted.</summary>
+    public static string TokenFor(string value) =>
+        value is "true" or "false" || int.TryParse(value, System.Globalization.NumberStyles.AllowLeadingSign,
+            System.Globalization.CultureInfo.InvariantCulture, out _) ? value : Quote(value);
+
+    /// <summary>Sets several values with one read and one write of the file (a preset applies ~40).</summary>
+    public static void SetMany(string path, IReadOnlyList<(string Section, string Key, string Token)> values)
     {
-        var parts = Parts(section);
+        if (values.Count == 0) return;
+        int start = 0;
         if (!File.Exists(path))
         {
+            var (section0, key0, token0) = values[0];
             var created = new List<string>
             {
                 "// Created by RHI with only the settings chosen in RHI. RTX Encore fills in the rest with its defaults when the game starts.",
                 "{",
                 $"  \"configVersion\": {CreatedConfigVersion},",
             };
-            created.AddRange(SectionBlock(parts, 0, key, token, trailingComma: false));
+            created.AddRange(SectionBlock(Parts(section0), 0, key0, token0, trailingComma: false));
             created.Add("}");
             WriteLines(path, created, "\r\n");
-            return;
+            if (values.Count == 1) return;
+            start = 1;
         }
 
         var text = File.ReadAllText(path);
@@ -58,6 +70,15 @@ public static class RtxEncoreConfig
         bool trailingNewline = lines.Count > 0 && lines[^1].Length == 0;
         if (trailingNewline) lines.RemoveAt(lines.Count - 1);
 
+        for (int v = start; v < values.Count; v++)
+            SetInLines(lines, Parts(values[v].Section), values[v].Key, values[v].Token);
+
+        if (trailingNewline) lines.Add("");
+        WriteLines(path, lines, nl);
+    }
+
+    private static void SetInLines(List<string> lines, string[] parts, string key, string token)
+    {
         int keyLine = FindKeyLine(lines, parts, key);
         if (keyLine >= 0)
         {
@@ -87,8 +108,6 @@ public static class RtxEncoreConfig
                 lines.InsertRange(anchor + 1, SectionBlock(parts, depth, key, token, trailingComma: true));
             }
         }
-        if (trailingNewline) lines.Add("");
-        WriteLines(path, lines, nl);
     }
 
     // ── Parsing ─────────────────────────────────────────────────────────────────

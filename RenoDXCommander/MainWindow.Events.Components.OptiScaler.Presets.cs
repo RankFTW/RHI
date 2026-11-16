@@ -365,19 +365,19 @@ public sealed partial class MainWindow
     }
 
     // Grey layers for the presets panel (white at low opacity over the cog's grey)
-    private const string OsPresetPanelBg     = "#0AFFFFFF";
-    private const string OsPresetPanelBorder = "#1AFFFFFF";
+    internal const string OsPresetPanelBg     = "#0AFFFFFF";
+    internal const string OsPresetPanelBorder = "#1AFFFFFF";
     private const string OsPresetPillBg      = "#12FFFFFF";
     private const string OsPresetPillBorder  = "#26FFFFFF";
 
-    private static TextBlock MakeOsPresetLabel(string text) => new()
+    internal static TextBlock MakeOsPresetLabel(string text) => new()
     {
         Text = text,
         FontSize = 12,
         Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
     };
 
-    private static TextBlock MakeOsPresetCaption(string text) => new()
+    internal static TextBlock MakeOsPresetCaption(string text) => new()
     {
         Text = text,
         FontSize = 11,

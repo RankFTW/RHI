@@ -157,4 +157,48 @@ public class RtxEncoreConfigTests : IDisposable
         Assert.Null(RtxEncoreConfig.Get(PathOf, "frameGeneration", "nope"));
         Assert.Null(RtxEncoreConfig.Get(PathOf, "nope", "multiplier"));
     }
+
+    [Fact]
+    public void SetMany_ExistingFile_SetsAllAndKeepsComments()
+    {
+        File.WriteAllText(PathOf, Sample);
+        RtxEncoreConfig.SetMany(PathOf, new[]
+        {
+            ("frameGeneration", "multiplier", "3"),
+            ("renderingEngines", "frameGenerationEngine", RtxEncoreConfig.TokenFor("xefg")),
+            ("imageQuality", "frameProtection", RtxEncoreConfig.TokenFor("false")),
+            ("neuralRendering/core", "nrEnabled", "true"),
+        });
+        Assert.Equal("3", RtxEncoreConfig.Get(PathOf, "frameGeneration", "multiplier"));
+        Assert.Equal("xefg", RtxEncoreConfig.Get(PathOf, "renderingEngines", "frameGenerationEngine"));
+        Assert.Equal("false", RtxEncoreConfig.Get(PathOf, "imageQuality", "frameProtection"));
+        Assert.Equal("true", RtxEncoreConfig.Get(PathOf, "neuralRendering/core", "nrEnabled"));
+        Assert.Equal("7", RtxEncoreConfig.Get(PathOf, "other", "multiplier"));
+        Assert.Contains("// game, dlss-fg or xefg. Restart.", File.ReadAllText(PathOf));
+        AssertValidJsonc(PathOf);
+    }
+
+    [Fact]
+    public void SetMany_MissingFile_CreatesFileWithEveryValue()
+    {
+        RtxEncoreConfig.SetMany(PathOf, new[]
+        {
+            ("frameGeneration", "mode", RtxEncoreConfig.TokenFor("fixed")),
+            ("frameGeneration", "multiplier", RtxEncoreConfig.TokenFor("4")),
+            ("dlssPresets", "dlssSrPreset", RtxEncoreConfig.TokenFor("k")),
+        });
+        Assert.Equal("fixed", RtxEncoreConfig.Get(PathOf, "frameGeneration", "mode"));
+        Assert.Equal("4", RtxEncoreConfig.Get(PathOf, "frameGeneration", "multiplier"));
+        Assert.Equal("k", RtxEncoreConfig.Get(PathOf, "dlssPresets", "dlssSrPreset"));
+        AssertValidJsonc(PathOf);
+    }
+
+    [Theory]
+    [InlineData("true", "true")]
+    [InlineData("false", "false")]
+    [InlineData("67", "67")]
+    [InlineData("game", "\"game\"")]
+    [InlineData("ultra-performance", "\"ultra-performance\"")]
+    public void TokenFor_QuotesOnlyStrings(string value, string token) =>
+        Assert.Equal(token, RtxEncoreConfig.TokenFor(value));
 }

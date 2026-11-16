@@ -60,10 +60,40 @@ public partial class DetailPanelBuilder
 
         Button? openCfgBtn = null;
 
+        // Settings a user preset saves and applies: every setting below except the per-game graphics API
+        var presetSettings = new List<RtxEncorePresetSetting>();
+        var gameApiValue = card.GraphicsApi switch
+        {
+            GraphicsApiType.DirectX11 => "d3d11",
+            GraphicsApiType.Vulkan    => "vulkan",
+            _                         => "d3d12",
+        };
+        cog.AddContent(BuildRtxEncorePresetsPanel(cog, gameName, cfgPath, presetSettings,
+            afterApply: () =>
+            {
+                // Smooth Motion on from a preset in a file without an API yet: the game's own API, as the dropdown does
+                if (string.Equals(RtxEncoreConfig.Get(cfgPath!, "smoothMotion", "smoothMotionEnabled"), "true", StringComparison.OrdinalIgnoreCase)
+                    && RtxEncoreConfig.Get(cfgPath!, "smoothMotion", "smoothMotionApi") == null)
+                    RtxEncoreConfig.SetString(cfgPath!, "smoothMotion", "smoothMotionApi", gameApiValue);
+            },
+            reopen: () =>
+            {
+                cog.Hide();
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+                timer.Tick += async (_, _) =>
+                {
+                    timer.Stop();
+                    try { await ShowRtxEncoreSettingsAsync(card, svc, installPath, isInstalled, nrDeployed); }
+                    catch (Exception ex) { CrashReporter.Log($"[RtxEncoreCog] Reopen after preset failed — {ex.Message}"); }
+                };
+                timer.Start();
+            }));
+
         // One dropdown bound to one setting in rtx-encore.jsonc. values are the file's values ("true", "4", "xefg").
         CogDialog.CompactCell Choice(string label, string help, string section, string key,
-            string[] displays, string[] values, string defaultValue, Action<int>? after = null)
+            string[] displays, string[] values, string defaultValue, Action<int>? after = null, bool inPresets = true)
         {
+            if (inPresets) presetSettings.Add(new(section, key, defaultValue));
             var current = canEdit ? RtxEncoreConfig.Get(cfgPath!, section, key) : null;
             int idx = Array.FindIndex(values, v => string.Equals(v, current ?? defaultValue, StringComparison.OrdinalIgnoreCase));
             if (idx < 0) idx = Array.FindIndex(values, v => string.Equals(v, defaultValue, StringComparison.OrdinalIgnoreCase));
@@ -84,8 +114,11 @@ public partial class DetailPanelBuilder
         void MarkSaved() { if (openCfgBtn != null) openCfgBtn.IsEnabled = true; }
 
         // A number box bound to one setting in rtx-encore.jsonc
-        CogDialog.CompactCell Number(string label, string help, string section, string key, int min, int max, int defaultValue) =>
-            new(label, help, BuildRtxEncoreNumberBox(cog, cfgPath, gameName, section, key, label, min, max, defaultValue, MarkSaved));
+        CogDialog.CompactCell Number(string label, string help, string section, string key, int min, int max, int defaultValue)
+        {
+            presetSettings.Add(new(section, key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            return new(label, help, BuildRtxEncoreNumberBox(cog, cfgPath, gameName, section, key, label, min, max, defaultValue, MarkSaved));
+        }
 
         // ── Frame generation ────────────────────────────────────────────────────
         cog.AddSection("Frame generation");
@@ -167,6 +200,8 @@ public partial class DetailPanelBuilder
         if (canEdit && IsReShadeDxgi(card) && svc.ReadNoDlssRuntimeStatus(installPath).FrameGenInstalled)
             cog.AddWarning(EncoreDlssFgReShadeWarningText);
         var noDlssEngines = new[] { "dlss", "xess", "nis", "fsr1" };
+        presetSettings.Add(new("dlssSuperResolution", "dlssWithoutGameDlss", "false"));
+        presetSettings.Add(new("dlssSuperResolution", "dlssWithoutGameDlssEngine", "dlss"));
         int upIdx = 0;
         if (canEdit && string.Equals(RtxEncoreConfig.Get(cfgPath!, "dlssSuperResolution", "dlssWithoutGameDlss"), "true", StringComparison.OrdinalIgnoreCase))
         {
@@ -282,12 +317,6 @@ public partial class DetailPanelBuilder
 
         // ── Smooth Motion ───────────────────────────────────────────────────────
         cog.AddSection("Smooth Motion");
-        var gameApiValue = card.GraphicsApi switch
-        {
-            GraphicsApiType.DirectX11 => "d3d11",
-            GraphicsApiType.Vulkan    => "vulkan",
-            _                         => "d3d12",
-        };
         var apiDisplays = new[] { "DirectX 12", "DirectX 11", "Vulkan" };
         var apiValues   = new[] { "d3d12", "d3d11", "vulkan" };
         var smCell = Choice("Smooth Motion",
@@ -302,7 +331,7 @@ public partial class DetailPanelBuilder
             });
         var smApiCell = Choice("Graphics API",
             "The game's graphics API, which Smooth Motion needs to know. Restart the game to apply.",
-            "smoothMotion", "smoothMotionApi", apiDisplays, apiValues, gameApiValue);
+            "smoothMotion", "smoothMotionApi", apiDisplays, apiValues, gameApiValue, inPresets: false);
         cog.AddCompactGrid(smCell, smApiCell);
 
         // ── Neural Rendering DLL ────────────────────────────────────────────────

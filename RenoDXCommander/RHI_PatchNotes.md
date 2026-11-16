@@ -8,6 +8,7 @@
 ### New
 - Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
 - Browse SteamGridDB covers and banners in Spotlight (right-click a game › Artwork). Needs your own free SteamGridDB API key (Settings › Accounts & Data).
+- RTX Encore's ⚙ has a Presets panel at the top: save a game's RTX Encore settings into one of six slots, name them, and apply them to any other game. Presets are shared by all games.
 - Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes
