@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.5 Beta 2
+## v2.9.5 Beta 3
 
 ### New
 - Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
@@ -13,6 +13,10 @@
 ### Changes
 - The Game settings ⚙ beside the game's name (RHI overlay, display modes, Block Steam updates) is now in every layout, not just Spotlight.
 - Extras' frame generation tools are grouped by what the game needs: "Frame Gen for Any Game" and "Games With DLSS Frame Gen". Each one lists its supported GPUs, game requirements and graphics APIs.
+- Extras that can't be used together can no longer be installed in the same game: OptiScaler and DLSS Enabler, DLSS Enabler and HSF or the three MFG unlocks (Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock), the MFG unlocks with each other, and RTX Encore with any of those. The install button says what to remove first.
+- Tidied Settings: interface, top bar and game list sizes are now beside the colour theme in a new Appearance card (General). Removed games sits with Custom game folders in a Game library card (Tools & Maintenance). Achievements and RHI overlay are one section, Overlay & Achievements.
+- Custom colour themes have two new colours: Button text, so text on buttons such as Install no longer has to be a lighter shade of the button colour, and Footer text for the bottom bar (last checked, version, Patch Notes, MOTD, Updates). Left unset, they look as before. Share codes include them.
+- Picking a Custom theme colour now shows a small preview of a game page beside the colour picker (game list, component rows with their buttons, status, warning and error text), so you can see the result without leaving Settings.
 - RTX Encore now gets the NVIDIA files it needs in games without DLSS (DLSS for upscaling, Streamline and DLSS Frame Generation for frame gen), never over the game's own files. Turn them on in its ⚙'s new Games without DLSS section.
 - RTX Encore warns where ReShade is dxgi.dll: its in-game menu may not open, and DLSS-FG can crash games with their own FSR frame generation (an RTX Encore issue).
 - DLSS Enabler's ⚙ now has its frame generation settings, so you can set them before starting the game. Installing it creates dlss-enabler.ini with defaults.
@@ -76,6 +80,9 @@
 - Fixed installing RTX Encore sometimes leaving a game without its own XeSS files.
 - Fixed 32-bit games getting 64-bit add-ons when the DLSS5 Tool or DLSS Tool (ShortFuse) was selected.
 - Fixed uninstalling the Ryubing emulator add-ons leaving some behind, and its update check reading the wrong file.
+
+### Manifest Updates
+- Added the BaBa Shaders pack by Barbatos (global illumination, ambient occlusion, SSR, sharpening, deband, anti-aliasing and more) to the shader packs.
 
 ## v2.9.4
 

@@ -1551,6 +1551,13 @@
       "url": "https://www.patreon.com/file?h=145859259&m=580770455",
       "description": "Zenteon's full shader set (free on Patreon): screen-space reflections, ZenRT path tracing, TurboGI, RadonBloom and XenonBloom, Nebulus, ZXpose exposure, local contrast, motion blur, film grain and more. Includes everything in ZenteonFX, so choose one or the other, not both.",
       "category": "Extra"
+    },
+    "BarbatosShaders": {
+      "displayName": "BaBa Shaders by Barbatos",
+      "kind": "DirectUrl",
+      "url": "https://github.com/BarbatosAWLS/Reshade-Shaders/archive/refs/heads/main.zip",
+      "description": "Lighting, reflections, sharpening, tone and anti-aliasing: global illumination, XeGTAO / NeoSSAO / MiAO ambient occlusion, SSR, NIS and neural sharpening, deband, DLAA-style AA, fake HDR and more. Enable BaBa: Launcher first; it builds the depth, normals and motion vectors the other effects use.",
+      "category": "Extra"
     }
   },
   "addonPacks": {
