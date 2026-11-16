@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56120,
-  "generated": "2026-11-16T21:21:44Z",
+  "game_count": 56122,
+  "generated": "2026-11-16T23:21:52Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -47527,6 +47527,7 @@
       "vulkan": true,
       "config_path": "%LOCALAPPDATA%\\DK64Recompiled\\"
     },
+    "Donkey Kong Bananza (DKB Recomp)": {},
     "Donkey Kong: Redux": {},
     "Donkey Xote": {
       "dx9": true,
@@ -114060,6 +114061,9 @@
       "steam_appid": 1488490,
       "engine": "Unity"
     },
+    "No Asteroids": {
+      "steam_appid": 5527800
+    },
     "No Body Home": {
       "steam_appid": 794420
     },
@@ -155505,6 +155509,7 @@
       "config_path": "HKEY_LOCAL_MACHINE\\Software\\Infogrames\\Space Circus\\"
     },
     "Starsiege": {
+      "opengl": true,
       "config_path": "<path-to-game>\\defaultPrefs.cs",
       "engine": "Darkstar"
     },
