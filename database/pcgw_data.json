@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56114,
-  "generated": "2026-11-16T05:21:11Z",
+  "game_count": 56116,
+  "generated": "2026-11-16T11:21:43Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -24862,6 +24862,7 @@
     "Bug Battle": {
       "steam_appid": 752000
     },
+    "Bug Bomber": {},
     "Bug Fables: The Everlasting Sapling": {
       "steam_appid": 1082710,
       "dx11": true,
@@ -122889,8 +122890,8 @@
     "Pigeon Simulator": {
       "steam_appid": 1496260,
       "dx12": true,
-      "config_path": "%APPDATA%\\PigeonSimulator\\Saved\\Config\\WindowsNoEditor\\",
-      "config_path_xbox": "%APPDATA%\\PigeonSimulator\\Saved\\Config\\WinGDK\\",
+      "config_path": "%APPDATA%\\PigeonSimulator\\Saved\\Config\\WindowsNoEditor",
+      "config_path_xbox": "%APPDATA%\\PigeonSimulator\\Saved\\Config\\WinGDK",
       "engine": "Unreal Engine 5"
     },
     "Pigeons Attack": {
@@ -125267,7 +125268,7 @@
     "Police Simulator Patrol Officers": {
       "steam_appid": 997010,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Boston\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Boston\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Police Simulator: Patrol Duty": {
@@ -146633,6 +146634,10 @@
     },
     "SimTower": {},
     "SimTown": {},
+    "SimTractor": {
+      "dx9": true,
+      "engine": "Virtools"
+    },
     "SimTunes": {},
     "Simulacra": {
       "steam_appid": 712730,
