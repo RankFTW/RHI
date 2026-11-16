@@ -30,6 +30,7 @@
 **General**
 - Fixed Microsoft Store apps that aren't games showing in the game list as Xbox games. RHI now lists only what Xbox Gaming Services has registered as a game, the same list the Xbox app uses. Thanks to the Special K team, whose SKIF launcher showed how.
 - Fixed RHI not opening at all with Admin Mode on when Admin Mode had been set up for another copy of RHI (after a reinstall in another folder, or the portable version), or when it couldn't start RHI as administrator. RHI now opens without admin rights and says how to set Admin Mode up again. Uninstalling RHI also removes Admin Mode's scheduled task.
+- Fixed Unreal Engine games played from both Steam and Game Pass getting UE-Extended's Engine.ini changes in the other store's settings folder, so they had no effect. Each copy now uses its own store's folder.
 - Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.
 - Fixed very high CPU and memory use after launching some Unreal Engine 3 games, such as Remember Me.
 - Fixed a repeating error filling the logs folder with crash reports.

@@ -805,7 +805,7 @@ public partial class AuxInstallService
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var configBase = Path.Combine(localAppData, projectName, "Saved", "Config");
 
-        var result = FindPlatformConfigDir(configBase);
+        var result = FindPlatformConfigDir(configBase, store);
         if (result != null) return result;
 
         // Fallback: Documents\My Games\{GameName}\Saved\Config\
@@ -813,7 +813,7 @@ public partial class AuxInstallService
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var myGamesConfig = Path.Combine(docs, "My Games", gameName, "Saved", "Config");
-            result = FindPlatformConfigDir(myGamesConfig);
+            result = FindPlatformConfigDir(myGamesConfig, store);
             if (result != null) return result;
 
             // Also try with stripped ® ™ symbols
@@ -821,7 +821,7 @@ public partial class AuxInstallService
             if (stripped != gameName)
             {
                 myGamesConfig = Path.Combine(docs, "My Games", stripped, "Saved", "Config");
-                result = FindPlatformConfigDir(myGamesConfig);
+                result = FindPlatformConfigDir(myGamesConfig, store);
                 if (result != null) return result;
             }
         }
@@ -839,7 +839,7 @@ public partial class AuxInstallService
                     // The project folder is immediately above Binaries
                     var projectDir = string.Join('\\', pathParts.Take(i));
                     var inGameConfig = Path.Combine(projectDir, "Saved", "Config");
-                    result = FindPlatformConfigDir(inGameConfig);
+                    result = FindPlatformConfigDir(inGameConfig, store);
                     if (result != null) return result;
 
                     // Also check the game root (parent of project folder)
@@ -852,7 +852,7 @@ public partial class AuxInstallService
                             foreach (var subDir in Directory.EnumerateDirectories(gameRoot))
                             {
                                 var subConfig = Path.Combine(subDir, "Saved", "Config");
-                                result = FindPlatformConfigDir(subConfig);
+                                result = FindPlatformConfigDir(subConfig, store);
                                 if (result != null) return result;
                             }
                         }
@@ -865,26 +865,34 @@ public partial class AuxInstallService
 
         // Nothing found — create in LocalAppData as default
         // Use WinGDK for Game Pass/Xbox games, Windows for all others
-        bool isGamePass = string.Equals(store, "Xbox", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(store, "Game Pass", StringComparison.OrdinalIgnoreCase);
-        var platformFolder = isGamePass ? "WinGDK" : "Windows";
+        var platformFolder = IsGamePassStore(store) ? "WinGDK" : "Windows";
         var fallbackDir = Path.Combine(configBase, platformFolder);
         Directory.CreateDirectory(fallbackDir);
         return fallbackDir;
     }
 
-    /// <summary>Checks a config base path for existing platform subfolders (WinGDK > Windows > WindowsNoEditor).</summary>
-    private static string? FindPlatformConfigDir(string configBase)
+    private static bool IsGamePassStore(string? store) =>
+        string.Equals(store, "Xbox", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(store, "Game Pass", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The existing platform subfolder of a config base path that belongs to this copy's store. Game Pass (GDK)
+    /// builds use WinGDK, every other store Windows or WindowsNoEditor. A game played from both stores has both
+    /// folders, so the order must follow the store: picking WinGDK first sent a Steam copy's Engine.ini edits to
+    /// the Game Pass folder, and a Game Pass copy not launched yet fell back to the Steam copy's Windows folder
+    /// (issue #138). Game Pass: WinGDK only (null otherwise, and ResolveEngineIniDir creates it). Others:
+    /// Windows, WindowsNoEditor, then WinGDK as a last resort.
+    /// </summary>
+    internal static string? FindPlatformConfigDir(string configBase, string? store)
     {
-        var winGdk = Path.Combine(configBase, "WinGDK");
-        if (Directory.Exists(winGdk)) return winGdk;
-
-        var windows = Path.Combine(configBase, "Windows");
-        if (Directory.Exists(windows)) return windows;
-
-        var windowsNoEditor = Path.Combine(configBase, "WindowsNoEditor");
-        if (Directory.Exists(windowsNoEditor)) return windowsNoEditor;
-
+        var order = IsGamePassStore(store)
+            ? new[] { "WinGDK" }
+            : new[] { "Windows", "WindowsNoEditor", "WinGDK" };
+        foreach (var folder in order)
+        {
+            var dir = Path.Combine(configBase, folder);
+            if (Directory.Exists(dir)) return dir;
+        }
         return null;
     }
 

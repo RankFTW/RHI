@@ -42,7 +42,7 @@ fileMatchPattern: "*Install*,*Update*,*Orchestration*"
 ### Engine.ini Deployment
 - Auto for UE5 UE-Extended games on install/Update All. **UE4 UE-Extended: Engine.ini HDR keys skipped by default** (no native HDR pipeline). User can still enable manually via cog dialog.
 - `ApplyEngineIniHdrSettings`: resolves project name from install path, finds platform subfolder
-- Platform priority: WinGDK → Windows → WindowsNoEditor → create Windows
+- Platform folder follows the copy's store (`FindPlatformConfigDir(base, store)`, issue #138; a game played from both stores has both folders): Game Pass (`Xbox`) = WinGDK only, created if missing (never the Steam copy's Windows); other stores = Windows → WindowsNoEditor → WinGDK → create Windows. PCGW `config_path_xbox` (Xbox cards) / `config_path` still win when present. Tests: `EngineIniPlatformFolderTests`.
 - **Never use ParseIni/WriteIni** (destroys duplicate keys). Use append-based approach.
 - Set read-only after writing. Remove before writing.
 - `InstalledModRecord.EngineIniHdr` boolean controls whether it fires (preserved across reinstall).
