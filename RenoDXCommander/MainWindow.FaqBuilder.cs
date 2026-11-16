@@ -502,7 +502,7 @@ public sealed partial class MainWindow
 
         var discordLink = new HyperlinkButton
         {
-            NavigateUri = new Uri("https://discord.gg/ultraplus"),
+            NavigateUri = new Uri("https://discord.gg/ultraplace"),
             Padding = new Thickness(0)
         };
         discordLink.Content = new TextBlock

@@ -246,8 +246,8 @@ public sealed partial class MainWindow
 
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
     {
-        _ = Windows.System.Launcher.LaunchUriAsync(
-            new Uri("https://discordapp.com/channels/1296187754979528747/1475173660686815374"));
+        // An invite, not a channel link: a channel link shows an empty server to anyone not already in it (issue #130)
+        _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://discord.gg/ultraplace"));
     }
 
     // ── Links menu handlers ───────────────────────────────────────────────────

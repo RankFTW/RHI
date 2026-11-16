@@ -3117,9 +3117,6 @@
                                 <HyperlinkButton NavigateUri="https://discord.gg/gF4GRJWZ2A" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RenoDX Discord</TextBlock>
                                 </HyperlinkButton>
-                                <HyperlinkButton NavigateUri="https://discord.gg/k3cDruEQ" Padding="0">
-                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">HDR Den Discord</TextBlock>
-                                </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework/wiki/Mods-List" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">HDR Den / Luma Wiki</TextBlock>
                                 </HyperlinkButton>
