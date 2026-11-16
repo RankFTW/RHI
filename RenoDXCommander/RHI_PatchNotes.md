@@ -80,11 +80,13 @@
 - Fixed the 20/30 FG Unlock update for pre-0.4.0 installs replacing another mod's version.dll.
 - Fixed uninstalling Universal MFG Unlocker, RTX Encore or 20/30 FG Unlock leaving the mod behind on installs from older RHI versions.
 - Fixed installing RTX Encore sometimes leaving a game without its own XeSS files.
+- Fixed RTX Encore's Neural Rendering not working with the NR DLL from RHI. RTX Encore now gets NVIDIA's original nvngx_dlssnr.dll 310.9.16 instead of the modified 20/30/40/50 build, and copies RHI put in before are replaced automatically. Thanks to TheSuppaOnion for the report.
 - Fixed 32-bit games getting 64-bit add-ons when the DLSS5 Tool or DLSS Tool (ShortFuse) was selected.
 - Fixed uninstalling the Ryubing emulator add-ons leaving some behind, and its update check reading the wrong file.
 
 ### Manifest Updates
 - Added the BaBa Shaders pack by Barbatos (global illumination, ambient occlusion, SSR, sharpening, deband, anti-aliasing and more) to the shader packs.
+- Added NVIDIA's original DLSS Neural Rendering 310.9.16 to the NR version lists, as "310.9.16". The modified "310.9.16 (20/30/40/50)" build stays the default.
 
 ## v2.9.4
 

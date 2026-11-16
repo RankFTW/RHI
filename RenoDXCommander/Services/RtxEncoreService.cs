@@ -19,8 +19,9 @@ namespace RenoDXCommander.Services;
 /// GitHub: SilyNoMeta/rtx-encore — picks the first .zip asset in the latest release
 /// (asset filename varies per release, e.g. RTX-Encore-v1.0.0-beta.2.zip).
 ///
-/// NR DLL: RTX Encore 1.5.3 accepts nvngx_dlssnr.dll 310.8.0 or 310.9.16; RHI only deploys 310.9.16
-/// (older RHI deployments of 310.8.0 are moved to it when RTX Encore is the file's only owner).
+/// NR DLL: RTX Encore 1.5.3 accepts nvngx_dlssnr.dll 310.8.0 or 310.9.16; RHI only deploys NVIDIA's own 310.9.16
+/// (older RHI deployments of 310.8.0 and of the modified 310.9.16 build are moved to it when RTX Encore is the
+/// file's only owner).
 /// We use the cached NR DLL from DlssStreamlineService staging (%LocalAppData%\RHI\DLSS-NR\).
 /// The file is tracked via RhiInstallManifest SharedFiles so it is only deleted when no other
 /// component still owns it.
@@ -38,8 +39,13 @@ public partial class RtxEncoreService
     private const string NoAsiMarker    = "rtx-encore.asi.none";
     public  const string NrDllName      = "nvngx_dlssnr.dll";
     public  const string NrRequiredVer  = "310.9.16";
-    /// <summary>The dlss_manifest.json "dlssnr" entry for <see cref="NrRequiredVer"/>.</summary>
-    public  const string NrManifestVersion = "310.9.16 (20/30/40/50)";
+    /// <summary>
+    /// The dlss_manifest.json "dlssnr" entry for <see cref="NrRequiredVer"/>: NVIDIA's original signed DLL. RTX Encore
+    /// needs it; the modified "310.9.16 (20/30/40/50)" build the other NR mods use doesn't work with it (issue #171).
+    /// </summary>
+    public  const string NrManifestVersion = "310.9.16";
+    /// <summary>Size of NVIDIA's nvngx_dlssnr.dll 310.9.16 (SHA-256 2BC19BC0…789F). The modified build is 276,162,560.</summary>
+    public  const long   NrOfficialSize = 266_424_944;
     public  const string ComponentName  = "RtxEncore";
     public  const string NrOwnerName    = "RtxEncore";
 
@@ -148,7 +154,8 @@ public partial class RtxEncoreService
         => GetNrDllCachedPath() ?? await dlss.EnsureSpecificDlssnrCachedAsync(NrManifestVersion).ConfigureAwait(false);
 
     /// <summary>
-    /// Moves an RHI deployment of an older NR DLL (310.8.x, from earlier RHI versions) to 310.9.16.
+    /// Moves an RHI deployment of an older NR DLL (310.8.x, from earlier RHI versions) or of the modified
+    /// 310.9.16 build (RHI before issue #171) to NVIDIA's 310.9.16.
     /// Only when RTX Encore is the file's only owner, so a version chosen elsewhere is never replaced.
     /// </summary>
     public bool UpgradeNrDllIfOlder(string installPath, string installedAs)
@@ -158,10 +165,12 @@ public partial class RtxEncoreService
         if (!File.Exists(dest) || GetNrDllCachedPath() == null) return false;
         var owners = RhiInstallManifest.GetSharedFileOwners(installPath, rel);
         if (owners.Count != 1 || !owners[0].Equals(NrOwnerName, StringComparison.OrdinalIgnoreCase)) return false;
-        var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(DlssNrCostScalerService.ResolveRealNrDllPath(dest));
+        var real = DlssNrCostScalerService.ResolveRealNrDllPath(dest);
+        var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(real);
         var ver = $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}";
-        if (ver == NrRequiredVer || !ver.StartsWith("310.8.", StringComparison.Ordinal)) return false;
-        _crashReporter.Log($"[RtxEncoreService.UpgradeNrDllIfOlder] '{installPath}': {ver} → {NrRequiredVer}");
+        bool modified = ver == NrRequiredVer && new FileInfo(real).Length != NrOfficialSize;
+        if (!modified && !ver.StartsWith("310.8.", StringComparison.Ordinal)) return false;
+        _crashReporter.Log($"[RtxEncoreService.UpgradeNrDllIfOlder] '{installPath}': {ver}{(modified ? " (modified build)" : "")} → {NrRequiredVer} (NVIDIA)");
         return DeployNrDll(installPath, installedAs, replacesOwnCopy: true);
     }
 
@@ -182,27 +191,22 @@ public partial class RtxEncoreService
     }
 
     /// <summary>
-    /// Returns the path to the cached 310.9.16 nvngx_dlssnr.dll from DLSS-NR staging,
-    /// or null if not yet staged.
+    /// Returns the path to NVIDIA's cached 310.9.16 nvngx_dlssnr.dll from DLSS-NR staging, or null if not yet staged.
+    /// Only the "310.9.16" folder of that manifest entry, never "310.9.16 (20-30-40-50)" (the modified build).
     /// </summary>
     public string? GetNrDllCachedPath()
     {
         // DLSS-NR staging layout: %LocalAppData%\RHI\DLSS-NR\{version}\nvngx_dlssnr.dll
-        var nrBase = Path.Combine(BaseStagingDir, "DLSS-NR");
-        if (!Directory.Exists(nrBase)) return null;
-
-        var candidate = Path.Combine(nrBase, NrRequiredVer, NrDllName);
-        if (File.Exists(candidate)) return candidate;
-
-        // Fallback: scan all version subfolders for the required version
-        foreach (var dir in Directory.GetDirectories(nrBase))
+        var candidate = Path.Combine(BaseStagingDir, "DLSS-NR", NrManifestVersion, NrDllName);
+        try
         {
-            var dirName = Path.GetFileName(dir);
-            if (dirName.StartsWith(NrRequiredVer, StringComparison.OrdinalIgnoreCase))
-            {
-                var path = Path.Combine(dir, NrDllName);
-                if (File.Exists(path)) return path;
-            }
+            if (!File.Exists(candidate)) return null;
+            if (new FileInfo(candidate).Length == NrOfficialSize) return candidate;
+            _crashReporter.Log($"[RtxEncoreService.GetNrDllCachedPath] '{candidate}' isn't NVIDIA's 310.9.16 build (size {new FileInfo(candidate).Length}) — not used");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[RtxEncoreService.GetNrDllCachedPath] {ex.Message}");
         }
         return null;
     }
