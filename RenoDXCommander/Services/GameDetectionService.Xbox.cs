@@ -9,12 +9,13 @@ public partial class GameDetectionService
 {
     // ── Xbox / Game Pass ──────────────────────────────────────────────────────
 
+    private const string GamingServicesRootKey = @"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root";
+
     /// <summary>
     /// Detects Xbox / Game Pass games using the Windows PackageManager API.
-    /// This enumerates all installed MSIX/UWP packages and filters for games
-    /// by looking for a MicrosoftGame.config file (GDK games) or exe files
-    /// in the package install location. This is the same approach used by
-    /// Playnite and other game library managers.
+    /// A package counts as a game only if Xbox Gaming Services has registered it
+    /// (HKLM\...\GamingServices\PackageRepository\Root, the list SKIF uses) or it ships
+    /// a MicrosoftGame.config (GDK games). Regular Store apps are in neither.
     /// </summary>
     public List<DetectedGame> FindXboxGames()
     {
@@ -22,6 +23,10 @@ public partial class GameDetectionService
 
         try
         {
+            var registered = ReadGamingServicesPackages();
+            var registeredNames = new HashSet<string>(registered.Select(r => r.PackageFullName), StringComparer.OrdinalIgnoreCase);
+            CrashReporter.Log($"[GameDetectionService.FindXboxGames] Gaming Services lists {registeredNames.Count} package(s)");
+
             var packageManager = new Windows.Management.Deployment.PackageManager();
 
             // FindPackagesForUser("") returns packages for the current user
@@ -62,53 +67,8 @@ public partial class GameDetectionService
                         continue;
 
                     // Filter: must be a game, not a regular app
-                    // GDK games have a MicrosoftGame.config file
-                    bool isGame = File.Exists(Path.Combine(installLocation, "MicrosoftGame.config"));
-
-                    // Some older UWP games don't have MicrosoftGame.config but do have
-                    // exe files and are not Microsoft system apps
-                    if (!isGame)
-                    {
-                        var packageName = package.Id?.Name ?? "";
-
-                        // Skip known Microsoft system/utility packages
-                        if (packageName.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("Windows.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("MicrosoftWindows.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("Clipchamp.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("Microsoft365.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("NVIDIACorp.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("RealtekSemiconductor", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("AppUp.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("Disney.", StringComparison.OrdinalIgnoreCase) ||
-                            packageName.StartsWith("SpotifyAB.", StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        // Check for exe files — apps without them aren't games
-                        bool hasExe = false;
-                        try
-                        {
-                            hasExe = Directory.EnumerateFiles(installLocation, "*.exe",
-                                SearchOption.TopDirectoryOnly).Any();
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
-                        if (!hasExe) continue;
-
-                        // Additional heuristic: must have a large exe (>10MB) typical of games
-                        // This filters out small utility apps
-                        bool hasLargeExe = false;
-                        try
-                        {
-                            hasLargeExe = Directory.EnumerateFiles(installLocation, "*.exe",
-                                SearchOption.TopDirectoryOnly)
-                                .Any(f => new FileInfo(f).Length > 10 * 1024 * 1024);
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
-                        if (!hasLargeExe) continue;
-
-                        isGame = true;
-                    }
-
+                    bool isGame = registeredNames.Contains(package.Id?.FullName ?? "")
+                               || File.Exists(Path.Combine(installLocation, "MicrosoftGame.config"));
                     if (!isGame) continue;
 
                     // Get the display name — prefer the DisplayName property, fall back to Id.Name
@@ -201,20 +161,31 @@ public partial class GameDetectionService
         }
         catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
 
-        // Registry
-        try
+        // Games registered with Gaming Services: each Root is a game folder itself, not a parent of games
+        var foundPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (packageFullName, root) in ReadGamingServicesPackages())
         {
-            using var key = Registry.LocalMachine.OpenSubKey(
-                @"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root");
-            if (key != null)
-                foreach (var v in key.GetValueNames())
+            try
+            {
+                var installPath = XboxPaths.RealPackageFolder(root) ?? root;
+                if (!Directory.Exists(installPath)) continue;
+                installPath = ResolveXboxGameRoot(installPath);
+                if (!foundPaths.Add(installPath)) continue;
+
+                var (configName, aumid) = XboxPaths.ReadGameConfig(installPath);
+                games.Add(new DetectedGame
                 {
-                    var path = key.GetValue(v) as string;
-                    if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-                        searchRoots.Add(path);
-                }
+                    Name        = configName ?? packageFullName.Split('_')[0],
+                    InstallPath = installPath,
+                    Source      = "Xbox",
+                    XboxAumid   = aumid,
+                });
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+            {
+                CrashReporter.Log($"[GameDetectionService.FindXboxGamesFallback] '{packageFullName}' — {ex.Message}");
+            }
         }
-        catch (Exception ex) { CrashReporter.Log($"[GameDetectionService] Scan error — {ex.Message}"); }
 
         // Common folder names
         try
@@ -253,6 +224,7 @@ public partial class GameDetectionService
                         continue;
 
                     var installPath = ResolveXboxGameRoot(gameDir);
+                    if (!foundPaths.Add(installPath)) continue;
 
                     bool hasExe = false;
                     try { hasExe = HasFileShallow(installPath, "*.exe", MaxScanDepth - 1); }
@@ -274,6 +246,42 @@ public partial class GameDetectionService
         }
 
         return games;
+    }
+
+    /// <summary>
+    /// Packages Xbox Gaming Services has registered as games: Root\&lt;GUID&gt;\&lt;entry&gt; with string values
+    /// Package (package full name) and Root (install folder, \\?\-prefixed). Empty if Gaming Services
+    /// isn't installed or the key can't be read.
+    /// </summary>
+    private static List<(string PackageFullName, string Root)> ReadGamingServicesPackages()
+    {
+        var result = new List<(string, string)>();
+        try
+        {
+            using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            using var rootKey = hklm.OpenSubKey(GamingServicesRootKey);
+            if (rootKey == null) return result;
+
+            foreach (var guid in rootKey.GetSubKeyNames())
+            {
+                using var guidKey = rootKey.OpenSubKey(guid);
+                if (guidKey == null) continue;
+                foreach (var entry in guidKey.GetSubKeyNames())
+                {
+                    using var entryKey = guidKey.OpenSubKey(entry);
+                    if (entryKey?.GetValue("Package") is not string package || string.IsNullOrWhiteSpace(package)) continue;
+                    var root = entryKey.GetValue("Root") as string ?? "";
+                    if (root.StartsWith(@"\\?\", StringComparison.Ordinal)) root = root[4..];
+                    root = root.TrimEnd('\\');
+                    result.Add((package, root));
+                }
+            }
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            CrashReporter.Log($"[GameDetectionService.ReadGamingServicesPackages] Registry read failed — {ex.Message}");
+        }
+        return result;
     }
 
     /// <summary>
