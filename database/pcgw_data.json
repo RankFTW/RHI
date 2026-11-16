@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56114,
-  "generated": "2026-11-15T21:21:11Z",
+  "generated": "2026-11-16T05:21:11Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -21480,6 +21480,7 @@
     },
     "Bloodshed": {
       "steam_appid": 2747550,
+      "dx11": true,
       "engine": "Unity"
     },
     "Bloodsports.TV": {
@@ -51521,7 +51522,8 @@
     },
     "Dynasty Warriors 4: Hyper": {
       "dx9": true,
-      "config_path": "%USERPROFILE%\\Documents\\KOEI\\<Localized Dynasty Warriors 4 Hyper>\\*.*"
+      "config_path": "%USERPROFILE%\\Documents\\KOEI\\<Localized Dynasty Warriors 4 Hyper>\\*.*",
+      "engine": "KTGL"
     },
     "Dynasty Warriors 6": {
       "dx9": true,
@@ -103662,7 +103664,7 @@
     "Miasma Chronicles": {
       "steam_appid": 1649010,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Miasma\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Miasma\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Miasmata": {
