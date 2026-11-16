@@ -442,7 +442,8 @@ public class AddonPackService : IAddonPackService
         // the Neural Rendering section and Extras section, not the addon picker.
         var pickerHiddenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "renodx-dlss5", "renodx-dlss-sf", "mfgunlock", "dlss5-feed", "dlss5-dx11-bridge"
+            "renodx-dlss5", "renodx-dlss-sf", "mfgunlock", "dlss5-feed", "dlss5-dx11-bridge",
+            "bfi-presenter", // installed per game from Extras (BfiPresenterService), never as an add-on for every game
         };
         for (int i = 0; i < _packs.Count; i++)
         {

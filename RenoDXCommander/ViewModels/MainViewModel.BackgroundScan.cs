@@ -195,6 +195,10 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] RTX40MFG staging failed — {ex.Message}"); }
             });
+            var bfiTask = Task.Run(async () => {
+                try { await UpdateBfiPresenterInstallsAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] BFI Presenter update failed — {ex.Message}"); }
+            });
             var dlssg2030Task = Task.Run(async () => {
                 try
                 {
@@ -242,6 +246,7 @@ public partial class MainViewModel
                 }
             }
             try { await rtx40MfgTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] RTX40MFG staging await failed — {ex.Message}"); }
+            try { await bfiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] BFI Presenter await failed — {ex.Message}"); }
             try { await dlssg2030Task; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Dlssg2030 staging await failed — {ex.Message}"); }
             try { await osDlssNrTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler DLSS NR staging await failed — {ex.Message}"); }
             try { await osF5Task; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler F5 staging await failed — {ex.Message}"); }
@@ -667,6 +672,9 @@ public partial class MainViewModel
 
                 _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Deferred: SyncAddons starting");
                 if (_backgroundStopped) return;
+                // BFI Presenter left the add-on list for Extras: take over its copies before the sync deletes them
+                MigrateBfiPresenterAddonPack();
+
                 // Deploy managed addons to all installed game locations
                 try
                 {

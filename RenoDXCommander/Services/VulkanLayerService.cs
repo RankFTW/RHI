@@ -140,6 +140,11 @@ public static class VulkanLayerService
             using var key = Registry.LocalMachine.CreateSubKey(RegistryKeyPath, writable: true);
             key.SetValue(LayerManifestPath, 0, RegistryValueKind.DWord);
             CrashReporter.Log("[VulkanLayerService.InstallLayer] Registered layer in HKLM ImplicitLayers");
+
+            // BFI Presenter's Vulkan layer must load after ReShade: a ReShade registered after it lands below it
+            if (BfiPresenterService.LayerOrderWrong)
+                Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                    .GetService<BfiPresenterService>(App.Services)?.FixLayerOrder();
         }
         catch (UnauthorizedAccessException) { throw; }
         catch (FileNotFoundException) { throw; }

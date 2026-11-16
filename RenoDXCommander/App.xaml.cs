@@ -119,6 +119,7 @@ public partial class App : Application
         services.AddSingleton<Rtx40MfgService>();
         services.AddSingleton<AnrFgService>();
         services.AddSingleton<Dlssg20_30Service>();
+        services.AddSingleton<BfiPresenterService>();
         services.AddSingleton<AutoUpdateService>();
         services.AddSingleton<DlssEnablerService>();
         services.AddSingleton<DgVoodooService>();

@@ -215,6 +215,7 @@ public partial class MainViewModel
             RtxEncoreNrDllDeployed = GetRtxEncoreNrDllDeployed(gameName, store),
             Rtx40MfgInstalledAs = GetRtx40MfgInstalledAs(gameName, store),
             Dlssg2030InstalledAs = GetDlssg2030InstalledAs(gameName, store),
+            BfiPresenterInstalledAs = GetBfiPresenterInstalledAs(gameName, store),
             DeInstalledAs = GetDeInstalledAs(gameName, store),
             DgVoodooStandalone = GetDgVoodooStandalone(gameName, store),
         };

@@ -991,6 +991,9 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] SyncShaders failed — {ex.Message}"); }
 
+                // BFI Presenter left the add-on list for Extras: take over its copies before the sync deletes them
+                MigrateBfiPresenterAddonPack();
+
                 // Deploy managed addons to all installed game locations
                 try
                 {

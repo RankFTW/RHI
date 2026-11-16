@@ -84,6 +84,7 @@ public partial class DetailPanelBuilder
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
         if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
         if (dgvInstalled)                                                                   exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
+        if (vm.GetBfiPresenterInstalledAs(gn, gs) != null)                                  exSummaryEntries.Add(("BFI Presenter", "On"));
         var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries, "Extras installed for this game.");
         if (exSummary != null)
         {
@@ -145,6 +146,12 @@ public partial class DetailPanelBuilder
         __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssg2030Row(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── Motion clarity: BFI Presenter (per game; DX add-on or Vulkan layer) ─
+        exBody.Children.Add(MakeExtrasSeparator("Motion Clarity"));
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildBfiPresenterRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] BfiPresenterRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── API Upgrades sub-header + DXVK row ────────────────────────────────
         if (card.IsDxvkToggleVisible)

@@ -170,6 +170,7 @@ public partial class GameNameService : IGameNameService
     private HashSet<string> _overlayDisabledGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _rtx40MfgInstalledAs = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dlssg2030InstalledAs = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _bfiPresenterInstalledAs = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per-game RTX Encore installed DLL name. Key = "GameName|Store", Value = dll filename. Absent = not installed.</summary>
     private Dictionary<string, string> _rtxEncoreInstalledAs = new(StringComparer.OrdinalIgnoreCase);
@@ -311,6 +312,9 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> Rtx40MfgInstalledAs => _rtx40MfgInstalledAs;
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>
     public Dictionary<string, string> Dlssg2030InstalledAs => _dlssg2030InstalledAs;
+    /// <summary>Per-game BFI Presenter install: the file RHI placed, relative to the install folder (the add-on, or
+    /// BFIPresenter.ini next to the exe for the Vulkan layer). Key = "GameName|Store".</summary>
+    public Dictionary<string, string> BfiPresenterInstalledAs => _bfiPresenterInstalledAs;
 
     /// <summary>Per-game RTX Encore installed DLL name. Composite-keyed "GameName|Store".</summary>
     public Dictionary<string, string> RtxEncoreInstalledAs => _rtxEncoreInstalledAs;
@@ -772,6 +776,9 @@ public partial class GameNameService : IGameNameService
         _dlssg2030InstalledAs = new Dictionary<string, string>(
             Load<Dictionary<string, string>>("Dlssg2030InstalledAs", new()),
             StringComparer.OrdinalIgnoreCase);
+        _bfiPresenterInstalledAs = new Dictionary<string, string>(
+            Load<Dictionary<string, string>>("BfiPresenterInstalledAs", new()),
+            StringComparer.OrdinalIgnoreCase);
 
         var rtxEncoreInstalledAsDict = Load<Dictionary<string, string>>("RtxEncoreInstalledAs", new(StringComparer.OrdinalIgnoreCase));
         _rtxEncoreInstalledAs = new(StringComparer.OrdinalIgnoreCase);
@@ -997,6 +1004,8 @@ public partial class GameNameService : IGameNameService
                 if (_dlssg2030InstalledAs.Count > 0) s["Dlssg2030InstalledAs"] = JsonSerializer.Serialize(_dlssg2030InstalledAs);
                 else s.Remove("Dlssg2030InstalledAs");
                 s.Remove("Dlssg2030GpuGen"); // removed setting: 20/30 FG Unlock now picks the GPU path itself
+                if (_bfiPresenterInstalledAs.Count > 0) s["BfiPresenterInstalledAs"] = JsonSerializer.Serialize(_bfiPresenterInstalledAs);
+                else s.Remove("BfiPresenterInstalledAs");
                 if (_rtxEncoreInstalledAs.Count > 0) s["RtxEncoreInstalledAs"] = JsonSerializer.Serialize(_rtxEncoreInstalledAs);
                 else s.Remove("RtxEncoreInstalledAs");
                 if (_rtxEncoreNrDllDeployed.Count > 0) s["RtxEncoreNrDllDeployed"] = JsonSerializer.Serialize(_rtxEncoreNrDllDeployed.ToList());
@@ -1153,6 +1162,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_overlayDisabledGames, oldName, newName);
         MigrateCompositeDict(_rtx40MfgInstalledAs, oldName, newName);
         MigrateCompositeDict(_dlssg2030InstalledAs, oldName, newName);
+        MigrateCompositeDict(_bfiPresenterInstalledAs, oldName, newName);
         MigrateCompositeDict(_rtxEncoreInstalledAs, oldName, newName);
         MigrateCompositeHashSet(_rtxEncoreNrDllDeployed, oldName, newName);
 

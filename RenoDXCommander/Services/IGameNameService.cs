@@ -236,6 +236,7 @@ public interface IGameNameService
     Dictionary<string, string> Rtx40MfgInstalledAs { get; }
     /// <summary>Per-game 20/30 FG Unlock installed DLL name. Key = "GameName|Store", Value = DLL filename.</summary>
     Dictionary<string, string> Dlssg2030InstalledAs { get; }
+    Dictionary<string, string> BfiPresenterInstalledAs { get; }
 
     /// <summary>Per-game RTX Encore installed DLL name. Composite-keyed "GameName|Store".</summary>
     Dictionary<string, string> RtxEncoreInstalledAs { get; }

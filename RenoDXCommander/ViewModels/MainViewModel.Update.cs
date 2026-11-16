@@ -383,6 +383,9 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic RTX Encore check failed — {ex.Message}"); }
 
+                try { await UpdateBfiPresenterInstallsAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic BFI Presenter check failed — {ex.Message}"); }
+
                 _forceUpdateCheck = true; // bypass cooldown since we ARE the cooldown
                 var records = _installer.LoadAll();
                 var auxRecords = _auxInstaller.LoadAll();

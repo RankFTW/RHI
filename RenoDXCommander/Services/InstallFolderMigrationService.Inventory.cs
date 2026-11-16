@@ -221,6 +221,16 @@ public partial class InstallFolderMigrationService
             b.Dir(g, Dlssg20_30Service.ModFolderName);
         }
 
+        // ── BFI Presenter DX add-on (in the folder itself; in a reshade.ini AddonPath folder it moves with ReShade's
+        //    folder, and the Vulkan route's ini sits next to the exe) ──
+        if (!string.IsNullOrEmpty(req.BfiPresenterInstalledAs) && req.BfiPresenterInstalledAs.IndexOfAny(new[] { '\\', '/' }) < 0
+            && BfiPresenterService.RouteOf(req.BfiPresenterInstalledAs) == BfiRoute.Dx)
+        {
+            var g = b.Group("BFI Presenter", HasSentinelCopy(newDir, req.BfiPresenterInstalledAs));
+            b.File(g, req.BfiPresenterInstalledAs, requireBackup: false);
+            foreach (var f in BfiPresenterService.DxGeneratedFiles) b.File(g, f);
+        }
+
         // ── Standalone DLSS Enabler (no backup of its own) ──────────────────
         if (!string.IsNullOrEmpty(req.DeInstalledAs) && req.DeInstalledAs.IndexOfAny(new[] { '\\', '/' }) < 0)
             b.File(b.Group("DLSS Enabler"), req.DeInstalledAs, suffix: null, requireBackup: false);

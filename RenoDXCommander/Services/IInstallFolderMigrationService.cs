@@ -38,6 +38,8 @@ public sealed class FolderMigrationRequest
     public bool RtxEncoreNrDllDeployed { get; init; }
     public string? Rtx40MfgInstalledAs { get; init; }
     public string? Dlssg2030InstalledAs { get; init; }
+    /// <summary>BFI Presenter record (relative path); only a DX add-on in the folder itself is moved.</summary>
+    public string? BfiPresenterInstalledAs { get; init; }
     public string? DeInstalledAs { get; init; }
     public bool DgVoodooStandalone { get; init; }
 }
