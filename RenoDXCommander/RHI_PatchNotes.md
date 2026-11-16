@@ -32,6 +32,7 @@
 - Fixed RHI not opening at all with Admin Mode on when Admin Mode had been set up for another copy of RHI (after a reinstall in another folder, or the portable version), or when it couldn't start RHI as administrator. RHI now opens without admin rights and says how to set Admin Mode up again. Uninstalling RHI also removes Admin Mode's scheduled task.
 - Fixed Unreal Engine games played from both Steam and Game Pass getting UE-Extended's Engine.ini changes in the other store's settings folder, so they had no effect. Each copy now uses its own store's folder.
 - Fixed ReShade not starting in some DirectX 9 games with the DLSS5 Feeder method: in games where RHI also detected another API, ReShade could be installed under the same name as the dgVoodoo2 file Feeder adds, which then replaced it. Reinstall the Feeder add-on in an affected game.
+- Fixed the Neural Rendering DLL (nvngx_dlssnr.dll) not being put back once it had gone missing (for example removed by an antivirus), and not changing when a different NR version was picked. Reinstalling now copies it again, and a new NR version replaces RHI's copy.
 - Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.
 - Fixed very high CPU and memory use after launching some Unreal Engine 3 games, such as Remember Me.
 - Fixed a repeating error filling the logs folder with crash reports.

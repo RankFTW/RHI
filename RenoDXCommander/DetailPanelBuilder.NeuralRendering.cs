@@ -159,15 +159,39 @@ public partial class DetailPanelBuilder
 
     // ── Utility helpers ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Puts the selected NR DLL in <paramref name="installPath"/> (sentinel pattern):
+    /// missing → copied (a 0-byte <c>.original</c> marks it RHI's, a non-empty one keeps the game's backup);
+    /// RHI's copy (a <c>.original</c> beside it) that differs → replaced, behind the NR Cost Scaler's proxy when
+    /// that's installed; the game's own DLL (no <c>.original</c>) → left alone.
+    /// It used to return as soon as a <c>.original</c> existed, so a DLL deleted since (antivirus, another
+    /// component's uninstall) was never put back and a newly picked version never replaced it (issue #133).
+    /// </summary>
     private static void DeployNrDllSentinel(string installPath, string cachedNrPath)
     {
         var dest     = Path.Combine(installPath, "nvngx_dlssnr.dll");
         var sentinel = dest + ".original";
-        if (File.Exists(sentinel)) return;          // already placed by RHI
-        if (File.Exists(dest))     return;          // game-original — don't touch
-        File.Copy(cachedNrPath, dest, overwrite: false);
-        File.WriteAllBytes(sentinel, Array.Empty<byte>());
-        CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll to '{installPath}' (sentinel written)");
+        if (!File.Exists(dest))
+        {
+            File.Copy(cachedNrPath, dest, overwrite: false);
+            if (!File.Exists(sentinel)) File.WriteAllBytes(sentinel, Array.Empty<byte>());
+            CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll to '{installPath}' (sentinel {(new FileInfo(sentinel).Length == 0 ? "RHI-owned" : "keeps the game's backup")})");
+            return;
+        }
+        if (!File.Exists(sentinel))
+        {
+            CrashReporter.Log($"[NeuralRendering] nvngx_dlssnr.dll in '{installPath}' is the game's own — left as is");
+            return;
+        }
+        var real = DlssNrCostScalerService.ResolveRealNrDllPath(dest);
+        if (VulkanLayerService.FilesIdentical(cachedNrPath, real))
+        {
+            CrashReporter.Log($"[NeuralRendering] nvngx_dlssnr.dll in '{installPath}' already the selected version");
+            return;
+        }
+        if (!DlssNrCostScalerService.ReplaceRealNrDll(dest, cachedNrPath))
+            File.Copy(cachedNrPath, dest, overwrite: true);
+        CrashReporter.Log($"[NeuralRendering] Replaced RHI's nvngx_dlssnr.dll in '{installPath}' with the selected version");
     }
 
     private static string? FindStagedAddon(string packageName, string extension)
