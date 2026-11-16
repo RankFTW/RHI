@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56116,
-  "generated": "2026-11-16T15:21:43Z",
+  "game_count": 56117,
+  "generated": "2026-11-16T17:23:02Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -33429,6 +33429,7 @@
     "Combat Core": {
       "steam_appid": 405670
     },
+    "Combat Course": {},
     "Combat Force": {
       "steam_appid": 1172430
     },
@@ -44855,7 +44856,7 @@
     },
     "DevilConnection": {
       "steam_appid": 3054820,
-      "config_path": "<SteamLibrary-folder>/steamapps/common/でびるコネクショん/_storage/DevilConnection_sf.sav",
+      "config_path": "<path-to-game>\\_storage\\DevilConnection_sf.sav",
       "engine": "Electron"
     },
     "Devilian": {
@@ -158800,7 +158801,8 @@
     },
     "Super Battle Golf": {
       "steam_appid": 4069520,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Brimstone\\Super Battle Golf"
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Brimstone\\Super Battle Golf",
+      "engine": "Unity"
     },
     "Super Beam": {
       "steam_appid": 1019500
