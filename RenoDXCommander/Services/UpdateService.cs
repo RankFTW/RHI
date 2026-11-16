@@ -308,9 +308,13 @@ public class UpdateService : IUpdateService
         try
         {
             CrashReporter.Log($"[UpdateService.LaunchInstaller] Launching installer {installerPath}");
+            // Silent update (issue #76): no wizard pages, just Inno Setup's progress window. The previous install
+            // folder and shortcut choices are reused (UsePreviousAppDir / UsePreviousTasks), and the installer's
+            // silent-only [Run] entry reopens RHI. A downloaded RHI-Setup.exe run by hand still shows the wizard.
             Process.Start(new ProcessStartInfo
             {
                 FileName        = installerPath,
+                Arguments       = "/SILENT /SUPPRESSMSGBOXES /NORESTART",
                 UseShellExecute = true,
             });
 

@@ -58,6 +58,10 @@ Type: filesandordirs; Name: "{localappdata}\RHI"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeginForegroundHandoff; AfterInstall: CompleteForegroundHandoff
+; RHI's in-app updater runs this installer with /SILENT (no wizard pages, issue #76): reopen RHI afterwards. As the
+; user who started the update, so an RHI that ran unelevated stays unelevated (Admin Mode elevates it through its task).
+; No foreground hand-off page here: it needs the wizard, which a silent install doesn't show.
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 [Code]
 const

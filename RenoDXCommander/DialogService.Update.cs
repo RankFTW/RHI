@@ -193,7 +193,8 @@ public partial class DialogService
             var versionStr = AppVersionInfo.Current.ToTagString();
             var markerFile = Path.Combine(PatchNotesDir, $"PatchNotes-{versionStr}.txt");
 
-            // Clean up markers from older versions
+            // Clean up markers from older versions (one there = this start follows an update, not a fresh install)
+            bool updatedFromOlder = false;
             try
             {
                 Directory.CreateDirectory(PatchNotesDir);
@@ -201,6 +202,7 @@ public partial class DialogService
                 {
                     if (!old.Equals(markerFile, StringComparison.OrdinalIgnoreCase))
                     {
+                        updatedFromOlder = true;
                         try { File.Delete(old); } catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to delete old marker '{old}' — {ex.Message}"); }
                     }
                 }
@@ -220,6 +222,10 @@ public partial class DialogService
             {
                 CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to write patch notes marker — {ex.Message}");
             }
+
+            // Updates install silently now (issue #76): say plainly that it worked
+            if (updatedFromOlder && !_window.IsShuttingDown)
+                _window.ShowStatusBarMessage($"Updated to RHI {AppVersionInfo.Display}.", TimeSpan.FromSeconds(20));
 
             if (!_window.IsShuttingDown) await ShowPatchNotesDialogAsync();
         }

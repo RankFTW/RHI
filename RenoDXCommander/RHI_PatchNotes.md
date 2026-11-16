@@ -13,6 +13,7 @@
 - Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes
+- Updating RHI from inside the app no longer shows the installer's pages: it installs with a small progress window, keeps your install folder and shortcuts, reopens RHI and says it was updated. Windows still asks for permission unless Admin Mode is on.
 - The Game settings ⚙ beside the game's name (RHI overlay, display modes, Block Steam updates) is now in every layout, not just Spotlight.
 - Extras' frame generation tools are grouped by what the game needs: "Frame Gen for Any Game" and "Games With DLSS Frame Gen". Each one lists its supported GPUs, game requirements and graphics APIs.
 - Extras that can't be used together can no longer be installed in the same game: OptiScaler and DLSS Enabler, DLSS Enabler and HSF or the three MFG unlocks (Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock), the MFG unlocks with each other, and RTX Encore with any of those. The install button says what to remove first.

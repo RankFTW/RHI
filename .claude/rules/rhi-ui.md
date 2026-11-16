@@ -198,6 +198,7 @@ Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of bloc
 - Maximized: use `GetWindowPlacement.rcNormalPosition` (preserves correct monitor)
 
 ## Installer Shutdown Signal
+- **In-app updates are silent** (issue #76): `UpdateService.LaunchInstallerAndExit` runs `RHI-Setup.exe /SILENT /SUPPRESSMSGBOXES /NORESTART` (Inno's progress window only; previous folder + tasks reused). The wizard's postinstall launch is `skipifsilent`, so `RHI Setup.iss` has a second `[Run]` entry (`Check: WizardSilent`, `runasoriginaluser`, no foreground hand-off page: it needs the wizard) that reopens RHI. On the first start of a new version `ShowPatchNotesIfNewVersionAsync` shows "Updated to RHI x" in the status bar when an older What's New marker existed (not on fresh installs). A hand-run RHI-Setup.exe still shows the wizard.
 - Signal file: `%LocalAppData%\RHI\rhi_shutdown_requested`
 - 2-second `DispatcherTimer` checks existence. When found: delete, set `_forceClose`, close.
 
