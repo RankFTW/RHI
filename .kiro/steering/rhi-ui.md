@@ -145,6 +145,7 @@ Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of bloc
 - Auto-relaunch: checks on startup, runs task, exits immediately
 - `schtasks /Run` can't pass arguments, so the elevated copy never sees the non-elevated one's command line. Hand-off files in `%LocalAppData%\RHI\`: `rhi_start_minimized` (`--minimized`) and `rhi_pending_launch` (UTC time + game name for `--launch` from desktop shortcuts / jump list; ignored after 2 min). Any new startup argument needs the same, or it's silently lost when Admin Mode is on and RHI wasn't running.
 - Create/Delete requires one-time UAC (`Verb = "runas"`)
+- **Relaunch safety** (issue #147): `App.QueryAdminTaskAsync` reads the task's `<Command>` (`schtasks /Query /XML`); if it isn't this `Environment.ProcessPath` (reinstall elsewhere, portable copy, a task from the RenoDXCommander.exe days) RHI does NOT relaunch and starts unelevated with `App.StartupNotice` (status bar, 30 s: turn Admin Mode off and on). After `schtasks /Run` it exits only once the elevated copy holds the single-instance mutex (`WaitForElevatedInstanceAsync`, 8 s; an access-denied open counts as present); otherwise it re-acquires the mutex, deletes the hand-off files and carries on unelevated. The uninstaller deletes the task (`RHI Setup.iss` `[UninstallRun]`).
 
 ## Drag-Drop (Admin Mode)
 - XAML drag-drop (`AllowDrop`) doesn't work elevated (Microsoft bug)

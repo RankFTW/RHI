@@ -48,6 +48,11 @@ Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
+[UninstallRun]
+; Admin Mode's scheduled task starts this install's RHI.exe by full path: left behind, a later install elsewhere
+; (or the portable copy) would launch nothing when Admin Mode relaunches through it (issue #147)
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN ""RHI Admin Mode"" /F"; Flags: runhidden; RunOnceId: "DeleteAdminModeTask"
+
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\RHI"
 

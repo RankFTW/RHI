@@ -282,12 +282,29 @@ public partial class App : Application
         _startMinimized = startMinimized;
 
         // ── Admin Mode: if the scheduled task exists and we're not elevated, relaunch via task ──
-        if (!IsRunningAsAdmin() && await IsAdminTaskRegisteredAsync())
+        var adminTask = IsRunningAsAdmin() ? (Registered: false, Command: null) : await QueryAdminTaskAsync();
+        bool taskMatchesExe = false;
+        try
+        {
+            taskMatchesExe = adminTask.Command != null && Environment.ProcessPath != null
+                && string.Equals(Path.GetFullPath(adminTask.Command), Path.GetFullPath(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            CrashReporter.Log($"[App.OnLaunched] Admin Mode task path unreadable — {ex.Message}");
+        }
+        if (adminTask.Registered && !taskMatchesExe)
+        {
+            // Running the task would start a missing or different exe and this copy would exit: nothing would open
+            CrashReporter.Log($"[App.OnLaunched] Admin Mode task starts '{adminTask.Command ?? "(unreadable)"}', not '{Environment.ProcessPath}' — starting without admin rights");
+            StartupNotice = "Admin Mode isn't set up for this copy of RHI (it was set up for another location). Turn Admin Mode off and on again in Settings › General.";
+        }
+        else if (adminTask.Registered)
         {
             try
             {
                 CrashReporter.Log("[App.OnLaunched] Admin Mode enabled but not elevated — relaunching via scheduled task");
-                
+
                 // Pass minimized flag via signal file (schtasks /Run doesn't support extra args)
                 if (startMinimized)
                 {
@@ -313,9 +330,28 @@ public partial class App : Application
                 // this exiting process for an active instance and exit itself.
                 SingleInstanceService.Stop();
                 System.Diagnostics.Process.Start(psi);
-                try { File.Delete(CrashReporter.CurrentSessionLogPath); } catch (Exception) { /* Safe to ignore: deleting this instance's session log right before exit; logging here would recreate the file. */ }
-                Environment.Exit(0);
-                return;
+                // Exit only once the elevated copy is up; otherwise carry on here, so RHI still opens
+                if (await WaitForElevatedInstanceAsync(TimeSpan.FromSeconds(8)))
+                {
+                    try { File.Delete(CrashReporter.CurrentSessionLogPath); } catch (Exception) { /* Safe to ignore: deleting this instance's session log right before exit; logging here would recreate the file. */ }
+                    Environment.Exit(0);
+                    return;
+                }
+                CrashReporter.Log("[App.OnLaunched] The Admin Mode task didn't start RHI within 8 s — continuing without admin rights");
+                StartupNotice = "Admin Mode couldn't start RHI as administrator, so it's running without admin rights. Turn Admin Mode off and on again in Settings › General.";
+                // Clear the hand-off files the elevated copy would have read
+                foreach (var f in new[] { "rhi_start_minimized", "rhi_pending_launch" })
+                {
+                    try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", f)); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { CrashReporter.Log($"[App.OnLaunched] Couldn't delete '{f}' — {ex.Message}"); }
+                }
+                if (!SingleInstanceService.TryAcquire())
+                {
+                    // The elevated copy arrived after all: hand over to it
+                    SingleInstanceService.SendToRunningInstance("--activate");
+                    Environment.Exit(0);
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -622,26 +658,65 @@ public partial class App : Application
         catch (Exception ex) { return $"error: {ex.Message}"; }
     }
 
-    private static async Task<bool> IsAdminTaskRegisteredAsync()
+    /// <summary>
+    /// Whether the "RHI Admin Mode" task exists and the exe it starts (its &lt;Command&gt;, quotes removed;
+    /// null when it couldn't be read). The task keeps a fixed path: a reinstall elsewhere, the portable copy,
+    /// or a task made when the exe was RenoDXCommander.exe leaves it starting nothing (issue #147).
+    /// </summary>
+    private static async Task<(bool Registered, string? Command)> QueryAdminTaskAsync()
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Query /TN \"RHI Admin Mode\" /FO LIST")
+            var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Query /TN \"RHI Admin Mode\" /XML")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                RedirectStandardOutput = true,
             };
             using var proc = System.Diagnostics.Process.Start(psi)!;
+            var outputTask = proc.StandardOutput.ReadToEndAsync();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             try { await proc.WaitForExitAsync(timeout.Token); }
             catch (OperationCanceledException)
             {
-                try { proc.Kill(); } catch (Exception ex) { CrashReporter.Log($"[App.IsAdminTaskRegisteredAsync] Failed to kill timed-out schtasks process — {ex.Message}"); }
+                try { proc.Kill(); } catch (Exception ex) { CrashReporter.Log($"[App.QueryAdminTaskAsync] Failed to kill timed-out schtasks process — {ex.Message}"); }
                 CrashReporter.Log("[App] Admin task query timed out — continuing normal startup");
-                return false;
+                return (false, null);
             }
-            return proc.ExitCode == 0;
+            if (proc.ExitCode != 0) return (false, null);
+            var xml = await outputTask;
+            var m = System.Text.RegularExpressions.Regex.Match(xml, @"<Command>\s*(.*?)\s*</Command>", System.Text.RegularExpressions.RegexOptions.Singleline);
+            var command = m.Success
+                ? Environment.ExpandEnvironmentVariables(System.Net.WebUtility.HtmlDecode(m.Groups[1].Value).Trim().Trim('"'))
+                : null;
+            return (true, command);
         }
-        catch { return false; }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            CrashReporter.Log($"[App.QueryAdminTaskAsync] {ex.Message}");
+            return (false, null);
+        }
     }
+
+    /// <summary>
+    /// After schtasks /Run: true once the elevated copy holds the single-instance mutex (it takes it first thing).
+    /// A mutex the elevated copy created can deny this unelevated process access: that still means it's there.
+    /// </summary>
+    private static async Task<bool> WaitForElevatedInstanceAsync(TimeSpan limit)
+    {
+        var until = DateTime.UtcNow + limit;
+        while (DateTime.UtcNow < until)
+        {
+            try
+            {
+                if (Mutex.TryOpenExisting(SingleInstanceService.MutexName, out var m)) { m.Dispose(); return true; }
+            }
+            catch (UnauthorizedAccessException) { return true; }
+            await Task.Delay(200);
+        }
+        return false;
+    }
+
+    /// <summary>Shown in the status bar once the window is up (set when Admin Mode couldn't start RHI elevated).</summary>
+    internal static string? StartupNotice { get; private set; }
 }

@@ -11,7 +11,7 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public static class SingleInstanceService
 {
-    private const string MutexName = "RenoDXCommander_SingleInstance";
+    internal const string MutexName = "RenoDXCommander_SingleInstance";
     private const string PipeName = "RenoDXCommander_AddonPipe";
     private static Mutex? _mutex;
     private static CancellationTokenSource? _cts;
