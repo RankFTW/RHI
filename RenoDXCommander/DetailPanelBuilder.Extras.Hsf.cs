@@ -122,6 +122,8 @@ public partial class DetailPanelBuilder
                 ? "Reinstall HSF (newest release). Your HSF settings are kept."
                 : "Install HSF: the add-on, its HSF_streamline folder (with HSF's licence files), HSF.ini and HSF.fx, plus iMMERSE LaunchPad for optical flow.")
                 + (versionNote != null ? "\n\n" + versionNote : ""));
+            if (ExtraBlocker(card, ExtraKind.Hsf) is { } hsfBlocker)
+                ApplyExtraBlock(installBtn, label, ExtraKind.Hsf, hsfBlocker);
         }
 
         installBtn.Click += async (s, e) =>

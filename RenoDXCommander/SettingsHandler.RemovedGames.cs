@@ -1,6 +1,7 @@
-// SettingsHandler.RemovedGames.cs -- "Removed games" button in Settings › Tools & Maintenance › Troubleshooting:
+// SettingsHandler.RemovedGames.cs -- "Removed games" button in Settings › Tools & Maintenance › Game library:
 // lists games taken out with Management › Remove from RHI and puts them back.
-// Built in C# (XAML constraint), added beside Full refresh the first time Settings opens.
+// Built in C# (XAML constraint), added the first time Settings opens (beside Full refresh in Troubleshooting if
+// the Game library card couldn't be built).
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,11 +22,12 @@ public partial class SettingsHandler
         }
         try
         {
-            // Searched down from the cards panel: FrameworkElement.Parent can be null on the first open
-            var host = FindPanelContaining(_window.SettingsCardsPanel, _window.FullRefreshBtn);
+            // Game library card; else beside Full refresh (searched down from the cards panel:
+            // FrameworkElement.Parent can be null on the first open)
+            var host = _removedGamesHost ?? FindPanelContaining(_window.SettingsCardsPanel, _window.FullRefreshBtn);
             if (host == null)
             {
-                CrashReporter.Log("[SettingsHandler.EnsureRemovedGamesButton] Troubleshooting panel not found — button not added");
+                CrashReporter.Log("[SettingsHandler.EnsureRemovedGamesButton] Game library card and Troubleshooting panel not found — button not added");
                 return;
             }
             _removedGamesBtn = new Button { Style = FindStyle("SettingsButtonStyle") };

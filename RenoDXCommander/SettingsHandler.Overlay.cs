@@ -1,6 +1,7 @@
-// SettingsHandler.Overlay.cs -- the "RHI overlay" section of Settings (before Tools & Maintenance, after
-// Achievements): on / off and the hotkey. Built in C# (XAML constraint), inserted the first time Settings
-// opens, before the section navigation is built so it gets a jump button. See docs/rhi-overlay-plan.md.
+// SettingsHandler.Overlay.cs -- the "Overlay & Achievements" section of Settings (before Tools & Maintenance):
+// the overlay's on / off and hotkey card here, the Achievements card added after it by
+// SettingsHandler.Achievements.cs. Built in C# (XAML constraint), inserted the first time Settings opens, before
+// the section navigation is built so it gets a jump button. See docs/rhi-overlay-plan.md.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -48,15 +49,14 @@ public partial class SettingsHandler
             var head = new StackPanel { Spacing = 3 };
             head.Children.Add(new TextBlock
             {
-                Text = "RHI overlay",
+                Text = "Overlay & Achievements",
                 FontSize = 18,
                 FontWeight = Microsoft.UI.Text.FontWeights.Bold,
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             });
             head.Children.Add(new TextBlock
             {
-                Text = "A full-screen RHI page over your game, opened with a key or a controller: achievements, screenshots, your notes, "
-                     + "playtime and the game's mod setup. Works while RHI is running, including from the tray.",
+                Text = "The RHI overlay over your games, and your achievements on the Spotlight page and in the overlay.",
                 FontSize = 12,
                 LineHeight = 17,
                 TextWrapping = TextWrapping.Wrap,
@@ -67,7 +67,16 @@ public partial class SettingsHandler
             var card = new Border { Style = FindStyle("SettingsCardStyle") };
             var body = new StackPanel { Spacing = 12 };
             card.Child = body;
-            body.Children.Add(new TextBlock { Text = "Overlay", Style = FindStyle("SettingsCardTitleStyle") });
+            var cardHead = new StackPanel { Spacing = 3 };
+            cardHead.Children.Add(new TextBlock { Text = "RHI overlay", Style = FindStyle("SettingsCardTitleStyle") });
+            cardHead.Children.Add(new TextBlock
+            {
+                Text = "A full-screen RHI page over your game, opened with a key or a controller: achievements, screenshots, your notes, "
+                     + "playtime and the game's mod setup. Works while RHI is running, including from the tray.",
+                Style = FindStyle("SettingsCardDescStyle"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            body.Children.Add(cardHead);
 
             var columns = new Grid();
             columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

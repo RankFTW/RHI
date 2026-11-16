@@ -33,7 +33,7 @@ public partial class DetailPanelBuilder
         // Use cached state from card instead of File.Exists on UI thread
         bool isInstalled   = card.MfgAdaInstalled;
         bool rsInstalled   = card.IsRsInstalled;
-        bool rtx40Conflict = card.Rtx40MfgInstalled;
+        var  blocker       = ExtraBlocker(card, ExtraKind.MfgUnlockAddon);
         // Use AddonPackService.IsDownloaded instead of File.Exists
         bool staged        = _window.ViewModel.AddonPackServiceInstance.IsDownloaded("MFG Ada Unlock");
 
@@ -112,11 +112,6 @@ public partial class DetailPanelBuilder
             btnLabel   = "⚠  ReShade required";
             btnEnabled = false;
         }
-        else if (rtx40Conflict)
-        {
-            btnLabel   = "⚠  Universal MFG Unlocker installed";
-            btnEnabled = false;
-        }
         else if (!staged)
         {
             btnLabel   = "⬇  Install MFG Unlock";
@@ -144,8 +139,8 @@ public partial class DetailPanelBuilder
 
         if (!rsInstalled)
             ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Unlock requires it");
-        else if (rtx40Conflict)
-            ToolTipService.SetToolTip(installBtn, "Universal MFG Unlocker is already installed and conflicts. Remove it first.");
+        else if (blocker is { } mfgBlocker)
+            ApplyExtraBlock(installBtn, label, ExtraKind.MfgUnlockAddon, mfgBlocker);
 
         installBtn.Click += async (s, e) =>
         {
@@ -460,8 +455,9 @@ public partial class DetailPanelBuilder
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:IsInstalled({card.GameName})");
         bool isInstalled   = deSvc.IsStandaloneInstalledIn(installPath, currentDllName);
 
-        // Mutual exclusivity with OptiScaler
-        bool osConflict = card.IsOsInstalled;
+        // Can't go in with OptiScaler (it includes DLSS Enabler) or the other extras in the conflict table
+        var  blocker    = ExtraBlocker(card, ExtraKind.DlssEnabler);
+        bool osConflict = blocker == ExtraKind.OptiScaler;
 
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:StagedVersion({card.GameName})");
         // Status text
@@ -567,6 +563,10 @@ public partial class DetailPanelBuilder
             installBtn.IsHitTestVisible = false;
             installBtn.Opacity = 0.35;
             ToolTipService.SetToolTip(installBtn, "Cannot install alongside OptiScaler — DLSS Enabler is already included within OptiScaler");
+        }
+        else if (blocker is { } deBlocker)
+        {
+            ApplyExtraBlock(installBtn, label, ExtraKind.DlssEnabler, deBlocker);
         }
         else
         {

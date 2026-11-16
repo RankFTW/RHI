@@ -15,6 +15,23 @@ public sealed record ThemePalette(
     Color Background, Color Panel, Color Border, Color Muted, Color Text,
     Color Accent, Color Buttons, Color Installed, Color Update, Color Warning, Color Error)
 {
+    /// <summary>
+    /// Text on action buttons (exactly the default Buttons colour, #7AACDD: install buttons, Primary cog buttons,
+    /// "Current" chips). Null = follows <see cref="Buttons"/>, as before this was added; button backgrounds and
+    /// borders always follow Buttons.
+    /// </summary>
+    public Color? ButtonText { get; init; }
+
+    /// <summary>
+    /// Footer and status bar text (the bottom bar: last checked, version, Patch Notes, MOTD, Updates). Null = the
+    /// theme's dim grey, as before. The footer uses <see cref="FooterTextSource"/>, one step from TextDisabled
+    /// (#404858), so the mapper can tell it apart from other dim text.
+    /// </summary>
+    public Color? FooterText { get; init; }
+
+    /// <summary>FooterTextBrush's colour in Themes/DarkTheme.xaml.</summary>
+    public static readonly Color FooterTextSource = Color.FromArgb(255, 0x40, 0x48, 0x59);
+
     /// <summary>RHI's own dark look (the colours in Themes/DarkTheme.xaml).</summary>
     public static readonly ThemePalette Default = new(
         Hex("#121518"), Hex("#181D23"), Hex("#283240"), Hex("#6B7A8E"), Hex("#E8ECF2"),
@@ -26,8 +43,10 @@ public sealed record ThemePalette(
         ("Background", "Background"),
         ("Panel", "Panels"),
         ("Text", "Text"),
+        ("FooterText", "Footer text"),
         ("Accent", "Accent"),
         ("Buttons", "Buttons"),
+        ("ButtonText", "Button text"),
         ("Installed", "Installed"),
         ("Update", "Update available"),
         ("Warning", "Warning"),
@@ -41,8 +60,10 @@ public sealed record ThemePalette(
         "Border" => Border,
         "Muted" => Muted,
         "Text" => Text,
+        "FooterText" => FooterText ?? new ThemeColorMapper(this with { FooterText = null }).Map(FooterTextSource),
         "Accent" => Accent,
         "Buttons" => Buttons,
+        "ButtonText" => ButtonText ?? Buttons,
         "Installed" => Installed,
         "Update" => Update,
         "Warning" => Warning,
@@ -63,6 +84,8 @@ public sealed record ThemePalette(
             "Text" => this with { Text = c },
             "Accent" => this with { Accent = c },
             "Buttons" => this with { Buttons = c },
+            "ButtonText" => this with { ButtonText = c },
+            "FooterText" => this with { FooterText = c },
             "Installed" => this with { Installed = c },
             "Update" => this with { Update = c },
             "Warning" => this with { Warning = c },
@@ -86,14 +109,18 @@ public sealed record ThemePalette(
         };
     }
 
-    /// <summary>Saved form of a Custom theme: "Background=#RRGGBB;Panel=#RRGGBB;…" (only the picked colours).</summary>
+    /// <summary>Saved form of a Custom theme: "Background=#RRGGBB;Panel=#RRGGBB;…" (only the picked colours;
+    /// ButtonText / FooterText only when set, so unset ones keep following the theme).</summary>
     public string ToCustomString() =>
-        string.Join(";", CustomKeys.Select(k => $"{k.Key}={ToHex(Get(k.Key))}"));
+        string.Join(";", CustomKeys.Where(k => (k.Key != "ButtonText" || ButtonText != null) && (k.Key != "FooterText" || FooterText != null))
+            .Select(k => $"{k.Key}={ToHex(Get(k.Key))}"));
 
     /// <summary>Start of a theme share code.</summary>
     public const string SharePrefix = "RHI-THEME:";
 
     // The colours in a share code, in this order. Never reorder or remove: codes already shared depend on it.
+    // Optional extras on the end (added in 2.9.5): 10th = Button text, 11th = Footer text. An empty part = not set
+    // ("…-E07070--AABBCC" sets only Footer text); trailing unset ones are left off.
     private static readonly string[] ShareKeys =
         { "Background", "Panel", "Text", "Accent", "Buttons", "Installed", "Update", "Warning", "Error" };
 
@@ -101,12 +128,19 @@ public sealed record ThemePalette(
     /// A Custom theme as text to paste anywhere (Discord, forums):
     /// "RHI-THEME:180213-23141B-9BE1F2-C5ACE6-D2ACDD-3CCB85-B898E8-D4A856-E07070".
     /// </summary>
-    public string ToShareCode() =>
-        SharePrefix + string.Join("-", ShareKeys.Select(k => ToHex(Get(k))[1..]));
+    public string ToShareCode()
+    {
+        var code = SharePrefix + string.Join("-", ShareKeys.Select(k => ToHex(Get(k))[1..]));
+        string Opt(Color? c) => c is { } v ? ToHex(v)[1..] : "";
+        if (FooterText != null) return code + "-" + Opt(ButtonText) + "-" + Opt(FooterText);
+        if (ButtonText != null) return code + "-" + Opt(ButtonText);
+        return code;
+    }
 
     /// <summary>
     /// Reads a <see cref="ToShareCode"/> code. Text around it (a pasted message) and case are ignored, and a
-    /// "#" before each colour is allowed. False when there's no code or any of its nine colours is unreadable.
+    /// "#" before each colour is allowed. False when there's no code or any of its nine colours (plus the optional
+    /// button / footer text) is unreadable.
     /// </summary>
     public static bool TryParseShareCode(string? text, out ThemePalette palette)
     {
@@ -118,14 +152,16 @@ public sealed record ThemePalette(
         int end = body.IndexOfAny(new[] { ' ', '\t', '\r', '\n' });
         if (end >= 0) body = body[..end];
         var parts = body.Split('-');
-        if (parts.Length != ShareKeys.Length) return false;
+        string[] optional = { "ButtonText", "FooterText" };
+        if (parts.Length < ShareKeys.Length || parts.Length > ShareKeys.Length + optional.Length) return false;
 
         var p = Default;
-        for (int i = 0; i < ShareKeys.Length; i++)
+        for (int i = 0; i < parts.Length; i++)
         {
             var hex = parts[i].Trim().TrimStart('#');
+            if (i >= ShareKeys.Length && hex.Length == 0) continue; // optional colour not set
             if (hex.Length != 6 || !TryHex("#" + hex, out var c)) return false;
-            p = p.With(ShareKeys[i], c);
+            p = p.With(i < ShareKeys.Length ? ShareKeys[i] : optional[i - ShareKeys.Length], c);
         }
         palette = p.WithDerivedNeutrals();
         return true;
@@ -233,11 +269,17 @@ public sealed class ThemeColorMapper
     private readonly Color[] _stopSrc;
     private readonly Color[] _stopDst;
     private readonly (Hsl Src, Hsl Dst)[] _accents;
+    private readonly Color? _buttonText;
+    private readonly Color _buttonsSrc;
+    private readonly Color? _footerText;
 
     public ThemeColorMapper(ThemePalette to)
     {
         var from = ThemePalette.Default;
         _identity = to == from;
+        _buttonText = to.ButtonText;
+        _footerText = to.FooterText;
+        _buttonsSrc = from.Buttons;
         var black = Color.FromArgb(255, 0, 0, 0);
         var white = Color.FromArgb(255, 255, 255, 255);
         _stopSrc = new[] { black, from.Background, from.Panel, from.Border, from.Muted, from.Text, white };
@@ -259,6 +301,13 @@ public sealed class ThemeColorMapper
     public Color Map(Color c)
     {
         if (_identity || c.A == 0) return c;
+        // Footer text: exactly FooterTextBrush's colour, when the theme sets its own
+        var fs = ThemePalette.FooterTextSource;
+        if (_footerText is { } ft && c.R == fs.R && c.G == fs.G && c.B == fs.B)
+            return Color.FromArgb(c.A, ft.R, ft.G, ft.B);
+        // Button text: exactly the default Buttons colour, when the theme sets its own
+        if (_buttonText is { } bt && c.R == _buttonsSrc.R && c.G == _buttonsSrc.G && c.B == _buttonsSrc.B)
+            return Color.FromArgb(c.A, bt.R, bt.G, bt.B);
         var hc = Hsl.From(c);
         var neutral = MapNeutral(hc);
 

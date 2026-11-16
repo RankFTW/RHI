@@ -306,8 +306,8 @@ public partial class SettingsHandler
     {
         EnsureSettingsPageHooks();
         EnsureNvAppLimitsPanel();
+        EnsureCustomFoldersCard();   // Game library card, which holds the Removed games button
         EnsureRemovedGamesButton();
-        EnsureCustomFoldersCard();
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureShippedAddonsSetting();
@@ -318,8 +318,8 @@ public partial class SettingsHandler
         EnsureLaunchButtonRows();
         EnsureShaderCompileRow();
         EnsureSteamGridDbCard();
-        EnsureAchievementsSection(); // before the nav, so it gets a jump button
-        EnsureRhiOverlaySection();   // same; lands after Achievements (both go just before Tools)
+        EnsureRhiOverlaySection();   // before the nav, so it gets a jump button (just before Tools)
+        EnsureAchievementsSection(); // a card in the overlay section, so after it
         EnsureSettingsNavigation();
         StartUpdateCountdown();
         if (wasAlreadyOpen || _settingsScroll == null) return; // keep the current position
@@ -330,6 +330,8 @@ public partial class SettingsHandler
         _navAnimating = false;
         _restoreOffset = double.NaN;
         _restoreKey = ViewModel.Settings.SettingsLastSection;
+        // Achievements was its own section before 2.9.5 Beta 3; it's a card in the overlay section now
+        if (string.Equals(_restoreKey, "Achievements", StringComparison.OrdinalIgnoreCase)) _restoreKey = "RhiOverlay";
         if (string.IsNullOrEmpty(_restoreKey) || FindSection(_restoreKey) == null)
             _restoreKey = _sections.Count > 0 ? _sections[0].Key : null;
         SetHighlightedSection(_restoreKey);

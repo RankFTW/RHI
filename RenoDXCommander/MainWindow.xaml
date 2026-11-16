@@ -3201,7 +3201,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" x:Name="StatusBarText" Text=""
-                           FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
+                           FontSize="11" Foreground="{StaticResource FooterTextBrush}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" MaxLines="1"/>
                 <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
@@ -3212,7 +3212,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="8">
                     <Button x:Name="StatusBarVersionText" x:FieldModifier="internal"
-                            FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
+                            FontSize="11" Foreground="{StaticResource FooterTextBrush}"
                             Background="Transparent" BorderThickness="0"
                             Padding="0,2" VerticalAlignment="Center"
                             Click="StatusBarVersion_Click"
@@ -3220,20 +3220,20 @@
                     <Button Content="Patch Notes"
                             Click="PatchNotesLink_Click"
                             Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                            Foreground="{StaticResource FooterTextBrush}" FontSize="11"
                             Padding="8,2" VerticalAlignment="Center"
                             ToolTipService.ToolTip="View recent patch notes"/>
                     <Button Content="MOTD"
                             Click="MotdButton_Click"
                             Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                            Foreground="{StaticResource FooterTextBrush}" FontSize="11"
                             Padding="8,2" VerticalAlignment="Center"
                             ToolTipService.ToolTip="Show message of the day"/>
                     <Button x:Name="UpdateLogBtn" x:FieldModifier="internal"
                             Content="Updates"
                             Click="UpdateLogButton_Click"
                             Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                            Foreground="{StaticResource FooterTextBrush}" FontSize="11"
                             Padding="8,2" VerticalAlignment="Center"
                             ToolTipService.ToolTip="View component update history"/>
                 </StackPanel>

@@ -1,7 +1,7 @@
-// SettingsHandler.Achievements.cs -- the "Achievements" section of Settings (before Tools & Maintenance):
-// opt-in toggles, one per store in a single card, for showing a game's achievements on the Spotlight page. Built in
-// C# (XAML constraint), inserted the first time Settings opens, before the section navigation is built
-// so it gets a jump button like the XAML sections.
+// SettingsHandler.Achievements.cs -- the "Achievements" card in Settings › Overlay & Achievements (after the RHI
+// overlay card): opt-in toggles, one per store, for showing a game's achievements on the Spotlight page and in the
+// overlay. Built in C# (XAML constraint) the first time Settings opens. If the overlay section is missing it falls
+// back to its own section before Tools & Maintenance.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,16 +29,22 @@ public partial class SettingsHandler
         {
             var panel = _window.SettingsCardsPanel;
             int toolsIndex = -1;
+            StackPanel? overlaySection = null;
             for (int i = 0; i < panel.Children.Count; i++)
-                if (panel.Children[i] is StackPanel sp && sp.Tag is string t && t == "Section:Tools") { toolsIndex = i; break; }
-            if (toolsIndex < 0)
+            {
+                if (panel.Children[i] is not StackPanel sp || sp.Tag is not string t) continue;
+                if (t == "Section:Tools") toolsIndex = i;
+                else if (t == "Section:RhiOverlay") overlaySection = sp;
+            }
+            if (toolsIndex < 0 && overlaySection == null)
             {
                 _achievementsSectionFailed = true;
                 CrashReporter.Log("[SettingsHandler.EnsureAchievementsSection] Tools section not found — section not added");
                 return;
             }
 
-            var section = new StackPanel { Tag = "Section:Achievements", Spacing = 12 };
+            // Normally a card in the Overlay & Achievements section; its own section only if that one failed
+            var section = overlaySection ?? new StackPanel { Tag = "Section:Achievements", Spacing = 12 };
             var head = new StackPanel { Spacing = 3 };
             head.Children.Add(new TextBlock
             {
@@ -55,13 +61,21 @@ public partial class SettingsHandler
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             });
-            section.Children.Add(head);
+            if (overlaySection == null) section.Children.Add(head);
 
             // One card: Steam left, Xbox right (the usual two-column Settings grid)
             var card = new Border { Style = FindStyle("SettingsCardStyle") };
             var body = new StackPanel { Spacing = 12 };
             card.Child = body;
-            body.Children.Add(new TextBlock { Text = "Stores", Style = FindStyle("SettingsCardTitleStyle") });
+            var cardHead = new StackPanel { Spacing = 3 };
+            cardHead.Children.Add(new TextBlock { Text = "Achievements", Style = FindStyle("SettingsCardTitleStyle") });
+            cardHead.Children.Add(new TextBlock
+            {
+                Text = "Show your achievements on the Spotlight page and in the RHI overlay. Off by default; turn on the stores you want to see.",
+                Style = FindStyle("SettingsCardDescStyle"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            body.Children.Add(cardHead);
 
             var columns = new Grid();
             columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -98,13 +112,13 @@ public partial class SettingsHandler
             body.Children.Add(columns);
             body.Children.Add(new TextBlock
             {
-                Text = "Progress, unlock dates, icons and rarity, read from each store's files on this PC. Spotlight layout only.",
+                Text = "Progress, unlock dates, icons and rarity, read from each store's files on this PC. Spotlight layout and the RHI overlay.",
                 Style = FindStyle("SettingsHelpStyle"),
                 TextWrapping = TextWrapping.Wrap,
             });
             section.Children.Add(card);
 
-            panel.Children.Insert(toolsIndex, section);
+            if (overlaySection == null) panel.Children.Insert(toolsIndex, section);
         }
         catch (Exception ex)
         {

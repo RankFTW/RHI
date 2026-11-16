@@ -87,8 +87,8 @@ public partial class DetailPanelBuilder
 
         var currentDllName = _window.ViewModel.GetDlssg2030InstalledAs(gameName, store);
         bool isInstalled   = svc.IsInstalledIn(installPath, currentDllName);
-        // Use cached state from card instead of File.Exists on UI thread
-        bool addonConflict = card.MfgAdaInstalled;
+        // Extras that can't be installed together (DetailPanelBuilder.Extras.Conflicts.cs)
+        var blocker = ExtraBlocker(card, ExtraKind.Dlssg2030);
 
         string statusText  = isInstalled ? (svc.StagedVersion ?? "Installed") : "Ready";
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
@@ -170,12 +170,9 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
         };
 
-        if (addonConflict)
+        if (blocker is { } fgBlocker)
         {
-            installBtn.IsEnabled = false;
-            installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Unlock (addon) is installed and conflicts. Remove it from the addon picker first.");
+            ApplyExtraBlock(installBtn, label, ExtraKind.Dlssg2030, fgBlocker);
         }
         else
         {
@@ -374,7 +371,7 @@ public partial class DetailPanelBuilder
 
         // Use cached state from card instead of File.Exists on UI thread
         bool isInstalled   = card.Rtx40MfgInstalled;
-        bool addonConflict = card.MfgAdaInstalled;
+        var  blocker       = ExtraBlocker(card, ExtraKind.UniversalMfg);
         var currentDllName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store);
         bool isPluginInstall = isInstalled && Rtx40MfgService.IsPluginInstall(currentDllName); // loaded by OptiScaler
         bool isHsfMods       = isInstalled && Rtx40MfgService.IsHsfModsInstall(currentDllName); // loaded by HSF's helper
@@ -469,12 +466,9 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
         };
 
-        if (addonConflict)
+        if (blocker is { } mfgBlocker)
         {
-            installBtn.IsEnabled = false;
-            installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Unlock (addon) is already installed and conflicts with Universal MFG Unlocker. Remove it from the addon picker first.");
+            ApplyExtraBlock(installBtn, label, ExtraKind.UniversalMfg, mfgBlocker);
         }
         else
         {

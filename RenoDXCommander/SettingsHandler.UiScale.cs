@@ -1,4 +1,5 @@
-// SettingsHandler.UiScale.cs — Settings › General › Windows: Interface size.
+// SettingsHandler.UiScale.cs — Settings › General › Appearance (right column): Interface size, Top bar size and
+// Game list size. Falls back to under Start with Windows if the Appearance card couldn't be built.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,19 +14,32 @@ public partial class SettingsHandler
     private ComboBox? _gameListScaleCombo;
     private bool _uiScaleSelecting;
 
-    /// <summary>Adds the "Interface size" row under Start with Windows (once) and selects the saved value.</summary>
+    /// <summary>Adds the size rows to the Appearance card (once) and selects the saved values.</summary>
     private void EnsureUiScaleRow()
     {
         try
         {
             if (_uiScaleCombo == null)
             {
-                if (FindRowOf(_window.SettingsCardsPanel, _window.StartWithWindowsCombo) is not { } found)
+                // The Appearance card's sizes column (built here if Settings hasn't built it yet)
+                EnsureColorThemeCard();
+                Panel list;
+                int insertAt;
+                if (_appearanceSizes != null)
                 {
-                    CrashReporter.Log("[SettingsHandler.EnsureUiScaleRow] Start with Windows row not found");
+                    list = _appearanceSizes;
+                    insertAt = list.Children.Count;
+                }
+                else if (FindRowOf(_window.SettingsCardsPanel, _window.StartWithWindowsCombo) is { } found)
+                {
+                    list = found.Item1;
+                    insertAt = list.Children.IndexOf(found.Item2) + 1;
+                }
+                else
+                {
+                    CrashReporter.Log("[SettingsHandler.EnsureUiScaleRow] Appearance card and Start with Windows row not found");
                     return;
                 }
-                var (list, anchorRow) = found;
 
                 var row = new Grid { ColumnSpacing = 10 };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -46,7 +60,7 @@ public partial class SettingsHandler
                     "Pop-ups, dropdown lists and tooltips keep the Windows size.");
                 Grid.SetColumn(combo, 1);
                 row.Children.Add(combo);
-                list.Children.Insert(list.Children.IndexOf(anchorRow) + 1, row);
+                list.Children.Insert(Math.Min(insertAt, list.Children.Count), row);
                 _uiScaleCombo = combo;
                 combo.SelectionChanged += UiScaleCombo_SelectionChanged;
 

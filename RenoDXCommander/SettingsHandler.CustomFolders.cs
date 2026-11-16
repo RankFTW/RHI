@@ -1,6 +1,7 @@
-// SettingsHandler.CustomFolders.cs -- "Custom game folders" card at the top of Settings › Tools & Maintenance:
-// folders RHI scans for DRM-free / non-store games (MainViewModel.CustomFolders.cs). Lists the folders with
-// Remove, plus Add folder, Scan now, Review (when games are waiting) and Forget ignored games.
+// SettingsHandler.CustomFolders.cs -- "Game library" card at the top of Settings › Tools & Maintenance.
+// Custom game folders: folders RHI scans for DRM-free / non-store games (MainViewModel.CustomFolders.cs), listed
+// with Remove, plus Add folder, Scan now, Review (when games are waiting) and Forget ignored games.
+// Removed games: the button from SettingsHandler.RemovedGames.cs goes in _removedGamesHost.
 // Built in C# (XAML constraint), inserted the first time Settings opens.
 
 using Microsoft.UI.Xaml;
@@ -14,6 +15,8 @@ namespace RenoDXCommander;
 public partial class SettingsHandler
 {
     private StackPanel? _customFoldersList;
+    /// <summary>The Game library card's Removed games row, where EnsureRemovedGamesButton puts its button.</summary>
+    private Panel? _removedGamesHost;
     private TextBlock? _customFoldersStatus;
     private Button? _customFoldersReviewBtn;
     private Button? _customFoldersForgetBtn;
@@ -41,15 +44,23 @@ public partial class SettingsHandler
             card.Child = body;
 
             var head = new StackPanel { Spacing = 3 };
-            head.Children.Add(new TextBlock { Text = "Custom game folders", Style = FindStyle("SettingsCardTitleStyle") });
+            head.Children.Add(new TextBlock { Text = "Game library", Style = FindStyle("SettingsCardTitleStyle") });
             head.Children.Add(new TextBlock
             {
-                Text = "Folders RHI checks for games from outside the supported stores, such as DRM-free downloads. "
-                     + "Each folder inside one is treated as a game. Games found are offered to you to add, never added on their own.",
+                Text = "Games from outside the supported stores, and games you took out of the list.",
                 Style = FindStyle("SettingsCardDescStyle"),
                 TextWrapping = TextWrapping.Wrap,
             });
             body.Children.Add(head);
+
+            body.Children.Add(new TextBlock { Text = "Custom game folders", Style = FindStyle("SettingsHeadStyle") });
+            body.Children.Add(new TextBlock
+            {
+                Text = "Folders RHI checks for games from outside the supported stores, such as DRM-free downloads. "
+                     + "Each folder inside one is treated as a game. Games found are offered to you to add, never added on their own.",
+                Style = FindStyle("SettingsHelpStyle"),
+                TextWrapping = TextWrapping.Wrap,
+            });
 
             _customFoldersList = new StackPanel { Spacing = 6 };
             body.Children.Add(_customFoldersList);
@@ -104,6 +115,17 @@ public partial class SettingsHandler
                 Visibility = Visibility.Collapsed,
             };
             body.Children.Add(_customFoldersStatus);
+
+            // Removed games (button added by EnsureRemovedGamesButton)
+            body.Children.Add(new TextBlock { Text = "Removed games", Style = FindStyle("SettingsHeadStyle"), Margin = new Thickness(0, 6, 0, 0) });
+            body.Children.Add(new TextBlock
+            {
+                Text = "Games you took out with Remove from RHI in a game's Management section. Open the list to put one back.",
+                Style = FindStyle("SettingsHelpStyle"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            _removedGamesHost = new WrapPanel { HorizontalSpacing = 8, VerticalSpacing = 8 };
+            body.Children.Add(_removedGamesHost);
 
             // After the heading, before the Tools card
             section.Children.Insert(Math.Min(1, section.Children.Count), card);

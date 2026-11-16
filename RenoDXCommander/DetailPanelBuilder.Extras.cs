@@ -185,7 +185,9 @@ public partial class DetailPanelBuilder
 
         if (propertyName is "IsOsInstalled" or "OsActionLabel" or "OsStatusText"
             or "OsStatusColor" or "OsDeleteVisibility" or "OsRowVisibility"
-            or "OsInstallEnabled" or "OsBtnBackground" or "OsInstalledFile" or "Is32Bit")
+            or "OsInstallEnabled" or "OsBtnBackground" or "OsInstalledFile" or "Is32Bit"
+            // Installed state the Extras conflict checks read (MFG Unlock can be added from the addon picker)
+            or "MfgAdaInstalled" or "Rtx40MfgInstalled")
         {
             RequestExtrasRebuild(card);
         }
@@ -394,6 +396,8 @@ public partial class DetailPanelBuilder
         // No "◄ see Info" marker in Tabs / Spotlight: it crowds the narrower button, and the Info button is beside it
         installBtn.Content = WithInfoArrow(osLabel, !Layout.IsTabs && HasRealInfoContent(card, AddonType.OptiScaler), card.OsStatus == GameStatus.UpdateAvailable, installBtn);
         installBtn.Click += (s, e) => _window.InstallOsButton_Click(s, e);
+        if (!osGreyed && ExtraBlocker(card, ExtraKind.OptiScaler) is { } osBlocker)
+            ApplyExtraBlock(installBtn, label, ExtraKind.OptiScaler, osBlocker);
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
 

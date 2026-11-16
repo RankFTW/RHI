@@ -98,7 +98,11 @@ public class ThemePaletteTests
         var p = ThemePresets.Find("Kiro")!.Palette;
         var back = ThemePalette.ParseCustom(p.ToCustomString(), ThemePalette.Default);
         foreach (var (key, _) in ThemePalette.CustomKeys)
+        {
+            // Unset footer text follows the dim grey, which Custom re-derives from Panel / Text (presets may set their own)
+            if (key == "FooterText" && p.FooterText == null) continue;
             Assert.Equal(p.Get(key), back.Get(key));
+        }
     }
 
     [Fact]

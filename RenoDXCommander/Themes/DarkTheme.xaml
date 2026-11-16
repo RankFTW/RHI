@@ -102,6 +102,8 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
     <SolidColorBrush x:Key="TextTertiaryBrush"  Color="{StaticResource TextTertiary}"/>
     <SolidColorBrush x:Key="TextDisabledBrush"  Color="{StaticResource TextDisabled}"/>
+    <!-- Footer / status bar text: TextDisabled, one step bluer so the theme can recolour it on its own (ThemePalette.FooterText) -->
+    <SolidColorBrush x:Key="FooterTextBrush"    Color="#FF404859"/>
 
     <!-- Accents -->
     <SolidColorBrush x:Key="AccentTealBrush"       Color="{StaticResource AccentTeal}"/>
