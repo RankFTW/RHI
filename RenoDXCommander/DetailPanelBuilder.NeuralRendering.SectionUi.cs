@@ -881,9 +881,8 @@ public partial class DetailPanelBuilder
                     Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
                 feederMv = FeederPreset.ReadGameProvider(installPath);
 
-                // dgVoodoo2 (DX9 Feeder) — only when DX9 is the PRIMARY graphics API,
-                // not just present in DetectedApis (UE4 games have a legacy DX9 shim in DetectedApis).
-                isDx9Feeder = card.GraphicsApi == GraphicsApiType.DirectX9;
+                // dgVoodoo2 (DX9 Feeder): the same rule the install uses (IsDx9FeederGame)
+                isDx9Feeder = IsDx9FeederGame(card);
                 dgVoodooOk = isDx9Feeder && App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
 
                 // GITC Uplift: addon + helper in the addon folder, NR DLL in GITC-Uplift\, shaders
@@ -1450,8 +1449,7 @@ public partial class DetailPanelBuilder
                     // For DX9 Feeder: dgVoodoo2 will own d3d9.dll, so ReShade must be dxgi.dll.
                     // Call InstallReShadeInternalAsync directly with the forced filename instead of
                     // going through InstallReShadeCommand which uses auto-detection (returns d3d9.dll for DX9).
-                    bool feederDx9 = selKey == NrMethodFeeder
-                        && card.GraphicsApi == GraphicsApiType.DirectX9;
+                    bool feederDx9 = selKey == NrMethodFeeder && IsDx9FeederGame(card);
                     if (feederDx9)
                         await _window.ViewModel.InstallReShadeInternalAsync(card, "dxgi.dll").ConfigureAwait(false);
                     else
@@ -1461,8 +1459,7 @@ public partial class DetailPanelBuilder
                     await Task.Delay(500).ConfigureAwait(false);
                 }
                 else if (selKey == NrMethodFeeder
-                    && (card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                        || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9))
+                    && IsDx9FeederGame(card)
                     && card.RsRecord?.InstalledAs?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // ReShade already installed as d3d9.dll (wrong for dgVoodoo) — reinstall as dxgi.dll

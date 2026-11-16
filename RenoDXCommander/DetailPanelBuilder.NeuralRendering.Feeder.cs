@@ -9,6 +9,23 @@ namespace RenoDXCommander;
 
 public partial class DetailPanelBuilder
 {
+    /// <summary>
+    /// A DirectX 9 game for DLSS5 Feeder: it gets dgVoodoo2 as D3D9.dll, so ReShade must be dxgi.dll. One rule for every
+    /// Feeder check (ReShade name on a fresh install, fixing an existing d3d9.dll ReShade, the dgVoodoo2 deploy, its
+    /// install record and the checklist). They used to differ (main API vs any detected API), so a game whose main API
+    /// wasn't DX9 but which also showed DX9 got ReShade as d3d9.dll and then dgVoodoo2 over it: ReShade never loaded
+    /// (issue #135, Assassin's Creed Brotherhood, whose PCGW data also lists OpenGL). DX9 is the main API, or DX9 was
+    /// detected without DX11 / DX12: DX11 / DX12 games (UE4) often list DX9 only for a legacy shim, the same precedence
+    /// MainViewModel.ResolveAutoReShadeFilename uses.
+    /// </summary>
+    internal static bool IsDx9FeederGame(GameCardViewModel card)
+    {
+        if (card.GraphicsApi == GraphicsApiType.DirectX9) return true;
+        var apis = card.DetectedApis;
+        return apis.Contains(GraphicsApiType.DirectX9)
+            && !apis.Contains(GraphicsApiType.DirectX11) && !apis.Contains(GraphicsApiType.DirectX12);
+    }
+
     private async Task InstallFeederAddonAsync(
         GameCardViewModel card,
         Button statusBtn,
@@ -362,8 +379,7 @@ public partial class DetailPanelBuilder
         // ── DX9 games: deploy dgVoodoo2 (D3D9→DX11 translation) ──
         // dgVoodoo2 is required for ALL DX9 Feeder games — not just the Luma manifest list.
         // Fall back to GraphicsApi when DetectedApis is empty (e.g. cached DX9 game with empty All set).
-        bool isDx9 = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                  || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
+        bool isDx9 = IsDx9FeederGame(card);
         if (isDx9)
         {
             var manifest = _window.ViewModel.Manifest;
@@ -494,8 +510,7 @@ public partial class DetailPanelBuilder
                 feederFiles.Add(@"host64\nvngx_dlssnr.dll");
                 feederFiles.Add(@"host64\nvngx_dlss.dll");
             }
-            bool feederIsDx9 = card.DetectedApis.Contains(Models.GraphicsApiType.DirectX9)
-                            || (card.DetectedApis.Count == 0 && card.GraphicsApi == Models.GraphicsApiType.DirectX9);
+            bool feederIsDx9 = IsDx9FeederGame(card);
             if (feederIsDx9)
             {
                 feederFiles.Add("D3D9.dll");
