@@ -77,6 +77,14 @@ public partial class MainViewModel
         return HsfService.PickRoute(forceDx12 || HsfIsDx12(card), card.Is32Bit, hasSl, card.StreamlineInstalledVersion);
     }
 
+    /// <summary>Settings › Components › HSF's keys by HSF.ini key (0 = none: HSF's own default stays).</summary>
+    public IReadOnlyDictionary<string, int> GlobalHsfKeybinds() => new Dictionary<string, int>
+    {
+        ["FrameGenKey"] = Settings.HsfFrameGenKey,
+        ["MfgKey"] = Settings.HsfMfgKey,
+        ["OsdKey"] = Settings.HsfOsdKey,
+    };
+
     /// <summary>
     /// Downloads (or updates) HSF and installs it into the game: add-on, HSF_streamline, HSF.ini with
     /// the D3D12 route set, then HSF.fx and LaunchPad through the shader sync. Returns an error, or null.
@@ -95,7 +103,10 @@ public partial class MainViewModel
                     return svc.LastError ?? "Couldn't download HSF. Try again later.";
                 if (launchpadOn && !UpliftService.LaunchpadStaged)
                     await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
+                // The global HSF keys go into a new HSF.ini only: an existing one keeps the keys set for this game
+                bool freshIni = !File.Exists(HsfService.IniPath(installPath));
                 svc.Install(installPath, card.Is32Bit, launchpadOn);
+                if (freshIni) svc.ApplyKeybinds(installPath, GlobalHsfKeybinds());
                 route = HsfRouteFor(card);
                 svc.PresetRoute(installPath, route);
                 return null;

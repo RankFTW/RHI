@@ -108,7 +108,17 @@ public partial class SettingsHandler
             };
             body.Children.Add(write);
 
-            section.Children.Insert(section.Children.IndexOf(osCard) + 1, card);
+            // GITC Uplift and HSF side by side (SettingsHandler.HsfKeys.cs)
+            var pair = new Grid { ColumnSpacing = 12 };
+            pair.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            pair.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            card.VerticalAlignment = VerticalAlignment.Stretch;
+            pair.Children.Add(card);
+            var hsfCard = BuildHsfKeysCard();
+            hsfCard.VerticalAlignment = VerticalAlignment.Stretch;
+            Grid.SetColumn(hsfCard, 1);
+            pair.Children.Add(hsfCard);
+            section.Children.Insert(section.Children.IndexOf(osCard) + 1, pair);
             _upliftKeyBox = box;
         }
         catch (Exception ex)

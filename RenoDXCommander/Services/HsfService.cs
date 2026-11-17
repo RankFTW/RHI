@@ -38,7 +38,7 @@ using RenoDXCommander.Models;
 
 namespace RenoDXCommander.Services;
 
-public class HsfService
+public partial class HsfService
 {
     private const string ReleasesApiUrl = "https://api.github.com/repos/Capt-Hunter/HSF/releases?per_page=10";
     public const string ReleasesPage = "https://github.com/Capt-Hunter/HSF";

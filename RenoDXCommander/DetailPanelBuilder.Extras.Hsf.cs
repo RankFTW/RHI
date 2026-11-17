@@ -323,12 +323,55 @@ public partial class DetailPanelBuilder
         });
     }
 
+    /// <summary>
+    /// The ⚙'s Keys section: this game's HSF hotkeys, written straight to its HSF.ini (HSF picks them up while the game
+    /// runs). ↺ puts back the key from Settings › Components › HSF, or HSF's default when none is set there.
+    /// </summary>
+    private void AddHsfKeybindRows(CogDialog cog, string installPath, HsfService svc)
+    {
+        cog.AddSection("Keys");
+        cog.AddIntro("HSF's keys in this game. Click a box and press a key; Backspace sets None. They're also in the KEYBINDS section "
+            + "of HSF's menu. Frame gen and overlay keys need an HSF version with KEYBINDS in its menu (newer than 0.9.8.6).");
+        var boxes = new Dictionary<string, Grid>();
+        // A key another HSF key had is set to None in HSF.ini: show that in its box too
+        void RefreshOthers(string changed)
+        {
+            foreach (var other in HsfService.Keybinds)
+                if (other.IniKey != changed && boxes.TryGetValue(other.IniKey, out var g) && g.Children.OfType<TextBox>().FirstOrDefault() is { } box)
+                    box.Text = SingleKeyBox.Text(HsfService.ReadKeybind(installPath, other));
+        }
+        int Write(HsfService.Keybind bind, int vk)
+        {
+            if (svc.WriteKeybind(installPath, bind, vk))
+            {
+                RefreshOthers(bind.IniKey);
+                cog.SetSuccess($"{bind.Label} set to {SingleKeyBox.Text(vk)}.");
+                return vk;
+            }
+            cog.SetError("Couldn't change HSF.ini. Close the game and try again.");
+            return HsfService.ReadKeybind(installPath, bind);
+        }
+        var globals = _window.ViewModel.GlobalHsfKeybinds();
+        foreach (var bind in HsfService.Keybinds)
+        {
+            var b = bind;
+            var keyBox = SingleKeyBox.Create(HsfService.ReadKeybind(installPath, b),
+                vk => Write(b, vk),
+                () => Write(b, globals.TryGetValue(b.IniKey, out var g) && g > 0 ? g : b.Default),
+                b.Help, "Back to the key from Settings › Components › HSF, or HSF's default");
+            keyBox.MaxWidth = 260;
+            keyBox.HorizontalAlignment = HorizontalAlignment.Left;
+            boxes[b.IniKey] = keyBox;
+            cog.AddRow(b.Label, keyBox, b.Help);
+        }
+    }
+
     private async Task ShowHsfSettingsAsync(GameCardViewModel card, bool isInstalled, bool rhiInstalled, HsfService svc)
     {
         var installPath = card.InstallPath ?? "";
         var cog = new CogDialog("HSF", _window.Content.XamlRoot);
         cog.AddIntro("HSF adds DLSS Frame Generation to the game. Open ReShade's overlay (Home key) and go to the HSF tab: "
-            + "turn FRAME GEN on and pick the multiplier (F7 cycles it in game). Set an FPS cap there for smoother frames.");
+            + "turn FRAME GEN on and pick the multiplier. Set an FPS cap there for smoother frames. The in-game keys are under Keys below.");
 
         cog.AddSection("This game");
         if (!isInstalled)
@@ -370,6 +413,7 @@ public partial class DetailPanelBuilder
                     });
                 });
         }
+        if (isInstalled) AddHsfKeybindRows(cog, installPath, svc);
         if (MainViewModel.HsfReShadeVersionNote(card) is { } rsNote) cog.AddWarning(rsNote);
         if (MainViewModel.HsfBlockReason(card) is { } reason) cog.AddWarning(reason);
 
