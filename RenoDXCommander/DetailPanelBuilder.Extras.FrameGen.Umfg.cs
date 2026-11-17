@@ -2,11 +2,13 @@
 // beside the exe, RTXMFG.RtxHair.ini) and DLSS 5 (nvngx_dlssnr.dll beside the exe). Wording follows the mod's
 // docs/compatibility.md ("Path traced hair") and docs/menu.md.
 
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RenoDXCommander;
 
@@ -60,14 +62,137 @@ public partial class DetailPanelBuilder
             });
     }
 
-    private static void AddUmfgDlss5Section(CogDialog cog, string installPath)
+    private void AddUmfgDlss5Section(CogDialog cog, GameCardViewModel card, Rtx40MfgService mfgSvc, bool isInstalled, bool isHsfMods)
     {
+        var installPath = card.InstallPath ?? "";
         cog.AddSection("DLSS 5");
         cog.AddIntro("The mod's DLSS 5 tab appears when NVIDIA's nvngx_dlssnr.dll (a version that supports your card) is beside the game's exe, "
-            + "in games running DLSS Super Resolution, DLAA or Ray Reconstruction. RHI's Neural Rendering section can install it.");
+            + "in games running DLSS Super Resolution, DLAA or Ray Reconstruction. RHI can install just that DLL here, or a full method from the Neural Rendering section.");
         if (string.IsNullOrEmpty(installPath)) return;
-        cog.AddNote(File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"))
-            ? "nvngx_dlssnr.dll: beside the game's exe."
-            : "nvngx_dlssnr.dll: not beside the game's exe.");
+
+        var dest = Path.Combine(installPath, Rtx40MfgService.NrDllName);
+        bool present = File.Exists(dest);
+        bool gamesOwn = present && !File.Exists(dest + ".original");
+        bool owned = Rtx40MfgService.OwnsNrDll(installPath);
+        var others = present
+            ? Models.RhiInstallManifest.GetSharedFileOwners(installPath, Rtx40MfgService.NrDllName)
+                .Where(o => !o.Equals(Rtx40MfgService.NrOwnerName, StringComparison.OrdinalIgnoreCase)).ToList()
+            : new System.Collections.Generic.List<string>();
+        string? ver = null;
+        if (present)
+        {
+            try
+            {
+                var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(DlssNrCostScalerService.ResolveRealNrDllPath(dest));
+                ver = $"{vi.FileMajorPart}.{vi.FileMinorPart}.{vi.FileBuildPart}";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { CrashReporter.Log($"[UmfgCog] Couldn't read the NR DLL version — {ex.Message}"); }
+        }
+        string verText = ver != null ? $" ({ver})" : "";
+        cog.AddNote(!present ? "nvngx_dlssnr.dll: not beside the game's exe."
+            : gamesOwn ? $"nvngx_dlssnr.dll{verText}: the game's own (left as it is)."
+            : others.Count > 0 ? $"nvngx_dlssnr.dll{verText}: installed by RHI ({string.Join(", ", others)})."
+            : $"nvngx_dlssnr.dll{verText}: installed by RHI for the mod.");
+
+        if (!isInstalled || isHsfMods || gamesOwn) return;
+        var family = GpuInfoService.Cached is { } gpus ? GpuInfoService.Primary(gpus)?.Family : null;
+        if (family is GpuFamily.NotRtx)
+        {
+            cog.AddNote("DLSS 5 needs an NVIDIA RTX card, so RHI doesn't offer the DLL on this PC.");
+            return;
+        }
+        var version = Rtx40MfgService.NrVersionFor(family);
+
+        bool on = owned;
+        bool suppress = false;
+        Microsoft.UI.Xaml.Controls.ComboBox? combo = null;
+        void Revert()
+        {
+            if (combo == null) return;
+            suppress = true;
+            combo.SelectedIndex = on ? 1 : 0;
+            suppress = false;
+        }
+
+        async Task ApplyAsync(bool enable)
+        {
+            if (enable == on) return;
+            if (!enable)
+            {
+                await Task.Run(() => mfgSvc.RemoveNrDll(installPath));
+                on = false;
+                cog.SetSuccess(others.Count > 0
+                    ? "The mod no longer uses its own copy; nvngx_dlssnr.dll stays for the other components that use it."
+                    : "Removed nvngx_dlssnr.dll.");
+                RequestExtrasRebuild(card);
+                return;
+            }
+            if (combo != null) combo.IsEnabled = false;
+            try
+            {
+                var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
+                var cached = ResolveCachedNrDllPath(version);
+                if (cached == null)
+                {
+                    cog.SetStatus($"Downloading nvngx_dlssnr.dll {version}...");
+                    cached = await dlssS.EnsureSpecificDlssnrCachedAsync(version);
+                }
+                if (cached == null)
+                {
+                    Revert();
+                    cog.SetError($"Couldn't download nvngx_dlssnr.dll {version}. Nothing was installed.");
+                    return;
+                }
+                var result = await Task.Run(() => mfgSvc.DeployNrDll(installPath, cached));
+                switch (result)
+                {
+                    case Rtx40MfgService.NrDeployResult.Failed:
+                        Revert();
+                        cog.SetError("Couldn't copy nvngx_dlssnr.dll beside the game's exe. Check that the game folder is writable.");
+                        return;
+                    case Rtx40MfgService.NrDeployResult.GamesOwn:
+                        Revert();
+                        cog.SetError("The game has its own nvngx_dlssnr.dll, so RHI left it as it is.");
+                        return;
+                    case Rtx40MfgService.NrDeployResult.SharedWithOther:
+                        cog.SetSuccess("RHI's nvngx_dlssnr.dll from the Neural Rendering section is already here; the mod uses that one. It stays while either needs it.");
+                        break;
+                    default:
+                        cog.SetSuccess($"Installed nvngx_dlssnr.dll {version} beside the game's exe. Restart the game to see the mod's DLSS 5 tab.");
+                        break;
+                }
+                // A game with no DLSS of its own may be in the scan skip cache: un-skip it so the NR DLL shows
+                dlssS.RecordDlssFound(card.GameName);
+                on = true;
+                RequestExtrasRebuild(card);
+            }
+            finally
+            {
+                if (combo != null) combo.IsEnabled = true;
+            }
+        }
+
+        combo = cog.AddCombo("Install NR DLL",
+            $"Copies only NVIDIA's Neural Rendering DLL (nvngx_dlssnr.dll {version}, picked for your "
+            + $"{(family is { } f ? GpuInfoService.FamilyLabel(f) : "card")}) beside the game's exe for the mod's DLSS 5 tab: no ReShade, add-on or host. "
+            + "No removes it again (kept while a Neural Rendering method still uses it). Removing the mod removes it too.",
+            new[] { "No", "Yes" }, on ? 1 : 0, i =>
+            {
+                if (suppress) return true;
+                _ = ApplySafeAsync(i == 1);
+                return true;
+            });
+
+        async Task ApplySafeAsync(bool enable)
+        {
+            try { await ApplyAsync(enable); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[UmfgCog] NR DLL change failed — {ex.Message}");
+                Revert();
+                cog.SetError($"Couldn't change the NR DLL: {ex.Message}");
+            }
+        }
     }
 }

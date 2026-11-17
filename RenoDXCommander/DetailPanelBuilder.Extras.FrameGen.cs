@@ -670,7 +670,7 @@ public partial class DetailPanelBuilder
                         + "If that happens, give ReShade a different DLL name in Game Overrides › DLL naming overrides.");
 
                 AddUmfgRtxHairSection(cog, card, mfgSvc, isInstalled, isHsfMods);
-                AddUmfgDlss5Section(cog, installPath);
+                AddUmfgDlss5Section(cog, card, mfgSvc, isInstalled, isHsfMods);
 
                 cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
                     async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/MFG-Unlocker")); }));
@@ -708,7 +708,11 @@ public partial class DetailPanelBuilder
                 removeBtn.IsEnabled = false;
                 // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
                 var liveName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? currentDllName;
-                await Task.Run(() => mfgSvc.Uninstall(installPath, liveName)); // hashes RHI's RTX Hair files
+                await Task.Run(() =>
+                {
+                    mfgSvc.Uninstall(installPath, liveName); // hashes RHI's RTX Hair files
+                    mfgSvc.RemoveNrDll(installPath);          // the DLSS 5 NR DLL, if the mod installed it
+                });
                 _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
                 card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
                 RequestExtrasRebuild(card);
