@@ -35,7 +35,7 @@ public partial class DetailPanelBuilder
             LineHeight = 20,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
-        Para($"{modName} is closed source: {author} publishes only the finished DLL, not its code, so nobody outside can check what it does.");
+        Para($"{modName} is closed source: {author} publishes only the compiled files, not its code, so nobody outside can check what it does.");
         var line = $"RHI downloads it unchanged from {author}'s GitHub releases. Only install it if you're OK with that. ";
         if (githubUrl == null)
             Para(line + "The Info button on its row opens its GitHub page.");

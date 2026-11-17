@@ -17,6 +17,24 @@ public partial class MainViewModel
         OptiScalerService.BeforeV10DeployHook               = card => MoveMfgIntoOptiScaler(card);
         OptiScalerService.V10InstallFailedHook              = card => MoveMfgOutOfOptiScaler(card);
         OptiScalerService.BeforeOptiScalerFolderRemovedHook = card => MoveMfgOutOfOptiScaler(card);
+        // RTX Hair files (dxcompiler.dll / dxil.dll) are only for DirectX 12 games
+        _rtx40MfgService.RunsDx12Provider = installPath =>
+            _allCards.ToList().Any(c => !string.IsNullOrEmpty(c.InstallPath)
+                && string.Equals(c.InstallPath.Replace('/', '\\').TrimEnd('\\'), installPath.Replace('/', '\\').TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
+                && UmfgRunsDx12(c));
+    }
+
+    /// <summary>
+    /// The game runs DirectX 12 as far as RHI knows (for Universal MFG Unlocker's RTX Hair files): the user's
+    /// Rendering API override when set, else DirectX 12 among the detected APIs. Not when it runs through Vulkan
+    /// (Vulkan games need no extra files) or the API is unknown.
+    /// </summary>
+    public bool UmfgRunsDx12(GameCardViewModel card)
+    {
+        if (card.RequiresVulkanInstall) return false;
+        if (GetApiOverride(card.GameName, card.Source ?? "") is { Count: > 0 } apis)
+            return apis.Contains(nameof(Models.GraphicsApiType.DirectX12), StringComparer.OrdinalIgnoreCase);
+        return card.GraphicsApi == Models.GraphicsApiType.DirectX12 || card.DetectedApis.Contains(Models.GraphicsApiType.DirectX12);
     }
 
     /// <summary>
@@ -60,7 +78,7 @@ public partial class MainViewModel
     public async Task<string?> EnsureUniversalMfgForPresetAsync(GameCardViewModel card)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return "This game has no install folder.";
-        if (card.MfgAdaInstalled) return "MFG Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the addon picker first.";
+        if (card.MfgAdaInstalled) return "MFG Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the Extras section first.";
 
         var installPath = card.InstallPath;
         var store       = card.Source ?? "";
@@ -90,6 +108,7 @@ public partial class MainViewModel
                     await _rtx40MfgService.EnsureStagingAsync().ConfigureAwait(false);
                 if (!asPlugin)
                     await _rtx40MfgService.EnsureXessStagingAsync().ConfigureAwait(false);
+                await _rtx40MfgService.PrepareRtxHairStagingAsync(installPath, target).ConfigureAwait(false);
                 return _rtx40MfgService.Install(installPath, target);
             });
             if (!ok) return "Couldn't download Universal MFG Unlocker. Try again, or install it from Extras.";

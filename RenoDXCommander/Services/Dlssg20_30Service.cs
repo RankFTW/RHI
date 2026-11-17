@@ -444,9 +444,12 @@ public class Dlssg20_30Service
     /// Copies the release's dlssg_sm86.ini, then writes back the user's values for the keys RHI
     /// manages (only valid values), so updates pick up new defaults without losing choices.
     /// </summary>
-    private void DeployIni(string installPath)
+    private void DeployIni(string installPath) =>
+        DeployIniFrom(Path.Combine(_pkgDir, IniFileName), Path.Combine(installPath, IniFileName));
+
+    /// <summary>Copies <paramref name="packagedIni"/> over <paramref name="dest"/>, keeping dest's valid <see cref="ManagedKeys"/> values.</summary>
+    internal static void DeployIniFrom(string packagedIni, string dest)
     {
-        var dest = Path.Combine(installPath, IniFileName);
         var kept = new List<(string Section, string Key, string Value)>();
         if (File.Exists(dest))
         {
@@ -457,7 +460,7 @@ public class Dlssg20_30Service
                     kept.Add((k.Section, k.Key, v));
             }
         }
-        File.Copy(Path.Combine(_pkgDir, IniFileName), dest, overwrite: true);
+        File.Copy(packagedIni, dest, overwrite: true);
         foreach (var (section, key, value) in kept)
             WriteIniValue(dest, section, key, value);
     }
@@ -504,6 +507,10 @@ public class Dlssg20_30Service
         new("DLSSG",            "Preset",             new[] { "A", "B", "C" }),
         new("DLSSG",            "Optimized",          new[] { "0", "1", "2", "3" }),
         new("SuperResolution",  "Mode",               new[] { "Off", "M-INT8", "L-INT8", "M-FP16", "L-FP16" }),
+        new("XeSSFG",           "FlowResolution",     new[] { "Coarse", "Middle", "Fine", "CoarseAt4K" }),
+        new("XeSSFG",           "UseHudless",         new[] { "Auto", "0", "1" }),
+        new("Logging",          "Level",              new[] { "0", "1", "2", "3" }),
+        new("Logging",          "FrameTiming",        new[] { "0", "1" }),
     };
 
     /// <summary>Reads a value from <c>[section] key=value</c>, or null if absent.</summary>

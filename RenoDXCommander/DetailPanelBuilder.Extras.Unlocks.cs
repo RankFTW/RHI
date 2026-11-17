@@ -57,10 +57,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Unlock — DLSS Multi Frame Generation (up to 6x) on RTX 40, and Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to 50, as a ReShade add-on.\n"
-            + "GPU: RTX 40 and 50 for DLSS frame generation (RTX 20 and 30 experimental). XeMFG on RTX 20 to 50.\n"
-            + "Game: DLSS MFG needs the game's own DLSS Frame Generation. XeMFG can also use the game's XeSS or FSR 3.1 frame generation (DirectX 12) or DLSS upscaling (Vulkan).\n"
-            + "API: DirectX 12, Vulkan experimental. Needs ReShade with add-on support.");
+        ToolTipService.SetToolTip(label, "MFG Unlock — DLSS multi frame generation (3x to 6x) on RTX 40, DLSS frame generation on RTX 20 and 30 (experimental), and Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to 50, as a ReShade add-on.\n"
+            + "Methods: DLSS-G (NVIDIA's generator), XeMFG DLSS-G (Intel's model inside the game's DLSS frame generation) and XeMFG (Intel's model with its own presentation).\n"
+            + "Game: DLSS-G and XeMFG DLSS-G need the game's DLSS Frame Generation, or Add frame generation (experimental) in games with DLSS Super Resolution only. XeMFG can also use the game's XeSS or FSR 3.1 frame generation, or DLSS upscaling.\n"
+            + "API: DirectX 12, Vulkan experimental. 64-bit games only. Needs ReShade with add-on support. Not for games with anti-cheat.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -107,9 +107,17 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         string btnLabel;
         bool btnEnabled = true;
+        // Only renodx-mfgunlock.addon64 is released: no 32-bit build
+        bool is32Bit = card.Is32Bit;
+        const string Only64BitText = "MFG Unlock works in 64-bit games only.";
         if (!rsInstalled)
         {
             btnLabel   = "⚠  ReShade required";
+            btnEnabled = false;
+        }
+        else if (is32Bit)
+        {
+            btnLabel   = "64-bit games only";
             btnEnabled = false;
         }
         else if (!staged)
@@ -139,12 +147,20 @@ public partial class DetailPanelBuilder
 
         if (!rsInstalled)
             ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Unlock requires it");
+        else if (is32Bit)
+        {
+            ToolTipService.SetToolTip(installBtn, Only64BitText);
+            // Disabled buttons show no tooltip: put the reason on the label too
+            ToolTipService.SetToolTip(label, $"{ToolTipService.GetToolTip(label)}\n\n{Only64BitText}");
+        }
         else if (blocker is { } mfgBlocker)
             ApplyExtraBlock(installBtn, label, ExtraKind.MfgUnlockAddon, mfgBlocker);
 
         installBtn.Click += async (s, e) =>
         {
-            if (string.IsNullOrEmpty(installPath)) return;
+            if (string.IsNullOrEmpty(installPath) || card.Is32Bit) return;
+            // Anti-cheat games: warn (Continue / Cancel), don't block
+            if (!await ConfirmAntiCheatAsync(card, "MFG Unlock", AntiCheatNoticeKey.MfgUnlock, installBtn.XamlRoot)) return;
             installBtn.IsEnabled = false;
             installBtn.Content   = "Downloading...";
             try
@@ -199,6 +215,11 @@ public partial class DetailPanelBuilder
 
         // Col 4 — Cog
         var cogBtn = CogDialog.MakeCogButton("MFG Unlock settings");
+        if (is32Bit)
+        {
+            cogBtn.IsEnabled = false;
+            cogBtn.Opacity   = 0.35;
+        }
         cogBtn.Click += async (s, e) =>
         {
             try
@@ -323,13 +344,15 @@ public partial class DetailPanelBuilder
     // ── MFG Ada Unlock ⚙ ──────────────────────────────────────────────────────
     // The mod keeps its settings in MFGAdaUnlock.ini beside the game's exe (it uses the exe's folder,
     // not the addon folder). Frame generation method = the mod's General › Frame generation method:
-    //   NVIDIA DLSS-G           → [Backend] Selected=DLSSG, [DLSSG] XmxGenerator=0
-    //   Intel XeMFG (CUDA)      → [Backend] Selected=XeMFG, [DLSSG] XmxGenerator=0
-    //   XeMFG via DLSS-G (XMX)  → [Backend] Selected=DLSSG, [DLSSG] XmxGenerator=1
-    // A missing ini or unknown value means DLSS-G, as in the mod.
+    //   DLSS-G        → [Backend] Selected=DLSSG, [DLSSG] XmxGenerator=0
+    //   XeMFG         → [Backend] Selected=XeMFG, [DLSSG] XmxGenerator=0
+    //   XeMFG DLSS-G  → [Backend] Selected=DLSSG, [DLSSG] XmxGenerator=1
+    // The mod renamed the methods in 1.10.0 (XMX → XeMFG DLSS-G, "XeMFG (CUDA)" → XeMFG); the ini keys kept
+    // their names. A missing ini or unknown value means DLSS-G, as in the mod.
+    // Add frame generation (1.10.0) = [DLSSG] AddFrameGeneration=0/1 in the same ini.
 
     private const string MfgAdaIniName = "MFGAdaUnlock.ini";
-    private static readonly string[] MfgAdaFgMethods = { "NVIDIA DLSS-G", "Intel XeMFG (CUDA)", "XeMFG via DLSS-G (XMX)" };
+    private static readonly string[] MfgAdaFgMethods = { "DLSS-G", "XeMFG", "XeMFG DLSS-G" };
 
     private static int ReadMfgAdaFgMethod(string iniPath)
     {
@@ -363,21 +386,21 @@ public partial class DetailPanelBuilder
         var installPath = card.InstallPath ?? "";
         var iniPath = string.IsNullOrEmpty(installPath) ? "" : Path.Combine(installPath, MfgAdaIniName);
 
-        cog.AddIntro("MFG Unlock unlocks DLSS multi frame generation (3x, 4x and 6x) on RTX 40 Series GPUs, " +
-                     "brings DLSS frame generation (DLSS-G and XMX) to RTX 20 and 30 Series GPUs (experimental), " +
-                     "and runs Intel XeSS frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs.");
+        cog.AddIntro("MFG Unlock unlocks DLSS multi frame generation (3x to 6x) on RTX 40 Series GPUs, " +
+                     "brings DLSS frame generation (DLSS-G and XeMFG DLSS-G) to RTX 20 and 30 Series GPUs (experimental), " +
+                     "and runs Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs.");
 
-        // Graphics API support, from the mod's README comparison table (1.8.0). Dual-API games with
+        // Graphics API support, from the mod's README (1.10.1). Dual-API games with
         // DirectX 12 get no warning: the user can run the DX12 version.
         var apis = new HashSet<GraphicsApiType>(card.DetectedApis ?? new HashSet<GraphicsApiType>()) { card.GraphicsApi };
         if (apis.Contains(GraphicsApiType.DirectX12)) { }
         else if (apis.Contains(GraphicsApiType.Vulkan))
-            cog.AddWarning("This is a Vulkan game. As of MFG Unlock 1.8.0, Vulkan support is experimental: Intel XeMFG (CUDA) needs the game " +
-                           "to use DLSS Super Resolution or Ray Reconstruction, NVIDIA DLSS-G is experimental, and XeMFG via DLSS-G (XMX) is DirectX 12 only. " +
+            cog.AddWarning("This is a Vulkan game. Vulkan support in MFG Unlock is experimental: DLSS-G and XeMFG DLSS-G need the game's own " +
+                           "DLSS frame generation (or Add frame generation), and XeMFG needs the game to use DLSS Super Resolution or Ray Reconstruction. " +
                            "Some Vulkan games also need a launch option before ReShade loads (for example +r_allowBlackListedLayers 1).");
         else if (apis.Overlaps(new[] { GraphicsApiType.DirectX8, GraphicsApiType.DirectX9, GraphicsApiType.DirectX10,
                                        GraphicsApiType.DirectX11, GraphicsApiType.OpenGL }))
-            cog.AddWarning($"This game uses {ApiDisplayName(card.GraphicsApi, apis)}. As of MFG Unlock 1.8.0, it only works in DirectX 12 games " +
+            cog.AddWarning($"This game uses {ApiDisplayName(card.GraphicsApi, apis)}. MFG Unlock only works in DirectX 12 games " +
                            "(and experimentally in Vulkan games), so it won't work here.");
 
         cog.AddSection("Frame generation");
@@ -385,9 +408,10 @@ public partial class DetailPanelBuilder
         ComboBox? dlssSrCombo = null;
         int current = string.IsNullOrEmpty(iniPath) ? 0 : ReadMfgAdaFgMethod(iniPath);
         cog.AddCombo("Frame generation method",
-            "NVIDIA DLSS-G: NVIDIA's frame generation, 3x to 6x on RTX 40 Series and, experimentally, on RTX 20 and 30 Series (needs a DLSS Frame Generation DLL 310 or newer; RTX 20/30 need one game restart the first time). " +
-            "Intel XeMFG (CUDA): Intel's XeSS frame generation, 2x to 6x on RTX 20 to RTX 50 Series. " +
-            "XeMFG via DLSS-G (XMX): the game's DLSS frame generation, with Intel's model generating the frames. " +
+            "DLSS-G: NVIDIA's frame generation, 3x to 6x on RTX 40 Series and, experimentally, on RTX 20 and 30 Series (needs a DLSS Frame Generation DLL 310 or newer; " +
+            "on RTX 20 and 30, start the game twice the first time and keep hardware-accelerated GPU scheduling on). " +
+            "XeMFG DLSS-G: Intel's model generates the frames inside the game's DLSS frame generation, 2x to 6x; the mod recommends it for games with DLSS frame generation. " +
+            "XeMFG: Intel's frame generation with its own presentation, 2x to 6x on RTX 20 to RTX 50 Series, for games without DLSS frame generation; it needs borderless or windowed mode. " +
             "Restart the game after changing this, and turn frame generation on in the game's own menu.",
             MfgAdaFgMethods, current,
             i =>
@@ -395,18 +419,38 @@ public partial class DetailPanelBuilder
                 if (string.IsNullOrEmpty(iniPath)) return false;
                 WriteMfgAdaFgMethod(iniPath, i);
                 if (openIniBtn != null) openIniBtn.IsEnabled = true; // the ini may not have existed before
-                if (dlssSrCombo != null) dlssSrCombo.IsEnabled = i == 1; // DLSS-SR input is an XeMFG (CUDA) option
+                if (dlssSrCombo != null) dlssSrCombo.IsEnabled = i == 1; // DLSS-SR input is an XeMFG option
                 CrashReporter.Log($"[MfgAdaCog] '{card.GameName}': frame generation method = {MfgAdaFgMethods[i]}");
                 cog.SetSuccess("Saved. Restart the game if it's running.");
                 return true;
             },
             isEnabled: !string.IsNullOrEmpty(iniPath));
 
-        // [Adapters] DlssSr: lets XeMFG work in games with DLSS Super Resolution but no DLSS frame generation
+        // [DLSSG] AddFrameGeneration (1.10.0): DLSS-G / XeMFG DLSS-G in games with DLSS Super Resolution only.
+        // Needs the add-on in ReShade's [ADDON] LoadFromDllMain, which the mod adds itself.
+        bool addFgOn = !string.IsNullOrEmpty(iniPath) && Dlssg20_30Service.ReadIniValue(iniPath, "DLSSG", "AddFrameGeneration") == "1";
+        cog.AddCombo("Add frame generation",
+            "Adds DLSS frame generation (DLSS-G or XeMFG DLSS-G) to games that have DLSS Super Resolution but no frame generation of their own. " +
+            "Games without Streamline also need NVIDIA's Streamline files: install them with Install / update Streamline files in the mod's panel. " +
+            "It doesn't work with HDR that uses a 16-bit (scRGB) swap chain: turn the game's HDR off or use XeMFG. Restart the game after changing it.",
+            new[] { "Off", "On (experimental)" }, addFgOn ? 1 : 0,
+            i =>
+            {
+                if (string.IsNullOrEmpty(iniPath)) return false;
+                Dlssg20_30Service.WriteIniValue(iniPath, "DLSSG", "AddFrameGeneration", i == 1 ? "1" : "0");
+                if (openIniBtn != null) openIniBtn.IsEnabled = true;
+                CrashReporter.Log($"[MfgAdaCog] '{card.GameName}': Add frame generation = {(i == 1 ? "On" : "Off")}");
+                cog.SetSuccess("Saved. Restart the game if it's running.");
+                return true;
+            },
+            isEnabled: !string.IsNullOrEmpty(iniPath));
+
+        // [Adapters] DlssSr: lets XeMFG work in games with DLSS Super Resolution but no frame generation
         bool dlssSrOn = !string.IsNullOrEmpty(iniPath) && Dlssg20_30Service.ReadIniValue(iniPath, "Adapters", "DlssSr") == "1";
         dlssSrCombo = cog.AddCombo("DLSS-SR input (experimental)",
-            "For games that use DLSS Super Resolution but have no DLSS frame generation for XeMFG to hook into. " +
-            "The camera is assumed and the HUD is interpolated with the scene. Only used with Intel XeMFG (CUDA). Restart the game after changing it.",
+            "For games that use DLSS Super Resolution but have no frame generation of their own. " +
+            "The camera is assumed and the HUD is interpolated with the scene. Only used with XeMFG, and not in games with DLSS, FSR 3.1 or XeSS frame generation. " +
+            "Restart the game after changing it.",
             new[] { "Off", "On" }, dlssSrOn ? 1 : 0,
             i =>
             {
@@ -423,17 +467,19 @@ public partial class DetailPanelBuilder
         switch (Rtx40MfgService.GetAdaXessState(installPath, out var xessDetail))
         {
             case Rtx40MfgService.AdaXessState.Ready:
-                cog.AddNote("Intel XeSS files (libxess_fg.dll and libxell.dll) are in the game folder, so both XeMFG methods are ready.");
+                cog.AddNote("Intel XeSS files (libxess_fg.dll and libxell.dll) are in the game folder, so XeMFG and XeMFG DLSS-G are ready.");
                 break;
             case Rtx40MfgService.AdaXessState.WrongVersion:
                 cog.AddWarning($"The game folder has a version of Intel's XeSS files that MFG Unlock doesn't accept ({xessDetail}). " +
                                "Reinstall MFG Unlock to replace them. The game's own copies are kept as a backup and put back if you remove the mod.");
                 break;
             default:
-                cog.AddWarning($"Intel XeSS files are missing from the game folder ({xessDetail}). Both XeMFG methods need them. " +
+                cog.AddWarning($"Intel XeSS files are missing from the game folder ({xessDetail}). XeMFG and XeMFG DLSS-G need them. " +
                                "Reinstall MFG Unlock to add them.");
                 break;
         }
+        cog.AddNote("If XeMFG doesn't start, other copies of Intel's libxess_fg.dll or libxell.dll elsewhere in the game folder may be a " +
+                    "different version: use Install / update files in the mod's panel.");
 
         cog.AddNote("Other settings are in the mod's panel in the ReShade overlay.");
         openIniBtn = cog.MakeOpenFileButton("Open MFGAdaUnlock.ini", string.IsNullOrEmpty(iniPath) ? null : iniPath);

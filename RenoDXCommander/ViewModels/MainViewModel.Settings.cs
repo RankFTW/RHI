@@ -1735,10 +1735,12 @@ public partial class MainViewModel
 
             if (dlssFixActive && hasStreamline && detection != null)
             {
-                // Add [ADDON] LoadFromDllMain
+                // Add DLSS Fix to [ADDON] LoadFromDllMain, keeping other add-ons listed there
+                // (MFG Unlock adds itself for RTX 20/30 and Add frame generation)
                 if (!ini.ContainsKey("ADDON"))
                     ini["ADDON"] = new AuxInstallService.OrderedDict();
-                ini["ADDON"]["LoadFromDllMain"] = "renodx-dlssfix.addon64";
+                ini["ADDON"].TryGetValue("LoadFromDllMain", out var earlyLoad);
+                ini["ADDON"]["LoadFromDllMain"] = ReShadeEarlyLoad.Add(earlyLoad, "renodx-dlssfix.addon64");
 
                 // Add [RENODX-DLSSFIX] section with paths
                 if (!ini.ContainsKey("RENODX-DLSSFIX"))
@@ -1775,12 +1777,11 @@ public partial class MainViewModel
                 if (ini.Remove("RENODX-DLSSFIX")) changed = true;
                 if (ini.TryGetValue("ADDON", out var addonSection) && addonSection.ContainsKey("LoadFromDllMain"))
                 {
+                    // Remove only DLSS Fix's entry; other add-ons keep early loading
                     var val = addonSection["LoadFromDllMain"];
-                    if (val.Contains("dlssfix", StringComparison.OrdinalIgnoreCase))
-                    {
-                        addonSection.Remove("LoadFromDllMain");
-                        changed = true;
-                    }
+                    var rest = ReShadeEarlyLoad.Remove(val, n => n.Contains("dlssfix", StringComparison.OrdinalIgnoreCase));
+                    if (rest == null) { addonSection.Remove("LoadFromDllMain"); changed = true; }
+                    else if (!string.Equals(rest, val, StringComparison.Ordinal)) { addonSection["LoadFromDllMain"] = rest; changed = true; }
                 }
                 if (changed) AuxInstallService.WriteIni(iniPath, ini);
             }

@@ -102,7 +102,7 @@ public static class OsPresetService
         new()
         {
             Id = "UmfgXefg", Name = "UMFG XeFG",
-            Description = "XeSS frame generation beyond 2x with Universal MFG Unlocker, which is installed if it's missing.",
+            Description = "XeSS frame generation up to 6x with Universal MFG Unlocker, which is installed if it's missing. DirectX 12 games, with OptiScaler nightly, F5 or DLSS NR.",
             FgEnabled = "true", FgInput = "upscaler", FgOutput = "xefg",
             DeployStreamline = true, DeployDlssEnabler = true, StreamlineVersion = "latest",
             HudFix = "true", ForceReflex = "0", UseGamesReflexMarkers = "true",

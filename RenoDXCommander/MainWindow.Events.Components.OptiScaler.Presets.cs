@@ -86,6 +86,43 @@ public sealed partial class MainWindow
                     var st = ViewModel.Settings;
                     var xamlRoot = pill.XamlRoot ?? Content.XamlRoot;
                     bool cogHidden = false;
+                    if (p.InstallUniversalMfg == true)
+                    {
+                        // The mod's XeFG through OptiScaler: DirectX 12 games with an OptiScaler 10 build only
+                        // (Vulkan needs the mod author's own OptiScaler build; stable 0.9 isn't supported by the mod)
+                        if (card.RequiresVulkanInstall || card.IsVulkanOnly)
+                        {
+                            ShowStatus($"{p.Name} is for DirectX 12 games. In Vulkan games, XeFG through OptiScaler needs the Universal MFG Unlocker author's own OptiScaler build, which RHI doesn't install.", false);
+                            return;
+                        }
+                        bool os10 = card.IsOsInstalled
+                            ? await System.Threading.Tasks.Task.Run(() => System.IO.Directory.Exists(System.IO.Path.Combine(card.InstallPath ?? "", "OptiScaler")))
+                            : OsVariants.IsOs10(ViewModel.GetOsVariant(card.GameName, ctx.Store));
+                        if (!os10)
+                        {
+                            ShowStatus($"{p.Name} needs OptiScaler nightly, F5 or DLSS NR. Stable OptiScaler (0.9) isn't supported by Universal MFG Unlocker.", false);
+                            return;
+                        }
+                        // Anti-cheat warning before a new install of the mod (not when it's already there)
+                        var mfgAs = ViewModel.GetRtx40MfgInstalledAs(card.GameName, ctx.Store);
+                        bool mfgThere = !string.IsNullOrEmpty(card.InstallPath) && !string.IsNullOrEmpty(mfgAs)
+                            && System.IO.File.Exists(System.IO.Path.Combine(card.InstallPath, mfgAs));
+                        if (!mfgThere && card.IsDxvkBlacklisted)
+                        {
+                            if (!ctx.Cog.IsEmbedded)
+                            {
+                                ctx.Cog.Hide(); // only one dialog can be open
+                                cogHidden = true;
+                            }
+                            bool goOn = await _detailPanelBuilder.ConfirmAntiCheatAsync(card, "Universal MFG Unlocker",
+                                DetailPanelBuilder.AntiCheatNoticeKey.UniversalMfg, xamlRoot);
+                            if (!goOn)
+                            {
+                                if (cogHidden) ReopenOsCog(ctx);
+                                return;
+                            }
+                        }
+                    }
                     if (p.InstallAnrFg == true && !AnrFgService.IsInstalledIn(card.InstallPath) && !st.AnrFgClosedSourceDismissed)
                     {
                         if (!ctx.Cog.IsEmbedded)
@@ -112,6 +149,20 @@ public sealed partial class MainWindow
                         RefreshExtrasIfSelected(card);
                         if (error != null)
                         {
+                            if (cogHidden)
+                            {
+                                // The cog closed for the anti-cheat warning: report in a dialog, then open the cog again
+                                await DialogService.ShowSafeAsync(new ContentDialog
+                                {
+                                    Title = "Universal MFG Unlocker wasn't installed",
+                                    Content = new TextBlock { Text = $"{p.Name} settings applied, but: {error}", TextWrapping = TextWrapping.Wrap },
+                                    CloseButtonText = "OK",
+                                    XamlRoot = xamlRoot,
+                                    RequestedTheme = ElementTheme.Dark,
+                                });
+                                ReopenOsCog(ctx);
+                                return;
+                            }
                             ShowStatus($"{p.Name} settings applied, but: {error}", false);
                             foreach (var b in pills.Children.OfType<Button>()) b.IsEnabled = true;
                             return;

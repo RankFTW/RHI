@@ -34,7 +34,7 @@
     {
       "id": "UmfgXefg",
       "name": "UMFG XeFG",
-      "description": "XeSS frame generation beyond 2x with Universal MFG Unlocker, which is installed if it's missing.",
+      "description": "XeSS frame generation up to 6x with Universal MFG Unlocker, which is installed if it's missing. DirectX 12 games, with OptiScaler nightly, F5 or DLSS NR.",
       "fgEnabled": "true",
       "fgInput": "upscaler",
       "fgOutput": "xefg",

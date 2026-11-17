@@ -142,7 +142,7 @@ public partial class MainViewModel
     public async Task<string?> InstallMfgForHsfAsync(GameCardViewModel card, string? proxyName)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return "This game has no install folder.";
-        if (card.MfgAdaInstalled) return "MFG Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the addon picker first.";
+        if (card.MfgAdaInstalled) return "MFG Unlock is installed, which conflicts with Universal MFG Unlocker. Remove it from the Extras section first.";
         var installPath = card.InstallPath;
         try
         {

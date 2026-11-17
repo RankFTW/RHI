@@ -21,7 +21,8 @@ public partial class DetailPanelBuilder
 
         var cog = new CogDialog("20/30 FG Unlock", _window.Content.XamlRoot);
         cog.AddIntro("These settings are saved in the game's dlssg_sm86.ini. Exit the game completely and start it again for changes to apply. " +
-                     "Needs NVIDIA driver R580 or newer; on older drivers the mod turns itself off.");
+                     "Needs NVIDIA driver R580 or newer; on older drivers the mod turns itself off. " +
+                     "Hardware-accelerated GPU scheduling must be on in Windows (Settings › System › Display › Graphics), or the game's frame generation option stays greyed out.");
         if (!hasIni)
             cog.AddWarning("Install 20/30 FG Unlock on this game to change these settings.");
 
@@ -60,7 +61,8 @@ public partial class DetailPanelBuilder
         ComboBox? framesCombo = null;
         bool engineIsXess = hasIni && "XeSS".Equals(Dlssg20_30Service.ReadIniValue(iniPath, "FrameGeneration", "Engine"), StringComparison.OrdinalIgnoreCase);
         AddSetting("Engine",
-            "DLSS uses NVIDIA's frame generation model. XeSS uses Intel's model: up to 4X, and it doesn't work with HDR (16-bit) output.",
+            "DLSS uses NVIDIA's frame generation model. XeSS uses Intel's model: up to 4X, uses about 0.5 GB more video memory, and on RTX 30 is faster at 1440p and below but slower at 4K. " +
+            "It doesn't work with HDR (16-bit) output, and a game it can't handle closes instead of falling back to DLSS.",
             "FrameGeneration", "Engine", "DLSS",
             new[] { ("DLSS (default)", "DLSS"), ("XeSS", "XeSS") },
             beforeWrite: value =>
@@ -73,7 +75,8 @@ public partial class DetailPanelBuilder
             });
 
         framesCombo = AddSetting("Max Frames",
-            "The highest multiplier the game can offer. The game's own menu can still pick a lower one. 6X has to be chosen here.",
+            "The multiplier the mod tells the game it supports. The game's own menu can still pick a lower one. " +
+            "6X only works in games that offer 6X or Dynamic multi frame generation; games whose own frame generation stops at 4X stay at 4X.",
             "FrameGeneration", "MaxGeneratedFrames", "3",
             new[] { ("2X", "1"), ("3X", "2"), ("4X (default)", "3"), ("5X", "4"), ("6X", "5"), ("Game decides", "0") },
             beforeWrite: value =>
@@ -93,13 +96,18 @@ public partial class DetailPanelBuilder
 
         AddSetting("Speed Tier",
             "How far the image may differ from NVIDIA's official output. Exact tiers match it bit for bit; Fast and Fastest are a few percent quicker with tiny differences.",
-            "DLSSG", "Optimized", "0",
+            "DLSSG", "Optimized", "1",
             new[] { ("Exact", "0"), ("Exact, optimised (default)", "1"), ("Fast", "2"), ("Fastest", "3") });
 
         AddSetting("Super Resolution",
             "RTX 20/30 only. Pins DLSS preset M or L. INT8 uses the mod's faster kernels: quicker in Performance and Ultra Performance, slower than the game's default in Quality, Balanced and DLAA. No effect while Ray Reconstruction is on.",
             "SuperResolution", "Mode", "Off",
             new[] { ("Off (default)", "Off"), ("M-INT8", "M-INT8"), ("L-INT8", "L-INT8"), ("M-FP16", "M-FP16"), ("L-FP16", "L-FP16") });
+
+        AddSetting("Log detail",
+            "Details records whether the mod loaded and why frame generation is off. Use it to check the install or report a problem.",
+            "Logging", "Level", "1",
+            new[] { ("Errors only (default)", "1"), ("Details", "2") });
 
         cog.AddSection("Files");
         cog.AddButtons(cog.MakeOpenFileButton("Open dlssg_sm86.ini", iniPath), cog.MakeOpenFileButton("Open log", logPath));

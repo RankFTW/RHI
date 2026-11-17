@@ -24,6 +24,7 @@ public partial class DetailPanelBuilder
         (ExtraKind.DlssEnabler,    ExtraKind.MfgUnlockAddon),
         (ExtraKind.DlssEnabler,    ExtraKind.Dlssg2030),
         (ExtraKind.DlssEnabler,    ExtraKind.Hsf),
+        (ExtraKind.Hsf,            ExtraKind.Dlssg2030),
         (ExtraKind.UniversalMfg,   ExtraKind.MfgUnlockAddon),
         (ExtraKind.UniversalMfg,   ExtraKind.Dlssg2030),
         (ExtraKind.MfgUnlockAddon, ExtraKind.Dlssg2030),

@@ -150,7 +150,7 @@ public partial class Rtx40MfgService
             File.Copy(src, dest, overwrite: true);
             File.WriteAllText(Path.Combine(pluginsDir, PreviousProxyFile), proxyName);
 
-            AuxInstallService.SentinelRestore(src);   // removes the proxy, restores the game's own file if it had one
+            RestoreProxySlot(src, proxyName);         // removes the proxy, restores the game's own file (Bink: from <name>Hooked.dll)
             // Very old installs have no sentinel, so SentinelRestore leaves the file: never keep two copies loaded
             if (File.Exists(src) && FilesEqual(src, dest)) File.Delete(src);
 
@@ -185,8 +185,13 @@ public partial class Rtx40MfgService
                 && KnownProxyNames.Contains(HookedDllNames.BaseOf(preferred), StringComparer.OrdinalIgnoreCase)
                 && (!HookedDllNames.TryGetBase(preferred, out var hookedBase) || File.Exists(Path.Combine(installPath, hookedBase)));
             string first = preferredOk ? preferred! : "version.dll";
-            var name = new[] { first, "version.dll", "winmm.dll", "dinput8.dll" }
+            // A Bink name only goes back where the game has that Bink DLL (it's kept beside the mod as <name>Hooked.dll);
+            // otherwise the name must be free. Bink names are never picked as a fallback.
+            bool binkBack = preferredOk && IsBinkName(first) && File.Exists(Path.Combine(installPath, first))
+                && !File.Exists(BinkHookedPath(Path.Combine(installPath, first)));
+            var name = binkBack ? first : new[] { first, "version.dll", "winmm.dll", "dinput8.dll" }
                 .Concat(KnownProxyNames)
+                .Where(n => !IsBinkName(n))
                 .FirstOrDefault(n => !File.Exists(Path.Combine(installPath, n)));
             if (name == null)
             {
@@ -195,7 +200,8 @@ public partial class Rtx40MfgService
             }
 
             var dest = Path.Combine(installPath, name);
-            AuxInstallService.SentinelBackup(dest);
+            if (IsBinkName(name)) KeepGameBinkAsHooked(dest, destIsMod: false);
+            else AuxInstallService.SentinelBackup(dest);
             File.Copy(pluginPath, dest, overwrite: true);
             AuxInstallService.SentinelRestore(pluginPath);
             if (File.Exists(pluginPath) && FilesEqual(pluginPath, dest)) File.Delete(pluginPath);
@@ -708,10 +714,12 @@ public partial class Rtx40MfgService
         int updated = 0;
         foreach (var (installPath, installedAs) in list)
         {
+            // Installs from before the Bink fix: the game's Bink DLL sat in .original with no <name>Hooked.dll
+            RepairBinkInstall(installPath, installedAs);
             if (!IsOutdatedIn(installPath, installedAs)) continue;
             // IsOutdatedIn is true for any file that differs from staging, so it can't tell RHI's copy from
             // another mod's: Install treats it as RHI's only when its version info matches (SameProductName).
-            if (Install(installPath, installedAs, replacesOwnCopy: false))
+            if (InstallCore(installPath, installedAs, replacesOwnCopy: false, explicitInstall: false))
             {
                 updated++;
                 _crashReporter.Log($"[Rtx40MfgService.UpdateInstalledGames] Updated '{installedAs}' in '{installPath}' to {StagedVersion}");
@@ -737,6 +745,9 @@ public partial class Rtx40MfgService
                 catch (Exception ex) { _crashReporter.Log($"[Rtx40MfgService.UpdateInstalledGames] XeSS catch-up failed — {ex.Message}"); }
             });
         }
+
+        // RTX Hair files (dxcompiler.dll / dxil.dll): existing installs get them, games that no longer qualify lose RHI's copies
+        ReconcileDxcFiles(list);
         return updated;
     }
 
@@ -746,6 +757,11 @@ public partial class Rtx40MfgService
     /// the file there is RHI's earlier copy (update), never saved as the game's original.
     /// </summary>
     public bool Install(string installPath, string dllName, bool replacesOwnCopy = false)
+        => InstallCore(installPath, dllName, replacesOwnCopy, explicitInstall: true);
+
+    /// <param name="explicitInstall">An install the user asked for: RTX Hair files RHI copied before and the user
+    /// removed are put back. Automatic updates leave them removed.</param>
+    private bool InstallCore(string installPath, string dllName, bool replacesOwnCopy, bool explicitInstall)
     {
         if (string.IsNullOrEmpty(installPath) || !IsStagingReady) return false;
         try
@@ -753,9 +769,13 @@ public partial class Rtx40MfgService
             var src  = Path.Combine(_stagingDir, StagedDllName);
             var dest = Path.Combine(installPath, dllName);
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!); // OptiScaler\plugins for plugin installs
+            bool ownCopy = replacesOwnCopy || AuxInstallService.SameProductName(dest, src);
+            // Bink names: the game's own Bink DLL stays beside the mod as <name>Hooked.dll (the mod's install guide)
+            if (IsBinkName(dllName) && !IsPluginInstall(dllName) && !IsHsfModsInstall(dllName))
+                KeepGameBinkAsHooked(dest, ownCopy);
             // A reinstall / update over RHI's own copy (same mod by version info) with no sentinel, from old installs:
             // don't save the mod as the game's original
-            AuxInstallService.SentinelBackupReplacingOwn(dest, replacesOwnCopy || AuxInstallService.SameProductName(dest, src));
+            else AuxInstallService.SentinelBackupReplacingOwn(dest, ownCopy);
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[Rtx40MfgService.Install] Deployed as '{dllName}' to '{installPath}'");
             // XeSS runtime for standalone XeMFG. Not fatal: DLSS frame generation works without it.
@@ -763,6 +783,8 @@ public partial class Rtx40MfgService
             if (SkipsXessFiles(installPath, dllName)) { }
             else if (IsXessStagingReady) DeployXessFiles(installPath);
             else _crashReporter.Log("[Rtx40MfgService.Install] XeSS runtime not staged — RTXMFG-XeSS skipped");
+            // RTX Hair files beside the exe (DirectX 12 games on RTX 30 / 40), for plugin installs too
+            DeployDxcAfterInstall(installPath, dllName, recreateRemoved: explicitInstall);
             return true;
         }
         catch (Exception ex)
@@ -785,8 +807,10 @@ public partial class Rtx40MfgService
         {
             if (!string.IsNullOrEmpty(installedAs))
             {
-                AuxInstallService.SentinelRestore(Path.Combine(installPath, installedAs));
+                RestoreProxySlot(Path.Combine(installPath, installedAs), installedAs);
                 RemoveXessFiles(installPath);
+                // HSF's helper copy never got them; anything else (proxy or plugin) did
+                if (!IsHsfModsInstall(installedAs)) RemoveDxcFiles(installPath);
                 if (IsPluginInstall(installedAs))
                 {
                     var marker = Path.Combine(installPath, Path.GetDirectoryName(PluginRelPath)!, PreviousProxyFile);

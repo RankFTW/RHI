@@ -109,10 +109,10 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "20/30 FG Unlock — turns on a game's greyed-out DLSS Frame Generation on RTX 20 and 30 (up to 6x where the game allows it).\n"
-            + "GPU: RTX 30 (RTX 20 experimental). Needs NVIDIA driver R580 or newer.\n"
-            + "Game: must already have DLSS Frame Generation. Games with an older Streamline stay at 2x.\n"
-            + "API: DirectX 12 only. No ASI Loader or ReShade needed. Use one frame generation unlock per game.");
+        ToolTipService.SetToolTip(label, "20/30 FG Unlock — turns on a game's greyed-out DLSS Frame Generation on RTX 20 and 30 (up to 6x where the game allows it), with NVIDIA's or Intel's XeSS frame generation model.\n"
+            + "GPU: RTX 30 and RTX 20 (RTX 20 is less tested). RTX 40 and 50 work too: frame generation then runs the mod's own kernels instead of NVIDIA's. Needs NVIDIA driver R580 or newer and Hardware-accelerated GPU scheduling turned on in Windows.\n"
+            + "Game: must already have DLSS Frame Generation. Games with an old DLSS Frame Generation (3.8 or older, for example The Witcher 3 next-gen) don't get frame generation; games whose own frame generation stops at 4x stay at 4x.\n"
+            + "API: DirectX 12 only. No ASI Loader or ReShade needed. Not for online games with anti-cheat. Use one frame generation mod per game (not with OptiScaler's frame generation, DLSS Enabler or HSF).");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -184,32 +184,40 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-
-            var st = _window.ViewModel.Settings;
-            if (!isInstalled && !await ShowClosedSourceNoticeAsync("20/30 FG Unlock", "sdli1995",
-                    () => st.Dlssg2030ClosedSourceDismissed, () => st.Dlssg2030ClosedSourceDismissed = true, installBtn.XamlRoot ?? _window.Content.XamlRoot))
-                return;
-
-            var chosen = await ShowDlssg2030DllPickerAsync(card, currentDllName);
-            if (chosen == null) return;
-
-            installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
             try
             {
+                // Fresh installs only: anti-cheat warning, closed-source notice, OptiScaler warning
+                var xamlRoot = installBtn.XamlRoot ?? _window.Content.XamlRoot;
+                var st = _window.ViewModel.Settings;
+                if (!isInstalled)
+                {
+                    if (!await ConfirmAntiCheatAsync(card, "20/30 FG Unlock", AntiCheatNoticeKey.Dlssg2030, xamlRoot)) return;
+                    if (!await ShowClosedSourceNoticeAsync("20/30 FG Unlock", "sdli1995",
+                            () => st.Dlssg2030ClosedSourceDismissed, () => st.Dlssg2030ClosedSourceDismissed = true, xamlRoot))
+                        return;
+                    if (card.IsOsInstalled && !await ConfirmDlssg2030WithOptiScalerAsync(xamlRoot)) return;
+                }
+
+                var chosen = await ShowDlssg2030DllPickerAsync(card, currentDllName);
+                if (chosen == null) return;
+
+                installBtn.IsEnabled = false;
+                installBtn.Content   = "Installing...";
+
                 // Only one proxy may be in the folder: if reinstalling under a different name,
                 // put the old slot back first (the ini and dlssg_sm86\ folder are reused)
                 if (isInstalled && !string.IsNullOrEmpty(currentDllName)
                     && !currentDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
                     AuxInstallService.SentinelRestore(Path.Combine(installPath, currentDllName));
 
-                bool ok = await Task.Run(async () =>
+                var (staged, ok) = await Task.Run(async () =>
                 {
                     if (!svc.IsStagingReady || svc.HasUpdate)
                         await svc.EnsureStagingAsync().ConfigureAwait(false);
+                    if (!svc.IsStagingReady) return (false, false);
                     // Same name as the current install: the file there is RHI's own proxy
-                    return svc.Install(installPath, chosen,
-                        replacesOwnCopy: isInstalled && string.Equals(currentDllName, chosen, StringComparison.OrdinalIgnoreCase));
+                    return (true, svc.Install(installPath, chosen,
+                        replacesOwnCopy: isInstalled && string.Equals(currentDllName, chosen, StringComparison.OrdinalIgnoreCase)));
                 });
 
                 if (ok)
@@ -219,14 +227,15 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content   = "Download failed — try again";
+                    CrashReporter.Log($"[BuildDlssg2030Row] '{gameName}': {(staged ? "install" : "download")} failed");
+                    installBtn.Content   = staged ? "Install failed — see the log" : "Download failed — try again";
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildDlssg2030Row] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
+                installBtn.Content   = "Install failed — see the log";
                 installBtn.IsEnabled = true;
             }
         };
@@ -345,7 +354,8 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Choose which proxy DLL the game loads. Start with version.dll; if frame generation doesn't appear in the game, reinstall with the next name in the list. dxgi.dll and d3d12.dll are a last resort and don't work in Vulkan games.",
+                        Text = "Choose which proxy DLL the game loads. Start with version.dll; if frame generation doesn't appear in the game, reinstall with the next name in the list. dxgi.dll and d3d12.dll are a last resort and don't work in Vulkan games. "
+                             + "To check it loaded, set Log detail to Details in the ⚙ and look for the game's exe name in the mod's log.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,
@@ -400,9 +410,10 @@ public partial class DetailPanelBuilder
             TextWrapping = TextWrapping.Wrap, // long name; wraps instead of clipping in the 120 px column
         };
         ToolTipService.SetToolTip(label, "Universal MFG Unlocker (formerly RTX 40 MFG Unlock) — DLSS Multi Frame Generation (up to 6x) on RTX 20, 30 and 40, plus XeSS frame generation (XeMFG) on any GPU.\n"
-            + "GPU: RTX 20, 30 and 40 for DLSS MFG (RTX 50 has it natively). XeMFG on NVIDIA, AMD and Intel (experimental).\n"
-            + "Game: must already have DLSS Frame Generation. Not for games with anti-cheat.\n"
-            + "API: standalone DLL, no ReShade or ASI Loader needed. RHI also installs the XeSS files XeMFG needs.");
+            + "GPU: RTX 20, 30 and 40 for DLSS MFG (RTX 50 has it natively). XeMFG on NVIDIA and AMD, Intel Arc experimental.\n"
+            + "Game: DLSS MFG needs the game's own DLSS Frame Generation. XeMFG standalone (experimental) also works with the game's DLSS, XeSS or FSR 3.1 upscaling. Not for games with anti-cheat.\n"
+            + "API: DirectX 12 and Vulkan (DLSS MFG in Vulkan is experimental, without Dynamic MFG). In DirectX 11 games only its menu and DLSS 5 run.\n"
+            + "No ReShade or ASI Loader needed. RHI also installs the XeSS files XeMFG needs.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -496,6 +507,11 @@ public partial class DetailPanelBuilder
             var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
             bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
 
+            // Games on RHI's anti-cheat list: warn before a new install (not on reinstall / update)
+            if (!liveInstalled && !await ConfirmAntiCheatAsync(card, "Universal MFG Unlocker",
+                    AntiCheatNoticeKey.UniversalMfg, installBtn.XamlRoot))
+                return;
+
             // Installed for HSF's helper (HSF_streamline\mods), or a 32-bit game with HSF (HSF's guide: never next to
             // a 32-bit exe): into HSF_streamline\mods, no name to pick
             if ((liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName)) || (hasHsf && card.Is32Bit))
@@ -539,7 +555,10 @@ public partial class DetailPanelBuilder
                 // If reinstalling under a different name, remove the old one first
                 if (liveInstalled && !string.IsNullOrEmpty(liveDllName)
                     && !liveDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
-                    mfgSvc.Uninstall(installPath, liveDllName);
+                {
+                    var oldName = liveDllName;
+                    await Task.Run(() => mfgSvc.Uninstall(installPath, oldName)); // hashes RHI's RTX Hair files
+                }
 
                 bool ok = await Task.Run(async () =>
                 {
@@ -547,6 +566,8 @@ public partial class DetailPanelBuilder
                         await mfgSvc.EnsureStagingAsync().ConfigureAwait(false);
                     if (!asPlugin) // standalone XeMFG; through OptiScaler it uses OptiScaler's XeSS files
                         await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
+                    // dxcompiler.dll / dxil.dll for RTX Hair (DirectX 12 games on RTX 30 / 40)
+                    await mfgSvc.PrepareRtxHairStagingAsync(installPath, chosen).ConfigureAwait(false);
                     return mfgSvc.Install(installPath, chosen);
                 });
 
@@ -582,10 +603,18 @@ public partial class DetailPanelBuilder
                 cog.AddIntro("Press Backspace in-game to open the Universal MFG Unlocker menu. It offers these modes:");
                 cog.AddNote("• Follow game: uses the game's own MFG setting");
                 cog.AddNote("• Fixed 2x to 6x: forces a specific multiplier");
-                cog.AddNote("• Dynamic: targets the display refresh rate or a custom FPS value");
-                cog.AddIntro("If frames freeze above 2x, set the Frame Generation preset to B in this game's DLSS / Streamline section.");
+                cog.AddNote("• Dynamic: targets the display refresh rate or a custom FPS value (not in Vulkan games)");
+                cog.AddIntro("If the picture freezes above 2x, try Frame Generation preset B, in the mod's menu or in this game's DLSS / Streamline section "
+                    + "(on RTX 30, restart the game after changing it).");
                 if (isInstalled)
                     cog.AddNote($"Currently installed as: {currentDllName}");
+                if (isInstalled && Rtx40MfgService.IsBinkName(currentDllName))
+                    cog.AddNote($"The game's own {currentDllName} is kept beside it as {System.IO.Path.GetFileNameWithoutExtension(currentDllName)}Hooked.dll, as the mod needs. Removing the mod puts it back.");
+
+                // Stable OptiScaler (0.9) beside a proxy install: the mod doesn't support it
+                if (isInstalled && !isPluginInstall && !isHsfMods && card.IsOsInstalled && !string.IsNullOrEmpty(installPath)
+                    && !System.IO.Directory.Exists(System.IO.Path.Combine(installPath, "OptiScaler")))
+                    cog.AddWarning("Stable OptiScaler (0.9) isn't supported by the mod. Use OptiScaler nightly, F5 or DLSS NR.");
 
                 if (isPluginInstall)
                 {
@@ -593,7 +622,15 @@ public partial class DetailPanelBuilder
                     cog.AddIntro("OptiScaler loads the mod as a plugin, as its author recommends. Frame generation is chosen in OptiScaler, not here: "
                         + "open OptiScaler's ⚙ and set FG Output to DLSSG for DLSS multi frame generation, or XeFG for XeMFG. "
                         + "OptiScaler's default (Auto) runs no frame generation.");
-                    cog.AddNote("The mod's own menu still opens beside OptiScaler's for the DLSS presets and DLSS 5. If OptiScaler is removed, RHI moves the mod back next to the game's exe.");
+                    cog.AddNote("With a recent OptiScaler nightly (4 November 2026 or newer) the DLSS presets and DLSS 5 are in an \"MFG Unlocker\" tab of OptiScaler's menu; "
+                        + "older builds show the mod's menu beside OptiScaler's. If OptiScaler is removed, RHI moves the mod back next to the game's exe.");
+                    cog.AddNote("On RTX 30, DLSS multi frame generation through OptiScaler is experimental; if it doesn't start, use XeFG.");
+                    cog.AddNote("Through OptiScaler, XeFG works in DirectX 12 games. Vulkan games need the mod author's own OptiScaler build.");
+                    cog.AddNote("OptiScaler's frame limit counts generated frames, so raise or remove it at high multipliers.");
+                    cog.AddNote("XeMFG can also run as OptiScaler's DLSS frame generation, but only with the mod author's OptiScaler build. RHI doesn't install that build.");
+                    cog.AddButtons(cog.MakeButton("Author's OptiScaler build", CogButtonKind.Secondary,
+                        async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/OptiScaler/releases")); },
+                        "Open the releases page of the mod author's OptiScaler build"));
                 }
 
                 if (isHsfMods || hasHsf)
@@ -612,8 +649,12 @@ public partial class DetailPanelBuilder
                 else if (isPluginInstall)
                     cog.AddIntro("Through OptiScaler, XeMFG is OptiScaler's FG Output set to XeFG. It uses the XeSS files OptiScaler installs, so nothing else is needed.");
                 else
-                    cog.AddIntro("The mod can also use Intel's XeSS frame generation, 2x to 6x on any GPU (experimental). Tick \"XeMFG standalone\" in the in-game menu and restart the game. "
-                        + "It needs Intel's libxess_fg.dll and libxell.dll in an RTXMFG-XeSS folder next to the mod; RHI installs them with the mod.");
+                {
+                    cog.AddIntro("The mod can also run Intel's XeSS frame generation itself, 2x to 6x on any GPU (experimental, DirectX 12 and Vulkan). "
+                        + "Tick XeMFG standalone in the in-game menu and pick the MFG mode. In games with DLSS Frame Generation, turn that on in the game; XeMFG replaces it. "
+                        + "Other games need DLSS, XeSS or FSR 3.1 upscaling on (Vulkan: DLSS only), with the game's own FSR or XeSS frame generation off.");
+                    cog.AddNote("It needs Intel's libxess_fg.dll and libxell.dll in an RTXMFG-XeSS folder next to the mod; RHI installs them with the mod.");
+                }
                 if (isInstalled && !isPluginInstall && !isHsfMods && !hasHsf && !string.IsNullOrEmpty(installPath))
                 {
                     var xessDir = System.IO.Path.Combine(installPath, Rtx40MfgService.XessFolderName);
@@ -627,6 +668,10 @@ public partial class DetailPanelBuilder
                 if (string.Equals(card.RsInstalledFile, "dxgi.dll", StringComparison.OrdinalIgnoreCase))
                     cog.AddWarning("ReShade is installed as dxgi.dll in this game. With XeMFG at 5x and 6x, some generated frames may not reach the screen. "
                         + "If that happens, give ReShade a different DLL name in Game Overrides › DLL naming overrides.");
+
+                AddUmfgRtxHairSection(cog, card, mfgSvc, isInstalled, isHsfMods);
+                AddUmfgDlss5Section(cog, installPath);
+
                 cog.AddButtons(cog.MakeButton("Open GitHub page", CogButtonKind.Secondary,
                     async () => { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/MFG-Unlocker")); }));
                 await cog.ShowAsync();
@@ -655,14 +700,24 @@ public partial class DetailPanelBuilder
             IsHitTestVisible = isInstalled,
         };
         ToolTipService.SetToolTip(removeBtn, "Remove Universal MFG Unlocker from this game");
-        removeBtn.Click += (s, e) =>
+        removeBtn.Click += async (s, e) =>
         {
-            if (string.IsNullOrEmpty(installPath)) return;
-            // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
-            mfgSvc.Uninstall(installPath, _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? currentDllName);
-            _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
-            card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
-            RequestExtrasRebuild(card);
+            try
+            {
+                if (string.IsNullOrEmpty(installPath)) return;
+                removeBtn.IsEnabled = false;
+                // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
+                var liveName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? currentDllName;
+                await Task.Run(() => mfgSvc.Uninstall(installPath, liveName)); // hashes RHI's RTX Hair files
+                _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
+                card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
+                RequestExtrasRebuild(card);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[BuildRtx40MfgRow] Remove failed — {ex.Message}");
+                removeBtn.IsEnabled = true;
+            }
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
@@ -684,11 +739,20 @@ public partial class DetailPanelBuilder
             Content   = listPanel,
         };
 
-        foreach (var option in GetExtraDllOptions(card, MfgDllNames, currentDllName))
+        // Bink names keep the game's own Bink DLL as <name>Hooked.dll, so they get no ASI Loader hooked option, and
+        // they need the game's Bink DLL: without one they're disabled
+        var installDir = card.InstallPath;
+        var binkMissing = await Task.Run(() => MfgDllNames.Where(Rtx40MfgService.IsBinkName)
+            .Where(n => !string.Equals(n, currentDllName, StringComparison.OrdinalIgnoreCase)
+                && (!File.Exists(Path.Combine(installDir, n))
+                    || File.Exists(Rtx40MfgService.BinkHookedPath(Path.Combine(installDir, n))))) // already another mod's Bink slot
+            .ToHashSet(StringComparer.OrdinalIgnoreCase));
+        foreach (var option in GetExtraDllOptions(card, MfgDllNames, currentDllName, noHooked: Rtx40MfgService.IsBinkName))
         {
             var name            = option.Name;
             bool isRecommended  = option.IsRecommended;
-            bool isRhiOwned     = option.BlockedBy != null;
+            bool noGameBink     = option.BlockedBy == null && binkMissing.Contains(name);
+            bool isRhiOwned     = option.BlockedBy != null || noGameBink;
             bool isDxgiConflict = string.Equals(name, "dxgi.dll", StringComparison.OrdinalIgnoreCase)
                                && !string.IsNullOrEmpty(card.RsInstalledFile);
             bool isCurrent      = option.IsCurrent;
@@ -726,6 +790,15 @@ public partial class DetailPanelBuilder
 
             btn.Content = contentRow;
 
+            if (noGameBink)
+            {
+                contentRow.Children.Add(MakeBadge("Game has no Bink DLL", "#2A1818", "#CC6666", "#5A2828"));
+                ToolTipService.SetToolTip(btn, File.Exists(Rtx40MfgService.BinkHookedPath(Path.Combine(installDir, name)))
+                    ? $"{System.IO.Path.GetFileNameWithoutExtension(name)}Hooked.dll is already there: another mod uses this Bink name."
+                    : $"This game has no {name}. The mod's Bink route keeps the game's own {name} beside it as {System.IO.Path.GetFileNameWithoutExtension(name)}Hooked.dll, so it only works in games that ship one.");
+            }
+            else if (!isRhiOwned && Rtx40MfgService.IsBinkName(name) && !isCurrent)
+                ToolTipService.SetToolTip(btn, $"RHI renames the game's {name} to {System.IO.Path.GetFileNameWithoutExtension(name)}Hooked.dll and keeps both, as the mod needs. Removing the mod puts it back.");
             if (!isRhiOwned && isDxgiConflict)
                 ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OptiScaler if they also use this name.");
 
@@ -753,7 +826,8 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename to deploy the Universal MFG Unlocker DLL as. Choose a name the game loads early, and avoid names already used by other mods.",
+                        Text = "Choose a name the game loads early. Start with version.dll, then winmm.dll; if the mod's menu (Backspace) doesn't appear, reinstall with the next name. "
+                             + "Vulkan games may not load DirectX names such as dxgi.dll or d3d12.dll.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,
