@@ -962,6 +962,10 @@
     "Phantom Blade Zero": {
       "reshade": "d3d12.dll",
       "dc": ""
+    },
+    "007 First Light": {
+      "reshade": "dinput8.dll",
+      "dc": ""
     }
   },
   "rtxEncoreDllNames": {
