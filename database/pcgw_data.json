@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56122,
-  "generated": "2026-11-17T03:21:44Z",
+  "generated": "2026-11-17T05:21:44Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -47528,7 +47528,9 @@
       "vulkan": true,
       "config_path": "%LOCALAPPDATA%\\DK64Recompiled\\"
     },
-    "Donkey Kong Bananza (DKB Recomp)": {},
+    "Donkey Kong Bananza (DKB Recomp)": {
+      "vulkan": true
+    },
     "Donkey Kong: Redux": {},
     "Donkey Xote": {
       "dx9": true,
