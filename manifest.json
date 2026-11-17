@@ -203,7 +203,8 @@
     "Trine 5: A Clockwork Conspiracy": "Trine 5",
     "L.A. Noire": "L.A. Noire",
     "Sekiro™: Shadows Die Twice": "Sekiro",
-    "Sekiro™: Shadows Die Twice - GOTY Edition": "Sekiro"
+    "Sekiro™: Shadows Die Twice - GOTY Edition": "Sekiro",
+    "NieR Replicant ver.1.22474487139...": "NieR Replicant"
   },
   "installPathOverrides": {
     "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc",
