@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56128,
-  "generated": "2026-11-17T21:22:45Z",
+  "generated": "2026-11-17T23:22:45Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -78671,7 +78671,7 @@
     "Hogwarts Legacy": {
       "steam_appid": 990080,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\HogwartsLegacy\\Saved\\Config\\WindowsNoEditor, %LOCALAPPDATA%\\Hogwarts\\Saved\\Config\\WindowNoEditor<user-id>, %LOCALAPPDATA%\\Phoenix\\Saved\\Config\\WindowsNoEditor",
+      "config_path": "%LOCALAPPDATA%\\Hogwarts Legacy\\Saved\\Config\\WindowsNoEditor, %LOCALAPPDATA%\\Hogwarts\\Saved\\Config\\WindowNoEditor<user-id>, %LOCALAPPDATA%\\Phoenix\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Hogwash": {},
@@ -190028,7 +190028,7 @@
     "Warm Snow": {
       "steam_appid": 1296830,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\BadMudStudio\\WarmSnow\\, HKEY_CURRENT_USER\\Software\\BadMudStudio\\WarmSnow\\",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\BadMudStudio\\WarmSnow\\Save\\_SettingMenuData, HKEY_CURRENT_USER\\Software\\BadMudStudio\\WarmSnow\\",
       "engine": "Unity"
     },
     "Warm Up!": {
