@@ -109,6 +109,7 @@ vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folde
 - Smooth Motion Enable: `0xB0D384C0`, APIs: `0xB0CC0875`, Flip Pacing FS: `0xB03A4546`, Win: `0xB03A4547`
 - ReBAR Feature: `0x000F00BA`, Expr Modes: `0x00C09D09`, Size Limit: `0x000F00FF` (BINARY/QWORD)
 - G-Sync Mode: `0x1194F158` (App) + `0x1094F1F7` (Global)
+- **Per-game G-SYNC off** (`SetPerGameGSyncEnabled`): writes all five settings Profile Inspector shows for the game: Global Feature `0x1094F157`=0, Requested State `0x10A879AC`=1, Application State `0x10A879CF`=1, **Application Mode `0x1194F158`=0 and Global Mode `0x1094F1F7`=0** (without the two modes G-SYNC stayed on, Nov 2026). On deletes all five. `GetPerGameGSyncEnabled` = disabled only when Requested State is Force Off AND the game's OWN Application Mode is 0 (`GetOwnPreset`, settingLocation check: `GetPreset` returns 0 for "not set"), so games turned off with only the three state settings read as enabled. Per-game export includes the two modes.
 - Preferred Refresh Rate: `0x0064B541`
 
 ### Elevation Requirements

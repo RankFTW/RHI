@@ -787,6 +787,38 @@ public partial class DlssPresetService
         }
     }
 
+    /// <summary>
+    /// A setting's value in the game's own profile, or null when the game has none of its own (it inherits).
+    /// Unlike GetPreset, which returns 0 for "not set" and so can't tell that apart from a real 0 / Off.
+    /// </summary>
+    private uint? GetOwnPreset(string gameName, string installPath, uint settingId)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null) return null;
+        if (!_sessionLock.Wait(millisecondsTimeout: 5_000))
+        {
+            CrashReporter.Log($"[DlssPresetService.GetOwnPreset] Lock timeout for '{gameName}' — NVAPI may be hung.");
+            return null;
+        }
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return null;
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(profile.Handle);
+            if (sH == IntPtr.Zero || pH == IntPtr.Zero) return null;
+            return GetOwnSettingRawNvApi(sH, pH, settingId);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.GetOwnPreset] Error for '{gameName}' 0x{settingId:X8} — {ex.Message}");
+            return null;
+        }
+        finally
+        {
+            _sessionLock.Release();
+        }
+    }
+
     /// <summary>Removes the game's own FPS Limiter V3 value so it follows the global limit again.</summary>
     public bool ClearPerGameFpsLimit(string gameName, string installPath)
     {

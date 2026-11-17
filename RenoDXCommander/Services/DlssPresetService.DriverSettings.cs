@@ -910,15 +910,24 @@ $destroyDel.Invoke($hSession) | Out-Null
         }
     }
 
-    /// <summary>Gets whether G-Sync is disabled for a specific game. Returns true if G-Sync is enabled (Allow), false if disabled (Force Off).</summary>
+    /// <summary>
+    /// Gets whether G-Sync is disabled for a specific game. Returns true if G-Sync is enabled, false if disabled:
+    /// Requested State Force Off AND the game's own Application Mode Off. Games RHI turned off before the mode settings
+    /// were added (only the three state settings) still had G-SYNC working, so they read as enabled and turning it
+    /// off again writes the rest.
+    /// </summary>
     public bool GetPerGameGSyncEnabled(string gameName, string installPath)
     {
-        // If the Requested State setting is "Force Off" (0x01), G-Sync is disabled for this game
-        var val = GetPreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID);
-        return val != 0x01; // 0x00 (Allow) or not set = enabled
+        if (GetPreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID) != 0x01) return true; // Allow or not set
+        return GetOwnPreset(gameName, installPath, GSYNC_APP_MODE_ID) != 0x00;               // own Off = disabled
     }
 
-    /// <summary>Sets per-game G-Sync state. When disabled, writes Force Off to all three G-Sync control settings. When enabled, deletes them (inherit from global).</summary>
+    /// <summary>
+    /// Sets per-game G-Sync state. Disabled writes all five settings NVIDIA Profile Inspector shows for it in the game's
+    /// profile: Global Feature Off, Application Requested State and Application State Force Off, and Application Mode
+    /// (0x1194F158) and Global Mode (0x1094F1F7) Off. Without the two modes G-SYNC stayed on. Enabled deletes all five
+    /// (the game follows the global settings).
+    /// </summary>
     public bool SetPerGameGSyncEnabled(string gameName, string installPath, bool enabled)
     {
         if (!_isSupported || _session == null || _cachedProfiles == null)
@@ -928,17 +937,19 @@ $destroyDel.Invoke($hSession) | Out-Null
         {
             if (enabled)
             {
-                // Delete all three per-game settings so the game inherits from global
                 DeletePreset(gameName, installPath, GSYNC_GLOBAL_FEATURE_ID);
                 DeletePreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID);
                 DeletePreset(gameName, installPath, GSYNC_STATE_ID);
+                DeletePreset(gameName, installPath, GSYNC_APP_MODE_ID);
+                DeletePreset(gameName, installPath, GSYNC_GLOBAL_MODE_ID);
             }
             else
             {
-                // Force Off: disable G-Sync for this game
                 SetPreset(gameName, installPath, GSYNC_GLOBAL_FEATURE_ID, 0x00);
                 SetPreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID, 0x01);
                 SetPreset(gameName, installPath, GSYNC_STATE_ID, 0x01);
+                SetPreset(gameName, installPath, GSYNC_APP_MODE_ID, 0x00);
+                SetPreset(gameName, installPath, GSYNC_GLOBAL_MODE_ID, 0x00);
             }
 
             CrashReporter.Log($"[DlssPresetService.SetPerGameGSyncEnabled] Set G-Sync {(enabled ? "Enabled" : "Disabled")} for '{gameName}'");
