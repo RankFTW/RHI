@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56123,
-  "generated": "2026-11-17T07:22:44Z",
+  "game_count": 56126,
+  "generated": "2026-11-17T13:24:28Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -14580,6 +14580,7 @@
       "dx11": true,
       "engine": "Unity"
     },
+    "Back to Baghdad": {},
     "Back to Bed": {
       "steam_appid": 308040,
       "dx9": true,
@@ -77941,6 +77942,7 @@
     "High Fidelity": {
       "steam_appid": 390540
     },
+    "High Heat Baseball 1999": {},
     "High Heat Baseball 2000": {},
     "High Heat Major League Baseball 2002": {},
     "High Heat Major League Baseball 2003": {
@@ -188663,6 +188665,9 @@
     "Vulture Strike": {
       "steam_appid": 635590,
       "engine": "Unity"
+    },
+    "VVVVK: Road of Eternal Night": {
+      "steam_appid": 5582480
     },
     "VVVVV": {
       "steam_appid": 1153250
