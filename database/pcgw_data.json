@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56127,
-  "generated": "2026-11-17T15:25:15Z",
+  "generated": "2026-11-17T17:22:45Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -31346,7 +31346,10 @@
       "steam_appid": 1150610
     },
     "City Hunter": {
-      "steam_appid": 3984650
+      "steam_appid": 3984650,
+      "dx11": true,
+      "config_path": "<Steam-folder>\\userdata\\<user-id>\\3984650\\remote",
+      "engine": "Unity"
     },
     "City League Softball": {},
     "City Life": {
@@ -166782,6 +166785,7 @@
     },
     "The Dark Eye (1995)": {
       "steam_appid": 4289030,
+      "config_path": "<path-to-game>\\scummvm.ini",
       "engine": "Director"
     },
     "The Dark Eye: Book of Heroes": {
