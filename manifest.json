@@ -907,6 +907,10 @@
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "https://oopydoopy.github.io/renodx/renodx-thewitcher3remastered.addon64"
   },
   "dllNameOverrides": {
+    "007 First Light": {
+      "reshade": "dinput8.dll",
+      "dc": ""
+    },
     "Aliens: Dark Descent": {
       "reshade": "dxgi.dll",
       "dc": ""
