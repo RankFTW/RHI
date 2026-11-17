@@ -21,6 +21,7 @@ paths:
 vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folder" made OptiScaler's root `nvngx_dlss.dll` block Default for a UE game's own DLSS in `Engine\Plugins`. `Restore` returns false when refused, `RestoreStreamline` / `RestoreAll` return how many files were kept; callers show a message and must not clear the user's version choice on a refusal. `RestoreStreamline` still restores the rest from the AppData zip when some sl.*.dll are kept, skipping the kept ones.
 - **NR Cost Scaler**: every read of the NR version (detection, trusted cache, cache load, card refresh, auto-update) goes through `DlssNrCostScalerService.ResolveRealNrDllPath`, or the proxy's version shows and auto-update compares against it.
 - **Streamline deployment rule**: Only replace `sl.*.dll` files that already exist in the game folder.
+- **NR DLL cache lookup is exact** (`DetailPanelBuilder.ResolveCachedNrDllPath`): `DLSS-NR\<full version, / and \ as ->\` (what `EnsureSpecificDlssnrCachedAsync` writes), then the legacy nested-slash folder. Never strip the "(...)" label or match by prefix: the manifest has "310.9.16" (NVIDIA's) and "310.9.16 (20/30/40/50)", and a prefix match returned the cached one for the other, so NVIDIA's never downloaded (Nov 2026). Not cached = null, and callers download.
 
 ### Service & ViewModel
 - `DlssStreamlineService` (partial class: `.cs`, `.Detection.cs`, `.Swap.cs`). Singleton DI.

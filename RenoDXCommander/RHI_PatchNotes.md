@@ -90,6 +90,7 @@
 - Fixed DLSS version changes and auto-update replacing the NR Cost Scaler. Cost Scaler updates also keep your nvngx_dlssnr.ini settings.
 - Fixed Streamline version changes going ahead without a backup, and "Default" restoring outdated files after a game update.
 - Fixed some DLSS files from Luma or RTX Encore not showing until the next full scan.
+- Fixed picking NR DLL 310.9.16 (NVIDIA's original) installing the 310.9.16 (20/30/40/50) build instead when that one was already downloaded. Each NR version now uses only its own download.
 
 **NVIDIA Driver Settings**
 - Fixed turning G-SYNC off for a game (Driver Settings, BFI Presenter) leaving it on: the game's G-SYNC Application Mode and Global Mode are now set to Off too. Games turned off before show G-SYNC as Enabled again, so turning it off once more finishes the job.

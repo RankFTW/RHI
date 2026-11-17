@@ -124,10 +124,7 @@ public partial class DetailPanelBuilder
                 cachedNrFeeder = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
             else
             {
-                var nrDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "RHI", "DLSS-NR", StripVersionSuffix(nrSelVer!));
-                cachedNrFeeder = ResolveCachedNrDllPath(nrSelVer!) ?? Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                cachedNrFeeder = ResolveCachedNrDllPath(nrSelVer!) ?? "";
                 if (!File.Exists(cachedNrFeeder))
                     cachedNrFeeder = await dlssSvc.EnsureSpecificDlssnrCachedAsync(nrSelVer!).ConfigureAwait(false)
                                   ?? await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
@@ -460,8 +457,7 @@ public partial class DetailPanelBuilder
                             cachedNrHost = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
                         else
                         {
-                            var nrDirHost = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "DLSS-NR", StripVersionSuffix(nrSelVerHost!));
-                            cachedNrHost = ResolveCachedNrDllPath(nrSelVerHost!) ?? Path.Combine(nrDirHost, "nvngx_dlssnr.dll");
+                            cachedNrHost = ResolveCachedNrDllPath(nrSelVerHost!) ?? "";
                             if (!File.Exists(cachedNrHost)) cachedNrHost = await dlssSvc.EnsureSpecificDlssnrCachedAsync(nrSelVerHost!).ConfigureAwait(false)
                                                                           ?? await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
                         }
