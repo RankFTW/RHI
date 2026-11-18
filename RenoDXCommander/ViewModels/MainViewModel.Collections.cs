@@ -46,6 +46,9 @@ public partial class MainViewModel
 
     private static string CardKey(GameCardViewModel card) => GameKey.FromCard(card.GameName, card.Source).ToKey();
 
+    /// <summary>The key a game is stored under in collections ("GameName|Store").</summary>
+    public static string CollectionKeyOf(GameCardViewModel card) => CardKey(card);
+
     public bool IsInCollection(string name, GameCardViewModel card) =>
         _gameNameService.Collections.Contains(name, CardKey(card));
 
@@ -59,12 +62,17 @@ public partial class MainViewModel
     }
 
     /// <summary>Creates a collection, optionally with a first game. Returns the problem with the name, or null.</summary>
-    public string? CreateCollection(string? name, GameCardViewModel? firstGame, out string created)
+    public string? CreateCollection(string? name, GameCardViewModel? firstGame, out string created) =>
+        CreateCollection(name, firstGame != null ? new[] { firstGame } : null, out created);
+
+    /// <summary>Creates a collection with these games in it (none = empty). Returns the problem with the name, or null.</summary>
+    public string? CreateCollection(string? name, IReadOnlyList<GameCardViewModel>? games, out string created)
     {
         var error = _gameNameService.Collections.Create(name, out created);
         if (error != null) return error;
-        if (firstGame != null) _gameNameService.Collections.SetMembership(created, CardKey(firstGame), true);
-        _crashReporter.Log($"[MainViewModel.CreateCollection] '{created}'{(firstGame != null ? $" with '{firstGame.GameName}'" : "")}");
+        foreach (var game in games ?? Array.Empty<GameCardViewModel>())
+            _gameNameService.Collections.SetMembership(created, CardKey(game), true);
+        _crashReporter.Log($"[MainViewModel.CreateCollection] '{created}' with {games?.Count ?? 0} game(s)");
         SaveNameMappings();
         CollectionsChanged?.Invoke();
         return null;
@@ -113,4 +121,24 @@ public partial class MainViewModel
         if (string.Equals(name, _filterViewModel.ActiveCollectionName, StringComparison.OrdinalIgnoreCase))
             _filterViewModel.ApplyFilter();
     }
+    /// <summary>
+    /// Adds many games to a collection or takes them out (keys "GameName|Store", so games that are no
+    /// longer detected can be taken out too). Saves and refilters once. Returns how many changed.
+    /// </summary>
+    public int SetCollectionMembership(string name, IEnumerable<string> gameKeys, bool member)
+    {
+        int changed = 0;
+        foreach (var key in gameKeys)
+            if (_gameNameService.Collections.SetMembership(name, key, member)) changed++;
+        if (changed == 0) return 0;
+        _crashReporter.Log($"[MainViewModel.SetCollectionMembership] {changed} game(s) {(member ? "added to" : "removed from")} '{name}'");
+        SaveNameMappings();
+        if (string.Equals(name, _filterViewModel.ActiveCollectionName, StringComparison.OrdinalIgnoreCase))
+            _filterViewModel.ApplyFilter();
+        return changed;
+    }
+
+    /// <summary>Many games at once (the game list's multi-select menu).</summary>
+    public int SetCollectionMembership(string name, IEnumerable<GameCardViewModel> cards, bool member) =>
+        SetCollectionMembership(name, cards.Select(CardKey).ToList(), member);
 }

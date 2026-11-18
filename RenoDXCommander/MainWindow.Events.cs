@@ -656,8 +656,12 @@ public sealed partial class MainWindow
 
     internal void GameRow_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.Tag is GameCardViewModel)
-            CardMoreMenu_Click(fe, e);
+        if (sender is FrameworkElement fe && fe.Tag is GameCardViewModel card)
+        {
+            // Several games picked (Ctrl / Shift click) and this is one of them: one menu for all of them
+            if (MultiSelectionFor(card) is { } picked) ShowBulkGameMenu(fe, picked);
+            else CardMoreMenu_Click(fe, e);
+        }
     }
 
     internal void CardMoreMenu_Click(object sender, RoutedEventArgs e)

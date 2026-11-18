@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry; leave every scope unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.5 Beta 4
+## v2.9.5 Beta 5
 
 ### New
 - BFI Presenter is now in Extras, under Motion Clarity, installed per game instead of from the add-on list (where turning it on for all games strobed every ReShade game). RHI picks the right version for the game: the ReShade add-on for DirectX 12, 11 and 9 and OpenGL games, or the Vulkan layer for Vulkan games and games run through DXVK. The install can set the game's NVIDIA profile the way BFI Presenter needs it (G-SYNC off, vertical sync on, no frame rate limit, maximum performance), and turns on full brightness or LCD protection if you want. Its ⚙ checks the game's setup (G-SYNC, vertical sync, frame limiters, Smooth Motion) with Fix buttons, shows the game's entry in BFI Presenter's tested-games list, and has its main settings. Games that need it get "Resize to start BFI" from that list automatically. Games that already had it from the add-on list keep it.
@@ -13,6 +13,10 @@
 - Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes
+
+**Collections**
+- New Manage collections window (the Manage chip beside "+ Collection", a collection chip's right-click menu, or a game's Add to collection menu), the same in Classic, Tabs and Spotlight. Create, rename, reorder and delete collections, and tick games in or out from your whole library with a search. Add all / Remove all work on everything the search matches. Games that are no longer detected are listed so you can take them out. It works with a controller too.
+- Pick several games in the game list with Ctrl or Shift click (Classic and Tabs), then right-click one of them to add them all to a collection, make a new collection with them, or remove them from one.
 
 **Updates**
 - Updating RHI from inside the app no longer shows the installer's pages: it installs with a small progress window, keeps your install folder and shortcuts, reopens RHI and says it was updated. Windows still asks for permission unless Admin Mode is on.

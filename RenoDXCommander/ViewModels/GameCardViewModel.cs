@@ -141,6 +141,9 @@ public partial class GameCardViewModel : ObservableObject
     // ── Sidebar selection state ───────────────────────────────────────────────────
     [ObservableProperty] private bool _isSelected;
 
+    /// <summary>One of several games picked in the game list (Ctrl / Shift click), highlighted like the selected one.</summary>
+    [ObservableProperty] private bool _isMultiSelected;
+
     // ── Card grid highlight state ─────────────────────────────────────────────────
     [ObservableProperty] private bool _cardHighlighted = false;
 
