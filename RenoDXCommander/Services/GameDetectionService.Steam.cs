@@ -27,19 +27,48 @@ public partial class GameDetectionService
                     var content = File.ReadAllText(acf);
                     var name       = ExtractVdfValue(content, "name");
                     var installDir = ExtractVdfValue(content, "installdir");
-                    if (name == null || installDir == null) continue;
+                    if (installDir == null) continue;
+                    var acfAppId = ExtractAppIdFromAcfFilename(Path.GetFileName(acf));
+                    // A placeholder name ("appid_244160") is replaced below from Steam's appinfo.vdf
+                    if (name == null && acfAppId == null) continue;
+                    name ??= "";
                     var rootPath = Path.Combine(steamapps, "common", installDir);
                     if (!Directory.Exists(rootPath)) continue;
                     var game = new DetectedGame { Name = name, InstallPath = rootPath, Source = "Steam" };
-                    var extractedAppId = ExtractAppIdFromAcfFilename(Path.GetFileName(acf));
-                    if (extractedAppId.HasValue)
-                        game.SteamAppId = extractedAppId.Value;
+                    if (acfAppId.HasValue)
+                        game.SteamAppId = acfAppId.Value;
                     games.Add(game);
                 }
                 catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindSteamGames] Failed to parse ACF '{acf}' — {ex.Message}"); }
             }
         }
+        FixPlaceholderNames(games, steamPath);
         return games;
+    }
+
+    /// <summary>
+    /// Steam writes "appid_&lt;id&gt;" (or no name) into an app manifest when it installs a game before it has
+    /// the app's details, and keeps it until the game updates; the Steam library shows the real name from
+    /// appcacheppinfo.vdf. Use that name. Games whose name can't be found keep the placeholder (or the
+    /// install folder's name when there is none at all).
+    /// </summary>
+    private static void FixPlaceholderNames(List<DetectedGame> games, string steamPath)
+    {
+        var placeholders = games.Where(g => SteamAppInfoReader.IsPlaceholderName(g.Name, g.SteamAppId)).ToList();
+        if (placeholders.Count == 0) return;
+        var ids = placeholders.Where(g => g.SteamAppId.HasValue).Select(g => g.SteamAppId!.Value).Distinct().ToList();
+        var names = SteamAppInfoReader.ReadNames(Path.Combine(steamPath, "appcache", "appinfo.vdf"), ids);
+        foreach (var g in placeholders)
+        {
+            var old = g.Name;
+            if (g.SteamAppId is int id && names.TryGetValue(id, out var real))
+                g.Name = real;
+            else if (string.IsNullOrWhiteSpace(g.Name))
+                g.Name = Path.GetFileName(g.InstallPath.TrimEnd(Path.DirectorySeparatorChar));
+            CrashReporter.Log(g.Name == old
+                ? $"[GameDetectionService.FixPlaceholderNames] '{old}': no name in Steam's appinfo.vdf, kept"
+                : $"[GameDetectionService.FixPlaceholderNames] '{old}' -> '{g.Name}' (Steam's manifest has no real name)");
+        }
     }
 
     /// <summary>

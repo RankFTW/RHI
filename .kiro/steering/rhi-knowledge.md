@@ -1256,6 +1256,12 @@ vngx_dlssnr.dll` as the game's NR file (gives the DLSS section NR version / pres
 
 - **GitHub OAuth token flow**: `GitHubAuthService` implements Device Flow (POST to `github.com/login/device/code`, poll for token). Token stored as `GitHubOAuthToken` in `settings.json`. Applied at startup via `App.ApplyStoredGitHubToken()` which calls `GitHubAuthService.ApplyTokenToHttpClient(http, token)`. On disconnect, falls back to `DevUnlockService.GitHubApiToken` (file-based). The shared `HttpClient` carries the token as a default `Authorization: Bearer` header — strip it for non-GitHub hosts (Codeberg) in `UltrawideFixService.FetchOrLoadCache`.
 
+## Steam placeholder names ("appid_123")
+
+- Steam writes `"name" "appid_<id>"` (or no name) into `appmanifest_<id>.acf` when it installs a game before it has the app's details, and only rewrites it when the game updates; the Steam library shows the right name from `appcacheppinfo.vdf`. Users saw RHI list Homeworld Remastered Collection as `appid_244160` (Nov 2026, also Meccha Chameleon until it updated); the developer's own install had the real name, so it can't be reproduced by installing the game.
+- Fix: `GameDetectionService.FixPlaceholderNames` (end of `FindSteamGames`) reads real names with `Services/SteamAppInfoReader.cs` (appinfo.vdf v39/40/41; v41 keys are int32 indexes into a string table at the offset in the header; only wanted apps are parsed, the rest skipped by size), tests `SteamAppInfoReaderTests`. PCGW data can't be used: one AppID can map to several pages (244160 = Homeworld, Homeworld 2, Homeworld 2 Remastered).
+- Not migrated: settings or install records saved under the placeholder name (records match on name + folder), so a game with RHI installs under `appid_<id>` shows them as not installed after the fix. Nobody reported installs on one so far; use the rename path if it comes up.
+
 ## Epic Games Detection (classic + new eglv2 launcher)
 - Classic launcher: `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item` (JSON: DisplayName, InstallLocation, CatalogNamespace, AppName).
 - New launcher (preview, Oct 2026, `com.epicgames.eglv2`): migrating **deletes the ProgramData manifests and uninstalls the old launcher**. Installs live in `%LOCALAPPDATA%\com.epicgames.eglv2\installations.jsonl`: header line, then an append log of entries (installationId, complete, dir, namespace, itemId, artifactId). Last entry per installationId wins; only `complete: true` counts. **No game names in it.**
