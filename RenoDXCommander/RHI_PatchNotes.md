@@ -121,6 +121,8 @@
 - Added NVIDIA's original DLSS Neural Rendering 310.9.16 to the NR version lists, as "310.9.16". The modified "310.9.16 (20/30/40/50)" build stays the default.
 - Death Stranding Director's Cut now finds its RenoDX mod, and the original Death Stranding no longer shows the Director's Cut mod.
 - Updated MFG Unlock's description for its new method names.
+- 007 First Light: ReShade now installs as dinput8.dll, as the RenoDX mod's instructions say (with dxgi.dll the game may not start). Already installed? Reinstall ReShade.
+- NieR Replicant ver.1.22474487139... now finds its Luma mod.
 
 ## v2.9.4
 
