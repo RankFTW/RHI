@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56129,
-  "generated": "2026-11-18T13:22:47Z",
+  "generated": "2026-11-18T15:22:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -52671,6 +52671,7 @@
     },
     "Ef: The First Tale": {
       "steam_appid": 1144300,
+      "dx9": true,
       "config_path": "%USERPROFILE%\\Documents\\minori\\ef - the first tale.\\sysparams.txt",
       "engine": "MUSICA"
     },
