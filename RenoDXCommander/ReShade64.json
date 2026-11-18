@@ -15,7 +15,7 @@
 			}
 		],
 		"disable_environment": {
-			"DISABLE_VK_LAYER_reshade_1": "1"
+			"DISABLE_VK_LAYER_reshade_2": "1"
 		}
 	}
 }

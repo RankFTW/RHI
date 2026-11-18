@@ -48,6 +48,7 @@
 ### Bug Fixes
 
 **General**
+- Steam games whose install data only has a number for the name ("appid_244160") now show their real name (e.g. Homeworld Remastered Collection), read from Steam's own library cache.
 - Fixed RHI not opening at all with Admin Mode on when Admin Mode had been set up for another copy of RHI (after a reinstall in another folder, or the portable version), or when it couldn't start RHI as administrator. RHI now opens without admin rights and says how to set Admin Mode up again. Uninstalling RHI also removes Admin Mode's scheduled task.
 - Fixed Microsoft Store apps that aren't games showing in the game list as Xbox games. RHI now lists only what Xbox Gaming Services has registered as a game, the same list the Xbox app uses. Thanks to the Special K team, whose SKIF launcher showed how.
 - Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.
@@ -64,6 +65,7 @@
 - Fixed Unreal Engine games played from both Steam and Game Pass getting UE-Extended's Engine.ini changes in the other store's settings folder, so they had no effect. Each copy now uses its own store's folder.
 
 **ReShade and shaders**
+- Fixed ReShade not loading in DOOM Eternal (Vulkan). The game switches ReShade's Vulkan layer off through the layer's off-switch, so RHI now gives that switch a different name. Other Vulkan games are not affected.
 - Fixed renaming ReShade to dxgi.dll in Game Overrides not renaming the file.
 - Fixed RHI sometimes deleting your own reshade-shaders folder.
 - Fixed installing ReShade under another name (opengl32, d3d12, version, winmm, .asi) overwriting another mod's file without asking. RHI now asks and keeps a backup.

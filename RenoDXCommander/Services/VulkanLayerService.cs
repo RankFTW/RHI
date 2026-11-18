@@ -189,6 +189,7 @@ public static class VulkanLayerService
     /// </summary>
     public static bool SyncLayerToChannel(string channel)
     {
+        EnsureOffSwitchRenamed();
         if (string.Equals(channel, AuxInstallService.ChannelCustom, StringComparison.OrdinalIgnoreCase))
         {
             CrashReporter.Log("[VulkanLayerService.SyncLayerToChannel] Custom channel — layer left as picked");
@@ -316,6 +317,53 @@ public static class VulkanLayerService
         }
     }
 
+    // ── Off-switch variable ───────────────────────────────────────────────────────
+
+    // The Vulkan loader requires every implicit layer to name an environment variable that turns it
+    // off ("disable_environment"). ReShade's installer uses DISABLE_VK_LAYER_reshade_1, and DOOM
+    // Eternal sets exactly that variable to block ReShade. RHI names it _2 instead (crosire's own
+    // workaround, ReShade forum thread 9638): no game needs the variable for ReShade to work, so
+    // only programs that set _1 to keep ReShade out are affected.
+    public const string OffSwitch = "DISABLE_VK_LAYER_reshade_2";
+    internal const string StockOffSwitch = "DISABLE_VK_LAYER_reshade_1";
+
+    /// <summary>The layer manifest text with ReShade's stock off-switch renamed, or null when it has none.</summary>
+    internal static string? RenameOffSwitch(string json) =>
+        json.Contains("\"" + StockOffSwitch + "\"", StringComparison.Ordinal)
+            ? json.Replace("\"" + StockOffSwitch + "\"", "\"" + OffSwitch + "\"", StringComparison.Ordinal)
+            : null;
+
+    /// <summary>
+    /// Renames the stock off-switch in an installed layer manifest (installed by older RHI versions or
+    /// ReShade's own installer). Only that one entry changes. Elevates if needed. Run off the UI thread.
+    /// </summary>
+    public static void EnsureOffSwitchRenamed()
+    {
+        if (!File.Exists(LayerManifestPath)) return;
+        string? tmp = null;
+        try
+        {
+            var updated = RenameOffSwitch(File.ReadAllText(LayerManifestPath));
+            if (updated == null) return;
+            tmp = Path.Combine(Path.GetTempPath(), $"rhi_{LayerManifestName}");
+            File.WriteAllText(tmp, updated);
+            AuxInstallService.CopyFileWithElevation(tmp, LayerManifestPath);
+            CrashReporter.Log($"[VulkanLayerService.EnsureOffSwitchRenamed] {StockOffSwitch} -> {OffSwitch} in {LayerManifestPath}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            CrashReporter.Log($"[VulkanLayerService.EnsureOffSwitchRenamed] Failed — {ex.Message}");
+        }
+        finally
+        {
+            if (tmp != null)
+            {
+                try { File.Delete(tmp); }
+                catch (IOException ex) { CrashReporter.Log($"[VulkanLayerService.EnsureOffSwitchRenamed] Temp file left — {ex.Message}"); }
+            }
+        }
+    }
+
     // ── Manifest generation ───────────────────────────────────────────────────────
 
     /// <summary>
@@ -335,7 +383,10 @@ public static class VulkanLayerService
                     "library_path": "{{libraryPath}}",
                     "api_version": "1.3.0",
                     "implementation_version": "1",
-                    "description": "ReShade"
+                    "description": "ReShade",
+                    "disable_environment": {
+                        "{{OffSwitch}}": "1"
+                    }
                 }
             }
             """;
