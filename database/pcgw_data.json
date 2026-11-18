@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56130,
-  "generated": "2026-11-18T21:23:47Z",
+  "generated": "2026-11-18T23:23:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -123678,7 +123678,7 @@
       "steam_appid": 264140,
       "dx9": true,
       "opengl": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\VITALI KIRPU & QUADRO DELTA\\Pixel Piracy\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\VitaliKirpuProductions\\Pixel Piracy\\",
       "engine": "Unity"
     },
     "Pixel Privateers": {
