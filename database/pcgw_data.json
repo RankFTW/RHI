@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56129,
-  "generated": "2026-11-18T15:22:47Z",
+  "generated": "2026-11-18T19:23:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -56475,7 +56475,7 @@
       "engine": "Unity"
     },
     "Everwild": {
-      "engine": "Unreal Engine 4"
+      "engine": "Unreal Engine 5"
     },
     "Everwind": {
       "steam_appid": 2253100,
@@ -134866,7 +134866,6 @@
     },
     "Returnal": {
       "steam_appid": 1649240,
-      "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Returnal\\Steam\\Saved\\Config",
       "engine": "Unreal Engine 4"
     },
