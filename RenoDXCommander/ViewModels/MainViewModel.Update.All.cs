@@ -77,7 +77,7 @@ public partial class MainViewModel
     /// <summary>Updates only the given cards (the silent auto-updater passes the outdated, non-running ones).</summary>
     public async Task UpdateAllUlAsync(IReadOnlyList<GameCardViewModel> cards)
     {
-        var ulCards = cards.Where(c => c.UlStatus == GameStatus.UpdateAvailable && !c.IsHidden && !c.ExcludeFromUpdateAllUl).ToList();
+        var ulCards = cards.Where(c => c.UlStatus == GameStatus.UpdateAvailable && !c.IsHidden && !c.ExcludeFromUpdateAllUl && !IsUlPinned(c)).ToList();
         if (ulCards.Count == 0) return;
 
         foreach (var card in ulCards)

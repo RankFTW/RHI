@@ -320,6 +320,30 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── ReLimiter version pin ─────────────────────────────────────────────────
+
+    /// <summary>The ReLimiter release a game is pinned to (e.g. "v3.3.4"), or null = Latest (auto-update).</summary>
+    public string? GetUlPinnedVersion(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.UlPinnedVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        return null;
+    }
+
+    /// <summary>Pins a game to a ReLimiter release. Null or empty = Latest. Pinned games are skipped by updates.</summary>
+    public void SetUlPinnedVersion(string gameName, string? tag, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(tag)) _gameNameService.UlPinnedVersion.Remove(key);
+        else _gameNameService.UlPinnedVersion[key] = tag;
+        CrashReporter.Log($"[MainViewModel.SetUlPinnedVersion] '{key}' → {(string.IsNullOrEmpty(tag) ? "Latest" : tag)}");
+        SaveNameMappings();
+    }
+
+    /// <summary>Version shown on a card with ReLimiter installed: the pinned release, else the global installed version.</summary>
+    private string? UlVersionForCard(string gameName, string? store, bool is32Bit) =>
+        GetUlPinnedVersion(gameName, store ?? "")?.TrimStart('v', 'V') ?? ReadUlInstalledVersion(is32Bit);
+
     // ── NR Runtime ────────────────────────────────────────────────────────────
 
     /// <summary>Returns the NR runtime version for a game. Empty string = use newest from manifest.</summary>

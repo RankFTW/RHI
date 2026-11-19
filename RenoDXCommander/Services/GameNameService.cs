@@ -60,6 +60,9 @@ public partial class GameNameService : IGameNameService
     /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest" (always auto-update).</summary>
     private Dictionary<string, string> _osNightlyBuild = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game pinned ReLimiter version. Key = "GameName|Store", Value = release tag e.g. "v3.3.4". Absent = Latest (auto-update).</summary>
+    private Dictionary<string, string> _ulPinnedVersion = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value = e.g. "310.8.2" or "310.8.SF-v2". Absent = default (310.8.2).</summary>
     private Dictionary<string, string> _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
 
@@ -226,6 +229,8 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
     /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest".</summary>
     public Dictionary<string, string> OsNightlyBuild => _osNightlyBuild;
+    /// <summary>Per-game pinned ReLimiter version. Key = "GameName|Store", Value = release tag. Absent = Latest.</summary>
+    public Dictionary<string, string> UlPinnedVersion => _ulPinnedVersion;
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
     public Dictionary<string, string> OsNrRuntime => _osNrRuntime;
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
@@ -602,6 +607,11 @@ public partial class GameNameService : IGameNameService
         _osNightlyBuild = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osNightlyBuildDict) _osNightlyBuild[kv.Key] = kv.Value;
 
+        var ulPinnedDict = Load<Dictionary<string, string>>("UlPinnedVersion",
+            new(StringComparer.OrdinalIgnoreCase));
+        _ulPinnedVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in ulPinnedDict) _ulPinnedVersion[kv.Key] = kv.Value;
+
         var osNrRuntimeDict = Load<Dictionary<string, string>>("OsNrRuntime",
             new(StringComparer.OrdinalIgnoreCase));
         _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
@@ -937,6 +947,8 @@ public partial class GameNameService : IGameNameService
                 s["OsVariantOverrides"] = JsonSerializer.Serialize(_osVariantOverrides);
                 if (_osNightlyBuild.Count > 0) s["OsNightlyBuild"] = JsonSerializer.Serialize(_osNightlyBuild);
                 else s.Remove("OsNightlyBuild");
+                if (_ulPinnedVersion.Count > 0) s["UlPinnedVersion"] = JsonSerializer.Serialize(_ulPinnedVersion);
+                else s.Remove("UlPinnedVersion");
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_upliftLaunchpad.Count > 0) s["UpliftLaunchpad"] = JsonSerializer.Serialize(_upliftLaunchpad);
                 else s.Remove("UpliftLaunchpad");
@@ -1190,6 +1202,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeDict(_customReShadeSelection, oldName, newName);
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_osNightlyBuild, oldName, newName);
+        MigrateCompositeDict(_ulPinnedVersion, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_upliftLaunchpad, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);

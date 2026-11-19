@@ -141,7 +141,7 @@ public partial class MainViewModel
             {
                 DispatcherQueue?.TryEnqueue(() =>
                 {
-                    foreach (var card in cards.Where(c => c.UlStatus == GameStatus.Installed))
+                    foreach (var card in cards.Where(c => c.UlStatus == GameStatus.Installed && !IsUlPinned(c)))
                         card.UlStatus = GameStatus.UpdateAvailable;
 
                     HasUpdatesAvailable = AnyUpdateAvailable;

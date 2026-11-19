@@ -1033,7 +1033,7 @@ public partial class MainViewModel
                 {
                     newCard.UlStatus = GameStatus.Installed;
                     newCard.UlInstalledFile = ulFileName;
-                    newCard.UlInstalledVersion = ReadUlInstalledVersion(newCard.Is32Bit);
+                    newCard.UlInstalledVersion = UlVersionForCard(newCard.GameName, newCard.Source, newCard.Is32Bit);
                 }
             }
             LogPhase("ReLimiter");

@@ -10,6 +10,7 @@
 - Added "Get beta updates" in Settings › General › Updates: RHI offers test builds of the next version, then moves you to the full release. Turning it off doesn't downgrade you.
 - RTX Encore's ⚙ has a Presets panel at the top: save a game's RTX Encore settings into one of six slots, name them, and apply them to any other game. Presets are shared by all games.
 - Browse SteamGridDB covers and banners in Spotlight (right-click a game › Artwork). Needs your own free SteamGridDB API key (Settings › Accounts & Data).
+- ReLimiter's ⚙ has a new Version section: pick any ReLimiter release for a game, or Latest. A game on a picked version is left out of update checks, Update All and automatic updates; picking Latest puts it back. If ReLimiter is installed, the new version goes in straight away and the game's relimiter.ini settings are kept.
 - Added "Built-in add-ons" in Settings › ReShade to keep ReShade's Generic Depth and Effect Runtime Sync add-ons on (RHI turns them off by default). "Write these to all games" applies it straight away.
 
 ### Changes

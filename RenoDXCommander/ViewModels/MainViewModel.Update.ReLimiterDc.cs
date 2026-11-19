@@ -135,6 +135,8 @@ public partial class MainViewModel
     {
         _crashReporter.Log($"[CheckUlUpdateAsync] Starting");
 
+        // Games pinned to a release (ReLimiter ⚙ › Version) are never updated
+        cards = cards.Where(c => !IsUlPinned(c)).ToList();
         bool anyInstalled = cards.Any(c => c.UlStatus == GameStatus.Installed);
 
         // ── Determine which bitness variants are in use ───────────────────
@@ -466,6 +468,9 @@ public partial class MainViewModel
         if (r == null || i == null) return !string.Equals(remote, installed, StringComparison.OrdinalIgnoreCase);
         return r > i;
     }
+
+    /// <summary>True when the game is pinned to a ReLimiter release (skipped by the update check and Update All).</summary>
+    public bool IsUlPinned(GameCardViewModel card) => GetUlPinnedVersion(card.GameName, card.Source ?? "") != null;
 
     // Cached latest release info from the update check
     private string? _latestUlVersion;

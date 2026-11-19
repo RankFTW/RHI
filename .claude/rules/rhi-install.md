@@ -91,6 +91,7 @@ paths:
 ### ReLimiter / Display Commander
 - Standard addon deployment
 - Auto-disable driver FPS cap on install. Delete setting on uninstall.
+- **ReLimiter version pin** (⚙ › Version, `MainWindow.Events.Components.FrameLimiters.Version.cs`): per-game `GameNameService.UlPinnedVersion` (`"Game|Store"` → release tag; `Get/SetUlPinnedVersion`, `IsUlPinned`). `UlReleaseService` lists releases (32-bit builds only from v3.3.1) and stages a pinned build in `framelimiter\pinned\<tag>\`. `InstallUlAsync` deploys the pin when set and then **doesn't write `ul_meta.json`** (that file tracks the global latest build). The update check, Update All and the cached update snapshot skip pinned games. A version change on an installed game = `SwitchUlVersionAsync` (binary only: no ini, driver FPS cap or global-setting writes).
 
 ### OptiScaler
 - Installs as `dxgi.dll`, renames existing ReShade → `ReShade64.dll`
