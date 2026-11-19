@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56135,
-  "generated": "2026-11-19T21:24:48Z",
+  "generated": "2026-11-19T23:25:18Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -49636,7 +49636,8 @@
       "steam_appid": 1129010
     },
     "Dressmaker": {
-      "steam_appid": 4019220
+      "steam_appid": 4019220,
+      "config_path": "\\AppData\\LocalLow\\Cozy Lives\\Dressmaker"
     },
     "Drew and the Floating Labyrinth": {
       "steam_appid": 346200
@@ -95662,6 +95663,7 @@
     },
     "Little Witch Nobeta": {
       "steam_appid": 1049890,
+      "dx11": true,
       "engine": "Unity"
     },
     "Little World Of Creatures": {
@@ -109624,6 +109626,7 @@
     },
     "My Sweet Floating in the Void": {
       "steam_appid": 2738740,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Oculus Digital\\My Sweet Floating In The Void",
       "engine": "Unity"
     },
     "My Sweet Waifu": {
@@ -123103,6 +123106,7 @@
     "Pin Town": {},
     "Pinata Smash: Incremental Circus": {
       "steam_appid": 4918810,
+      "dx11": true,
       "engine": "Unity"
     },
     "Pinball": {
