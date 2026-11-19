@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56132,
-  "generated": "2026-11-19T07:23:47Z",
+  "game_count": 56133,
+  "generated": "2026-11-19T09:23:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -58971,6 +58971,9 @@
     "FanTris": {
       "steam_appid": 918960,
       "engine": "GameMaker"
+    },
+    "Fantôme Rapport -Intermezzo-": {
+      "steam_appid": 3622860
     },
     "Fant├┤me Rapport -Intermezzo-": {
       "steam_appid": 3622860
