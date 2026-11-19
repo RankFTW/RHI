@@ -255,6 +255,16 @@ public partial class MainViewModel
     }
 
     public void SaveLibraryPublic() => SaveLibrary();
+
+    /// <summary>
+    /// Saves the library on the UI thread after background updates. Queued behind the status changes the installs
+    /// queued there (card.XxxStatus = Installed), so the saved snapshot no longer says "update available".
+    /// </summary>
+    public void SaveLibraryAfterUpdates() => DispatcherQueue?.TryEnqueue(() =>
+    {
+        try { SaveLibrary(); }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.SaveLibraryAfterUpdates] {ex.Message}"); }
+    });
     private void SaveLibrary()
     {
         var detectedGames = _allCards

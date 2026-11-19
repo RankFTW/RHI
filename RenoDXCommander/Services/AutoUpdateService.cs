@@ -31,6 +31,7 @@ public class AutoUpdateService
 
     // Guard so two passes never run concurrently (startup + 4h timer can overlap).
     private int _running; // 0 = idle, 1 = running  (Interlocked)
+    private volatile bool _updatedAny; // set when a pass ran an update; the library is saved once at the end
 
     private volatile bool _stopped;
 
@@ -84,9 +85,11 @@ public class AutoUpdateService
         try
         {
             _crashReporter.Log("[AutoUpdateService] Silent auto-update pass started");
+            _updatedAny = false;
             // Run on background thread — the UpdateAll* methods internally dispatch
             // property changes to the UI thread via DispatcherQueue.TryEnqueue().
             await RunUpdatePassAsync().ConfigureAwait(false);
+            SaveLibraryIfUpdated();
             _crashReporter.Log("[AutoUpdateService] Silent auto-update pass complete");
         }
         catch (Exception ex)
@@ -278,6 +281,7 @@ public class AutoUpdateService
         try
         {
             _crashReporter.Log($"[AutoUpdateService] Updating {component} for {names}");
+            _updatedAny = true;
             await update().ConfigureAwait(false);
         }
         catch (IOException ioEx)
@@ -289,6 +293,17 @@ public class AutoUpdateService
         {
             _crashReporter.Log($"[AutoUpdateService] {component} for {names} — failed ({ex.Message})");
         }
+    }
+
+    /// <summary>
+    /// Saves game_library.json after a pass that updated something. Without this the saved "update available"
+    /// flags stayed until the next full update check, so a restart within the check cooldown restored them and
+    /// the next pass installed the same updates again (seen Nov 2026: ReLimiter v4 installed twice in 24 games).
+    /// </summary>
+    private void SaveLibraryIfUpdated()
+    {
+        if (!_updatedAny || _stopped) return;
+        _viewModel?.SaveLibraryAfterUpdates();
     }
 
     // ── Retry queue & timer ───────────────────────────────────────────────────────
@@ -320,7 +335,8 @@ public class AutoUpdateService
     private async Task RetryPassAsync()
     {
         if (_stopped || Interlocked.CompareExchange(ref _running, 1, 0) != 0) return;
-        try { await RetryPassCoreAsync().ConfigureAwait(false); }
+        _updatedAny = false;
+        try { await RetryPassCoreAsync().ConfigureAwait(false); SaveLibraryIfUpdated(); }
         catch (Exception ex) { _crashReporter.Log($"[AutoUpdateService] Retry pass failed — {ex.Message}"); }
         finally { Interlocked.Exchange(ref _running, 0); }
     }

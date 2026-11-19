@@ -51,6 +51,7 @@
 
 **General**
 - Steam games whose install data only has a number for the name ("appid_244160") now show their real name (e.g. Homeworld Remastered Collection), read from Steam's own library cache.
+- Fixed automatic component updates installing the same updates again when RHI was restarted soon after.
 - Fixed RHI not opening at all with Admin Mode on when Admin Mode had been set up for another copy of RHI (after a reinstall in another folder, or the portable version), or when it couldn't start RHI as administrator. RHI now opens without admin rights and says how to set Admin Mode up again. Uninstalling RHI also removes Admin Mode's scheduled task.
 - Fixed Microsoft Store apps that aren't games showing in the game list as Xbox games. RHI now lists only what Xbox Gaming Services has registered as a game, the same list the Xbox app uses. Thanks to the Special K team, whose SKIF launcher showed how.
 - Fixed Epic games not launching from RHI in Admin Mode while the Epic launcher was running as administrator.

@@ -78,7 +78,12 @@ public partial class MainViewModel
             return UlDx12State.No;
         }
 
-        return ReShadeLogApi(card.InstallPath) ?? UlDx12State.Unknown;
+        return ReShadeLogApi(card.InstallPath) switch
+        {
+            UlLogApi.Dx12 => UlDx12State.Yes,
+            UlLogApi.Older or UlLogApi.Vulkan => UlDx12State.No,
+            _ => UlDx12State.Unknown,
+        };
     }
 
     /// <summary>The ReLimiter v4 verdict for a game (blocked / allowed / automatic).</summary>
@@ -87,7 +92,9 @@ public partial class MainViewModel
         bool dxvk = card.IsDxvkInstalled || (card.Mod?.IsGenericSource == true && card.InstalledRecord != null);
         var dx12 = UlDx12For(card);
         bool openGl = card.GraphicsApi == GraphicsApiType.OpenGL && dx12 != UlDx12State.Yes;
-        return UlV4Rules.Check(card.Is32Bit, card.RequiresVulkanInstall, dxvk, openGl, UlGpuNow(), dx12);
+        // A log showing only Vulkan means the game really rendered with Vulkan (e.g. Ryubing, whose card says DX12)
+        bool vulkan = card.RequiresVulkanInstall || ReShadeLogApi(card.InstallPath) == UlLogApi.Vulkan;
+        return UlV4Rules.Check(card.Is32Bit, vulkan, dxvk, openGl, UlGpuNow(), dx12);
     }
 
     /// <summary>True when the game should be on ReLimiter v4 (its choice + the verdict).</summary>
@@ -96,11 +103,11 @@ public partial class MainViewModel
 
     // ── ReShade.log ─────────────────────────────────────────────────────────────
 
-    private static readonly ConcurrentDictionary<string, (long Len, DateTime Time, UlDx12State? Api)> _rsLogApiCache =
+    private static readonly ConcurrentDictionary<string, (long Len, DateTime Time, UlLogApi? Api)> _rsLogApiCache =
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The API the game last started on according to ReShade.log in its folder, or null. Cached by size + date.</summary>
-    private static UlDx12State? ReShadeLogApi(string? installPath)
+    private static UlLogApi? ReShadeLogApi(string? installPath)
     {
         if (string.IsNullOrEmpty(installPath)) return null;
         var path = Path.Combine(installPath, "ReShade.log");

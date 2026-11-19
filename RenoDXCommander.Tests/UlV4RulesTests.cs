@@ -68,33 +68,80 @@ public class UlV4RulesTests
         Assert.False(UlV4Rules.WantsV4("3", auto));
     }
 
-    // Lines as ReShade 6.8 writes them (taken from real logs)
+    // Lines as ReShade 6.8 / ReLimiter write them (taken from real logs)
+    private const string Start = "08:15:48:106 [43216] | INFO  | Initializing crosire's ReShade version '6.8.0.2155' (64-bit) loaded from 'C:\\Games\\X\\dxgi.dll' ...\n";
     private const string D3D12 = "16:44:43:361 [27800] | INFO  | Redirecting D3D12CreateDevice(pAdapter = 0000017F8A5ADE20, MinimumFeatureLevel = 0xc000, riid = {189819F1-1DB6-4B57-BE54-1821339B85F7}, ppDevice = 0000003D6E2FE5B8) ...\n";
     private const string D3D11 = "22:47:05:883 [25368] | INFO  | Redirecting D3D11CreateDevice(pAdapter = 00000235A2D75FB0, DriverType = 0, Software = 0000000000000000, Flags = 0x20, pFeatureLevels = 00000035D2EFE3F0, FeatureLevels = 4, SDKVersion = 7, ppDevice = 00000035D2EFE528, pFeatureLevel = 00000035D2EFE4D0, ppImmediateContext = 00000035D2EFE520) ...\n";
     private const string D3D9 = "15:44:50:125 [34424] | INFO  | Redirecting Direct3DCreate9Ex(SDKVersion = 0x20, ppD3D = 000000EF7C37EE88) ...\n";
     private const string Gl = "16:02:55:017 [ 3000] | INFO  | Redirecting wglCreateContext(hdc = 000000006E0130E3) ...\n";
-    private const string Start = "08:15:48:106 [43216] | INFO  | Initializing crosire's ReShade version '6.8.0.2155' (64-bit) loaded from 'C:\\Games\\X\\dxgi.dll' ...\n";
+    private const string VkInstance = "12:00:01:000 [ 1234] | INFO  | Redirecting vkCreateInstance(pCreateInfo = 000000C0FFEE0000, pAllocator = 0000000000000000, pInstance = 000000C0FFEE0010) ...\n";
+    private const string SwapChain = "18:22:28:150 [26028] | INFO  | Redirecting IDXGIFactory2::CreateSwapChainForHwnd(this = 000001B6174C1220, pDevice = 000001B617E16B60) ...\n";
+    private const string Running = "18:22:28:417 [26028] | INFO  | Running on NVIDIA GeForce RTX 5090 Driver 617.42.\n";
+    private const string Unregistered = "18:22:28:100 [26028] | INFO  | Unregistered add-on \"ReLimiter\".\n";
+    private static string Rl(string version) => $"18:22:27:855 [26028] | INFO  | Registered add-on \"ReLimiter\" v{version} using ReShade API version 18.\n";
+    private static string RlApi(int api) => $"16:44:47:000 [27800] | WARN  | [ReLimiter] on_present: captured presenting swapchain 00000186FF7493B0 (hwnd=000000000010167E, api={api}, ptr_changed=1, api_changed=1)\n";
 
     [Fact]
-    public void ReShadeLog_D3D12_Wins_Even_With_Side_Devices()
+    public void ReShadeLog_ReLimiter_Api_New_Numbering()
     {
-        // DX12 games often open a D3D11 device later (video / UI) or a D3D9 one first (RDR2)
-        Assert.Equal(UlDx12State.Yes, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + D3D11));
-        Assert.Equal(UlDx12State.Yes, UlV4Rules.ApiFromReShadeLog(Start + D3D9 + D3D12));
+        // v3.3.1+: None, DX9, DX11, DX12, Vulkan, OpenGL (Quake: DX12, then a DX11 launcher resize)
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + Rl("3.3.4.0") + RlApi(3) + D3D11 + RlApi(2)));
+        // Rogue Waters: DX11 game, DLSS 5 Bridge makes a D3D12 device after ReShade starts
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + D3D11 + Rl("3.3.5.0") + SwapChain + Running + RlApi(2) + D3D12));
     }
 
     [Fact]
-    public void ReShadeLog_Older_Apis_Are_Not_Dx12()
+    public void ReShadeLog_ReLimiter_Api_Old_Numbering_Before_3_3_1()
     {
-        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + D3D11));
-        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + D3D9));
-        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + Gl));
+        // Before v3.3.1: None, DX11, DX12, Vulkan, OpenGL (GreedFall: The Dying World on 3.2.9, Star Trek Voyager on 3.3.0)
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + Rl("3.2.9.0") + RlApi(2)));
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + Rl("3.3.0.0") + RlApi(2)));
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + D3D11 + Rl("3.2.9.0") + RlApi(1)));
+    }
+
+    [Fact]
+    public void ReShadeLog_Uses_The_Device_In_Use_When_ReShade_Started()
+    {
+        // ZERO PARADES: a D3D12 test device (add-ons unregister when it's released), then it renders on D3D11
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + Rl("4.0.0.0") + Unregistered + D3D11 + SwapChain + Running));
+        // DX12 games open D3D11 / D3D9 devices after starting (video, UI) or before (RDR2's D3D9)
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D9 + D3D12 + SwapChain + Running + D3D11));
+        // No "Running on" line yet: the last device
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + D3D9));
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + Gl));
+    }
+
+    private const string D3D11On12 = "06:35:03:010 [34068] | INFO  | Redirecting D3D11On12CreateDevice(pDevice = 000001094EC48B30, Flags = 0x20, pFeatureLevels = 0000000000000000, FeatureLevels = 0, ppCommandQueues = 0000003D6E2FE5B8, NumQueues = 1, NodeMask = 0, ppDevice = 0000003D6E2FE5C0, ppImmediateContext = 0000000000000000, pChosenFeatureLevel = 0000000000000000) ...\n";
+
+    [Fact]
+    public void ReShadeLog_D3D11On12_Counts_As_D3D12()
+    {
+        // Nice Day for Fishing / BLACKWOOD: D3D12, D3D11-on-12 (with its D3D11 lines), then ReShade starts
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + D3D11On12 + D3D11 + SwapChain + Running));
+    }
+
+    [Fact]
+    public void ReShadeLog_Dx11_Splash_Then_Dx12_Is_Dx12()
+    {
+        // Hogwarts Legacy: a D3D11 window first, then the game on D3D12
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + D3D11 + SwapChain + Running + Unregistered + D3D12 + SwapChain + Running + D3D11));
+        // Silver Pines: DX11 game, GITC Uplift's D3D12 device between two DX11 starts
+        Assert.Equal(UlLogApi.Older, UlV4Rules.ApiFromReShadeLog(Start + D3D11 + Running + D3D11 + D3D12 + D3D11 + Running + D3D11));
+    }
+
+    [Fact]
+    public void ReShadeLog_Vulkan_Only_Is_Vulkan()
+    {
+        // Ryubing: RHI's card says DX12, but the log shows only Vulkan
+        Assert.Equal(UlLogApi.Vulkan, UlV4Rules.ApiFromReShadeLog(Start + VkInstance));
+        Assert.Equal(UlLogApi.Dx12, UlV4Rules.ApiFromReShadeLog(Start + VkInstance + D3D12 + Running));
     }
 
     [Fact]
     public void ReShadeLog_Without_A_Device_Is_Unknown()
     {
         Assert.Null(UlV4Rules.ApiFromReShadeLog(Start));
+        Assert.Null(UlV4Rules.ApiFromReShadeLog(Start + Rl("3.3.5.0")));
         Assert.Null(UlV4Rules.ApiFromReShadeLog(""));
         Assert.Null(UlV4Rules.ApiFromReShadeLog(null));
     }
