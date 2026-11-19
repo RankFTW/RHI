@@ -19,7 +19,11 @@ public class GameMod
     // Optional URL found in the game name cell on the wiki (points to per-game instructions)
     public string? NameUrl { get; set; }
 
-    [JsonIgnore] public string? AddonFileName   => SnapshotUrl   != null ? Path.GetFileName(SnapshotUrl)   : null;
-    [JsonIgnore] public string? AddonFileName32  => SnapshotUrl32 != null ? Path.GetFileName(SnapshotUrl32) : null;
+    // A .zip snapshot (addon + helper files) installs the addon inside it: name that, not the zip
+    [JsonIgnore] public string? AddonFileName   => NameFor(SnapshotUrl);
+    [JsonIgnore] public string? AddonFileName32  => NameFor(SnapshotUrl32);
+    private static string? NameFor(string? url) => url == null ? null
+        : RenoDXCommander.Services.RenoDxZipPackage.IsZip(url) ? RenoDXCommander.Services.RenoDxZipPackage.AddonNameFor(Path.GetFileName(url))
+        : Path.GetFileName(url);
     [JsonIgnore] public bool HasBothBitVersions  => SnapshotUrl != null && SnapshotUrl32 != null;
 }

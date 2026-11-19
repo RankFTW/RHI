@@ -91,6 +91,7 @@ public class PeHeaderService : IPeHeaderService
     {
         "gitc-uplift-helper64.exe",  // GITC Uplift (Neural Rendering)
         "dlss5-feed-host64.exe",     // DLSS5 Feeder's 64-bit host (host64\)
+        "renodx-batmanac-dlaa-host64.exe", // Batman: Arkham City RenoDX mod's DLAA / FSR helper (BatmanAcSetup)
     };
 
     public static bool IsRhiToolExe(string fileName) => RhiToolExes.Contains(Path.GetFileName(fileName));

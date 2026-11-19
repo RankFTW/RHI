@@ -86,6 +86,10 @@ public class ModInstallService : IModInstallService
 
         Directory.CreateDirectory(DownloadPaths.RenoDX);
 
+        // A .zip snapshot (addon + helper files, e.g. Batman: Arkham City) is unpacked instead of copied
+        if (RenoDxZipPackage.IsZip(resolvedUrl))
+            return await InstallZipPackageAsync(mod, resolvedUrl, gameInstallPath, progress, gameName, store).ConfigureAwait(false);
+
         var fileName  = Path.GetFileName(resolvedUrl);
 
         // Only allow .addon64 / .addon32 files from the RenoDX wiki.
@@ -288,6 +292,106 @@ public class ModInstallService : IModInstallService
         return record;
     }
 
+    /// <summary>
+    /// Installs a RenoDX mod whose snapshot is a .zip (RenoDxZipPackage): downloads it (always: it's small and the
+    /// release host gives no reliable size), unpacks the addon and its runtime files next to the addon, and records the
+    /// zip's SHA-256 and size, which the update check compares.
+    /// </summary>
+    private async Task<InstalledModRecord> InstallZipPackageAsync(GameMod mod, string url, string gameInstallPath,
+        IProgress<(string message, double percent)>? progress, string? gameName, string? store)
+    {
+        var zipName   = Path.GetFileName(new Uri(url).LocalPath);
+        var cachePath = Path.Combine(DownloadPaths.RenoDX, zipName);
+        var addonDir  = GetAddonDeployPath(gameInstallPath);
+        var addonName = RenoDxZipPackage.AddonNameFor(zipName);
+
+        string? previousVersion = null;
+        try { previousVersion = AuxInstallService.ReadInstalledVersion(addonDir, addonName); }
+        catch (Exception ex) { CrashReporter.Log($"[ModInstallService.InstallZipPackageAsync] Could not read previous addon version — {ex.Message}"); }
+
+        progress?.Report(("Downloading...", 0));
+        var tmp = cachePath + ".tmp";
+        using (var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+        {
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to download '{url}' (HTTP {(int)resp.StatusCode}).");
+            var total = resp.Content.Headers.ContentLength ?? -1L;
+            long done = 0;
+            var buf = new byte[1024 * 1024];
+            await using (var net = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            await using (var file = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, useAsync: true))
+            {
+                int read;
+                while ((read = await net.ReadAsync(buf).ConfigureAwait(false)) > 0)
+                {
+                    await file.WriteAsync(buf.AsMemory(0, read)).ConfigureAwait(false);
+                    done += read;
+                    if (total > 0) progress?.Report(($"Downloading... {done / 1024} KB", (double)done / total * 100));
+                }
+            }
+        }
+        File.Move(tmp, cachePath, overwrite: true);
+
+        progress?.Report(("Installing...", 90));
+        string installedAddon;
+        try { installedAddon = RenoDxZipPackage.Extract(cachePath, addonDir); }
+        catch (InvalidDataException ex)
+        {
+            File.Delete(cachePath);
+            throw new InvalidOperationException($"The download from '{url}' is not a valid zip. Please try again. ({ex.Message})");
+        }
+
+        AddonFileNames.RemoveDuplicates(addonDir, installedAddon);
+        var record = new InstalledModRecord
+        {
+            GameName        = gameName ?? mod.Name,
+            InstallPath     = gameInstallPath,
+            Store           = store ?? "",
+            AddonFileName   = installedAddon,
+            FileHash        = await ComputeHashAsync(cachePath).ConfigureAwait(false), // the zip's hash (update check)
+            InstalledAt     = DateTime.UtcNow,
+            SnapshotUrl     = url,
+            RemoteFileSize  = new FileInfo(cachePath).Length,
+            PreviousVersion = previousVersion,
+        };
+        SaveRecord(record);
+        try { InstallCompleted?.Invoke(record); } catch (Exception ex) { CrashReporter.Log($"[ModInstallService.InstallZipPackageAsync] InstallCompleted event handler failed — {ex.Message}"); }
+        progress?.Report(("Installed!", 100));
+        return record;
+    }
+
+    /// <summary>Zip packages: downloads the zip and compares its SHA-256 with the installed one's.</summary>
+    private async Task<bool> CheckZipPackageUpdateAsync(InstalledModRecord record, string url)
+    {
+        var tmp = Path.Combine(DownloadPaths.RenoDX, Path.GetFileName(new Uri(url).LocalPath) + $".update_check_{Guid.NewGuid():N}.tmp");
+        try
+        {
+            Directory.CreateDirectory(DownloadPaths.RenoDX);
+            using (var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+            {
+                if (!resp.IsSuccessStatusCode) return false;
+                await using var net = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                await using var file = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, useAsync: true);
+                await net.CopyToAsync(file).ConfigureAwait(false);
+            }
+            var hash = await ComputeHashAsync(tmp).ConfigureAwait(false);
+            bool changed = !string.Equals(hash, record.FileHash, StringComparison.OrdinalIgnoreCase);
+            CrashReporter.Log($"[ModInstallService.CheckZipPackageUpdateAsync] '{record.GameName}': {(changed ? "new package" : "up to date")}");
+            return changed;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[ModInstallService.CheckZipPackageUpdateAsync] '{record.GameName}' — {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { CrashReporter.Log($"[ModInstallService.CheckZipPackageUpdateAsync] Temp cleanup — {ex.Message}"); }
+        }
+    }
+
     // ── Update detection ──────────────────────────────────────────────────────────
 
     /// <summary>
@@ -317,6 +421,9 @@ public class ModInstallService : IModInstallService
         // Always resolve to the authoritative URL — handles records written before
         // the override table existed (their stored URL may be the generic CDN).
         var checkUrl = ResolveSnapshotUrl(record.SnapshotUrl);
+
+        if (RenoDxZipPackage.IsZip(checkUrl))
+            return await CheckZipPackageUpdateAsync(record, checkUrl).ConfigureAwait(false);
 
         // For CDNs that don't serve reliable Content-Length on HEAD (e.g. github.io, /snapshot/ paths),
         // fall back to a full download comparison — do this check FIRST before any HEAD request.
@@ -612,6 +719,9 @@ public class ModInstallService : IModInstallService
                 { CrashReporter.Log($"[ModInstallService.Uninstall] Couldn't delete '{realName}' — {ex.Message}"); }
             }
         }
+        // Files a .zip package brought with the addon (helper exe, DLLs RHI added for it)
+        foreach (var dir in new[] { addonDir, record.InstallPath }.Distinct(StringComparer.OrdinalIgnoreCase))
+            RenoDxZipPackage.RemoveFiles(dir, AddonFileNames.Canonical(record.AddonFileName));
         // Cache copy intentionally kept for future reinstalls.
 
         lock (SafeJsonFile.LockFor(DbPath))

@@ -936,6 +936,13 @@ public partial class MainViewModel
             _controlUeInstallOptions = controlOpts;
         }
 
+        // Pre-install pop-up for Batman: Arkham City (boostedwarr's zip: helper, DLSS / FSR files, launcher settings)
+        if (BatmanAcSetup.IsBatmanAcAddon(card.Mod.AddonFileName) && !await BatmanAcSetup.ShowInstallDialogAsync())
+        {
+            if (swappedTo32 && originalSnapshotUrl != null) card.Mod.SnapshotUrl = originalSnapshotUrl;
+            return;
+        }
+
         card.IsInstalling = true;
         card.ActionMessage = "Starting download...";
         _crashReporter.Log($"[MainViewModel.InstallModAsync] Install started: {card.GameName} → {card.InstallPath}");
@@ -1104,6 +1111,32 @@ public partial class MainViewModel
                 catch (Exception dlssEx)
                 {
                     _crashReporter.Log($"[InstallModAsync] Control UE DLSS rescan failed — {dlssEx.Message}");
+                }
+            }
+
+            // ── Batman: Arkham City (boostedwarr's zip): DLSS + AMD FSR files next to the mod's 64-bit helper ──
+            if (BatmanAcSetup.IsBatmanAcAddon(record.AddonFileName))
+            {
+                var batStatus = await BatmanAcSetup.RunAsync(card.GameName, card.InstallPath).ConfigureAwait(false);
+                try
+                {
+                    var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+                    var detection = dlssSvc.Detect(card.InstallPath);
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        var live = _allCards.FirstOrDefault(c =>
+                            c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)
+                            && c.Source == card.Source) ?? card;
+                        live.DlssDetection = detection;
+                        live.ApplyDlssDetection(detection);
+                        live.RefreshDlssVersions(dlssSvc);
+                        RequestDetailPanelRebuild?.Invoke(live);
+                        RequestOverridesPanelRebuild?.Invoke(live);
+                    });
+                }
+                catch (Exception dlssEx)
+                {
+                    _crashReporter.Log($"[InstallModAsync] Batman: Arkham City DLSS rescan failed — {dlssEx.Message} ({batStatus})");
                 }
             }
 
