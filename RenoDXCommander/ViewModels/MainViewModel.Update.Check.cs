@@ -135,14 +135,22 @@ public partial class MainViewModel
         {
         try
         {
-            var ulUpdateAvailable = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update result: {ulUpdateAvailable}, cards with UL installed: {cards.Count(c => c.UlStatus == GameStatus.Installed)}");
-            if (ulUpdateAvailable)
+            // Per game: v4 games against the latest release, games staying on v3 against the last v3 release
+            var ulOutdated = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update result: {(ulOutdated == null ? "check failed" : ulOutdated.Count + " game(s)")}, cards with UL installed: {cards.Count(c => c.UlStatus == GameStatus.Installed)}");
+            if (ulOutdated != null)
             {
+                var outdated = new HashSet<GameCardViewModel>(ulOutdated);
                 DispatcherQueue?.TryEnqueue(() =>
                 {
-                    foreach (var card in cards.Where(c => c.UlStatus == GameStatus.Installed && !IsUlPinned(c)))
-                        card.UlStatus = GameStatus.UpdateAvailable;
+                    foreach (var card in cards.Where(c => !IsUlPinned(c)))
+                    {
+                        if (outdated.Contains(card) && card.UlStatus == GameStatus.Installed)
+                            card.UlStatus = GameStatus.UpdateAvailable;
+                        // e.g. the game's v3 / v4 choice changed since the last check
+                        else if (!outdated.Contains(card) && card.UlStatus == GameStatus.UpdateAvailable)
+                            card.UlStatus = GameStatus.Installed;
+                    }
 
                     HasUpdatesAvailable = AnyUpdateAvailable;
                     OnPropertyChanged(nameof(AnyUpdateAvailable));

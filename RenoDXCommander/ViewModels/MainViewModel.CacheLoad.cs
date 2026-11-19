@@ -886,7 +886,7 @@ public partial class MainViewModel
                 {
                     newCard.UlStatus = GameStatus.Installed;
                     newCard.UlInstalledFile = ulFileName;
-                    newCard.UlInstalledVersion = UlVersionForCard(newCard.GameName, newCard.Source, is32Bit);
+                    newCard.UlInstalledVersion = UlVersionForCard(newCard.GameName, newCard.Source, is32Bit, installPath);
                 }
             }
 

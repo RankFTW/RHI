@@ -340,9 +340,13 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
-    /// <summary>Version shown on a card with ReLimiter installed: the pinned release, else the global installed version.</summary>
-    private string? UlVersionForCard(string gameName, string? store, bool is32Bit) =>
-        GetUlPinnedVersion(gameName, store ?? "")?.TrimStart('v', 'V') ?? ReadUlInstalledVersion(is32Bit);
+    /// <summary>
+    /// Version shown on a card with ReLimiter installed: the game's own addon file version, else the pinned release,
+    /// else the global installed version (old builds without a version resource).
+    /// </summary>
+    private string? UlVersionForCard(string gameName, string? store, bool is32Bit, string? installPath) =>
+        ReadUlAddonVersion(FindUlAddon(installPath, is32Bit)) is { } fileVer ? UlV4Rules.DisplayVersion(fileVer)
+        : GetUlPinnedVersion(gameName, store ?? "")?.TrimStart('v', 'V') ?? ReadUlInstalledVersion(is32Bit);
 
     // ── NR Runtime ────────────────────────────────────────────────────────────
 

@@ -131,6 +131,8 @@ public partial class InstallFolderMigrationService
             var g = b.Group("ReLimiter", ulNames.Any(n => File.Exists(Path.Combine(ctx.NewAddonDir, n))));
             foreach (var n in ulNames) b.Addon(g, n);
             b.Addon(g, "relimiter.ini");
+            b.Addon(g, UlV4Rules.BackupName(3));
+            b.Addon(g, UlV4Rules.BackupName(UlV4Rules.V4Major));
             foreach (var pattern in new[] { "relimiter*.log", "relimiter*.csv" })
                 foreach (var f in SafeFiles(oldDir, pattern)) b.File(g, Path.GetFileName(f), suffix: null);
         }

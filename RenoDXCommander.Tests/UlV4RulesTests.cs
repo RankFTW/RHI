@@ -1,0 +1,158 @@
+using RenoDXCommander.Services;
+using Xunit;
+
+namespace RenoDXCommander.Tests;
+
+/// <summary>ReLimiter v4 rules: who gets v4, reading the API from ReShade.log, versions and the fresh relimiter.ini.</summary>
+public class UlV4RulesTests
+{
+    private static UlV4Verdict Check(bool is32 = false, bool vulkan = false, bool dxvk = false, bool openGl = false,
+        UlGpuState gpu = UlGpuState.Nvidia, UlDx12State dx12 = UlDx12State.Yes) =>
+        UlV4Rules.Check(is32, vulkan, dxvk, openGl, gpu, dx12);
+
+    [Fact]
+    public void Dx12_On_Nvidia_Is_Automatic()
+    {
+        var v = Check();
+        Assert.True(v.Allowed);
+        Assert.True(v.Auto);
+        Assert.Null(v.Reason);
+        Assert.Null(v.Note);
+    }
+
+    [Theory]
+    [InlineData(true, false, false, false, false)]   // 32-bit
+    [InlineData(false, true, false, false, false)]   // Vulkan
+    [InlineData(false, false, true, false, false)]   // DXVK
+    [InlineData(false, false, false, true, false)]   // OpenGL
+    [InlineData(false, false, false, false, true)]   // not NVIDIA
+    public void Blocked_Cases(bool is32, bool vulkan, bool dxvk, bool openGl, bool notNvidia)
+    {
+        var v = Check(is32, vulkan, dxvk, openGl, notNvidia ? UlGpuState.NotNvidia : UlGpuState.Nvidia);
+        Assert.False(v.Allowed);
+        Assert.False(v.Auto);
+        Assert.False(string.IsNullOrEmpty(v.Reason));
+    }
+
+    [Theory]
+    [InlineData(false)]  // not DX12
+    [InlineData(true)]   // unknown
+    public void Not_Dx12_Is_Allowed_With_A_Note_But_Not_Automatic(bool unknown)
+    {
+        var v = Check(dx12: unknown ? UlDx12State.Unknown : UlDx12State.No);
+        Assert.True(v.Allowed);
+        Assert.False(v.Auto);
+        Assert.False(string.IsNullOrEmpty(v.Note));
+    }
+
+    [Fact]
+    public void Unknown_Gpu_Is_Allowed_But_Never_Automatic()
+    {
+        var v = Check(gpu: UlGpuState.Unknown);
+        Assert.True(v.Allowed);
+        Assert.False(v.Auto);
+        Assert.Contains("graphics card", v.Note);
+    }
+
+    [Fact]
+    public void WantsV4_Follows_Choice_Within_The_Verdict()
+    {
+        var auto = Check();
+        var manualOnly = Check(dx12: UlDx12State.No);
+        var blocked = Check(is32: true);
+
+        Assert.True(UlV4Rules.WantsV4(null, auto));
+        Assert.False(UlV4Rules.WantsV4(null, manualOnly));
+        Assert.True(UlV4Rules.WantsV4("4", manualOnly));
+        Assert.False(UlV4Rules.WantsV4("4", blocked));   // a v4 choice can't beat a block
+        Assert.False(UlV4Rules.WantsV4("3", auto));
+    }
+
+    // Lines as ReShade 6.8 writes them (taken from real logs)
+    private const string D3D12 = "16:44:43:361 [27800] | INFO  | Redirecting D3D12CreateDevice(pAdapter = 0000017F8A5ADE20, MinimumFeatureLevel = 0xc000, riid = {189819F1-1DB6-4B57-BE54-1821339B85F7}, ppDevice = 0000003D6E2FE5B8) ...\n";
+    private const string D3D11 = "22:47:05:883 [25368] | INFO  | Redirecting D3D11CreateDevice(pAdapter = 00000235A2D75FB0, DriverType = 0, Software = 0000000000000000, Flags = 0x20, pFeatureLevels = 00000035D2EFE3F0, FeatureLevels = 4, SDKVersion = 7, ppDevice = 00000035D2EFE528, pFeatureLevel = 00000035D2EFE4D0, ppImmediateContext = 00000035D2EFE520) ...\n";
+    private const string D3D9 = "15:44:50:125 [34424] | INFO  | Redirecting Direct3DCreate9Ex(SDKVersion = 0x20, ppD3D = 000000EF7C37EE88) ...\n";
+    private const string Gl = "16:02:55:017 [ 3000] | INFO  | Redirecting wglCreateContext(hdc = 000000006E0130E3) ...\n";
+    private const string Start = "08:15:48:106 [43216] | INFO  | Initializing crosire's ReShade version '6.8.0.2155' (64-bit) loaded from 'C:\\Games\\X\\dxgi.dll' ...\n";
+
+    [Fact]
+    public void ReShadeLog_D3D12_Wins_Even_With_Side_Devices()
+    {
+        // DX12 games often open a D3D11 device later (video / UI) or a D3D9 one first (RDR2)
+        Assert.Equal(UlDx12State.Yes, UlV4Rules.ApiFromReShadeLog(Start + D3D12 + D3D11));
+        Assert.Equal(UlDx12State.Yes, UlV4Rules.ApiFromReShadeLog(Start + D3D9 + D3D12));
+    }
+
+    [Fact]
+    public void ReShadeLog_Older_Apis_Are_Not_Dx12()
+    {
+        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + D3D11));
+        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + D3D9));
+        Assert.Equal(UlDx12State.No, UlV4Rules.ApiFromReShadeLog(Start + Gl));
+    }
+
+    [Fact]
+    public void ReShadeLog_Without_A_Device_Is_Unknown()
+    {
+        Assert.Null(UlV4Rules.ApiFromReShadeLog(Start));
+        Assert.Null(UlV4Rules.ApiFromReShadeLog(""));
+        Assert.Null(UlV4Rules.ApiFromReShadeLog(null));
+    }
+
+    [Theory]
+    [InlineData("v3.3.5", 3)]
+    [InlineData("4.0.0.0", 4)]
+    [InlineData("V4.1", 4)]
+    [InlineData("v4.0.0-beta", 4)]
+    [InlineData("4", 4)]
+    public void MajorOf_Parses_Tags_And_File_Versions(string s, int major) => Assert.Equal(major, UlV4Rules.MajorOf(s));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("latest")]
+    public void MajorOf_Rejects_Junk(string? s) => Assert.Null(UlV4Rules.MajorOf(s));
+
+    [Fact]
+    public void Versions_Compare_With_Missing_Parts_As_Zero()
+    {
+        Assert.True(UlV4Rules.SameVersion(new Version(4, 0, 0, 0), UlV4Rules.ParseVersion("v4.0.0")!));
+        Assert.True(UlV4Rules.IsOlder(new Version(3, 3, 5, 0), UlV4Rules.ParseVersion("v4.0.0")!));
+        Assert.False(UlV4Rules.IsOlder(new Version(4, 0, 0, 0), UlV4Rules.ParseVersion("v4.0.0")!));
+        Assert.True(UlV4Rules.IsOlder(new Version(3, 3, 4, 0), new Version(3, 3, 5)));
+    }
+
+    [Fact]
+    public void DisplayVersion_Drops_A_Zero_Revision()
+    {
+        Assert.Equal("4.0.0", UlV4Rules.DisplayVersion(new Version(4, 0, 0, 0)));
+        Assert.Equal("3.3.5.1", UlV4Rules.DisplayVersion(new Version(3, 3, 5, 1)));
+    }
+
+    [Fact]
+    public void NewestV3_Is_By_Version_Not_Order()
+    {
+        var tags = new[] { "v4.0.1", "v4.0.0", "v3.3.10", "v3.3.9", "v3.4.0-junk", "nightly" };
+        Assert.Equal("v3.4.0-junk", UlV4Rules.NewestTagWithMajor(tags, 3));
+        Assert.Equal("v3.3.10", UlV4Rules.NewestTagWithMajor(new[] { "v3.3.9", "v3.3.10" }, 3));
+        Assert.Null(UlV4Rules.NewestTagWithMajor(new[] { "v4.0.0" }, 3));
+    }
+
+    [Fact]
+    public void FreshIni_Has_Only_Rhi_Lines()
+    {
+        var ini = UlV4Rules.BuildFreshIni("PageUp", sharedPresets: true, dlssHooks: false, targetFps: 117);
+        Assert.Equal("[FrameLimiter]\r\nosd_toggle_key=PageUp\r\nshared_presets=true\r\ndlss_info_hooks=false\r\ntarget_fps=117\r\n", ini);
+    }
+
+    [Fact]
+    public void FreshIni_Leaves_Out_An_Off_Cap_And_An_Empty_Key()
+    {
+        var ini = UlV4Rules.BuildFreshIni("", sharedPresets: false, dlssHooks: true, targetFps: 0);
+        Assert.Equal("[FrameLimiter]\r\nshared_presets=false\r\ndlss_info_hooks=true\r\n", ini);
+    }
+
+    [Fact]
+    public void BackupName_Names_The_Old_Major() =>
+        Assert.Equal("relimiter.ini.v3-backup", UlV4Rules.BackupName(3));
+}

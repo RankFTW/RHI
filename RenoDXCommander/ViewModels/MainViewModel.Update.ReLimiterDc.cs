@@ -127,50 +127,24 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Checks if a newer ReLimiter is available by comparing the latest GitHub
-    /// release tag version against the locally installed version from meta.
-    /// Returns true if an update is available.
+    /// Checks ReLimiter updates per game. The installed version comes from each game's own addon file. Games that
+    /// run the latest release are compared with it; once the latest release is v4, games that don't qualify for v4
+    /// (UlV4Rules) are compared with the last v3 release instead. A game on v4 that no longer qualifies is never
+    /// moved back to v3 automatically (the ReLimiter ⚙ warns and offers it). Pinned games are skipped.
+    /// Returns the games with an update, or null when the check failed.
     /// </summary>
-    public async Task<bool> CheckUlUpdateAsync(List<GameCardViewModel> cards)
+    public async Task<List<GameCardViewModel>?> CheckUlUpdateAsync(List<GameCardViewModel> cards)
     {
         _crashReporter.Log($"[CheckUlUpdateAsync] Starting");
+        var result = new List<GameCardViewModel>();
 
         // Games pinned to a release (ReLimiter ⚙ › Version) are never updated
-        cards = cards.Where(c => !IsUlPinned(c)).ToList();
-        bool anyInstalled = cards.Any(c => c.UlStatus == GameStatus.Installed);
-
-        // ── Determine which bitness variants are in use ───────────────────
-        bool needs64 = cards.Any(c => c.UlStatus == GameStatus.Installed && !c.Is32Bit);
-        bool needs32 = cards.Any(c => c.UlStatus == GameStatus.Installed && c.Is32Bit);
-
-        // If nothing is specifically installed yet (legacy/meta-only), default to 64-bit
-        if (!needs64 && !needs32)
-            needs64 = true;
-
-        // ── Read installed version from meta (use oldest across bitness variants) ──
-        var installedVersion64 = needs64 ? ReadUlInstalledVersion(false) : null;
-        var installedVersion32 = needs32 ? ReadUlInstalledVersion(true) : null;
-        var installedVersion = (installedVersion64, installedVersion32) switch
+        var installed = cards.Where(c => !IsUlPinned(c)
+            && (c.UlStatus == GameStatus.Installed || c.UlStatus == GameStatus.UpdateAvailable)).ToList();
+        if (installed.Count == 0)
         {
-            (null, null) => null,
-            (null, var v) => v,
-            (var v, null) => v,
-            // Use the older of the two so we trigger an update if either is behind
-            var (v64, v32) => (Version.TryParse(v64, out var ver64) && Version.TryParse(v32, out var ver32))
-                ? (ver64 <= ver32 ? v64 : v32)
-                : v64, // fallback to 64-bit if parsing fails
-        };
-
-        if (installedVersion == null && !anyInstalled)
-        {
-            _crashReporter.Log("[CheckUlUpdateAsync] No UL installed and no meta — skipping");
-            return false;
-        }
-
-        // If UL is installed but no version in meta (legacy install), treat as needing update
-        if (installedVersion == null && anyInstalled)
-        {
-            _crashReporter.Log("[CheckUlUpdateAsync] UL installed but no version in meta — treating as update needed");
+            _crashReporter.Log("[CheckUlUpdateAsync] No (unpinned) ReLimiter installs — skipping");
+            return result;
         }
 
         try
@@ -180,7 +154,7 @@ public partial class MainViewModel
             if (json == null)
             {
                 _crashReporter.Log($"[CheckUlUpdateAsync] API returned error");
-                return false;
+                return null;
             }
 
             using var doc = System.Text.Json.JsonDocument.Parse(json);
@@ -194,10 +168,11 @@ public partial class MainViewModel
             if (doc.RootElement.TryGetProperty("body", out var ulBodyEl))
                 _latestUlReleaseBody = ulBodyEl.GetString();
 
-            if (string.IsNullOrEmpty(remoteVersion))
+            var latest = UlV4Rules.ParseVersion(remoteVersion);
+            if (string.IsNullOrEmpty(remoteVersion) || latest == null)
             {
-                _crashReporter.Log("[CheckUlUpdateAsync] No tag_name in latest release");
-                return false;
+                _crashReporter.Log($"[CheckUlUpdateAsync] No usable tag_name in latest release ('{remoteVersion}')");
+                return null;
             }
 
             // Get the download URLs for both bitness variants from assets
@@ -222,43 +197,73 @@ public partial class MainViewModel
                 }
             }
 
-            // Need at least one matching asset for the variants we care about
-            if ((needs64 && string.IsNullOrEmpty(downloadUrl64)) && (needs32 && string.IsNullOrEmpty(downloadUrl32)))
-            {
-                _crashReporter.Log("[CheckUlUpdateAsync] No matching asset found in latest release");
-                return false;
-            }
-
-            _crashReporter.Log($"[CheckUlUpdateAsync] Remote version={remoteVersion}, installed={installedVersion ?? "(none)"}");
-
-            // ── Compare versions ──────────────────────────────────────────
-            if (installedVersion != null && !IsNewerVersion(remoteVersion, installedVersion))
-            {
-                _crashReporter.Log("[CheckUlUpdateAsync] No update (installed is current)");
-                return false;
-            }
-
-            // ── Update available — store remote info and pre-cache ────────
             _latestUlVersion = remoteVersion;
             _latestUlDownloadUrl = downloadUrl64;
             _latestUlDownloadUrl32 = downloadUrl32;
-            _crashReporter.Log($"[CheckUlUpdateAsync] Update available: {installedVersion ?? "(none)"} → {remoteVersion}");
+
+            // Dev test build (unlock.txt): it is the latest 64-bit release; installs copy it, nothing to pre-cache
+            bool devBuild = ApplyUlDevOverride();
+            if (devBuild)
+            {
+                remoteVersion = _latestUlVersion!;
+                latest = UlV4Rules.ParseVersion(remoteVersion)!;
+            }
+
+            bool latestIsV4 = latest.Major >= UlV4Rules.V4Major;
+            if (latestIsV4) await GpuInfoService.GetNvidiaGpusAsync().ConfigureAwait(false);
+
+            bool pre64 = false, pre32 = false;
+            Version? oldest = null;
+            foreach (var card in installed)
+            {
+                var have = UlInstalledFileVersion(card); // null = old file name or no version resource: update it
+                Version? target;
+                if (!latestIsV4 || UlWantsV4(card))
+                {
+                    if (string.IsNullOrEmpty(card.Is32Bit ? downloadUrl32 : downloadUrl64)) continue;
+                    target = latest;
+                }
+                else
+                {
+                    if (have != null && have.Major >= UlV4Rules.V4Major)
+                    {
+                        _crashReporter.Log($"[CheckUlUpdateAsync] '{card.GameName}' has v{UlV4Rules.DisplayVersion(have)} but doesn't qualify for v4 — left alone");
+                        continue;
+                    }
+                    var v3Tag = await GetLastV3TagAsync(card.Is32Bit).ConfigureAwait(false);
+                    target = UlV4Rules.ParseVersion(v3Tag);
+                    if (target == null) continue;
+                }
+
+                if (have == null || UlV4Rules.IsOlder(have, target))
+                {
+                    result.Add(card);
+                    if (target == latest) { if (card.Is32Bit) pre32 = true; else pre64 = true; }
+                    if (have != null && (oldest == null || UlV4Rules.IsOlder(have, oldest))) oldest = have;
+                }
+            }
+
+            _crashReporter.Log($"[CheckUlUpdateAsync] Latest={remoteVersion}, {result.Count} of {installed.Count} game(s) have an update"
+                + (result.Count > 0 ? ": " + string.Join(", ", result.Select(c => c.GameName)) : ""));
+            if (result.Count == 0) return result;
+
             App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
             {
                 Timestamp     = DateTime.UtcNow,
                 Category      = "Component",
                 ComponentName = "ReLimiter",
-                OldVersion    = installedVersion,
+                OldVersion    = oldest != null ? UlV4Rules.DisplayVersion(oldest) : null,
                 NewVersion    = remoteVersion,
             });
 
-            await PreCacheRemoteUlAsync(needs64, needs32);
-            return true;
+            if (devBuild) pre64 = false;
+            if (pre64 || pre32) await PreCacheRemoteUlAsync(pre64, pre32);
+            return result;
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[CheckUlUpdateAsync] Failed — {ex.Message}");
-            return false;
+            return null;
         }
     }
 

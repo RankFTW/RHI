@@ -32,6 +32,13 @@ public static class GpuInfoService
 {
     private static readonly SemaphoreSlim Lock = new(1, 1);
     private static IReadOnlyList<NvidiaGpu>? _cached;
+    private static volatile bool _queryFailed;
+
+    /// <summary>
+    /// True when Windows couldn't be asked for the graphics cards (WMI broken, disabled or blocked), so an empty
+    /// list means "unknown", not "no NVIDIA card". Valid once <see cref="Cached"/> is set.
+    /// </summary>
+    public static bool QueryFailed => _queryFailed;
 
     // Desktop and laptop GeForce: "RTX 4070", "RTX 4070 Laptop GPU", "RTX 5090 D", "RTX 3050 Ti"
     private static readonly Regex GeForceNumber = new(@"\bRTX\s*(\d{2})(\d{2})\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -153,6 +160,7 @@ public static class GpuInfoService
                                       or UnauthorizedAccessException or TypeInitializationException)
         {
             CrashReporter.Log($"[GpuInfoService.Query] WMI failed — {ex.Message}");
+            _queryFailed = list.Count == 0;
         }
         return list;
     }
