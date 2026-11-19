@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56134,
-  "generated": "2026-11-19T19:23:48Z",
+  "game_count": 56135,
+  "generated": "2026-11-19T21:24:48Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -45459,6 +45459,7 @@
     },
     "Dimension Tripper Neptune: Top Nep": {
       "steam_appid": 1798780,
+      "dx11": true,
       "engine": "GameMaker"
     },
     "Dimensional": {
@@ -47075,6 +47076,7 @@
     "DokeV": {},
     "Doki Doki Literature Club Plus!": {
       "steam_appid": 1388880,
+      "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Team Salvato\\Doki Doki Literature Club Plus\\save_preferences.sav",
       "engine": "Unity"
     },
@@ -88338,6 +88340,7 @@
     },
     "Kannagi Usagi": {
       "steam_appid": 2551500,
+      "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Chanbara\\Saved\\Config"
     },
     "Kanojo x Switch": {
@@ -105932,6 +105935,8 @@
     },
     "Moe Era": {
       "steam_appid": 1159660,
+      "dx9": true,
+      "opengl": true,
       "engine": "Ren'Py"
     },
     "Moe Jigsaw": {
@@ -141295,7 +141300,8 @@
       "engine": "Unity"
     },
     "Saya no Uta ~ The Song of Saya": {
-      "steam_appid": 702050
+      "steam_appid": 702050,
+      "dx11": true
     },
     "Sayaka": {
       "steam_appid": 575620
@@ -160108,6 +160114,7 @@
     },
     "Superdimension Neptune VS Sega Hard Girls": {
       "steam_appid": 571530,
+      "opengl": true,
       "config_path": "<Steam-folder>\\userdata\\<user-id>\\571530\\remote\\NeptuneVS.ini"
     },
     "SuperDriver": {
@@ -188018,6 +188025,9 @@
       "steam_appid": 392600
     },
     "VolvyÔÇÖs Adventure: Reslimed": {
+      "steam_appid": 4523120
+    },
+    "Volvy’s Adventure: Reslimed": {
       "steam_appid": 4523120
     },
     "Vomitoreum": {
