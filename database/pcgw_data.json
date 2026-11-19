@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56134,
-  "generated": "2026-11-19T11:23:48Z",
+  "generated": "2026-11-19T13:23:48Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -490,12 +490,12 @@
     "1348 Ex Voto": {
       "steam_appid": 1895900,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\P1348\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%/P1348/Saved/SaveGames/, <path-to-game>/P1348/Saved/SaveGames/",
       "engine": "Unreal Engine 5"
     },
     "140": {
       "steam_appid": 242820,
-      "config_path": "HKEY_CURRENT_USER\\Software\\JeppeCarlsen\\140",
+      "config_path": "HKEY_CURRENT_USER\\Software\\JeppeCarlsen\\140\\",
       "engine": "Unity"
     },
     "1406": {
@@ -77795,6 +77795,7 @@
     "Hidden Folks": {
       "steam_appid": 435400,
       "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Adriaan de Jongh\\Hidden Folks\\",
       "engine": "Unity"
     },
     "Hidden in Plain Sight": {
@@ -104575,6 +104576,7 @@
     },
     "Minami Lane": {
       "steam_appid": 2678990,
+      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Doot\\MinamiLane, %USERPROFILE%\\AppData\\LocalLow\\Doot\\MinamiLane\\RELEASEglobalsavedata.json",
       "engine": "Unity"
     },
