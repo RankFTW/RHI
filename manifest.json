@@ -1547,7 +1547,7 @@
       "displayName": "SD Shaders by Starodubysko",
       "kind": "DirectUrl",
       "url": "https://github.com/Starodubysko/sd-reshade-shaders/archive/refs/heads/main.zip",
-      "description": "Colour grading for SDR and HDR: SD Subtractive Saturation (lowers brightness as colours get more saturated, keeping them dense) and SD Color Density (darkens saturated colours without shifting hues or neutral tones).",
+      "description": "Color grading and post-processing effects for SDR and HDR",
       "category": "Extra"
     },
     "ZenteonPlus": {
