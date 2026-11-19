@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56131,
-  "generated": "2026-11-19T03:23:47Z",
+  "game_count": 56132,
+  "generated": "2026-11-19T07:23:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -165207,6 +165207,9 @@
       "steam_appid": 752020
     },
     "The Apartment (2026)": {
+      "steam_appid": 4333430
+    },
+    "The Apartment (2027)": {
       "steam_appid": 4333430
     },
     "The Apocalyptic Game About Penguins 4": {},
