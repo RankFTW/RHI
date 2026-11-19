@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56134,
-  "generated": "2026-11-19T13:23:48Z",
+  "generated": "2026-11-19T15:23:48Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -28243,6 +28243,7 @@
     },
     "Cat Quest III": {
       "steam_appid": 2305840,
+      "dx11": true,
       "config_path": "%LOCALAPPDATA%\\Cat Quest III\\cq3_settings.dat",
       "engine": "Unity"
     },
@@ -78851,6 +78852,7 @@
     },
     "HoloCure - Save the Fans!": {
       "steam_appid": 2420510,
+      "dx11": true,
       "config_path": "%LOCALAPPDATA%\\HoloCure\\",
       "engine": "GameMaker"
     },
@@ -121021,6 +121023,7 @@
     },
     "Patch Quest": {
       "steam_appid": 1347970,
+      "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Lychee Game Labs\\Patch Quest\\SaveData\\Users\\Settings.json",
       "engine": "Unity"
     },
