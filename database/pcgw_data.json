@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56130,
-  "generated": "2026-11-18T23:23:47Z",
+  "generated": "2026-11-19T01:23:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -111788,6 +111788,7 @@
     },
     "NEKOPARA Extra": {
       "steam_appid": 899970,
+      "dx9": true,
       "config_path": "<path-to-game>\\Profile\\<user-id>\\Saves, %APPDATA%\\NEKO WORKs\\nekopara_extra, %USERPROFILE%\\Documents\\NEKO WORKs\\nekopara_extra",
       "engine": "KiriKiri Z"
     },
@@ -111817,6 +111818,7 @@
     },
     "NEKOPARA Vol. 4": {
       "steam_appid": 1406990,
+      "dx9": true,
       "engine": "KiriKiri Z"
     },
     "NEKOPUGI": {
@@ -132312,7 +132314,8 @@
       "steam_appid": 687520
     },
     "Realm Revolutions": {
-      "steam_appid": 764030
+      "steam_appid": 764030,
+      "dx9": true
     },
     "Realm Royale Reforged": {
       "steam_appid": 813820,
