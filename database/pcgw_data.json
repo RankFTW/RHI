@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56133,
-  "generated": "2026-11-19T09:23:47Z",
+  "game_count": 56134,
+  "generated": "2026-11-19T11:23:48Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -75056,6 +75056,7 @@
     },
     "Havendock": {
       "steam_appid": 2020710,
+      "dx11": true,
       "engine": "Unity"
     },
     "Havoc": {},
@@ -150658,6 +150659,9 @@
       "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Wales Interactive\\SoulAxiom\\",
       "engine": "Unity"
+    },
+    "Soul Blade": {
+      "steam_appid": 2658410
     },
     "Soul Devourer": {
       "steam_appid": 2530620
