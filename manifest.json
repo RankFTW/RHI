@@ -643,7 +643,8 @@
     "DOOM 64": "VLK",
     "Crimson Desert Enhanced": "DX12",
     "The Witcher 3: Wild Hunt - Complete Edition": "DX12",
-    "Lords of the Fallen": "DX12"
+    "Lords of the Fallen": "DX12",
+    "Batman: Arkham City GOTY": "DX11"
   },
   "dlssPathOverrides": {
     "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64",
