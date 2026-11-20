@@ -83,4 +83,16 @@ public class StoreNameSuffixTests
         Assert.Equal("Dead by Daylight", data.TryLookup("Dead by Daylight Windows", null).PageTitle);
         Assert.Null(data.TryLookup("Prey (Windows)", null).PageTitle); // two years: no guess
     }
+
+    [Fact]
+    public void PcgwLookup_IgnoresPunctuationWhenUnambiguous()
+    {
+        var data = new PcgwCentralData();
+        foreach (var t in new[] { "Assassin’s Creed: Black Flag Resynced", "Black Smith", "Blacksmith" })
+            data.Games[t] = new PcgwCentralEntry();
+
+        Assert.Equal("Assassin’s Creed: Black Flag Resynced",
+            data.TryLookup("Assassin's Creed Black Flag Resynced", null).PageTitle);
+        Assert.Null(data.TryLookup("Black-Smith", null).PageTitle); // two titles share the key: no guess
+    }
 }

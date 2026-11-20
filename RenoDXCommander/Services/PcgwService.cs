@@ -123,7 +123,42 @@ internal sealed class PcgwCentralData
             && Games.TryGetValue(yearTitles[0], out var yearEntry))
             return (yearTitles[0], yearEntry);
 
+        // 9. Punctuation the store dropped or changed ("Assassin's Creed Black Flag Resynced" from Ubisoft
+        // vs "Assassin's Creed: Black Flag Resynced"): letters and digits only, used only when one title has that key
+        if (LooseTitles.TryGetValue(LooseKey(stripped), out var looseTitle) && looseTitle != null
+            && Games.TryGetValue(looseTitle, out var looseEntry))
+            return (looseTitle, looseEntry);
+
         return (null, null);
+    }
+
+    /// <summary>Lower-case letters and digits only, so "Title: Subtitle" and "Title Subtitle" share a key.</summary>
+    internal static string LooseKey(string name)
+    {
+        var sb = new System.Text.StringBuilder(name.Length);
+        foreach (var c in name)
+            if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c));
+        return sb.ToString();
+    }
+
+    private Dictionary<string, string?>? _looseTitles;
+
+    /// <summary>Loose key → PCGamingWiki title; null when two titles share the key (too ambiguous to use).</summary>
+    private Dictionary<string, string?> LooseTitles
+    {
+        get
+        {
+            var map = _looseTitles;
+            if (map != null) return map;
+            map = new Dictionary<string, string?>(StringComparer.Ordinal);
+            foreach (var title in Games.Keys)
+            {
+                var key = LooseKey(title.Replace("™", "").Replace("®", "").Replace("©", ""));
+                if (key.Length == 0) continue;
+                map[key] = map.ContainsKey(key) ? null : title;
+            }
+            return _looseTitles = map;
+        }
     }
 
     private Dictionary<string, List<string>>? _yearTitles;

@@ -257,22 +257,17 @@ internal sealed partial class DetailLayoutHost
         _heroBrush!.ImageSource = null;
         if (card == null) return;
 
-        if (SteamArtworkService.TryGetCustom(MainWindow.ArtKey(card), SteamArtworkService.Kind.Hero) is { } custom)
+        var source = _window.ArtSourceFor(card, DetailPanelBuilder.ResolveCommunityAppId(card, _window.ViewModel.Manifest));
+        if (SteamArtworkService.TryResolveNow(source, SteamArtworkService.Kind.Hero) is { } ready)
         {
-            SetHero(custom);
+            SetHero(ready);
             return;
         }
-        var appId = DetailPanelBuilder.ResolveCommunityAppId(card, _window.ViewModel.Manifest);
-        if (appId is not int id) return;
-        if (SteamArtworkService.TryGetCached(id, SteamArtworkService.Kind.Hero) is { } cached)
-        {
-            SetHero(cached);
-            return;
-        }
+        if (source.AppId == null && !source.AutoSteamGridDb) return;
         var token = _window.LifetimeToken;
         _ = Task.Run(async () =>
         {
-            var path = await SteamArtworkService.GetAsync(id, SteamArtworkService.Kind.Hero, token).ConfigureAwait(false);
+            var path = await SteamArtworkService.ResolveAsync(source, SteamArtworkService.Kind.Hero, token).ConfigureAwait(false);
             if (path == null || token.IsCancellationRequested) return;
             _window.DispatcherQueue.TryEnqueue(() =>
             {

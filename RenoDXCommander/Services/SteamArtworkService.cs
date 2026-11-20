@@ -97,6 +97,33 @@ internal static class SteamArtworkService
         }
     }
 
+    // ── Which image a game shows ─────────────────────────────────────────────
+    // 1. the user's custom art (RHI's Artwork menu)  2. the art they set in their Steam library
+    // 3. Steam's store art  4. SteamGridDB's top image, when Steam has none and a SteamGridDB key is saved
+
+    internal sealed record ArtSource(string GameKey, int? AppId, string GameName, string? InstallPath,
+                                     bool UseLibrary, bool AutoSteamGridDb);
+
+    /// <summary>The image to show that's already on disk, or null when it has to be downloaded first.</summary>
+    internal static string? TryResolveNow(ArtSource s, Kind kind, bool includeCustom = true)
+    {
+        if (includeCustom && TryGetCustom(s.GameKey, kind) is { } custom) return custom;
+        if (s.UseLibrary && SteamLibraryArtService.TryGet(s.AppId, s.GameName, s.InstallPath, kind) is { } library) return library;
+        if (s.AppId is int id && TryGetCached(id, kind) is { } steam) return steam;
+        // SteamGridDB's pick only stands in for Steam art Steam doesn't have
+        if (s.AutoSteamGridDb && (s.AppId is not int missId || File.Exists(MissPath(missId, kind)))
+            && SteamGridDbService.TryGetAuto(s.GameKey, kind) is { } auto) return auto;
+        return null;
+    }
+
+    /// <summary>Downloads the image when <see cref="TryResolveNow"/> found none: Steam's art, else SteamGridDB's. Null when there's none.</summary>
+    internal static async Task<string?> ResolveAsync(ArtSource s, Kind kind, CancellationToken ct)
+    {
+        if (s.AppId is int id && await GetAsync(id, kind, ct).ConfigureAwait(false) is { } steam) return steam;
+        if (!s.AutoSteamGridDb || ct.IsCancellationRequested) return null;
+        return await SteamGridDbService.GetAutoAsync(s.GameKey, s.AppId, s.GameName, kind, ct).ConfigureAwait(false);
+    }
+
     /// <summary>The cached file, or null when it isn't downloaded yet. Cheap (file checks only).</summary>
     internal static string? TryGetCached(int appId, Kind kind)
     {

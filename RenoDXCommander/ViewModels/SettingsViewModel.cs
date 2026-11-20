@@ -130,6 +130,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _controllerSupport = true;
     /// <summary>Spotlight: show the selected Steam game's achievements (opt-in, Settings › Achievements).</summary>
     [ObservableProperty] private bool _steamAchievements;
+    [ObservableProperty] private bool _useSteamLibraryArt = true;   // Spotlight: the art set in the user's Steam library
+    [ObservableProperty] private bool _autoSteamGridDbArt = true;   // Spotlight: SteamGridDB's top image when Steam has none (needs a key)
     /// <summary>Spotlight: show the selected Xbox game's achievements (opt-in, Settings › Achievements).</summary>
     [ObservableProperty] private bool _xboxAchievements;
     /// <summary>Backups (Settings › Tools › Backup and restore): folder the .rhibackup files go in; empty = none chosen.</summary>
@@ -483,6 +485,8 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("ControllerSupport", out var csVal)) ControllerSupport = csVal != "false"; // default true
         if (s.TryGetValue("SteamAchievements", out var saVal)) SteamAchievements = saVal == "true"; // default false (opt-in)
+        if (s.TryGetValue("UseSteamLibraryArt", out var slaVal)) UseSteamLibraryArt = slaVal != "false"; // default true
+        if (s.TryGetValue("AutoSteamGridDbArt", out var asgVal)) AutoSteamGridDbArt = asgVal != "false"; // default true
         if (s.TryGetValue("XboxAchievements", out var xaVal)) XboxAchievements = xaVal == "true"; // default false (opt-in)
         if (s.TryGetValue("BackupFolder", out var bfVal)) BackupFolder = bfVal ?? "";
         if (s.TryGetValue("AutoBackup", out var abVal)) AutoBackup = abVal == "true";
@@ -688,6 +692,8 @@ public partial class SettingsViewModel : ObservableObject
         else s["DropHelperEnabled"] = "true";
         s["ControllerSupport"] = ControllerSupport ? "true" : "false";
         s["SteamAchievements"] = SteamAchievements ? "true" : "false";
+        s["UseSteamLibraryArt"] = UseSteamLibraryArt ? "true" : "false";
+        s["AutoSteamGridDbArt"] = AutoSteamGridDbArt ? "true" : "false";
         s["XboxAchievements"] = XboxAchievements ? "true" : "false";
         s["BackupFolder"] = BackupFolder ?? "";
         s["AutoBackup"] = AutoBackup ? "true" : "false";

@@ -550,24 +550,20 @@ public sealed partial class MainWindow
         }
     }
 
-    /// <summary>Shows the game's Steam cover: from memory, from disk, or downloaded in the background.</summary>
+    /// <summary>Shows the game's cover: from memory, from disk, or downloaded in the background.</summary>
     private void LoadCover(ShelfTile tile, GameCardViewModel card)
     {
-        if (SteamArtworkService.TryGetCustom(ArtKey(card), SteamArtworkService.Kind.Cover) is { } custom)
+        var source = ArtSourceFor(card, ShelfAppId(card));
+        if (SteamArtworkService.TryResolveNow(source, SteamArtworkService.Kind.Cover) is { } ready)
         {
-            tile.Image.Source = CoverImage(custom);
+            tile.Image.Source = CoverImage(ready);
             return;
         }
-        if (ShelfAppId(card) is not int appId) return;
-        if (SteamArtworkService.TryGetCached(appId, SteamArtworkService.Kind.Cover) is { } cached)
-        {
-            tile.Image.Source = CoverImage(cached);
-            return;
-        }
+        if (source.AppId == null && !source.AutoSteamGridDb) return;
         var token = LifetimeToken;
         _ = Task.Run(async () =>
         {
-            var path = await SteamArtworkService.GetAsync(appId, SteamArtworkService.Kind.Cover, token).ConfigureAwait(false);
+            var path = await SteamArtworkService.ResolveAsync(source, SteamArtworkService.Kind.Cover, token).ConfigureAwait(false);
             if (path == null || token.IsCancellationRequested) return;
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -578,11 +574,26 @@ public sealed partial class MainWindow
 
     internal static string ArtKey(GameCardViewModel card) => Models.GameKey.FromCard(card.GameName, card.Source).ToKey();
 
+    /// <summary>Where a game's cover and banner can come from, with the user's artwork settings.</summary>
+    internal SteamArtworkService.ArtSource ArtSourceFor(GameCardViewModel card, int? appId) =>
+        new(ArtKey(card), appId, card.GameName, card.InstallPath,
+            ViewModel.Settings.UseSteamLibraryArt,
+            ViewModel.Settings.AutoSteamGridDbArt && SteamGridDbService.HasKey);
+
     /// <summary>Shows a game's cover again after its custom art changed.</summary>
     internal void ReloadCover(GameCardViewModel card)
     {
         foreach (var t in _shelfTiles)
             if (ReferenceEquals(t.Card, card)) { t.Image.Source = null; LoadCover(t, card); }
+    }
+
+    /// <summary>Shows every cover and the banner again (after the artwork settings changed).</summary>
+    internal void ReloadAllArt()
+    {
+        if (_detailPanelBuilder?.Layout.IsSpotlight != true) return;
+        foreach (var t in _shelfTiles)
+            if (t.Card != null) { t.Image.Source = null; LoadCover(t, t.Card); }
+        _detailPanelBuilder.Layout.ReloadHeroArt();
     }
 
     private BitmapImage CoverImage(string path)

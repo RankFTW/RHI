@@ -306,20 +306,18 @@ internal sealed partial class DetailLayoutHost
         var kind = _pickKind;
         int decode = DecodeWidth();
         int seq = _pickSeq;
-        var appId = DetailPanelBuilder.ResolveCommunityAppId(card, _window.ViewModel.Manifest);
-        if (appId is int id)
+        // What the game shows without custom art: Steam library art, Steam's art, or SteamGridDB's pick
+        var source = _window.ArtSourceFor(card, DetailPanelBuilder.ResolveCommunityAppId(card, _window.ViewModel.Manifest));
+        if (SteamArtworkService.TryResolveNow(source, kind, includeCustom: false) is { } ready) ShowPickImage(image, fallback, ready, decode);
+        else if (source.AppId != null || source.AutoSteamGridDb)
         {
-            if (SteamArtworkService.TryGetCached(id, kind) is { } cached) ShowPickImage(image, fallback, cached, decode);
-            else
+            var token = _window.LifetimeToken;
+            _ = Task.Run(async () =>
             {
-                var token = _window.LifetimeToken;
-                _ = Task.Run(async () =>
-                {
-                    var path = await SteamArtworkService.GetAsync(id, kind, token).ConfigureAwait(false);
-                    if (path == null || token.IsCancellationRequested) return;
-                    _window.DispatcherQueue.TryEnqueue(() => { if (seq == _pickSeq) ShowPickImage(image, fallback, path, decode); });
-                });
-            }
+                var path = await SteamArtworkService.ResolveAsync(source, kind, token).ConfigureAwait(false);
+                if (path == null || token.IsCancellationRequested) return;
+                _window.DispatcherQueue.TryEnqueue(() => { if (seq == _pickSeq) ShowPickImage(image, fallback, path, decode); });
+            });
         }
         else fallback.Text = "Steam (no Steam art for this game)";
 

@@ -60,11 +60,20 @@ public partial class SettingsHandler
             body.Children.Add(new TextBlock { Text = "Artwork", Style = FindStyle("SettingsCardTitleStyle") });
             body.Children.Add(new TextBlock
             {
-                Text = "With your own free SteamGridDB API key you can browse community covers and banners for your games "
-                     + "in the Spotlight layout (right-click a game › Artwork › Browse covers / Browse banners).",
+                Text = "Covers and banners in the Spotlight layout. With your own free SteamGridDB API key you can also browse "
+                     + "community art for your games (right-click a game › Artwork › Browse covers / Browse banners).",
                 Style = FindStyle("SettingsNoteStyle"),
                 TextWrapping = TextWrapping.Wrap,
             });
+
+            body.Children.Add(MakeArtOnOffRow("Use my Steam library artwork", ViewModel.Settings.UseSteamLibraryArt,
+                "Show the covers and banners you set for your games in Steam (including games added to Steam as non-Steam games),\n"
+              + "instead of Steam's own art. Art you pick in RHI still comes first.",
+                on => ViewModel.Settings.UseSteamLibraryArt = on));
+            body.Children.Add(MakeArtOnOffRow("Fill in missing artwork from SteamGridDB", ViewModel.Settings.AutoSteamGridDbArt,
+                "For games Steam has no cover or banner for, use the top-rated one on SteamGridDB.\n"
+              + "Needs your SteamGridDB API key below.",
+                on => ViewModel.Settings.AutoSteamGridDbArt = on));
 
             // Setting row: label | [key box | Save]
             var row = new Grid { ColumnSpacing = 10 };
@@ -140,6 +149,45 @@ public partial class SettingsHandler
             _sgdbKeyBox = null;
             CrashReporter.Log($"[SettingsHandler.EnsureSteamGridDbCard] Failed — {ex.Message}");
         }
+    }
+
+    /// <summary>An Off / On setting row for the Artwork card. A change saves and reloads the shown covers and banner.</summary>
+    private Grid MakeArtOnOffRow(string label, bool value, string tooltip, Action<bool> set)
+    {
+        var row = new Grid { ColumnSpacing = 10 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 210 });
+        row.Children.Add(new TextBlock
+        {
+            Text = label,
+            Style = FindStyle("SettingsLabelStyle"),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var combo = new ComboBox { Style = FindStyle("SettingsComboStyle") };
+        combo.Items.Add(new ComboBoxItem { Content = "Off" });
+        combo.Items.Add(new ComboBoxItem { Content = "On" });
+        combo.SelectedIndex = value ? 1 : 0;
+        ToolTipService.SetToolTip(combo, tooltip);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(combo, label);
+        combo.SelectionChanged += (s, e) =>
+        {
+            try
+            {
+                if (combo.SelectedIndex < 0) return;
+                bool on = combo.SelectedIndex == 1;
+                set(on);
+                ViewModel.SaveSettingsPublic();
+                CrashReporter.Log($"[SettingsHandler.Artwork] {label}: {(on ? "On" : "Off")}");
+                _window.ReloadAllArt();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.Artwork] {label} failed — {ex.Message}");
+            }
+        };
+        Grid.SetColumn(combo, 1);
+        row.Children.Add(combo);
+        return row;
     }
 
     private static Button MakeSgdbButton(string text, string style, string brushKey, string tooltip)
