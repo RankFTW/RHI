@@ -374,8 +374,8 @@ public partial class HsfService
     {
         if (!IsRhiInstalled(gameDir)) return Array.Empty<(string, string)>();
         var list = new List<(string, string)>();
-        var fx = Path.Combine(StagingDir, ShaderFx);
-        if (File.Exists(fx)) list.Add((Path.Combine("Shaders", ShaderFx), fx));
+        // Listed even when not staged yet: the shader sync then keeps the game's own copy instead of deleting it
+        list.Add((Path.Combine("Shaders", ShaderFx), Path.Combine(StagingDir, ShaderFx)));
         if (ReadMarker(gameDir).LaunchpadOn) list.AddRange(UpliftService.LaunchpadFiles());
         return list;
     }

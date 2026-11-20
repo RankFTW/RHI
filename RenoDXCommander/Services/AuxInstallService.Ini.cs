@@ -1538,6 +1538,26 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Turns ReLimiter v4's native PC Latency on (native_pcl_enabled=true in [FrameLimiter]).
+    /// Only for v4 games whose Windows account has the PCL permission (Settings › Components › ReLimiter).
+    /// </summary>
+    public static void ApplyUlNativePcl(string iniFilePath)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "FrameLimiter";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["native_pcl_enabled"] = "true";
+
+        WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
     /// Writes the target_fps value to the [FrameLimiter] section of a relimiter.ini file.
     /// When 0, the key is removed (disabled/off). Otherwise sets the FPS cap value.
     /// </summary>

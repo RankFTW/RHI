@@ -464,6 +464,9 @@ public partial class MainViewModel
                     if (File.Exists(iniFile3))
                         AuxInstallService.ApplyUlTargetFps(iniFile3, _settingsViewModel.UlTargetFps);
                 }
+
+                // v4 with PC Latency allowed in Settings: turn it on in the game's ini (fresh or existing)
+                if (newVer?.Major >= UlV4Rules.V4Major) ApplyUlNativePclIfAllowed(card.InstallPath);
                 keepModes?.Invoke();
             }
 

@@ -200,6 +200,13 @@ public class UlV4RulesTests
     }
 
     [Fact]
+    public void FreshIni_For_V4_Turns_On_Native_Pcl()
+    {
+        var ini = UlV4Rules.BuildFreshIni("PageUp", sharedPresets: true, dlssHooks: true, targetFps: 0, nativePcl: true);
+        Assert.Equal("[FrameLimiter]\r\nosd_toggle_key=PageUp\r\nshared_presets=true\r\ndlss_info_hooks=true\r\nnative_pcl_enabled=true\r\n", ini);
+    }
+
+    [Fact]
     public void BackupName_Names_The_Old_Major() =>
         Assert.Equal("relimiter.ini.v3-backup", UlV4Rules.BackupName(3));
 }

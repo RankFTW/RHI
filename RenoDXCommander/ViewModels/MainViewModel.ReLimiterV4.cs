@@ -245,8 +245,35 @@ public partial class MainViewModel
     // ── relimiter.ini on a major version change ─────────────────────────────────
 
     /// <summary>A fresh relimiter.ini with the current RHI settings (OSD key, shared presets, DLSS info hooks, frame rate cap).</summary>
-    private string FreshUlIniText() => UlV4Rules.BuildFreshIni(
-        _settingsViewModel.UlOsdHotkey, _settingsViewModel.UlSharedPresets, _settingsViewModel.UlDlssHooks, _settingsViewModel.UlTargetFps);
+    private string FreshUlIniText(bool v4) => UlV4Rules.BuildFreshIni(
+        _settingsViewModel.UlOsdHotkey, _settingsViewModel.UlSharedPresets, _settingsViewModel.UlDlssHooks, _settingsViewModel.UlTargetFps,
+        nativePcl: v4 && PclAllowed());
+
+    /// <summary>
+    /// The user allowed PC Latency in Settings › Components › ReLimiter (their account is in Performance Log Users,
+    /// or the current sign-in already has it). v4 inis then get native_pcl_enabled=true.
+    /// </summary>
+    private static bool PclAllowed()
+    {
+        var s = PclPermissionService.GetStatus();
+        return s.DirectMember == true || (s.DirectMember == null && s.InToken);
+    }
+
+    /// <summary>On a v4 install / update with PC Latency allowed: native_pcl_enabled=true in the game's relimiter.ini. Never throws.</summary>
+    private void ApplyUlNativePclIfAllowed(string installPath)
+    {
+        var ini = Path.Combine(ModInstallService.GetAddonDeployPath(installPath), UlV4Rules.IniName);
+        try
+        {
+            if (!File.Exists(ini) || !PclAllowed()) return;
+            AuxInstallService.ApplyUlNativePcl(ini);
+            CrashReporter.Log($"[MainViewModel.ApplyUlNativePclIfAllowed] native_pcl_enabled=true in '{ini}'");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[MainViewModel.ApplyUlNativePclIfAllowed] '{ini}' — {ex.Message}");
+        }
+    }
 
     /// <summary>Writes a fresh relimiter.ini (RHI's lines only) next to the addon when the game has none. Never throws.</summary>
     private void WriteFreshUlIniIfAbsent(string installPath)
@@ -255,7 +282,7 @@ public partial class MainViewModel
         try
         {
             if (File.Exists(ini)) return;
-            File.WriteAllText(ini, FreshUlIniText());
+            File.WriteAllText(ini, FreshUlIniText(v4: true)); // only called for v4 installs
             CrashReporter.Log($"[MainViewModel.WriteFreshUlIniIfAbsent] Wrote a fresh relimiter.ini to '{ini}'");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -272,7 +299,7 @@ public partial class MainViewModel
     private bool ResetUlIniForMajorChange(GameCardViewModel card, int oldMajor, int newMajor)
     {
         var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath, DisplayModeItemKeys.ReLimiterItems);
-        var content = FreshUlIniText();
+        var content = FreshUlIniText(v4: newMajor >= UlV4Rules.V4Major);
         bool replaced = Replace(Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), UlV4Rules.IniName), whenAbsent: true);
         if (card.IsRefInstalled)
         {

@@ -468,11 +468,9 @@ public class UpliftService
         var pinned = ReadMarker(gameDir).Pinned;
         var dir = pinned != null && IsReady(VersionDir(pinned)) ? VersionDir(pinned) : StagingDir;
         var list = new List<(string, string)>();
+        // Listed even when not staged yet: the shader sync then keeps the game's own copy instead of deleting it
         foreach (var f in ShaderFiles)
-        {
-            var src = Path.Combine(dir, f);
-            if (File.Exists(src)) list.Add((Path.Combine("Shaders", f), src));
-        }
+            list.Add((Path.Combine("Shaders", f), Path.Combine(dir, f)));
         if (LaunchpadOn(gameDir)) list.AddRange(LaunchpadFiles());
         return list;
     }

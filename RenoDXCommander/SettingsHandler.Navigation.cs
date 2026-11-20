@@ -312,6 +312,7 @@ public partial class SettingsHandler
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureShippedAddonsSetting();
+        EnsureReLimiterPclSetting();
         EnsureBetaUpdatesSetting();
         EnsureUpliftKeySetting();
         EnsureDisplayModesCard();

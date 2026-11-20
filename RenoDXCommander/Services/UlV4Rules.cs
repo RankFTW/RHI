@@ -165,10 +165,10 @@ internal static class UlV4Rules
     internal static string BackupName(int oldMajor) => $"{IniName}.v{oldMajor}-backup";
 
     /// <summary>
-    /// A fresh relimiter.ini with only the lines RHI writes (OSD key, shared presets, DLSS info hooks, frame rate cap).
-    /// ReLimiter fills in everything else with its own defaults on first start. Pure.
+    /// A fresh relimiter.ini with only the lines RHI writes (OSD key, shared presets, DLSS info hooks, frame rate cap,
+    /// and for v4 native PC Latency on). ReLimiter fills in everything else with its own defaults on first start. Pure.
     /// </summary>
-    internal static string BuildFreshIni(string? osdKey, bool sharedPresets, bool dlssHooks, int targetFps)
+    internal static string BuildFreshIni(string? osdKey, bool sharedPresets, bool dlssHooks, int targetFps, bool nativePcl = false)
     {
         var sb = new StringBuilder();
         sb.Append("[FrameLimiter]\r\n");
@@ -176,6 +176,8 @@ internal static class UlV4Rules
         sb.Append("shared_presets=").Append(sharedPresets ? "true" : "false").Append("\r\n");
         sb.Append("dlss_info_hooks=").Append(dlssHooks ? "true" : "false").Append("\r\n");
         if (targetFps > 0) sb.Append("target_fps=").Append(targetFps).Append("\r\n");
+        // v4 only reads PC Latency with this on (and the account in Performance Log Users, Settings › Components)
+        if (nativePcl) sb.Append("native_pcl_enabled=true\r\n");
         return sb.ToString();
     }
 }

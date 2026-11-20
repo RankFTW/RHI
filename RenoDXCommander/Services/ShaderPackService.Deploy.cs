@@ -326,8 +326,16 @@ public partial class ShaderPackService
 
         foreach (var (rel, source) in extras)
         {
+            var src = source;
+            // Not downloaded yet (fresh, restored or purged RHI folder: the first sync runs before Uplift / HSF
+            // finish staging): keep the game's own copy instead of letting the mirror delete it. A later sync
+            // copies the staged file. Nov 2026: Uplift shaders and HSF.fx were removed until the next launch.
+            if (!File.Exists(src)
+                && FileHelper.SafeCombine(Path.Combine(gameDir, GameReShadeShaders), rel) is { } existing
+                && File.Exists(existing))
+                src = existing;
             var sub = rel.Split('\\', '/')[0];
-            plan.Add(sub, rel.Substring(sub.Length).TrimStart('\\', '/'), source);
+            plan.Add(sub, rel.Substring(sub.Length).TrimStart('\\', '/'), src);
         }
 
         if (CrashReporter.VerboseLogging)
