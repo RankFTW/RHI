@@ -308,6 +308,7 @@ public partial class SettingsHandler
         EnsureNvAppLimitsPanel();
         EnsureCustomFoldersCard();   // Game library card, which holds the Removed games button
         EnsureRemovedGamesButton();
+        EnsureBackupCard();           // after the Game library card, in Tools & Maintenance
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureShippedAddonsSetting();

@@ -260,6 +260,9 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic manifest fetch failed — {ex.Message}"); }
 
+                // Automatic backup (Settings › Backup and restore): reads cards, so it starts on the UI thread
+                DispatcherQueue?.TryEnqueue(() => _ = MaybeAutoBackupAsync("periodic"));
+
                 // Re-fetch wiki to detect new mods
                 try
                 {

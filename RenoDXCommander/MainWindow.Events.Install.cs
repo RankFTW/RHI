@@ -290,9 +290,15 @@ public sealed partial class MainWindow
 
     private async void InstallDofFixButton_Click(object sender, RoutedEventArgs e)
     {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        await InstallDofFixAsync(card);
+    }
+
+    /// <summary>The DOF Fix install behind the button; awaitable for the backup restore (MainWindow.Restore.cs).</summary>
+    internal async Task InstallDofFixAsync(GameCardViewModel card)
+    {
         try
         {
-            if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
             if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
 
             card.DofFixIsInstalling = true;
@@ -330,7 +336,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[MainWindow.InstallDofFixButton_Click] Unhandled error — {ex.Message}\n{ex.StackTrace}");
+            CrashReporter.Log($"[MainWindow.InstallDofFixAsync] Unhandled error — {ex.Message}\n{ex.StackTrace}");
         }
     }
 

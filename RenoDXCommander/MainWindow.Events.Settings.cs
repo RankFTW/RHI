@@ -704,6 +704,17 @@ public sealed partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Text for a DLDSR failure. DLDSR writes its state to C:\ProgramData\RHI and the driver's registry keys, which
+    /// need admin rights: without them every apply fails, so say that instead of "check logs".
+    /// </summary>
+    private static string DldsrFailureText(string action) =>
+        VulkanLayerService.IsRunningAsAdmin()
+            ? $"RHI couldn't {action}. The log (Settings › Tools & Maintenance › Logs) has the details."
+            : $"RHI couldn't {action} because it isn't running as administrator. DLDSR changes need admin rights.\n\n"
+            + "Turn on Admin Mode in Settings › General (one Windows prompt, then RHI always starts with admin rights), "
+            + "or close RHI and start it with Run as administrator, then try again.";
+
     private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1850,7 +1861,7 @@ public sealed partial class MainWindow
                     var dlg = new ContentDialog
                     {
                         Title = "DLDSR Apply Failed",
-                        Content = "Failed to apply DLDSR state. Check logs for details.",
+                        Content = DldsrFailureText("apply this DLDSR setting"),
                         CloseButtonText = "OK",
                         XamlRoot = Content.XamlRoot,
                     };
@@ -2030,7 +2041,7 @@ public sealed partial class MainWindow
                     var dlg = new ContentDialog
                     {
                         Title = "Smoothness Apply Failed",
-                        Content = "Failed to set DSR smoothness. Check logs for details.",
+                        Content = DldsrFailureText("set DSR smoothness"),
                         CloseButtonText = "OK",
                         XamlRoot = Content.XamlRoot,
                     };

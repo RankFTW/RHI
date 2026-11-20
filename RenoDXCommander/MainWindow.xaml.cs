@@ -273,6 +273,7 @@ public sealed partial class MainWindow : Window
         StatusBarVersionText.Content = $"v{Services.CrashReporter.AppVersion}";
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
+        SetUpRestoreAndBackupHooks(); // restore review / automatic backup once the scan is done (MainWindow.Restore.cs)
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");
         // Games launched from RHI before it was restarted: keep watching them / revert display changes
         ResumeLaunchSessions();

@@ -216,10 +216,15 @@ public class InstallEventHandler
 
     public async void InstallOsButton_Click(object sender, RoutedEventArgs e)
     {
+        if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
+        await InstallOptiScalerAsync(card, sender);
+    }
+
+    /// <summary>The OptiScaler install behind the button; awaitable for the backup restore (MainWindow.Restore.cs).</summary>
+    public async Task InstallOptiScalerAsync(GameCardViewModel card, object? sender)
+    {
         try
         {
-            var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-            if (card == null) return;
             if (!await EnsureGameFolderAsync(card, sender)) return;
 
             // ── First-time OptiScaler warning ──────────────────────────────
@@ -227,7 +232,7 @@ public class InstallEventHandler
 
             if (!ViewModel.Settings.OsFirstTimeWarningDismissed)
             {
-                var xamlRoot = (sender as FrameworkElement)?.XamlRoot;
+                var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;
                 if (xamlRoot != null)
                 {
                     var warningDialog = new ContentDialog
@@ -376,7 +381,7 @@ public class InstallEventHandler
         }
         catch (Exception unhandledEx)
         {
-            CrashReporter.Log($"[InstallEventHandler.InstallOsButton_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+            CrashReporter.Log($"[InstallEventHandler.InstallOptiScalerAsync] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
         }
     }
 

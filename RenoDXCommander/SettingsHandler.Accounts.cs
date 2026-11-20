@@ -292,61 +292,20 @@ public partial class SettingsHandler
             _window.GitHubPatSaveBtn.IsEnabled = false;
             _window.GitHubPatSaveBtn.Content = "Validating...";
 
-            // Validate the token
-            bool valid = false;
-            string? username = null;
-            try
-            {
-                var http = App.Services.GetRequiredService<HttpClient>();
-                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, "https://api.github.com/user");
-                req.Headers.TryAddWithoutValidation("Authorization", $"Bearer {pat}");
-                req.Headers.TryAddWithoutValidation("User-Agent", "RHI");
-                using var resp = await http.SendAsync(req, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cts.Token);
-                valid = resp.IsSuccessStatusCode;
-                if (valid)
-                {
-                    var json = await resp.Content.ReadAsStringAsync();
-                    using var doc = System.Text.Json.JsonDocument.Parse(json);
-                    doc.RootElement.TryGetProperty("login", out var loginEl);
-                    username = loginEl.GetString();
-                }
-            }
-            catch { valid = false; }
+            // Validate, save to github_api.txt and apply (shared with the first-run screen)
+            var (ok, username, error) = await GitHubTokenSetup.ValidateAndSaveAsync(App.Services.GetRequiredService<HttpClient>(), pat);
 
             _window.GitHubPatSaveBtn.IsEnabled = true;
             _window.GitHubPatSaveBtn.Content = "Save";
 
-            if (!valid)
+            if (!ok)
             {
-                _window.GitHubPatStatusText.Text = "Token validation failed — check the token and try again.";
+                _window.GitHubPatStatusText.Text = error ?? "Token validation failed — check the token and try again.";
                 _window.GitHubPatStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                 _window.GitHubPatStatusText.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
                 return;
             }
 
-            // Write to github_api.txt
-            try
-            {
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "RHI", "github_api.txt");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
-                System.IO.File.WriteAllText(path, pat);
-            }
-            catch (Exception ex)
-            {
-                _window.GitHubPatStatusText.Text = $"Failed to save: {ex.Message}";
-                _window.GitHubPatStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                _window.GitHubPatStatusText.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-                return;
-            }
-
-            // Apply immediately
-            var http2 = App.Services.GetRequiredService<HttpClient>();
-            DevUnlockService.ResetTokenCache();
-            DevUnlockService.UpdateToken(pat);
-            GitHubAuthService.ApplyTokenToHttpClient(http2, pat);
             ViewModel.RestartPeriodicUpdateCheckTimer(); // checks every hour with a token, 4 h without
 
             _window.GitHubPatBox.Text = "";

@@ -260,6 +260,7 @@ public partial class MainViewModel
             // Run addon update check AFTER manifest overrides are applied so releaseApiUrl entries are available
             try { await _addonPackService.CheckAndUpdateAllAsync(); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon update check failed — {ex.Message}"); }
+            await EnsureSelectedAddonsDownloadedAsync(); // selected but never downloaded (after a restore / purge)
             _dlssPresetService.ApplyManifestProfileConfig(_manifest);
             FeatureFlags.ApplyManifest(_manifest?.FeatureFlags);
             OsForkService.SetDefinitions(_manifest?.OsForks); // recommended OptiScaler forks
@@ -470,6 +471,8 @@ public partial class MainViewModel
             // Save updated library
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } });
 
+            RaiseLibraryScanned("background scan");
+
             // Check for updates (async, parallel, non-blocking)
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Starting background update checks...");
             _ = Task.Run(async () =>
@@ -614,10 +617,23 @@ public partial class MainViewModel
                 // Redeploy Streamline to all games where it's enabled (after OptiScaler staging is ready)
                 try
                 {
+                    var ensuredSl = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var card in _allCards.Where(c => c.IsOsInstalled && !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath)
-                        && GetOsDeployStreamline(c.GameName, c.Source ?? "")))
+                        && GetOsDeployStreamline(c.GameName, c.Source ?? "")).ToList())
                     {
-                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!, GetOsStreamlineVersion(card.GameName, card.Source ?? "")); }
+                        var slVersion = GetOsStreamlineVersion(card.GameName, card.Source ?? "");
+                        // Download the game's Streamline version if it isn't staged (a restored or purged RHI folder
+                        // has none; the redeploy only copies). No network when it's already there.
+                        if (ensuredSl.Add(slVersion ?? ""))
+                        {
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(slVersion)) await _dlssStreamlineService.EnsureSpecificStreamlineCachedAsync(slVersion);
+                                else await _dlssStreamlineService.EnsureNewestStreamlineCachedAsync();
+                            }
+                            catch (Exception ex) { _crashReporter.Log($"[StreamlineRedeploy] Couldn't stage Streamline {slVersion ?? "(newest)"} — {ex.Message}"); }
+                        }
+                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!, slVersion); }
                         catch (Exception ex) { _crashReporter.Log($"[StreamlineRedeploy] Failed for '{card.GameName}' — {ex.Message}"); }
                     }
                 }

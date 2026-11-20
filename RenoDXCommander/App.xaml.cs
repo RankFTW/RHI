@@ -364,6 +364,10 @@ public partial class App : Application
             }
         }
 
+        // A restore chosen in Settings › Backup and restore: applied before anything reads RHI's data
+        if (await BackupRestoreHelper.ApplyStagedRestoreAsync())
+            CrashReporter.Log("[App.OnLaunched] Restored RHI's data from a backup (install review follows the first scan)");
+
         // Before anything loads them: saved Game Pass paths → the game's real folder (see XboxPaths).
         // After the Admin Mode relaunch, so it runs (and logs) in the instance that stays open.
         XboxPaths.MigrateSavedPaths(Path.Combine(
@@ -396,6 +400,15 @@ public partial class App : Application
         {
             CrashReporter.Log("[App.OnLaunched] First-launch setup not done — showing SetupWindow");
             var setupWindow = new SetupWindow();
+            // Restore from a backup: RHI's data (settings included, so the ReShade choice too) comes from the backup
+            setupWindow.OnRestore = (backupPath) =>
+            {
+                BackupArchive.ApplyData(backupPath, Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI"));
+                SettingsViewModel.UpdateSettingsFile(s => s["FirstLaunchSetupDone"] = "true", "App.OnLaunched.SetupRestore");
+                CrashReporter.Log($"[App.OnLaunched] Setup: restored from '{backupPath}'");
+                StartMainAfterSetup();
+            };
             setupWindow.OnComplete = (manageReShade) =>
             {
                 SettingsViewModel.UpdateSettingsFile(s =>
@@ -409,7 +422,11 @@ public partial class App : Application
                     }
                 }, "App.OnLaunched.SetupComplete");
                 CrashReporter.Log($"[App.OnLaunched] Setup complete — manageReShade={manageReShade}");
+                StartMainAfterSetup();
+            };
 
+            void StartMainAfterSetup()
+            {
                 setupWindow.AppWindow.Hide();
                 try
                 {
@@ -430,7 +447,7 @@ public partial class App : Application
                     setupWindow.AppWindow.Show();
                     setupWindow.Activate();
                 }
-            };
+            }
             setupWindow.Activate();
             return;
         }

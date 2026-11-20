@@ -8,6 +8,9 @@
 //   page=settings[:Section]        (optional: open the Settings page, e.g. page=settings:Display)
 //   open=displaymodes              (optional: open the selected game's Display mode dialog)
 //   close=dialogs                  (optional: close open dialogs first)
+//   open=setup                     (optional: open a preview of the first-run window; capture it from the screen)
+//   backup=<folder>                (optional: make a backup in that folder now)
+//   reviewbackup=<.rhibackup path> (optional: open the restore review for that backup; nothing is restored)
 //   dmswitch=<mode name>           (optional: switch the selected game's display mode)
 //   target=popupcontent / settings (optional: a dialog's whole scrolling body / the whole Settings column)
 // Checked by the same 2 s timer as the installer shutdown signal.
@@ -160,6 +163,29 @@ public sealed partial class MainWindow
             var section = page.Contains(':') ? page[(page.IndexOf(':') + 1)..] : null;
             if (!string.IsNullOrEmpty(section)) _settingsHandler.DevJumpToSection(section);
             waitMs = Math.Max(waitMs, 3000);
+        }
+        // backup=<folder>: make a backup there now (Settings › Backup and restore, Back up now)
+        if (Opt("backup") is { Length: > 0 } backupFolder)
+        {
+            _ = ViewModel.CreateBackupAsync(backupFolder, onlyIfChanged: false, "dev");
+            waitMs = Math.Max(waitMs, 15000);
+        }
+        // reviewbackup=<.rhibackup>: open the restore review for that backup without restoring anything first
+        // (shows the dialog only; its plan is in memory, so nothing on disk changes unless Restore is clicked)
+        if (Opt("reviewbackup") is { Length: > 0 } reviewPath && File.Exists(reviewPath))
+        {
+            var m = BackupArchive.ReadManifest(reviewPath);
+            _ = ShowRestoreReviewAsync(new RestorePlan { BackupCreatedUtc = m.CreatedUtc, RhiVersion = m.RhiVersion, HasNvidia = m.HasNvidia, Games = m.Games });
+            waitMs = Math.Max(waitMs, 2000);
+        }
+        // open=setup: show the first-run window (no callbacks, so its buttons do nothing) to look at its design.
+        // It's a separate window: capture it from the screen, not with this hook's render.
+        if (string.Equals(Opt("open"), "setup", StringComparison.OrdinalIgnoreCase))
+        {
+            var setup = new SetupWindow();
+            // Topmost: Windows may not bring it forward, and an elevated RHI can't be raised or captured from outside
+            if (setup.AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter op) op.IsAlwaysOnTop = true;
+            setup.Activate();
         }
         // close=dialogs: hide open dialogs first (one left open by an earlier open=...)
         if (string.Equals(Opt("close"), "dialogs", StringComparison.OrdinalIgnoreCase) && Content?.XamlRoot is { } cr)

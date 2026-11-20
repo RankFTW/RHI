@@ -608,6 +608,7 @@ public partial class MainViewModel
                         await _addonPackService.EnsureLatestAsync();
                         (_addonPackService as AddonPackService)?.ApplyManifestOverrides(manifestForAddons);
                         await _addonPackService.CheckAndUpdateAllAsync();
+                        await EnsureSelectedAddonsDownloadedAsync(); // selected but never downloaded (after a restore / purge)
                     }
                     catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Addon update check failed — {ex.Message}"); }
                 });
@@ -885,6 +886,7 @@ public partial class MainViewModel
 
             // Notify the Update All button after restoring update statuses
             NotifyUpdateButtonChanged();
+            RaiseLibraryScanned("full scan");
 
             // Check for updates (async, parallel, non-blocking)
             _crashReporter.Log("[MainViewModel.InitializeAsync] Starting background update checks...");
