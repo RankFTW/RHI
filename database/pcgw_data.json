@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56140,
-  "generated": "2026-11-20T17:25:19Z",
+  "game_count": 56141,
+  "generated": "2026-11-20T21:25:19Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -21990,6 +21990,7 @@
       "engine": "GameMaker"
     },
     "Boards and Blades 2": {
+      "config_path": "<path-to-game>\\System\\BB2.ini",
       "engine": "Genesis3D"
     },
     "Boardwalk Carnival Game": {
@@ -57415,7 +57416,7 @@
     "Extreme Angler": {},
     "Extreme Assault": {},
     "Extreme Boards & Blades": {
-      "config_path": "<path-to-game>\\xboards.ini",
+      "config_path": "<path-to-game>\\System\\xboards.ini",
       "engine": "Genesis3D"
     },
     "Extreme Bullrider": {},
@@ -129643,6 +129644,7 @@
       "steam_appid": 772610,
       "engine": "GameMaker"
     },
+    "Q.A.D: Quintessential Art of Destruction": {},
     "Q.U.B.E.": {
       "steam_appid": 203730,
       "dx9": true,
