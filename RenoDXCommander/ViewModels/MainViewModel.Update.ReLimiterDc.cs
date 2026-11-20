@@ -511,6 +511,12 @@ public partial class MainViewModel
                 _crashReporter.Log($"[PreCacheRemoteUlAsync] No download URL available for {(is32Bit ? "32-bit" : "64-bit")}");
                 return;
             }
+            // A test build in the cache (newer than the latest release) isn't replaced
+            if (await Task.Run(() => IsUlCacheNewerThanLatest(is32Bit)))
+            {
+                _crashReporter.Log($"[PreCacheRemoteUlAsync] Cached build is newer than {_latestUlVersion} (test build) — not replacing it");
+                return;
+            }
 
             var tempPath = GetUlCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);

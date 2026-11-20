@@ -14,6 +14,11 @@ public class WrapPanel : Panel
     private UIElement[] _visibleChildren = [];
     private int _lastChildCount;
 
+    // At display scales above 100% the arrange width is rounded to physical pixels and can come out a
+    // fraction below the measured width, which wrapped the last item onto a row the parent had no room for
+    // (the collections' Manage chip under "+ Collection" at 125% / 150%).
+    private const double ArrangeTolerance = 1.0;
+
     private void EnsureCapacity(int childCount)
     {
         if (childCount != _lastChildCount)
@@ -77,7 +82,7 @@ public class WrapPanel : Panel
             // Skip zero-size children
             if (desired.Width <= 0 && desired.Height <= 0) continue;
 
-            if (x > 0 && x + desired.Width > finalSize.Width)
+            if (x > 0 && x + desired.Width > finalSize.Width + ArrangeTolerance)
             {
                 _rowStarts[rowCount++] = (rowStart, rowHeight);
                 rowStart = visibleCount;
@@ -106,7 +111,7 @@ public class WrapPanel : Panel
             }
             var child = _visibleChildren[i];
             var desired = child.DesiredSize;
-            if (x > 0 && x + desired.Width > finalSize.Width)
+            if (x > 0 && x + desired.Width > finalSize.Width + ArrangeTolerance)
             {
                 // shouldn't happen since we pre-computed, but safety
                 y += currentRowHeight + VerticalSpacing;

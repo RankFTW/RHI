@@ -372,9 +372,12 @@ public partial class MainViewModel
             else
             {
                 // Force fresh download on reinstall (but not update — the check already cached the new file)
-                if (card.UlStatus == GameStatus.Installed)
+                // A v4 test build placed in the cache by hand is kept (it's newer than any release)
+                if (card.UlStatus == GameStatus.Installed && File.Exists(GetUlCachePath(card.Is32Bit)))
                 {
-                    if (File.Exists(GetUlCachePath(card.Is32Bit))) File.Delete(GetUlCachePath(card.Is32Bit));
+                    if (string.IsNullOrEmpty(_latestUlVersion)) await FetchLatestUlReleaseInfoAsync(card.Is32Bit);
+                    if (!await Task.Run(() => IsUlCacheNewerThanLatest(card.Is32Bit)))
+                        File.Delete(GetUlCachePath(card.Is32Bit));
                 }
 
                 // Download to cache if not already cached (dev test build: copy that instead)
@@ -505,10 +508,19 @@ public partial class MainViewModel
         {
             // The cache must hold the latest release when that's known: once v4 is out, games staying on v3
             // no longer trigger the update pre-cache, so an older build could otherwise sit here as "latest"
-            var cachedVer = ReadUlAddonVersion(GetUlCachePath(is32Bit));
+            // A cached build newer than the latest release can only be a test build put there by hand
+            // (v4 testers): keep it. Read off the UI thread (FileVersionInfo froze RHI here).
+            var cachePath = GetUlCachePath(is32Bit);
+            var cachedVer = await Task.Run(() => ReadUlAddonVersion(cachePath));
             var latestVer = UlV4Rules.ParseVersion(_latestUlVersion);
             if (latestVer == null || cachedVer == null || UlV4Rules.SameVersion(cachedVer, latestVer))
             {
+                progress?.Report(("Installing from cache...", 50));
+                return;
+            }
+            if (IsNewerThan(cachedVer, latestVer))
+            {
+                CrashReporter.Log($"[MainViewModel.EnsureUlCachedAsync] Cached {UlV4Rules.DisplayVersion(cachedVer)} is newer than the latest release ({_latestUlVersion}) — keeping it (test build)");
                 progress?.Report(("Installing from cache...", 50));
                 return;
             }
@@ -561,6 +573,17 @@ public partial class MainViewModel
             SaveUlMeta(_latestUlVersion, is32Bit);
         progress?.Report(("Downloaded!", 100));
     }
+
+    /// <summary>True when the cached "latest" build is newer than the latest release (a test build put there by hand).</summary>
+    private bool IsUlCacheNewerThanLatest(bool is32Bit)
+    {
+        var cachedVer = ReadUlAddonVersion(GetUlCachePath(is32Bit));
+        var latestVer = UlV4Rules.ParseVersion(_latestUlVersion);
+        return cachedVer != null && latestVer != null && IsNewerThan(cachedVer, latestVer);
+    }
+
+    // Version compares 3.3.5.0 as newer than 3.3.5, so equal versions are ruled out first
+    private static bool IsNewerThan(Version a, Version b) => !UlV4Rules.SameVersion(a, b) && a > b;
 
     private async Task FetchLatestUlReleaseInfoAsync(bool is32Bit)
     {
