@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56138,
-  "generated": "2026-11-20T11:25:18Z",
+  "generated": "2026-11-20T15:25:19Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -182246,7 +182246,7 @@
       "steam_appid": 636470
     },
     "Tunguska: Legend of Faith": {
-      "config_path": "C:\\Windows\\tunguska.ini"
+      "config_path": "C:\\Windows\\tunguska.ini, <path-to-game>\\TUNGUS.INI"
     },
     "Tunguska: The Visitation": {
       "steam_appid": 1601970,
