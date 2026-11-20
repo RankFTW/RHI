@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56136,
-  "generated": "2026-11-20T01:25:18Z",
+  "game_count": 56138,
+  "generated": "2026-11-20T05:25:18Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -74488,6 +74488,11 @@
     "HardBall!": {
       "steam_appid": 2766080
     },
+    "Hardcoded": {
+      "steam_appid": 2693710,
+      "config_path": "%APPDATA%\\Godot\\app_userdata\\HARDCODED",
+      "engine": "Godot"
+    },
     "Hardcore Bunny Jumper": {
       "steam_appid": 1076320
     },
@@ -87422,6 +87427,9 @@
     "Jump Off The Bridge": {
       "steam_appid": 1057780,
       "engine": "GameMaker"
+    },
+    "Jump Raven": {
+      "engine": "DreamFactory"
     },
     "Jump Space": {
       "steam_appid": 1757300,
