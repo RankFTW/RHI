@@ -168,8 +168,7 @@ public partial class DetailPanelBuilder
         var launchExeHeaderPanel = new StackPanel { Spacing = 4 };
 
         // Resolve the effective launch exe for display — user override > manifest > auto-detected
-        var currentLaunchExe = _gameNameService.LaunchExeOverrides
-            .TryGetValue(ctx.CapturedName, out var savedExe) ? savedExe : "";
+        var currentLaunchExe = _window.ViewModel.GetLaunchExeOverride(ctx.CapturedName);
         var _exeExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "CrashHandler",
               "unins000", "Launcher", "BEService", "EasyAntiCheat",
@@ -239,18 +238,14 @@ public partial class DetailPanelBuilder
         };
         ToolTipService.SetToolTip(launchExeBox,
             "Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder).");
-        launchExeBox.LostFocus += (s, ev) =>
+        // Saves on Enter and when focus leaves (shared with the game's ⚙: MainViewModel.LaunchOptions.cs)
+        launchExeBox.LostFocus += (s, ev) => _window.ViewModel.SetLaunchExeOverride(ctx.CapturedName, launchExeBox.Text);
+        launchExeBox.KeyDown += (s, ev) =>
         {
-            var newPath = launchExeBox.Text.Trim();
-            if (string.IsNullOrEmpty(newPath))
-                _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
-            else
-                _gameNameService.LaunchExeOverrides[ctx.CapturedName] = newPath;
-            _window.ViewModel.SaveSettingsPublic();
+            if (ev.Key == Windows.System.VirtualKey.Enter) _window.ViewModel.SetLaunchExeOverride(ctx.CapturedName, launchExeBox.Text);
         };
 
-        var currentLaunchArgs = _gameNameService.LaunchArgsOverrides
-            .TryGetValue(ctx.CapturedName, out var savedArgs) ? savedArgs : "";
+        var currentLaunchArgs = _window.ViewModel.GetLaunchArgsOverride(ctx.CapturedName);
         var launchArgsBox = new TextBox
         {
             Text = currentLaunchArgs,
@@ -258,18 +253,14 @@ public partial class DetailPanelBuilder
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var argsTooltip = "Command-line arguments passed to the game on launch. Saves on focus lost.";
+        var argsTooltip = "Command-line arguments passed to the game on launch. Saves on Enter or when you click elsewhere.";
         if (card.Source.Equals("Epic", StringComparison.OrdinalIgnoreCase))
             argsTooltip += "\n\nNote: Setting arguments disables Epic protocol launch. EOS-protected games may fail to launch with arguments.";
         ToolTipService.SetToolTip(launchArgsBox, argsTooltip);
-        launchArgsBox.LostFocus += (s, ev) =>
+        launchArgsBox.LostFocus += (s, ev) => _window.ViewModel.SetLaunchArgsOverride(ctx.CapturedName, launchArgsBox.Text);
+        launchArgsBox.KeyDown += (s, ev) =>
         {
-            var newArgs = launchArgsBox.Text.Trim();
-            if (string.IsNullOrEmpty(newArgs))
-                _gameNameService.LaunchArgsOverrides.Remove(ctx.CapturedName);
-            else
-                _gameNameService.LaunchArgsOverrides[ctx.CapturedName] = newArgs;
-            _window.ViewModel.SaveSettingsPublic();
+            if (ev.Key == Windows.System.VirtualKey.Enter) _window.ViewModel.SetLaunchArgsOverride(ctx.CapturedName, launchArgsBox.Text);
         };
 
         var launchBoxRow = new Grid { ColumnSpacing = 8 };
@@ -300,29 +291,14 @@ public partial class DetailPanelBuilder
         };
         browseLaunchBtn.Click += async (s, ev) =>
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-            string? filePath = await Task.Run(() =>
+            try
             {
-                var ofn = new NativeInterop.OpenFileName();
-                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
-                ofn.hwndOwner = hwnd;
-                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
-                ofn.file = new string(new char[260]);
-                ofn.maxFile = ofn.file.Length;
-                ofn.title = "Select Game Executable";
-                var browseDir = card.InstallPath is { Length: > 0 } bp && System.IO.Directory.Exists(bp) ? bp
-                              : card.DetectedGame?.InstallPath is { Length: > 0 } dp && System.IO.Directory.Exists(dp) ? dp
-                              : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                ofn.initialDir = browseDir.Replace('/', '\\');
-                ofn.flags = 0x00080000 | 0x00001000;
-                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
-            });
-            if (!string.IsNullOrEmpty(filePath))
-            {
+                var filePath = await MainViewModel.BrowseForLaunchExeAsync(WinRT.Interop.WindowNative.GetWindowHandle(_window), card);
+                if (string.IsNullOrEmpty(filePath)) return;
                 launchExeBox.Text = filePath;
-                _gameNameService.LaunchExeOverrides[ctx.CapturedName] = filePath;
-                _window.ViewModel.SaveSettingsPublic();
+                _window.ViewModel.SetLaunchExeOverride(ctx.CapturedName, filePath);
             }
+            catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Browse for launch exe failed — {ex.Message}"); }
         };
         Grid.SetColumn(browseLaunchBtn, 0);
         ToolTipService.SetToolTip(browseLaunchBtn, "Browse for a game executable to use as the launch target.");
@@ -340,9 +316,8 @@ public partial class DetailPanelBuilder
         {
             launchExeBox.Text = "";
             launchArgsBox.Text = "";
-            _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
-            _gameNameService.LaunchArgsOverrides.Remove(ctx.CapturedName);
-            _window.ViewModel.SaveSettingsPublic();
+            _window.ViewModel.SetLaunchExeOverride(ctx.CapturedName, "");
+            _window.ViewModel.SetLaunchArgsOverride(ctx.CapturedName, "");
         };
         Grid.SetColumn(resetLaunchBtn, 1);
         ToolTipService.SetToolTip(resetLaunchBtn, "Clear the launch executable and launch arguments for this game. The executable goes back to auto-detection.");
@@ -360,7 +335,10 @@ public partial class DetailPanelBuilder
             Content = "Reset Overrides",
             FontSize = 12,
             Height = 32,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MinWidth = 160,
+            Padding = new Thickness(16, 0, 16, 0),
+            Margin = new Thickness(0, 4, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Right,
             Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
@@ -380,7 +358,6 @@ public partial class DetailPanelBuilder
             addonComboInitializing = true;
             addonModeCombo.SelectedItem = "Global";
             addonComboInitializing = false;
-            if (ctx.RenderPathCombo != null) ctx.RenderPathCombo.SelectedItem = "DirectX";
             ctx.ResetDllOverrides?.Invoke();
             // Reset update inclusion to all-included
             if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName, card.Source))
@@ -588,8 +565,7 @@ public partial class DetailPanelBuilder
         };
         ctx.ResetAction = resetAction;
         resetOverridesBtn.Click += (s, ev) => resetAction();
-        // resetOverridesBtn is hidden — Management panel calls ctx.ResetAction directly
-        resetOverridesBtn.Visibility = Visibility.Collapsed;
+        // The only Reset Overrides button (Management's was removed in v2.9.6: it duplicated this one)
         _window.OverridesPanel.Children.Add(resetOverridesBtn);
     }
 }

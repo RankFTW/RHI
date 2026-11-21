@@ -44,6 +44,7 @@ internal sealed partial class DetailLayoutHost
         var rows = new StackPanel { Spacing = 16 };
         AddOverlayRow(rows, card);
         AddDisplayModeRow(rows, card, openDisplayModes);
+        AddLaunchRows(rows, card);
         AddSteamUpdateBlockRow(rows, card);
         return rows;
     }
@@ -89,6 +90,93 @@ internal sealed partial class DetailLayoutHost
         };
         AddGameSettingRow(rows, "Block Steam updates", baseDesc, toggle);
         rows.Children.Add(status);
+    }
+
+    /// <summary>
+    /// Launch executable and launch arguments: the same settings as in Game Overrides (MainViewModel.LaunchOptions.cs).
+    /// Text boxes save on Enter and when focus leaves; Game Overrides is rebuilt so it shows the new values.
+    /// </summary>
+    private void AddLaunchRows(StackPanel rows, GameCardViewModel card)
+    {
+        var vm = _window.ViewModel;
+        string name = card.GameName;
+        const double boxWidth = 280;
+
+        void Saved() => _window.DetailPanelBuilderInstance.QueueOverridesRebuild(name);
+
+        // ── Launch executable: box + Browse / Reset ──
+        var exeBox = new TextBox
+        {
+            Text = vm.GetLaunchExeOverride(name),
+            PlaceholderText = "Auto-detect (or paste path)",
+            FontSize = 12,
+            Width = boxWidth,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(exeBox, "Launch executable");
+        void SaveExe()
+        {
+            if (exeBox.Text.Trim() == vm.GetLaunchExeOverride(name)) return;
+            vm.SetLaunchExeOverride(name, exeBox.Text);
+            Saved();
+        }
+        exeBox.LostFocus += (s, e) => SaveExe();
+        exeBox.KeyDown += (s, e) => { if (e.Key == Windows.System.VirtualKey.Enter) SaveExe(); };
+
+        var browseBtn = new Button { Content = "Browse", Padding = new Thickness(14, 0, 14, 0) };
+        TabsTheme.Apply(browseBtn, TabsTheme.BlueButton, height: 32, fontSize: 12);
+        browseBtn.Click += async (s, e) =>
+        {
+            try
+            {
+                var path = await MainViewModel.BrowseForLaunchExeAsync(WinRT.Interop.WindowNative.GetWindowHandle(_window), card);
+                if (string.IsNullOrEmpty(path)) return;
+                exeBox.Text = path;
+                SaveExe();
+            }
+            catch (Exception ex) { CrashReporter.Log($"[DetailLayoutHost.GameSettings] Browse for launch exe failed — {ex.Message}"); }
+        };
+        var resetBtn = new Button { Content = "Reset launch options", Padding = new Thickness(14, 0, 14, 0) };
+        TabsTheme.Apply(resetBtn, TabsTheme.DangerButton, height: 32, fontSize: 12);
+
+        var exePanel = new StackPanel { Spacing = 8, Width = boxWidth };
+        exePanel.Children.Add(exeBox);
+        var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        btnRow.Children.Add(browseBtn);
+        btnRow.Children.Add(resetBtn);
+        exePanel.Children.Add(btnRow);
+        AddGameSettingRow(rows, "Launch executable",
+            "The program RHI starts when you launch this game. Leave blank to detect it automatically.", exePanel);
+
+        // ── Launch arguments ──
+        var argsBox = new TextBox
+        {
+            Text = vm.GetLaunchArgsOverride(name),
+            PlaceholderText = "Launch arguments",
+            FontSize = 12,
+            Width = boxWidth,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(argsBox, "Launch arguments");
+        void SaveArgs()
+        {
+            if (argsBox.Text.Trim() == vm.GetLaunchArgsOverride(name)) return;
+            vm.SetLaunchArgsOverride(name, argsBox.Text);
+            Saved();
+        }
+        argsBox.LostFocus += (s, e) => SaveArgs();
+        argsBox.KeyDown += (s, e) => { if (e.Key == Windows.System.VirtualKey.Enter) SaveArgs(); };
+        string argsDesc = "Command-line arguments passed to the game when RHI launches it.";
+        if (string.Equals(card.Source, "Epic", StringComparison.OrdinalIgnoreCase))
+            argsDesc += " Setting arguments turns off Epic's own launch link; games with Epic's anti-cheat may not start with them.";
+        AddGameSettingRow(rows, "Launch arguments", argsDesc, argsBox);
+
+        resetBtn.Click += (s, e) =>
+        {
+            exeBox.Text = "";
+            argsBox.Text = "";
+            vm.SetLaunchExeOverride(name, "");
+            vm.SetLaunchArgsOverride(name, "");
+            Saved();
+        };
     }
 
     private void AddOverlayRow(StackPanel rows, GameCardViewModel card)

@@ -27,7 +27,7 @@ public sealed partial class MainWindow
 
         ComboBox? addonCombo = null;
 
-        AddRsOverrideCombo(cog, "ReShade channel",
+        AddSharedOverrideCombo(cog, "ReShade channel",
             "The ReShade build for this game. Vulkan games share one ReShade, so a change applies to every Vulkan game.",
             () => { var (items, sel) = dp.GetRsChannelChoices(card); return (items, sel); },
             sel => DetailPanelBuilder.RsChannelPickNeedsDialog(card, sel),
@@ -39,7 +39,7 @@ public sealed partial class MainWindow
             },
             reopenItem: "Custom", closeThenRun: closeThenRun);
 
-        var shaderCombo = AddRsOverrideCombo(cog, "Shaders",
+        var shaderCombo = AddSharedOverrideCombo(cog, "Shaders",
             "Global uses the shaders chosen in Settings, Custom your own shader folders, Select picks packs for this game, Off installs none.",
             () => (DetailPanelBuilder.ShaderModeItems, dp.GetShaderModeDisplay(card)),
             sel => sel == "Select",
@@ -51,7 +51,7 @@ public sealed partial class MainWindow
             },
             reopenItem: "Select", closeThenRun: closeThenRun);
 
-        addonCombo = AddRsOverrideCombo(cog, "Addons",
+        addonCombo = AddSharedOverrideCombo(cog, "Addons",
             "Global uses the addons chosen in Settings, Select picks addons for this game, Off installs none. Needs the addon build of ReShade (any channel except No Addons).",
             () => (DetailPanelBuilder.AddonModeItems, dp.GetAddonModeDisplay(card)),
             sel => sel == "Select",
@@ -68,7 +68,7 @@ public sealed partial class MainWindow
         ComboBox? dllCombo = null;
         if (!card.RequiresVulkanInstall)
         {
-            dllCombo = AddRsOverrideCombo(cog, "ReShade DLL name",
+            dllCombo = AddSharedOverrideCombo(cog, "ReShade DLL name",
                 "Renames ReShade's DLL in this game's folder. -------- uses the default name. Names used by Display Commander or OptiScaler aren't listed. Greyed out while Load ReShade as ASI is on.",
                 () => { var (items, sel) = dp.GetRsDllNameChoices(card); return (items, sel); },
                 _ => false,
@@ -106,7 +106,21 @@ public sealed partial class MainWindow
     /// dropdown re-reads the saved value, so a cancelled pick goes back by itself. Picking <paramref name="reopenItem"/>
     /// while it's already the saved value runs it again (reopens its picker), like the Game Overrides dropdowns.
     /// </summary>
-    private static ComboBox AddRsOverrideCombo(CogDialog cog, string label, string help,
+    private static ComboBox AddSharedOverrideCombo(CogDialog cog, string label, string help,
+        Func<(IList<string> Items, string Selected)> read,
+        Func<string, bool> needsDialog,
+        Func<string, Task<bool>> apply,
+        string? reopenItem,
+        Action<Func<Task>> closeThenRun,
+        Func<bool>? enabled = null)
+    {
+        var combo = MakeSharedOverrideCombo(cog, label, read, needsDialog, apply, reopenItem, closeThenRun, enabled);
+        cog.AddRow(label, combo, help);
+        return combo;
+    }
+
+    /// <summary>The dropdown of <see cref="AddSharedOverrideCombo"/>, not added anywhere (for compact grids).</summary>
+    private static ComboBox MakeSharedOverrideCombo(CogDialog cog, string label,
         Func<(IList<string> Items, string Selected)> read,
         Func<string, bool> needsDialog,
         Func<string, Task<bool>> apply,
@@ -167,7 +181,6 @@ public sealed partial class MainWindow
                 await PickAsync(reopenItem);
         };
 
-        cog.AddRow(label, combo, help);
         return combo;
     }
 }

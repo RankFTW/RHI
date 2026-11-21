@@ -19,7 +19,7 @@ public partial class DetailPanelBuilder
     private void BuildManagementSection(GameCardViewModel card, string capturedName, OverridesPanelCtx ctx)
     {
         _window.ViewModel.SetLastUiAction($"BuildManagementSection({card.GameName})");
-        // ── Management section (single row: 5 buttons side by side with separators) ──
+        // ── Management section (single row: 4 buttons side by side with separators; Reset Overrides is in Game Overrides) ──
         _window.ManagementPanel.Children.Clear();
 
         // Collapsible header
@@ -71,8 +71,6 @@ public partial class DetailPanelBuilder
         };
 
         var mgmtRow = new Grid { ColumnSpacing = 0 };
-        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -152,31 +150,6 @@ public partial class DetailPanelBuilder
         Grid.SetColumn(sep2, 5);
         mgmtRow.Children.Add(sep2);
 
-        var mgmtResetOverridesBtn = new Button
-        {
-            Content = "Reset Overrides",
-            FontSize = 11,
-            Height = 32,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        mgmtResetOverridesBtn.Click += (s, ev) =>
-        {
-            // Call reset action directly — automation peer invoke fails on Visibility.Collapsed buttons
-            ctx.ResetAction?.Invoke();
-        };
-        Grid.SetColumn(mgmtResetOverridesBtn, 6);
-        ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, launch settings, update inclusion).");
-        mgmtRow.Children.Add(mgmtResetOverridesBtn);
-
-        var sep3 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
-        Grid.SetColumn(sep3, 7);
-        mgmtRow.Children.Add(sep3);
-
         var reportBtn = new Button
         {
             Content = "Copy Report",
@@ -204,18 +177,16 @@ public partial class DetailPanelBuilder
             }
         }
         reportBtn.Click += (s, ev) => CopyReport();
-        Grid.SetColumn(reportBtn, 8);
+        Grid.SetColumn(reportBtn, 6);
         ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
         mgmtRow.Children.Add(reportBtn);
 
         if (Layout.IsTabs)
         {
-            // Tabs (mockup A): the same four actions as tiles
+            // Tabs (mockup A): the same actions as tiles
             var tiles = new Controls.AutoFitGrid { MinColumnWidth = 220 };
             tiles.Children.Add(TabsTheme.MakeTile("Change install folder", "Point RHI at a different folder for this game", false,
                 (s, ev) => _window.BrowseFolder_Click(changeFolderBtn, ev), TabsTooltip(changeFolderBtn)));
-            tiles.Children.Add(TabsTheme.MakeTile("Reset Overrides", "Put every per-game setting back to global", false,
-                (s, ev) => ctx.ResetAction?.Invoke(), TabsTooltip(mgmtResetOverridesBtn)));
             tiles.Children.Add(TabsTheme.MakeTile("Copy Report", "Copy this game’s setup to share for support", false,
                 (s, ev) => CopyReport(), TabsTooltip(reportBtn)));
             if (!card.IsManuallyAdded)
