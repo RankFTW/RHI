@@ -63,6 +63,10 @@ public sealed partial class MainWindow
             var reshadeLogPath = Path.Combine(installPath, "ReShade.log");
             var cog = new CogDialog("ReShade", Content.XamlRoot);
 
+            // ── Game overrides (same settings as Game Overrides; pickers close the dialog first, then it reopens) ──
+            Func<Task>? runAfterClose = null;
+            var rsDllNameCombo = AddRsGameOverridesSection(cog, card, action => { runAfterClose = action; cog.Hide(); });
+
             // ── Hotkeys ───────────────────────────────────────────────────────────
             // Capture box + Apply per key: a key press only fills the box, Apply writes it.
             cog.AddSection("Hotkeys");
@@ -175,7 +179,7 @@ public sealed partial class MainWindow
                 bool asiReverting = false;
                 asiCombo = cog.AddCombo("Load ReShade as ASI",
                     $"On renames ReShade to {asiName} so an ASI loader (such as ASI Loader in Extras) loads it. "
-                    + "RHI doesn't install a loader for you. Installs and updates keep the name, and ReShade's DLL name in Game Overrides is greyed out while this is on.",
+                    + "RHI doesn't install a loader for you. Installs and updates keep the name, and ReShade's DLL name is greyed out while this is on.",
                     new[] { "Off", "On" },
                     ViewModel.GetRsAsiMode(card.GameName, card.Source ?? "") ? 1 : 0,
                     i =>
@@ -203,6 +207,7 @@ public sealed partial class MainWindow
                                     ? (installed ? $"ReShade is now {asiName}. Make sure an ASI loader is installed in this game." : $"ReShade will be installed as {asiName}.")
                                     : (installed ? $"ReShade is back to {card.RsInstalledFile}." : "ReShade will be installed under its normal DLL name."));
                                 card.NotifyAll();
+                                if (rsDllNameCombo != null) rsDllNameCombo.IsEnabled = !turnOn;
                                 _detailPanelBuilder?.UpdateDetailComponentRows(card);
                                 _detailPanelBuilder?.BuildOverridesPanel(card); // greys/ungreys the ReShade DLL name dropdown
                             }
@@ -286,6 +291,14 @@ public sealed partial class MainWindow
             // No default button: Enter in the key/number boxes must not close the dialog
             cog.Build().DefaultButton = ContentDialogButton.None;
             await cog.ShowAsync();
+
+            // A Game overrides pick that opens a dialog closed the cog: run it now, then open the cog again
+            if (runAfterClose != null)
+            {
+                try { await runAfterClose(); }
+                catch (Exception ex) { CrashReporter.Log($"[MainWindow.RsCogButton_Click] Game overrides change failed — {ex}"); }
+                RsCogButton_Click(sender, e);
+            }
         }
         catch (Exception ex)
         {

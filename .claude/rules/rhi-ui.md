@@ -13,6 +13,7 @@ paths:
 
 ## Panel Architecture
 - Overrides panel: `DetailPanelBuilder.Overrides` split across partials (`.RsChannel.cs`, `.ShadersAddons.cs`, `.Dxvk.cs`, `.NvidiaProfile.cs`, `.DriverSettings.cs`, `.Dlss.cs`)
+- **ReShade settings live in two places** (user decision, v2.9.6): ReShade Channel, Shaders, Addons, ReShade DLL name and Select ReShade Preset are in Game Overrides AND in the ReShade ⚙ "Game overrides" section (`MainWindow.Events.Components.ReShadeOverrides.cs`). Don't remove either copy. Both call the shared methods in `DetailPanelBuilder.Overrides.RsShared.cs` (`Get*Choices` / `Get*Display` to read, `Apply*Async` / `ApplyRsDllName` / `PickReShadePresetAsync` to change, `QueueOverridesRebuild` after a change from the cog); put new logic there, never in one UI. In the Classic dialog cog, picks that open a dialog (Legacy/Custom/Vulkan confirm, Select, preset) close the cog, run, then reopen it (no nested ContentDialogs).
 - Code-behind builders (NOT XAML templates). `DetailPanelBuilder` receives services via constructor injection (11 services).
 - `BuildOverridesPanel()` fills `OverridesPanel`, the DLSS / Driver Settings panels (`.Overrides.NvidiaProfile.cs`, `.Overrides.DriverSettings.cs`) and `ManagementPanel`. Neural Rendering is built by `DetailPanelBuilder.NeuralRendering*.cs`, Extras by `DetailPanelBuilder.Extras*.cs`.
 

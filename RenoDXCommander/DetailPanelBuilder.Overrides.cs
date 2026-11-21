@@ -795,27 +795,13 @@ public partial class DetailPanelBuilder
             }
         };
 
-        // ── Per-game Shader mode ComboBox ─────────────────────────────────────
-        string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName, card.Source ?? "");
-        // Resolve effective display: reflect the global setting when mode is "Global"
-        string effectiveShaderDisplay = currentShaderMode;
-        var shaderModeKey = GameKey.FromCard(gameName, card.Source).ToKey();
-        bool hasPerGameOverride = _gameNameService.PerGameShaderMode.ContainsKey(shaderModeKey)
-                               || _gameNameService.PerGameShaderMode.ContainsKey(gameName);
-        if (currentShaderMode == "Global" && !hasPerGameOverride)
-        {
-            if (_window.ViewModel.Settings.GlobalShadersOff)
-                effectiveShaderDisplay = "Off";
-            else if (_window.ViewModel.Settings.UseCustomShaders)
-                effectiveShaderDisplay = "Custom";
-        }
-
-        var shaderModeItems = new[] { "Global", "Custom", "Select", "Off" };
+        // ── Per-game Shader mode ComboBox (logic shared with the ReShade ⚙: DetailPanelBuilder.Overrides.RsShared.cs) ──
+        string effectiveShaderDisplay = GetShaderModeDisplay(card);
         bool shaderComboInitializing = true;
 
         var shaderModeCombo = new ComboBox
         {
-            ItemsSource = shaderModeItems,
+            ItemsSource = ShaderModeItems,
             SelectedItem = effectiveShaderDisplay,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -839,146 +825,39 @@ public partial class DetailPanelBuilder
 
         shaderModeCombo.SelectionChanged += async (s, ev) =>
         {
-            if (shaderComboInitializing) return;
-            var selected = shaderModeCombo.SelectedItem as string;
-            if (string.IsNullOrEmpty(selected)) return;
-            CrashReporter.Log($"[DetailPanelBuilder.ShaderMode] '{capturedName}' selection changed to: '{selected}'");
-
-            if (selected == "Select")
+            try
             {
-                // Open per-game shader picker — use composite key for selection lookup
-                var capturedShaderKey = GameKey.FromCard(capturedName, card.Source).ToKey();
-                List<string>? current = _gameNameService.PerGameShaderSelection.TryGetValue(capturedShaderKey, out var existing)
-                    ? existing
-                    : (_gameNameService.PerGameShaderSelection.TryGetValue(capturedName, out existing)
-                        ? existing
-                        // Fall back to global selection but strip custom file IDs — they are user-specific
-                        // files that should not auto-populate every new per-game selection.
-                        : _window.ViewModel.Settings.SelectedShaderPacks
-                            .Where(id => !id.StartsWith(ShaderPackService.CustomFilePackId, StringComparison.OrdinalIgnoreCase))
-                            .ToList());
-                var result = await ShaderPopupHelper.ShowAsync(
-                    _window.Content.XamlRoot,
-                    _shaderPackService,
-                    current,
-                    ShaderPopupHelper.PopupContext.PerGame);
-                if (result != null)
+                if (shaderComboInitializing) return;
+                var selected = shaderModeCombo.SelectedItem as string;
+                if (string.IsNullOrEmpty(selected)) return;
+
+                if (await ApplyShaderModeAsync(card, capturedName, selected))
                 {
-                    _gameNameService.PerGameShaderSelection[capturedShaderKey] = result;
-                    _window.ViewModel.SetPerGameShaderMode(capturedName, "Select", card.Source ?? "");
-                    _window.ViewModel.DeployShadersForCard(capturedName);
+                    effectiveShaderDisplay = selected;
                 }
                 else
                 {
-                    // Cancelled — revert to actual current persisted mode
-                    var currentMode = _window.ViewModel.GetPerGameShaderMode(capturedName, card.Source);
-                    var revertTo = currentMode == "Select" ? "Select" : (currentMode == "Off" ? "Off" : (currentMode == "Custom" ? "Custom" : "Global"));
+                    // Cancelled — revert to the saved mode
                     shaderComboInitializing = true;
-                    shaderModeCombo.SelectedItem = revertTo;
+                    shaderModeCombo.SelectedItem = GetShaderModeDisplay(card);
                     shaderComboInitializing = false;
                 }
-                return;
             }
-
-            if (selected == "Off")
+            catch (Exception ex)
             {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Off", card.Source ?? "");
-                _window.ViewModel.DeployShadersForCard(capturedName);
+                CrashReporter.Log($"[DetailPanelBuilder.ShaderMode] Shader mode change failed — {ex}");
             }
-            else if (selected == "Custom")
-            {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Custom", card.Source ?? "");
-                _window.ViewModel.DeployShadersForCard(capturedName);
-            }
-            else // "Global"
-            {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global", card.Source ?? "");
-                _window.ViewModel.DeployShadersForCard(capturedName);
-            }
-            effectiveShaderDisplay = selected;
         };
         shaderComboInitializing = false;
 
-        // ── Auto-save: RS name box on dropdown selection ─────────────────────────
+        // ── Auto-save: RS name box on dropdown selection (logic shared with the ReShade ⚙) ──
         rsNameBox.SelectionChanged += (s, e) =>
         {
             if (_updatingDropdowns) return; // fired by UpdateAllDropdowns — ignore
-            var targetCard = card;
             var rsName = GetComboValue(rsNameBox);
             if (string.IsNullOrWhiteSpace(rsName)) return;
-            var dcName = GetComboValue(dcNameBox);
-
-            // -------- = clear RS override, revert DLL to default name
-            if (rsName == DllDefaultSentinel)
-            {
-                // Use live card state, not stale existingCfg — the user may have changed the name
-                // after the panel was built, making existingCfg out of date.
-                var currentRsInstalled = targetCard.RsInstalledFile ?? targetCard.RsRecord?.InstalledAs;
-                var defName = AuxInstallService.RsNormalName;
-                if (!string.IsNullOrEmpty(currentRsInstalled) && targetCard.RsRecord != null
-                    && !string.IsNullOrEmpty(targetCard.InstallPath)
-                    && !currentRsInstalled.Equals(defName, StringComparison.OrdinalIgnoreCase))
-                {
-                    var oldP = System.IO.Path.Combine(targetCard.InstallPath, currentRsInstalled);
-                    var newP = System.IO.Path.Combine(targetCard.InstallPath, defName);
-                    try
-                    {
-                        if (System.IO.File.Exists(oldP))
-                        {
-                            // If the default name (dxgi.dll) is occupied by OptiScaler, fall back to ReShade64/32.dll
-                            if (System.IO.File.Exists(newP) && !newP.Equals(oldP, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var coexistName = targetCard.Is32Bit ? AuxInstallService.RsStaged32 : AuxInstallService.RsStaged64;
-                                var coexistP = System.IO.Path.Combine(targetCard.InstallPath, coexistName);
-                                if (!System.IO.File.Exists(coexistP))
-                                {
-                                    System.IO.File.Move(oldP, coexistP);
-                                    targetCard.RsRecord.InstalledAs = coexistName;
-                                    _auxInstallService.SaveAuxRecord(targetCard.RsRecord);
-                                    targetCard.RsInstalledFile = coexistName;
-                                    CrashReporter.Log($"[DetailPanelBuilder] Reverted RS DLL '{currentRsInstalled}' → '{coexistName}' (dxgi.dll occupied by OS) for '{capturedName}'");
-                                }
-                            }
-                            else if (!System.IO.File.Exists(newP))
-                            {
-                                System.IO.File.Move(oldP, newP);
-                                targetCard.RsRecord.InstalledAs = defName;
-                                _auxInstallService.SaveAuxRecord(targetCard.RsRecord);
-                                targetCard.RsInstalledFile = defName;
-                                CrashReporter.Log($"[DetailPanelBuilder] Reverted RS DLL '{currentRsInstalled}' → '{defName}' for '{capturedName}'");
-                            }
-                        }
-                    }
-                    catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] RS revert failed — {ex.Message}"); }
-                }
-                // Clear RS from config — keep DC/OS if set
-                var effDc = (dcName == DllDefaultSentinel || string.IsNullOrEmpty(dcName)) ? "" : dcName;
-                _window.ViewModel.SetDllOverrideNames(targetCard.GameName, "", effDc);
-                if (!_window.ViewModel.HasDllOverride(capturedName))
-                    targetCard.DllOverrideEnabled = false;
+            if (ApplyRsDllName(card, capturedName, rsName))
                 UpdateDcDropdownItems();
-                return;
-            }
-
-            CrashReporter.Log($"[DetailPanelBuilder] RS DLL combo changed → '{rsName}' for '{capturedName}'");
-
-            // Collision guard: block if RS name matches the installed OS name
-            var osInstalledName = !string.IsNullOrEmpty(card.OsInstalledFile)
-                ? card.OsInstalledFile
-                : existingCfg?.OsFileName;
-            if (!string.IsNullOrEmpty(osInstalledName) && rsName.Equals(osInstalledName, StringComparison.OrdinalIgnoreCase))
-            {
-                CrashReporter.Log($"[DetailPanelBuilder] Blocking RS DLL selection '{rsName}' — collides with OS name for '{capturedName}'.");
-                return;
-            }
-
-            if (_window.ViewModel.HasDllOverride(capturedName))
-                _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            else
-                _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName);
-            targetCard.NotifyAll();
-
-            UpdateDcDropdownItems();
         };
 
         // ── Bitness Override ComboBox (left column of Bitness & API Row) ─────────

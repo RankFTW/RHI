@@ -52,15 +52,13 @@ public partial class DetailPanelBuilder
         Grid.SetRow(ctx.ShaderModeCombo, 1); Grid.SetColumn(ctx.ShaderModeCombo, 0);
         shaderAddonGrid.Children.Add(ctx.ShaderModeCombo);
 
-        // ── Per-game Addon mode ComboBox ─────────────────────────────────────
-        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName, card.Source);
-        var addonModeItems = new[] { "Global", "Select", "Off" };
+        // ── Per-game Addon mode ComboBox (logic shared with the ReShade ⚙: DetailPanelBuilder.Overrides.RsShared.cs) ──
         bool addonComboInitializing = true;
 
         var addonModeCombo = new ComboBox
         {
-            ItemsSource = addonModeItems,
-            SelectedItem = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"),
+            ItemsSource = AddonModeItems,
+            SelectedItem = GetAddonModeDisplay(card),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
@@ -84,81 +82,23 @@ public partial class DetailPanelBuilder
 
         addonModeCombo.SelectionChanged += async (s, ev) =>
         {
-            if (addonComboInitializing) return;
-            var selected = addonModeCombo.SelectedItem as string;
-            if (string.IsNullOrEmpty(selected)) return;
-            CrashReporter.Log($"[DetailPanelBuilder.AddonMode] '{ctx.CapturedName}' selection changed to: '{selected}'");
-
-            if (selected == "Select")
+            try
             {
-                // Use composite key for addon selection lookup
-                var addonSelKey = GameKey.FromCard(gameName, ctx.Card.Source).ToKey();
-                List<string>? current = _gameNameService.PerGameAddonSelection.TryGetValue(addonSelKey, out var existingAddons)
-                    ? existingAddons
-                    : (_gameNameService.PerGameAddonSelection.TryGetValue(gameName, out existingAddons) ? existingAddons : null);
+                if (addonComboInitializing) return;
+                var selected = addonModeCombo.SelectedItem as string;
+                if (string.IsNullOrEmpty(selected)) return;
 
-                IAddonPackService? addonPackService = null;
-                var addonSvcProp = _window.ViewModel.GetType().GetProperty("AddonPackServiceInstance");
-                if (addonSvcProp != null)
-                    addonPackService = addonSvcProp.GetValue(_window.ViewModel) as IAddonPackService;
-
-                if (addonPackService == null)
+                if (!await ApplyAddonModeAsync(ctx.Card, ctx.CapturedName, selected))
                 {
-                    var infoDlg = new ContentDialog
-                    {
-                        Title = "Select Addons",
-                        Content = new TextBlock
-                        {
-                            Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
-                            FontSize = 13,
-                            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                        },
-                        CloseButtonText = "OK",
-                        XamlRoot = _window.Content.XamlRoot,
-                        Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                        RequestedTheme = ElementTheme.Dark,
-                    };
-                    await DialogService.ShowSafeAsync(infoDlg);
-                    var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source);
+                    // Cancelled — revert to the saved mode
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = warnRevertMode == "Select" ? "Select" : (warnRevertMode == "Off" ? "Off" : "Global");
-                    addonComboInitializing = false;
-                    return;
-                }
-
-                var result = await AddonPopupHelper.ShowAsync(
-                    _window.Content.XamlRoot,
-                    addonPackService,
-                    current,
-                    AddonPopupHelper.PopupContext.PerGame,
-                    ctx.Card.InstallPath);
-                if (result != null)
-                {
-                    _gameNameService.PerGameAddonSelection[addonSelKey] = result;
-                    _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Select", ctx.Card.Source);
-                    _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
-                }
-                else
-                {
-                    // Cancelled — revert to actual current persisted mode
-                    var actualMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source);
-                    var revertTo = actualMode == "Select" ? "Select" : (actualMode == "Off" ? "Off" : "Global");
-                    addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = revertTo;
+                    addonModeCombo.SelectedItem = GetAddonModeDisplay(ctx.Card);
                     addonComboInitializing = false;
                 }
-                return;
             }
-
-            if (selected == "Off")
+            catch (Exception ex)
             {
-                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Off", ctx.Card.Source);
-                _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
-            }
-            else // "Global"
-            {
-                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Global", ctx.Card.Source);
-                _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
+                CrashReporter.Log($"[DetailPanelBuilder.AddonMode] Addon mode change failed — {ex}");
             }
         };
         addonComboInitializing = false;
@@ -199,45 +139,8 @@ public partial class DetailPanelBuilder
             "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
         presetBtn.Click += async (s, ev) =>
         {
-            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
-            if (selected != null && selected.Count > 0)
-            {
-                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
-                {
-                    int count = PresetPopupHelper.DeployPresets(selected, targetCard.InstallPath);
-                    CrashReporter.Log($"[DetailPanelBuilder] Deployed {count} preset(s) to '{ctx.CapturedName}'");
-
-                    if (count > 0)
-                    {
-                        var shaderDialog = new ContentDialog
-                        {
-                            Title = "🔧 Install Shaders?",
-                            Content = "Also install the required shaders and textures?",
-                            PrimaryButtonText = "Yes",
-                            CloseButtonText = "No",
-                            XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = ElementTheme.Dark,
-                        };
-
-                        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
-                        if (shaderResult == ContentDialogResult.Primary)
-                        {
-                            var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-                            await _window.ViewModel.ApplyPresetShadersAsync(ctx.CapturedName, presetPaths, ctx.Card.Source ?? "");
-
-                            // Rebuild overrides panel so the shader combo reflects the new "Select" mode
-                            var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                                c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
-                            if (refreshCard != null)
-                                _window.DispatcherQueue?.TryEnqueue(
-                                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                                    () => BuildOverridesPanel(refreshCard));
-                        }
-                    }
-                }
-            }
+            try { await PickReShadePresetAsync(ctx.Card, ctx.CapturedName); }
+            catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Select ReShade Preset failed — {ex}"); }
         };
         shadersAddonsLeftColumn.Children.Add(presetBtn);
 

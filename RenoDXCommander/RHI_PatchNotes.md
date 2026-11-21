@@ -12,6 +12,7 @@
 
 ### Changes
 - ReLimiter v4 can now be picked in every game in the ReLimiter cog › Version, including 32-bit, Vulkan, DXVK and OpenGL games. v4 is only tested in 64-bit DirectX 12, so these games stay on v3 unless you choose v4, and the cog says it's untested there.
+- ReShade's ⚙ has a new Game overrides section with ReShade Channel, Shaders, Addons, ReShade DLL name and Select ReShade Preset. They're the same settings as in Game Overrides, which keeps them too, so a change in one place shows in the other.
 
 ### Bug Fixes
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
