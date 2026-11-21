@@ -874,6 +874,9 @@
     },
     "Warframe": {
       "reshade": "YOU WILL BE BANNED IF YOU INSTALL RESHADE. SERIOUSLY, YOU WILL."
+    },
+    "The Ascent": {
+      "renodx": "The Ascent had native HDR added in a recent patch. This HDR was worked on and implemented by Pumbo of The HDR Den. You should not use RenoDX in this game."
     }
   },
   "forceExternalOnly": {
