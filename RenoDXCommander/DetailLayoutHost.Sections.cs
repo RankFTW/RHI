@@ -333,7 +333,7 @@ internal sealed partial class DetailLayoutHost
     {
         var fields = new List<ColumnField>();
         var cols = columns.Children.OfType<FrameworkElement>()
-            .OrderBy(Grid.GetColumn).ToList();
+            .OrderBy(Grid.GetRow).ThenBy(Grid.GetColumn).ToList(); // row by row (Driver Settings has a second row)
         foreach (var col in cols)
         {
             if (col is not Panel panel) continue; // dividers

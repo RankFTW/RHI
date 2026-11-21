@@ -167,6 +167,12 @@ vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folde
 - SR/RR: skip if `StartsWith("1.")`. FG: NO guard (can upgrade). Streamline: skip if v1.x.
 - Also skips components with driver override active.
 
+## Texture Filtering (Driver Settings, v2.9.6)
+- `DlssPresetService.TextureFiltering.cs`; UI `DetailPanelBuilder.Overrides.DriverSettings.Texture.cs`, second row of the Driver grid (row 1, col 0). Tabs `ReadColumns` orders by row then column.
+- **LOD bias (DX)** `0x00738E8F` = bias x 8 as signed int (-1.0 = 0xFFFFFFF8). DX10+ games ignore it unless **Transparency Supersampling** `0x10D48A85` = `0x08` (replay mode all; NVPI-R "Full Transparency AA (DLSS Mods)"). `SetLodBias` also writes Negative LOD bias `0x0019BB68`=0 (Allow) and Auto LOD bias `0x00638E8F`=0. Default deletes them; the transparency value only when it's ours (0x08), and a user's own non-zero transparency value is never overwritten.
+- **AF**: mode `0x10D2BB16` (0 app / 1 override) + level `0x101E61A9` (2/4/8/16). **Quality** `0x00CE2691`: High Quality 0xFFFFFFF6 (+ trilinear opt `0x002ECAF2`=1 Off), Quality 0, Performance 0x0A, High Performance 0x14.
+- Reads use `GetOwnPreset` (0 is a real value). Deletes go through `DeleteOwn`: `DeletePreset` writes 0 when DeleteSetting fails, which it does for a setting that isn't there, so deleting an unset LOD bias would create +0.000.
+
 ## DLSS/Streamline Defaults (Quick Apply)
 - 9 settings on `SettingsViewModel`. Empty/"Default" = don't change.
 - `DlssDefaultsDialog.cs` for configuration. Quick Apply column in panel.

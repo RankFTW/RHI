@@ -31,7 +31,8 @@ public partial class DetailPanelBuilder
         uint ReBarMode,
         ulong GlobalReBarSizeLimit,
         uint? PerGameFpsLimit, uint GlobalFpsLimit,
-        bool IsAdmin);
+        bool IsAdmin,
+        int? LodBias = null, uint AnisoLevel = 0, uint? TextureQuality = null);
 
     private const string DriverSummaryTag = "DriverSummary";   // collapsed-only header summary
 
@@ -195,7 +196,10 @@ public partial class DetailPanelBuilder
                         GlobalReBarSizeLimit:     svc.GetGlobalReBarSizeLimit(),
                         PerGameFpsLimit:          svc.GetPerGameFpsLimit(gameName, installPath),
                         GlobalFpsLimit:           svc.GetGlobalFpsLimit(),
-                        IsAdmin:                  VulkanLayerService.IsRunningAsAdmin());
+                        IsAdmin:                  VulkanLayerService.IsRunningAsAdmin(),
+                        LodBias:                  svc.GetLodBias(gameName, installPath),
+                        AnisoLevel:               svc.GetAnisoLevel(gameName, installPath),
+                        TextureQuality:           svc.GetTextureQuality(gameName, installPath));
                 }, scanCt);
                 using var delayCts = new CancellationTokenSource();
                 var delayTask = Task.Delay(5000, delayCts.Token);
@@ -292,9 +296,13 @@ public partial class DetailPanelBuilder
                 summaryEntries.Add(("G-Sync", "Off"));
             if (data.PerGameFpsLimit is uint capFps)
                 summaryEntries.Add(("FPS Limit", capFps == 0 ? "Off" : $"{capFps}"));
+            if (data.LodBias is int lod)
+                summaryEntries.Add(("LOD Bias", DlssPresetService.FormatLodBias(lod)));
+            if (data.AnisoLevel != 0)
+                summaryEntries.Add(("AF", $"{data.AnisoLevel}x"));
             var summaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(summaryEntries,
                 "NVIDIA driver version and this game's driver profile settings.\n"
-                + "VSync is always shown. Smooth (Smooth Motion), ReBAR, G-Sync and FPS Limit appear only when they differ from the default.");
+                + "VSync is always shown. Smooth (Smooth Motion), ReBAR, G-Sync, FPS Limit, LOD Bias and AF (anisotropic filtering) appear only when they differ from the default.");
             if (summaryTb != null)
             {
                 summaryTb.Tag = DriverSummaryTag;
@@ -1016,6 +1024,15 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(rebarCol, 2);
             nvidiaGrid.Children.Add(rebarCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(3));
+
+            // ── Row 2: Texture Filtering (LOD bias, anisotropic filtering, quality) ──
+            nvidiaGrid.RowSpacing = 12;
+            nvidiaGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            nvidiaGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var textureCol = BuildTextureFilteringColumn(d, nvidiaPresetService, capturedName, installPathSafe);
+            Grid.SetRow(textureCol, 1);
+            Grid.SetColumn(textureCol, 0);
+            nvidiaGrid.Children.Add(textureCol);
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:ReBAR done({capturedName})");
 
             // Defer adding the fully-built driver grid to the visual tree so WinUI can

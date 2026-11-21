@@ -30,6 +30,9 @@ public partial class DlssPresetService
         RTX_HDR_DEBANDING_ID,
         // Vulkan/OpenGL present method — per-game DXVK setting
         VULKAN_PRESENT_METHOD_ID,
+        // Texture filtering (LOD bias + its transparency supersampling, anisotropic filtering, quality)
+        LOD_BIAS_DX_ID, TRANSPARENCY_SS_ID, LOD_BIAS_NEGATIVE_ID, LOD_BIAS_AUTO_ID,
+        ANISO_MODE_ID, ANISO_LEVEL_ID, TEXTURE_QUALITY_ID, TRILINEAR_OPT_ID,
     ];
 
     /// <summary>Exports all RHI-managed NVIDIA profile settings to a dictionary for serialization.</summary>
