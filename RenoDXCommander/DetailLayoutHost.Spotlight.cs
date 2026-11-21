@@ -44,6 +44,7 @@ internal sealed partial class DetailLayoutHost
     private Grid? _panelOverlay;
     private Border? _panelSheet;
     private TextBlock? _panelTitle;
+    private Button? _panelPrev, _panelNext; // previous / next section arrows in the panel header
     private StackPanel? _panelHost;
     private ScrollViewer? _panelScroll;
     private string? _panelKey;
@@ -313,12 +314,21 @@ internal sealed partial class DetailLayoutHost
         var close = TabsTheme.MakeIconButton(TabsTheme.GlyphClose, TabsTheme.IconButton, 12);
         close.Click += (s, e) => ClosePanel();
         ToolTipService.SetToolTip(close, "Close");
+        // Previous / next section without leaving the panel (same order as LB / RB: Components, then the Tune tiles)
+        _panelPrev = TabsTheme.MakeIconButton(TabsTheme.GlyphChevronLeft, TabsTheme.IconButton, 12);
+        _panelPrev.Click += (s, e) => StepPanel(-1);
+        _panelNext = TabsTheme.MakeIconButton(TabsTheme.GlyphChevronRight, TabsTheme.IconButton, 12);
+        _panelNext.Click += (s, e) => StepPanel(1);
+        var headButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        headButtons.Children.Add(_panelPrev);
+        headButtons.Children.Add(_panelNext);
+        headButtons.Children.Add(close);
         var head = new Grid { Padding = new Thickness(24, 20, 20, 12) };
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         head.Children.Add(_panelTitle);
-        Grid.SetColumn(close, 1);
-        head.Children.Add(close);
+        Grid.SetColumn(headButtons, 1);
+        head.Children.Add(headButtons);
 
         _panelHost = new StackPanel { Spacing = 20 };
         _panelScroll = new ScrollViewer
@@ -389,8 +399,8 @@ internal sealed partial class DetailLayoutHost
         _panelHost!.Children.Add(content);
         content.Visibility = Visibility.Visible;
         _panelKey = key;
-        _panelTitle!.Text = key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements"
-            : key == ScreenshotsKey ? "Screenshots" : key == ArtworkPickerKey ? "Artwork" : key == GameSettingsKey ? "Game settings" : GetTitle(key);
+        _panelTitle!.Text = PanelTitleFor(key);
+        RefreshPanelSteps();
         if (key == OverviewKey) RefreshOverviewCards();
 
         // Re-adding the sheet replays its slide-in transition
@@ -401,6 +411,29 @@ internal sealed partial class DetailLayoutHost
             _panelOverlay.Visibility = Visibility.Visible;
         }
         _panelScroll?.ChangeView(null, 0, null, disableAnimation: true);
+    }
+
+    private static string PanelTitleFor(string key) =>
+        key == OverviewKey ? "Components" : key == AchievementsKey ? "Achievements"
+        : key == ScreenshotsKey ? "Screenshots" : key == ArtworkPickerKey ? "Artwork" : key == GameSettingsKey ? "Game settings" : GetTitle(key);
+
+    /// <summary>
+    /// Shows the previous / next arrows for sections in the step order (not for Achievements, Screenshots, Artwork or
+    /// Game settings), with the neighbours' names as tooltips.
+    /// </summary>
+    private void RefreshPanelSteps()
+    {
+        if (_panelPrev == null || _panelNext == null) return;
+        var keys = PanelStepKeys();
+        int index = _panelKey == null ? -1 : keys.IndexOf(_panelKey);
+        var show = index >= 0 && keys.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
+        _panelPrev.Visibility = _panelNext.Visibility = show;
+        if (show == Visibility.Collapsed) return;
+        string Neighbour(int delta) => PanelTitleFor(keys[((index + delta) % keys.Count + keys.Count) % keys.Count]);
+        ToolTipService.SetToolTip(_panelPrev, $"Previous: {Neighbour(-1)}");
+        ToolTipService.SetToolTip(_panelNext, $"Next: {Neighbour(1)}");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_panelPrev, $"Previous: {Neighbour(-1)}");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_panelNext, $"Next: {Neighbour(1)}");
     }
 
     /// <summary>Closes the panel and puts its section back on the (hidden) page.</summary>

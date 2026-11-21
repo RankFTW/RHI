@@ -18,6 +18,7 @@
 - Display Commander's ⚙ and OptiScaler's ⚙ now have their DLL name, the same setting as in Game Overrides, which keeps it too.
 - Reset Overrides moved from Management to the bottom of Game Overrides.
 - What's New now starts with what changed since the version you had, so after a beta update you can see what's different without checking GitHub. The full notes for the version follow underneath as before.
+- Spotlight: the side panel has previous and next arrows at the top, so you can move between Components and the Tune this game sections without closing it. Hover an arrow to see which section it opens.
 
 ### Bug Fixes
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.

@@ -40,16 +40,23 @@ internal sealed partial class DetailLayoutHost
     internal bool StepPanel(int delta)
     {
         if (!IsPanelOpen) return false;
-        var keys = new List<string> { OverviewKey };
-        if (_tuneGrid != null)
-            foreach (var child in _tuneGrid.Children)
-                if (child is FrameworkElement { Visibility: Visibility.Visible, Tag: string key }) keys.Add(key);
+        var keys = PanelStepKeys();
         if (keys.Count < 2) return false;
         int index = Math.Max(0, keys.IndexOf(_panelKey ?? OverviewKey));
         var next = keys[((index + delta) % keys.Count + keys.Count) % keys.Count];
         if (IsCogInPanel) CloseCog(ContentDialogResult.None);
         OpenPanel(next);
         return true;
+    }
+
+    /// <summary>The sections LB / RB and the panel's arrows step through: Components, then the visible Tune tiles.</summary>
+    private List<string> PanelStepKeys()
+    {
+        var keys = new List<string> { OverviewKey };
+        if (_tuneGrid != null)
+            foreach (var child in _tuneGrid.Children)
+                if (child is FrameworkElement { Visibility: Visibility.Visible, Tag: string key }) keys.Add(key);
+        return keys;
     }
 
     /// <summary>X: the game menu (the same one as right-clicking the banner).</summary>

@@ -325,6 +325,8 @@ internal static class TabsTheme
     internal const string GlyphInfo = "";
     internal const string GlyphSettings = "";
     internal const string GlyphClose = "";
+    internal const string GlyphChevronLeft = "";
+    internal const string GlyphChevronRight = "";
 
     internal static FontIcon Icon(string glyph, double size = 15) => new()
     {
