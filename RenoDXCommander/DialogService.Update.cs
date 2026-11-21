@@ -209,6 +209,10 @@ public partial class DialogService
             }
             catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to clean up old patch note markers — {ex.Message}"); }
 
+            // Keep a copy of the notes this version shipped with; the one from the version before becomes the
+            // baseline for "Changed since ..." (PatchNotesChanges)
+            RotatePatchNotesSnapshot(versionStr);
+
             // If marker exists, this version's notes have already been shown
             if (File.Exists(markerFile)) return;
 
@@ -237,9 +241,78 @@ public partial class DialogService
 
     private const double PatchNotesFontMin = 10, PatchNotesFontMax = 20;
 
+    // Copies of RHI_PatchNotes.md in %LocalAppData%\RHI: the version RHI last ran (Seen) and the one before it (Previous).
+    // Each .version file holds the version's tag string ("2.9.6-beta.2").
+    private const string SeenNotesFile = "PatchNotesSeen.md", SeenVersionFile = "PatchNotesSeen.version";
+    private const string PreviousNotesFile = "PatchNotesPrevious.md", PreviousVersionFile = "PatchNotesPrevious.version";
+
+    /// <summary>
+    /// On the first start of a new version: the saved copy of the last version's notes becomes "Previous" and this
+    /// version's notes are saved as "Seen". Does nothing when Seen is already this version.
+    /// </summary>
+    private static void RotatePatchNotesSnapshot(string currentTag)
+    {
+        try
+        {
+            var seen = Path.Combine(PatchNotesDir, SeenNotesFile);
+            var seenVersion = Path.Combine(PatchNotesDir, SeenVersionFile);
+            string? seenTag = File.Exists(seenVersion) ? File.ReadAllText(seenVersion).Trim() : null;
+            if (seenTag == currentTag && File.Exists(seen)) return;
+
+            if (!string.IsNullOrEmpty(seenTag) && File.Exists(seen))
+            {
+                File.Copy(seen, Path.Combine(PatchNotesDir, PreviousNotesFile), overwrite: true);
+                File.WriteAllText(Path.Combine(PatchNotesDir, PreviousVersionFile), seenTag);
+            }
+            var notes = AppPaths.InExeDir("RHI_PatchNotes.md");
+            if (File.Exists(notes))
+            {
+                File.Copy(notes, seen, overwrite: true);
+                File.WriteAllText(seenVersion, currentTag);
+            }
+            CrashReporter.Log($"[DialogService.RotatePatchNotesSnapshot] Saved notes for {currentTag} (previous: {seenTag ?? "none"})");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DialogService.RotatePatchNotesSnapshot] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// "Changed since 2.9.6 beta 2" for this version's notes: lines added or reworded since the version the user had
+    /// before, when that version's notes had a section for this version number. Null when there's nothing to show.
+    /// Returns the heading of the section it belongs to.
+    /// </summary>
+    private static (string Heading, string Block)? BuildChangedSinceBlock()
+    {
+        try
+        {
+            var previous = Path.Combine(PatchNotesDir, PreviousNotesFile);
+            var previousVersion = Path.Combine(PatchNotesDir, PreviousVersionFile);
+            var notes = AppPaths.InExeDir("RHI_PatchNotes.md");
+            if (!File.Exists(previous) || !File.Exists(previousVersion) || !File.Exists(notes)) return null;
+            if (!RdxcVersion.TryParse(File.ReadAllText(previousVersion).Trim(), out var before)) return null;
+            var current = AppVersionInfo.Current;
+            if (!(before < current)) return null;
+
+            var now = PatchNotesChanges.FindSection(File.ReadAllText(notes), current.NumberString);
+            var then = PatchNotesChanges.FindSection(File.ReadAllText(previous), current.NumberString);
+            if (now == null || then == null) return null;
+            var block = PatchNotesChanges.BuildBlock(
+                PatchNotesChanges.NewLines(then.Value.Body, now.Value.Body), before.ToDisplayString());
+            return block == null ? null : (now.Value.Heading, block);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[DialogService.BuildChangedSinceBlock] Failed — {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task ShowPatchNotesDialogAsync()
     {
         var (preamble, sections) = MainViewModel.GetPatchNoteSections();
+        var changedSince = BuildChangedSinceBlock();
         // The search box sits in the left column (not a row across the top), so the notes get its height
         const double bodyHeight = 530;
         const double cardWidth = 640, navWidth = 160, layoutGap = 14; // strip 30 + gaps + nav + card must fit the dialog's ~870 px
@@ -307,6 +380,9 @@ public partial class DialogService
             if (index < 0 || index >= sections.Count) return;
             Highlight(index);
             var body = sections[index].Body;
+            // What changed since the version the user had before, above this version's full notes
+            if (changedSince is { } cs && sections[index].Version == cs.Heading)
+                body = PatchNotesChanges.InsertBlock(body, cs.Block);
             // The GitHub token tip stays above the newest version only
             markdown.Text = index == 0 && preamble.Length > 0 ? preamble + "\n\n---\n\n" + body : body;
             scrollViewer.ChangeView(null, 0, null, true);

@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6 Beta 2
+## v2.9.6 Beta 3
 
 ### New
 - **Your Steam library artwork in Spotlight.** The covers and banners you've set for your games in Steam now show in Spotlight too, including games from other stores that you've added to Steam as non-Steam games. Art you pick in RHI still comes first. Turn it off in Settings › Accounts & Data › Artwork.
@@ -17,6 +17,7 @@
 - The game's ⚙ (Game settings) now has Launch executable and Launch arguments, the same settings as in Game Overrides, which keeps them too. Both now also save when you press Enter.
 - Display Commander's ⚙ and OptiScaler's ⚙ now have their DLL name, the same setting as in Game Overrides, which keeps it too.
 - Reset Overrides moved from Management to the bottom of Game Overrides.
+- What's New now starts with what changed since the version you had, so after a beta update you can see what's different without checking GitHub. The full notes for the version follow underneath as before.
 
 ### Bug Fixes
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
