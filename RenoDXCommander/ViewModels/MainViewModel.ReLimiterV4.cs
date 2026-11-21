@@ -232,7 +232,7 @@ public partial class MainViewModel
         int? latestMajor = LatestUlMajor ?? ReadUlAddonVersion(GetUlCachePath(card.Is32Bit))?.Major;
         if (latestMajor is null || latestMajor < UlV4Rules.V4Major) return null;
 
-        if (!card.Is32Bit) await GpuInfoService.GetNvidiaGpusAsync();
+        await GpuInfoService.GetNvidiaGpusAsync(); // 32-bit games too: they can pick v4
         if (UlWantsV4(card)) return null;
 
         var tag = await GetLastV3TagAsync(card.Is32Bit);

@@ -1,7 +1,7 @@
 // UlV4Rules.cs -- pure rules for ReLimiter v4 (unit tested in UlV4RulesTests).
-// v4 needs an NVIDIA card, is 64-bit only, doesn't work in Vulkan / DXVK / OpenGL games and is built for DirectX 12.
-// DX12 games move to v4 automatically; DX9/10/11 games can pick it in the ReLimiter cog; everything else stays on
-// the last v3 release. Crossing between v3 and v4 gives the game a fresh relimiter.ini with only RHI's lines.
+// v4 needs an NVIDIA card and is tested only in 64-bit DirectX 12. 64-bit DX12 games move to v4 automatically;
+// every other game (DX9/10/11, Vulkan, DXVK, OpenGL, 32-bit) can pick it in the ReLimiter cog, where v4's untested
+// fallback pacing applies, and otherwise stays on the last v3 release. Crossing between v3 and v4 gives the game a fresh relimiter.ini with only RHI's lines.
 
 using System.Text;
 using System.Text.RegularExpressions;
@@ -33,22 +33,30 @@ internal static class UlV4Rules
     /// <summary>Decides whether a game can use ReLimiter v4. Pure.</summary>
     internal static UlV4Verdict Check(bool is32Bit, bool vulkan, bool dxvk, bool openGl, UlGpuState gpu, UlDx12State dx12)
     {
-        if (is32Bit) return Blocked("ReLimiter v4 is 64-bit only. This game stays on v3.");
-        if (vulkan) return Blocked("ReLimiter v4 doesn't work in Vulkan games. This game stays on v3.");
-        if (dxvk) return Blocked("ReLimiter v4 doesn't work with DXVK, which runs the game through Vulkan. This game stays on v3.");
-        if (openGl) return Blocked("ReLimiter v4 doesn't work in OpenGL games. This game stays on v3.");
         if (gpu == UlGpuState.NotNvidia) return Blocked("ReLimiter v4 needs an NVIDIA graphics card. This game stays on v3.");
 
+        // Untested in v4 (it falls back to a plain cap or its untested routes): allowed, never automatic
         var notes = new List<string>();
+        bool untested = is32Bit || vulkan || dxvk || openGl;
+        if (is32Bit)
+            notes.Add("ReLimiter v4 is untested in 32-bit games; it gives them a plain frame rate cap.");
+        if (vulkan)
+            notes.Add("ReLimiter v4 is untested in Vulkan games.");
+        else if (dxvk)
+            notes.Add("ReLimiter v4 is untested with DXVK, which runs the game through Vulkan.");
+        if (openGl)
+            notes.Add("ReLimiter v4 is untested in OpenGL games.");
+        if (untested)
+            notes.Add("You can try it here, but this game isn't moved to v4 automatically.");
         if (gpu == UlGpuState.Unknown)
             notes.Add("RHI couldn't detect your graphics card, so this game isn't moved to v4 automatically. v4 needs an NVIDIA card.");
-        if (dx12 == UlDx12State.No)
+        if (!untested && dx12 == UlDx12State.No)
             notes.Add("ReLimiter v4 is built for DirectX 12 and may not work as intended in this game.");
-        else if (dx12 == UlDx12State.Unknown)
+        else if (!untested && dx12 == UlDx12State.Unknown)
             notes.Add("RHI can't tell yet whether this game runs DirectX 12. It moves to v4 automatically once the game has run " +
                       "in DirectX 12 with ReShade, or set the Rendering API in Game Overrides.");
 
-        bool auto = gpu == UlGpuState.Nvidia && dx12 == UlDx12State.Yes;
+        bool auto = !untested && gpu == UlGpuState.Nvidia && dx12 == UlDx12State.Yes;
         return new UlV4Verdict(true, auto, null, notes.Count == 0 ? null : string.Join(" ", notes));
 
         static UlV4Verdict Blocked(string reason) => new(false, false, reason, null);

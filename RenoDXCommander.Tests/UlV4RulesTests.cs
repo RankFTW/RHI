@@ -20,18 +20,27 @@ public class UlV4RulesTests
         Assert.Null(v.Note);
     }
 
-    [Theory]
-    [InlineData(true, false, false, false, false)]   // 32-bit
-    [InlineData(false, true, false, false, false)]   // Vulkan
-    [InlineData(false, false, true, false, false)]   // DXVK
-    [InlineData(false, false, false, true, false)]   // OpenGL
-    [InlineData(false, false, false, false, true)]   // not NVIDIA
-    public void Blocked_Cases(bool is32, bool vulkan, bool dxvk, bool openGl, bool notNvidia)
+    [Fact]
+    public void Not_Nvidia_Is_Blocked()
     {
-        var v = Check(is32, vulkan, dxvk, openGl, notNvidia ? UlGpuState.NotNvidia : UlGpuState.Nvidia);
+        var v = Check(gpu: UlGpuState.NotNvidia);
         Assert.False(v.Allowed);
         Assert.False(v.Auto);
         Assert.False(string.IsNullOrEmpty(v.Reason));
+    }
+
+    [Theory]
+    [InlineData(true, false, false, false)]   // 32-bit
+    [InlineData(false, true, false, false)]   // Vulkan
+    [InlineData(false, false, true, false)]   // DXVK
+    [InlineData(false, false, false, true)]   // OpenGL
+    public void Untested_Setups_Are_Allowed_With_A_Note_But_Never_Automatic(bool is32, bool vulkan, bool dxvk, bool openGl)
+    {
+        var v = Check(is32, vulkan, dxvk, openGl);   // even when the game also lists DX12
+        Assert.True(v.Allowed);
+        Assert.False(v.Auto);
+        Assert.Null(v.Reason);
+        Assert.Contains("untested", v.Note);
     }
 
     [Theory]
@@ -59,13 +68,16 @@ public class UlV4RulesTests
     {
         var auto = Check();
         var manualOnly = Check(dx12: UlDx12State.No);
-        var blocked = Check(is32: true);
+        var blocked = Check(gpu: UlGpuState.NotNvidia);
+        var untested = Check(is32: true);
 
         Assert.True(UlV4Rules.WantsV4(null, auto));
         Assert.False(UlV4Rules.WantsV4(null, manualOnly));
         Assert.True(UlV4Rules.WantsV4("4", manualOnly));
         Assert.False(UlV4Rules.WantsV4("4", blocked));   // a v4 choice can't beat a block
         Assert.False(UlV4Rules.WantsV4("3", auto));
+        Assert.False(UlV4Rules.WantsV4(null, untested));   // never moved automatically
+        Assert.True(UlV4Rules.WantsV4("4", untested));     // but the user can pick it
     }
 
     // Lines as ReShade 6.8 / ReLimiter write them (taken from real logs)
