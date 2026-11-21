@@ -179,12 +179,49 @@ public class InstallEventHandler
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
             if (!await EnsureGameFolderAsync(card, sender)) return;
+            if (!await ConfirmUlV4WarningsAsync(card, sender)) return;
             await ViewModel.InstallUlAsync(card);
         }
         catch (Exception unhandledEx)
         {
             CrashReporter.Log($"[InstallEventHandler.InstallUlButton_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
         }
+    }
+
+    /// <summary>
+    /// ReLimiter v4 doesn't support NVIDIA Dynamic MFG and doesn't work as intended with the Extras MFG mods
+    /// (Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, DLSS Enabler). When this install would put v4 in a game
+    /// with either, asks first (Install anyway / Cancel). True = go ahead.
+    /// </summary>
+    private async Task<bool> ConfirmUlV4WarningsAsync(GameCardViewModel card, object sender)
+    {
+        if (!await ViewModel.UlInstallWillBeV4Async(card)) return true;
+        var (dmfgOn, mods) = await Task.Run(() => (ViewModel.IsDmfgOn(card), ViewModel.InstalledMfgModsForUl(card)));
+        var messages = new List<string>();
+        if (dmfgOn) messages.Add(MainViewModel.UlDmfgWarning);
+        if (MainViewModel.UlMfgModsWarning(mods) is { } modsText) messages.Add(modsText);
+        if (messages.Count == 0) return true;
+
+        CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': ReLimiter v4 install with "
+            + $"DMFG={(dmfgOn ? "on" : "off")}, MFG mods=[{string.Join(", ", mods)}]");
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;
+        if (xamlRoot == null) return true;
+
+        var dialog = new ContentDialog
+        {
+            Title = dmfgOn && mods.Count == 0 ? "Dynamic MFG is on"
+                : !dmfgOn ? "Frame generation mods installed"
+                : "ReLimiter v4 and frame generation",
+            Content = new TextBlock { Text = string.Join("\n\n", messages), TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+            PrimaryButtonText = "Install anyway",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        bool go = await DialogService.ShowSafeAsync(dialog) == ContentDialogResult.Primary;
+        CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': {(go ? "installing anyway" : "cancelled")}");
+        return go;
     }
 
     public void UninstallUlButton_Click(object sender, RoutedEventArgs e)

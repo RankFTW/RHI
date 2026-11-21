@@ -39,6 +39,13 @@ public sealed partial class MainWindow
         verdictLine.Visibility = Visibility.Collapsed;
         var warning = cog.AddWarning("");
         warning.Visibility = Visibility.Collapsed;
+        // ReLimiter v4 doesn't support NVIDIA Dynamic MFG: shown when DMFG is on and v4 is installed or can be picked
+        var dmfgWarning = cog.AddWarning(MainViewModel.UlDmfgWarning);
+        dmfgWarning.Visibility = Visibility.Collapsed;
+        bool dmfgOn = false;
+        // ...and doesn't work as intended with the Extras MFG mods
+        var mfgModsWarning = cog.AddWarning("");
+        mfgModsWarning.Visibility = Visibility.Collapsed;
         var switchBtn = CogDialog.StyledButton("Switch to v3", CogButtonKind.Primary);
         var switchRow = cog.AddButtons(switchBtn);
         switchRow.Visibility = Visibility.Collapsed;
@@ -77,6 +84,25 @@ public sealed partial class MainWindow
             warning.Text = bad ? $"This game has ReLimiter v4, which won't work here: {verdict.Reason} Switch back to v3 (with a fresh relimiter.ini)." : "";
             warning.Visibility = bad ? Visibility.Visible : Visibility.Collapsed;
             switchRow.Visibility = bad ? Visibility.Visible : Visibility.Collapsed;
+
+            bool showDmfg = dmfgOn && (onV4 || (hasV4 && verdict.Allowed));
+            dmfgWarning.Visibility = showDmfg ? Visibility.Visible : Visibility.Collapsed;
+            bool v4Relevant = onV4 || (hasV4 && verdict.Allowed);
+            mfgModsWarning.Visibility = v4Relevant && mfgModsWarning.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // The driver profile is read through NVAPI, off the UI thread
+        _ = ReadDmfgAsync();
+        async Task ReadDmfgAsync()
+        {
+            try
+            {
+                var (on, mods) = await Task.Run(() => (ViewModel.IsDmfgOn(card), ViewModel.InstalledMfgModsForUl(card)));
+                dmfgOn = on;
+                mfgModsWarning.Text = MainViewModel.UlMfgModsWarning(mods) ?? "";
+                if (dmfgOn || mods.Count > 0) RefreshNotes();
+            }
+            catch (Exception ex) { CrashReporter.Log($"[MainWindow.AddUlVersionSection] DMFG / MFG mods read failed — {ex.Message}"); }
         }
 
         void Fill(List<UlRelease> releases)
