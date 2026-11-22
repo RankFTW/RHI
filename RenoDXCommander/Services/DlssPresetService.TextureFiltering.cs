@@ -169,6 +169,36 @@ public partial class DlssPresetService
         return ok;
     }
 
+    // ── Global (base profile) values ─────────────────────────────────────────
+    // A game with no value of its own uses these, so the game's Default choice shows them.
+
+    /// <summary>The global LOD bias in eighths, or null when the base profile has none.</summary>
+    public int? GetGlobalLodBias() => GetGlobalRaw(LOD_BIAS_DX_ID) is uint v ? unchecked((int)v) : null;
+
+    /// <summary>The globally forced anisotropic level, or 0 when games control it.</summary>
+    public uint GetGlobalAnisoLevel()
+        => GetGlobalRaw(ANISO_MODE_ID) == 1 ? GetGlobalRaw(ANISO_LEVEL_ID) ?? 0 : 0;
+
+    /// <summary>The global texture filtering quality, or null when the base profile has none.</summary>
+    public uint? GetGlobalTextureQuality() => GetGlobalRaw(TEXTURE_QUALITY_ID);
+
+    private uint? GetGlobalRaw(uint settingId)
+    {
+        if (!_isSupported || _session == null) return null;
+        try
+        {
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sessionHandle == IntPtr.Zero || profileHandle == IntPtr.Zero) return null;
+            return GetSettingRawNvApi(sessionHandle, profileHandle, settingId);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.GetGlobalRaw] 0x{settingId:X8}: {ex.Message}");
+            return null;
+        }
+    }
+
     /// <summary>
     /// Removes a setting only when the game has its own value. DeletePreset writes 0 when the delete
     /// fails, and a missing setting fails, so calling it on an unset setting would create a 0 value.

@@ -135,6 +135,7 @@ public partial class SettingsHandler
                 if (_sgdbKeyBox != null) _sgdbKeyBox.Text = "";
                 RefreshSteamGridDbStatus();
                 SetSgdbStatus("Key removed.", ResourceKeys.TextTertiaryBrush);
+                _window.ReloadAllArt();
             };
             buttons.Children.Add(_sgdbClearBtn);
             body.Children.Add(buttons);
@@ -263,6 +264,7 @@ public partial class SettingsHandler
                     }
                     _sgdbKeyBox.Text = "";
                     RefreshSteamGridDbStatus();
+                    _window.ReloadAllArt(); // missing covers can now come from SteamGridDB
                     break;
                 case SteamGridDbService.Status.BadKey:
                     SetSgdbStatus("SteamGridDB didn't accept this key. Check you copied all of it.", ResourceKeys.AccentRedBrush);

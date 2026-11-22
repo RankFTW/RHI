@@ -223,7 +223,8 @@ public partial class SettingsHandler
 
             // 6. Re-parent: host Grid row → new root Grid [nav | ScrollViewer]. Everything above is built
             //    first so a failure can't leave the page without its ScrollViewer.
-            var root = new Grid();
+            // Transparent background so the empty space beside the nav column takes the mouse wheel too
+            var root = new Grid { Background = s_transparentBrush };
             _navColumn = new ColumnDefinition { Width = new GridLength(NavColumnWidth) };
             root.ColumnDefinitions.Add(_navColumn);
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -240,6 +241,7 @@ public partial class SettingsHandler
             root.Children.Add(sv);
             host.Children.Insert(index, root);
             _settingsScroll = sv;
+            sv.Background ??= s_transparentBrush; // the gutters beside the cards take the wheel too
 
             cardsPanel.Children.Insert(0, _searchResultsPanel);
 
@@ -250,6 +252,10 @@ public partial class SettingsHandler
 
             // 7. Events (attached once)
             sv.ViewChanged += SettingsScroll_ViewChanged;
+            // The wheel over the nav column or the space beside it scrolls the settings (handledEventsToo:
+            // the nav column's own ScrollViewer marks it handled even when it has nothing to scroll)
+            root.AddHandler(UIElement.PointerWheelChangedEvent,
+                new PointerEventHandler(SettingsRoot_PointerWheelChanged), handledEventsToo: true);
             root.SizeChanged += (_, e) => UpdateSettingsNarrowLayout(e.NewSize.Width);
 
             CrashReporter.Log($"[SettingsHandler.EnsureSettingsNavigation] Settings navigation added ({_sections.Count} sections)");
@@ -258,6 +264,79 @@ public partial class SettingsHandler
         {
             CrashReporter.Log($"[SettingsHandler.EnsureSettingsNavigation] Failed — {ex.Message}\n{ex.StackTrace}");
         }
+    }
+
+    /// <summary>
+    /// Mouse wheel outside the settings ScrollViewer (nav column, empty space beside it): scrolls the
+    /// settings, unless the nav column itself can scroll (short window) and the pointer is over it.
+    /// </summary>
+    private void SettingsRoot_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        try
+        {
+            var sv = _settingsScroll;
+            if (sv == null || e.OriginalSource is not DependencyObject src) return;
+            for (var o = src; o != null; o = VisualTreeHelper.GetParent(o))
+            {
+                if (ReferenceEquals(o, sv)) return; // the settings scroll themselves
+                if (ReferenceEquals(o, _navBorder) && _navBorder.Child is ScrollViewer nav && nav.ScrollableHeight > 0)
+                    return;
+            }
+            int delta = e.GetCurrentPoint(sv).Properties.MouseWheelDelta;
+            if (delta == 0) return;
+            // Smooth scroll driven per frame (WheelScroll_Rendering): a notch moves the target and the page
+            // eases towards it. ChangeView's own animation restarts its curve on every notch, which stutters.
+            if (!_wheelScrolling) _wheelPos = _wheelTarget = sv.VerticalOffset;
+            _wheelTarget = Math.Clamp(_wheelTarget - delta, 0, sv.ScrollableHeight);
+            if (!_wheelScrolling)
+            {
+                _wheelScrolling = true;
+                _wheelLastFrame = TimeSpan.Zero;
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += WheelScroll_Rendering;
+            }
+            e.Handled = true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.SettingsRoot_PointerWheelChanged] {ex.Message}");
+        }
+    }
+
+    // Wheel forwarding from the nav column (SettingsRoot_PointerWheelChanged)
+    private bool _wheelScrolling;
+    private double _wheelPos, _wheelTarget;
+    private TimeSpan _wheelLastFrame;
+
+    /// <summary>One frame of the nav-column wheel scroll: moves part of the way to the target (time-based, so
+    /// the speed is the same at any refresh rate) and stops once there.</summary>
+    private void WheelScroll_Rendering(object? sender, object e)
+    {
+        var sv = _settingsScroll;
+        var now = (e as RenderingEventArgs)?.RenderingTime ?? TimeSpan.Zero;
+        if (sv == null || _window.IsShuttingDown)
+        {
+            StopWheelScroll();
+            return;
+        }
+        if (now == _wheelLastFrame) return; // Rendering can fire twice for one frame
+        double dtMs = _wheelLastFrame == TimeSpan.Zero ? 16.7 : Math.Min((now - _wheelLastFrame).TotalMilliseconds, 50);
+        _wheelLastFrame = now;
+        double diff = _wheelTarget - _wheelPos;
+        if (Math.Abs(diff) < 0.5)
+        {
+            _wheelPos = _wheelTarget;
+            StopWheelScroll();
+        }
+        else
+            _wheelPos += diff * (1 - Math.Exp(-dtMs / 70.0)); // about 200 ms to settle
+        sv.ChangeView(null, _wheelPos, null, disableAnimation: true);
+    }
+
+    private void StopWheelScroll()
+    {
+        if (!_wheelScrolling) return;
+        _wheelScrolling = false;
+        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= WheelScroll_Rendering;
     }
 
     private static string? GetSectionTitle(StackPanel section)

@@ -36,6 +36,8 @@ public partial class DetailPanelBuilder
             AddLabel("LOD Bias");
             var options = DlssPresetService.LodBiasOptions;
             var items = options.Select(o => o.Name).ToList();
+            // Default follows the global (base profile) value: show it
+            if (d.GlobalLodBias is int globalLod) items[0] = $"Global ({DlssPresetService.FormatLodBias(globalLod)})";
             int idx = Array.FindIndex(options, o => o.Eighths == d.LodBias);
             if (idx < 0 && d.LodBias is int own)
             {
@@ -73,6 +75,7 @@ public partial class DetailPanelBuilder
             AddLabel("Anisotropic Filtering");
             var options = DlssPresetService.AnisoOptions;
             var items = options.Select(o => o.Name).ToList();
+            if (d.GlobalAnisoLevel != 0) items[0] = $"Global ({d.GlobalAnisoLevel}x)";
             int idx = Array.FindIndex(options, o => o.Level == d.AnisoLevel);
             if (idx < 0)
             {
@@ -106,6 +109,11 @@ public partial class DetailPanelBuilder
             AddLabel("Quality");
             var options = DlssPresetService.TextureQualityOptions;
             var items = options.Select(o => o.Name).ToList();
+            if (d.GlobalTextureQuality is uint globalQ)
+            {
+                int gi = Array.FindIndex(options, o => o.Value == globalQ);
+                items[0] = $"Global ({(gi > 0 ? options[gi].Name : $"0x{globalQ:X8}")})";
+            }
             int idx = Array.FindIndex(options, o => o.Value == d.TextureQuality);
             if (idx < 0)
             {
@@ -115,7 +123,7 @@ public partial class DetailPanelBuilder
             var combo = MakeCombo(items, idx);
             ToolTipService.SetToolTip(combo,
                 "Texture filtering quality. High Quality turns off the driver's filtering shortcuts (and trilinear optimization) "
-                + "for the cleanest textures at a very small cost. Default lets the driver use Quality.");
+                + "for the cleanest textures at a very small cost. Default (or Global) follows your global driver setting, which is Quality unless you changed it.");
             var init = true;
             combo.SelectionChanged += (s, e) =>
             {

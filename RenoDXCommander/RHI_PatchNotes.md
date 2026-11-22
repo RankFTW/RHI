@@ -23,6 +23,7 @@
 ### Bug Fixes
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
+- Fixed the mouse wheel not scrolling Settings while the pointer was over the section list on the left or the space beside it.
 
 ## v2.9.5
 

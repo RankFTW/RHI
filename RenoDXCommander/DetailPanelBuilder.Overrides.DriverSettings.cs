@@ -32,7 +32,8 @@ public partial class DetailPanelBuilder
         ulong GlobalReBarSizeLimit,
         uint? PerGameFpsLimit, uint GlobalFpsLimit,
         bool IsAdmin,
-        int? LodBias = null, uint AnisoLevel = 0, uint? TextureQuality = null);
+        int? LodBias = null, uint AnisoLevel = 0, uint? TextureQuality = null,
+        int? GlobalLodBias = null, uint GlobalAnisoLevel = 0, uint? GlobalTextureQuality = null);
 
     private const string DriverSummaryTag = "DriverSummary";   // collapsed-only header summary
 
@@ -199,7 +200,10 @@ public partial class DetailPanelBuilder
                         IsAdmin:                  VulkanLayerService.IsRunningAsAdmin(),
                         LodBias:                  svc.GetLodBias(gameName, installPath),
                         AnisoLevel:               svc.GetAnisoLevel(gameName, installPath),
-                        TextureQuality:           svc.GetTextureQuality(gameName, installPath));
+                        TextureQuality:           svc.GetTextureQuality(gameName, installPath),
+                        GlobalLodBias:            svc.GetGlobalLodBias(),
+                        GlobalAnisoLevel:         svc.GetGlobalAnisoLevel(),
+                        GlobalTextureQuality:     svc.GetGlobalTextureQuality());
                 }, scanCt);
                 using var delayCts = new CancellationTokenSource();
                 var delayTask = Task.Delay(5000, delayCts.Token);
