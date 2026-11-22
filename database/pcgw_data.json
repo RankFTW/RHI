@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56152,
-  "generated": "2026-11-22T11:25:50Z",
+  "generated": "2026-11-22T13:25:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -95589,7 +95589,7 @@
     "Little Nightmares Enhanced Edition": {
       "steam_appid": 2149010,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Little Nightmares Enhanced Edition\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Little Nightmares Enhanced Edition\\Saved\\Config\\WindowsNoEditor\\*.ini",
       "engine": "Unreal Engine 4"
     },
     "Little Nightmares II": {
@@ -191651,6 +191651,8 @@
     },
     "What the Buck?!": {
       "steam_appid": 4832970,
+      "vulkan": true,
+      "config_path": "%APPDATA%\\Godot\\app_userdata\\What the Buck\\settings.cfg",
       "engine": "Godot"
     },
     "What the Car?": {
