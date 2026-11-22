@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56153,
-  "generated": "2026-11-22T17:25:50Z",
+  "game_count": 56155,
+  "generated": "2026-11-22T19:25:51Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -8023,6 +8023,8 @@
     },
     "American Gladiators": {},
     "American Hero": {
+      "dx11": true,
+      "config_path": "%APPDATA%\\Ziggurat\\American Hero\\USR-DATA",
       "engine": "RapidFire"
     },
     "American Idol (2002)": {
@@ -143486,6 +143488,14 @@
       "steam_appid": 111600,
       "engine": "XNA"
     },
+    "Serious Sam Fusion": {
+      "steam_appid": 564310,
+      "dx11": true,
+      "dx12": true,
+      "vulkan": true,
+      "config_path": "<Steam-folder>/userdata/<user-id>/564310/local/",
+      "engine": "Serious Engine"
+    },
     "Serious Sam Fusion 2017": {
       "steam_appid": 564310,
       "dx11": true,
@@ -169083,6 +169093,7 @@
       "config_path": "<path-to-game>\\render.cfg"
     },
     "The History Channel: Great Battles of Rome": {},
+    "The History Channel: Lost Worlds": {},
     "The Hit": {
       "engine": "Unity"
     },
