@@ -9,6 +9,8 @@
 - **Your Steam library artwork in Spotlight.** The covers and banners you've set for your games in Steam now show in Spotlight too, including games from other stores that you've added to Steam as non-Steam games. Art you pick in RHI still comes first. Turn it off in Settings › Accounts & Data › Artwork.
 - **Missing artwork filled in from SteamGridDB.** If you've added a SteamGridDB API key, games Steam has no cover or banner for get the top-rated one from SteamGridDB. Turn it off in Settings › Accounts & Data › Artwork.
 - **Texture Filtering in Driver Settings.** Three new per-game NVIDIA settings from Profile Inspector: LOD Bias, Anisotropic Filtering and texture filtering Quality. A negative LOD bias sharpens the blurry textures some games' DLSS leaves behind (Dead Space Remake, the RE4 DLSS mod); the list marks a starting value for each DLSS mode. RHI also turns on the transparency supersampling setting DX10, DX11 and DX12 games need for the bias to work. Anisotropic Filtering forces 2x to 16x, and High Quality turns off the driver's texture filtering shortcuts.
+- **HSF frame generation engine.** HSF builds with XeMFG (Intel's XeSS frame generation, run inside DLSS-G) get an Engine choice in HSF's ⚙: DLSS-G or XeMFG. It applies the next time the game starts. XeMFG needs Universal MFG Unlocker for 3x to 6x on every RTX card, RTX 50 included; without it XeMFG is limited to 2x, and the ⚙ says so.
+- **HSF test builds by drag and drop.** Drop an HSF build's zip on RHI, straight from Discord or as a saved file, and pick the game. RHI installs it like a release, keeps your HSF settings, and leaves it in place until the next HSF release instead of putting the current release back over it. A build set to XeMFG offers Universal MFG Unlocker too.
 
 ### Changes
 - ReLimiter v4 can now be picked in every game in the ReLimiter cog › Version, including 32-bit, Vulkan, DXVK and OpenGL games. v4 is only tested in 64-bit DirectX 12, so these games stay on v3 unless you choose v4, and the cog says it's untested there.
@@ -26,6 +28,7 @@
 - ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
 
 ### Bug Fixes
+- Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
 - Fixed the mouse wheel not scrolling Settings while the pointer was over the section list on the left or the space beside it.

@@ -126,6 +126,52 @@ public partial class MainViewModel
     }
 
     /// <summary>
+    /// Installs an HSF test build dropped on RHI (<paramref name="packageRoot"/> = the extracted folder with its
+    /// add-on). The release is staged first, so HSF.fx is there for the shader sync and the build is kept until a newer
+    /// release (<see cref="HsfService.InstallBeta"/>). Returns an error message, or null.
+    /// </summary>
+    public async Task<string?> InstallHsfBetaAsync(GameCardViewModel card, string packageRoot, string label)
+    {
+        if (HsfBlockReason(card) is { } reason) return reason;
+        if (string.IsNullOrEmpty(card.InstallPath)) return "This game has no install folder.";
+        var installPath = card.InstallPath;
+        var svc = App.Services.GetRequiredService<HsfService>();
+        bool launchpadOn = !HsfService.IsRhiInstalled(installPath) || HsfService.ReadMarker(installPath).LaunchpadOn;
+        try
+        {
+            await Task.Run(async () =>
+            {
+                // The release's HSF.fx and the version the build is measured against; a failed download still installs
+                if (!svc.IsStagingReady) await svc.EnsureStagingAsync().ConfigureAwait(false);
+                if (launchpadOn && !UpliftService.LaunchpadStaged)
+                    await _shaderPackService.EnsurePacksAsync(new[] { UpliftService.LaunchpadPackId }).ConfigureAwait(false);
+                bool freshIni = !File.Exists(HsfService.IniPath(installPath));
+                svc.InstallBeta(packageRoot, label, installPath, card.Is32Bit, launchpadOn);
+                if (freshIni) svc.ApplyKeybinds(installPath, GlobalHsfKeybinds());
+                svc.PresetRoute(installPath, HsfRouteFor(card));
+            });
+            await DeployShadersForCardAsync(card.GameName);
+            _crashReporter.Log($"[MainViewModel.InstallHsfBeta] '{label}' installed for '{card.GameName}' (engine {HsfService.ReadFgEngine(installPath)})");
+            return null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _crashReporter.Log($"[MainViewModel.InstallHsfBeta] '{card.GameName}' — {ex.Message}");
+            return ex is UnauthorizedAccessException
+                ? "Couldn't write into the game folder (access denied). Close the game, or try Admin Mode."
+                : ex is IOException
+                    ? $"Couldn't copy the files. If the game is running, close it and try again. ({ex.Message})"
+                    : ex.Message;
+        }
+    }
+
+    /// <summary>True when XeMFG is set for this game but neither unlocker is installed (XeMFG then stays at 2x).</summary>
+    public static bool HsfXeMfgNeedsUnlocker(GameCardViewModel card) =>
+        !string.IsNullOrEmpty(card.InstallPath)
+        && HsfService.ReadFgEngine(card.InstallPath) == HsfService.EngineXeMfg
+        && !card.Rtx40MfgInstalled && !card.MfgAdaInstalled;
+
+    /// <summary>
     /// Where Universal MFG Unlocker goes with HSF (HSF's installer guide): next to the exe of a 64-bit game, any
     /// API (in DirectX 12 the game loads it; in DirectX 9 / 11 / Vulkan HSF's helper finds it there by its
     /// product name). 32-bit games: in HSF_streamline\mods, never next to the 32-bit exe.

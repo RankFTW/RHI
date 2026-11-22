@@ -135,14 +135,40 @@ public sealed class AddonFileWatcher : IDisposable
         if (ArchiveExtensions.Contains(ext))
         {
             var fileName = Path.GetFileName(path);
+            // Any other archive only when RHI's drop helper just saved it (a drop in Admin Mode, e.g. an HSF build
+            // from Discord): ordinary downloads in the folder are left alone
             if (!fileName.Contains("renodx", StringComparison.OrdinalIgnoreCase)
-                && !fileName.Contains("luma", StringComparison.OrdinalIgnoreCase))
+                && !fileName.Contains("luma", StringComparison.OrdinalIgnoreCase)
+                && !SavedByDropHelper(path))
                 return;
 
             _crashReporter.Log($"[AddonFileWatcher] Detected archive: {fileName}");
             WaitAndRaise(path, ArchiveFileDetected);
             return;
         }
+    }
+
+    /// <summary>
+    /// True when RHI.DropHelper (the non-elevated drop target in Admin Mode) noted this file in the last 2 minutes
+    /// (%TEMP%\rhi_drop_saved.txt: ticks | path).
+    /// </summary>
+    internal static bool SavedByDropHelper(string path, string? logPath = null)
+    {
+        try
+        {
+            logPath ??= Path.Combine(Path.GetTempPath(), "rhi_drop_saved.txt");
+            if (!File.Exists(logPath)) return false;
+            var full = Path.GetFullPath(path);
+            foreach (var line in File.ReadAllLines(logPath))
+            {
+                int bar = line.IndexOf('|');
+                if (bar <= 0 || !long.TryParse(line[..bar], out var ticks)) continue;
+                if (DateTime.UtcNow - new DateTime(ticks, DateTimeKind.Utc) > TimeSpan.FromMinutes(2)) continue;
+                if (string.Equals(Path.GetFullPath(line[(bar + 1)..]), full, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { }
+        return false;
     }
 
     private void WaitAndRaise(string path, Action<string>? handler)

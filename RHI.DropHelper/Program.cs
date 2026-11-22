@@ -145,6 +145,25 @@ class DropOverlayForm : Form
 
     private bool _rhiWasInFront;
 
+    /// <summary>
+    /// Notes a file this helper is about to save in the watch folder (time | path, in %TEMP%\rhi_drop_saved.txt),
+    /// so RHI's folder watcher acts on it even when its name doesn't say RenoDX or Luma (HSF builds from Discord).
+    /// Written before the file, because the watcher sees the file as soon as it's created. Last 10 kept.
+    /// </summary>
+    private static void NoteSaved(string path)
+    {
+        try
+        {
+            var log = Path.Combine(Path.GetTempPath(), "rhi_drop_saved.txt");
+            var lines = File.Exists(log) ? new System.Collections.Generic.List<string>(File.ReadAllLines(log)) : new();
+            lines.Add($"{DateTime.UtcNow.Ticks}|{path}");
+            if (lines.Count > 10) lines.RemoveRange(0, lines.Count - 10);
+            File.WriteAllLines(log, lines);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
     private void OnDragEnter(object? sender, DragEventArgs e)
     {
         if (e.Data == null) { e.Effect = DragDropEffects.None; return; }
@@ -170,6 +189,7 @@ class DropOverlayForm : Form
                     {
                         var dest = Path.Combine(_downloadDir, Path.GetFileName(f));
                         if (File.Exists(dest)) File.Delete(dest);
+                        NoteSaved(dest);
                         File.Copy(f, dest);
                     }
                     catch { }
@@ -195,7 +215,9 @@ class DropOverlayForm : Form
                 if (File.Exists(dest)) File.Delete(dest);
                 using var resp = await _http.GetAsync(uri);
                 resp.EnsureSuccessStatusCode();
-                await File.WriteAllBytesAsync(dest, await resp.Content.ReadAsByteArrayAsync());
+                var bytes = await resp.Content.ReadAsByteArrayAsync();
+                NoteSaved(dest);
+                await File.WriteAllBytesAsync(dest, bytes);
             }
             catch { }
         }

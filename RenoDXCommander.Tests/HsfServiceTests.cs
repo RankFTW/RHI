@@ -40,6 +40,31 @@ public class HsfServiceTests
     public void StagedPathFor_KeepsWhatGamesNeed(string entry, string? expected) =>
         Assert.Equal(expected, HsfService.StagedPathFor(entry));
 
+    // A dropped test build (the XeMFG test zip's layout)
+    [Theory]
+    [InlineData("hsf.addon64", false, "hsf.addon64")]
+    [InlineData("hsf.addon32", false, null)]                 // only the game's bitness
+    [InlineData("hsf.addon32", true, "hsf.addon32")]
+    [InlineData("HSF.ini", false, null)]                     // merged separately
+    [InlineData("reshade-shaders/Shaders/HSF.fx", false, null)]
+    [InlineData("libxess_fg.dll", false, "libxess_fg.dll")]  // next to HSF.ini, as the test build asks
+    [InlineData("libxell.dll", false, "libxell.dll")]
+    [InlineData("README-TEST.txt", false, @"HSF_streamline\README-TEST.txt")]
+    [InlineData("HSF_streamline/nvngx_dlssg.dll", false, @"HSF_streamline\nvngx_dlssg.dll")]
+    [InlineData("licenses/Intel-XeSS-LICENSE.txt", false, @"HSF_streamline\licenses\Intel-XeSS-LICENSE.txt")]
+    [InlineData("tools/other.dll", false, null)]
+    public void BetaPathFor_PlacesTestBuildFiles(string entry, bool is32, string? expected) =>
+        Assert.Equal(expected, HsfService.BetaPathFor(entry, is32));
+
+    [Theory]
+    [InlineData(null, null, "0.9.9", false)]       // a release: updates as usual
+    [InlineData("HSF-xmx-test", "0.9.9", "0.9.9", true)]  // no newer release yet
+    [InlineData("HSF-xmx-test", "0.9.9", "1.0.0", false)] // the next release replaces it
+    [InlineData("HSF-xmx-test", "", null, true)]   // nothing staged: leave it
+    [InlineData("HSF-xmx-test", "", "1.0.0", false)]
+    public void KeepBeta_UntilANewerRelease(string? label, string? over, string? staged, bool expected) =>
+        Assert.Equal(expected, HsfService.KeepBeta(label, over, staged));
+
     [Fact]
     public void ParseNewestRelease_TakesPreReleasesAndSkipsDrafts()
     {

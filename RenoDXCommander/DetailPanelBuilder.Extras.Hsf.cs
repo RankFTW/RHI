@@ -29,9 +29,10 @@ public partial class DetailPanelBuilder
         bool isInstalled  = HsfService.IsInstalledIn(installPath, card.Is32Bit);
         bool rhiInstalled = isInstalled && HsfService.IsRhiInstalled(installPath);
         var installedVer  = rhiInstalled ? HsfService.ReadMarker(installPath).Version : null;
+        var betaLabel     = rhiInstalled ? HsfService.ReadBeta(installPath).Label : null;
         var block         = MainViewModel.HsfBlock(card);
 
-        string statusText  = !isInstalled ? "Ready" : rhiInstalled ? (installedVer ?? "Installed") : "Manual";
+        string statusText  = !isInstalled ? "Ready" : betaLabel != null ? "Beta" : rhiInstalled ? (installedVer ?? "Installed") : "Manual";
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         var row = new Grid { ColumnSpacing = 8 };
@@ -119,7 +120,9 @@ public partial class DetailPanelBuilder
         {
             var versionNote = MainViewModel.HsfReShadeVersionNote(card);
             ToolTipService.SetToolTip(installBtn, (isInstalled
-                ? "Reinstall HSF (newest release). Your HSF settings are kept."
+                ? betaLabel != null
+                    ? $"Reinstall HSF (newest release) in place of the test build '{betaLabel}'. Your HSF settings are kept."
+                    : "Reinstall HSF (newest release). Your HSF settings are kept."
                 : "Install HSF: the add-on, its HSF_streamline folder (with HSF's licence files), HSF.ini and HSF.fx, plus iMMERSE LaunchPad for optical flow.")
                 + (versionNote != null ? "\n\n" + versionNote : ""));
             if (ExtraBlocker(card, ExtraKind.Hsf) is { } hsfBlocker)
@@ -264,13 +267,15 @@ public partial class DetailPanelBuilder
     /// The detected card sets the default answer. A yes in a 64-bit game (any API) goes on to the DLL name
     /// picker, next to the exe; 32-bit games get it in HSF_streamline\mods. Cancelled = install nothing.
     /// </summary>
-    private async Task<(bool Cancelled, bool Install, string? ProxyName)> AskHsfMfgUnlockerAsync(GameCardViewModel card, XamlRoot? xamlRoot)
+    internal async Task<(bool Cancelled, bool Install, string? ProxyName)> AskHsfMfgUnlockerAsync(GameCardViewModel card, XamlRoot? xamlRoot)
     {
         xamlRoot ??= _window.Content.XamlRoot;
         if (xamlRoot == null || card.Rtx40MfgInstalled || card.MfgAdaInstalled) return (false, false, null);
+        // XeMFG (HSF's Intel frame generation) needs the unlocker for 3x to 6x on every RTX card, RTX 50 too
+        bool xemfg = !string.IsNullOrEmpty(card.InstallPath) && HsfService.ReadFgEngine(card.InstallPath) == HsfService.EngineXeMfg;
         var gpu = GpuInfoService.Primary(await GpuInfoService.GetNvidiaGpusAsync());
-        if (gpu is { Family: GpuFamily.Rtx50 or GpuFamily.Newer }) return (false, false, null);
-        bool needs = gpu != null && GpuInfoService.NeedsMfgUnlocker(gpu.Family);
+        if (!xemfg && gpu is { Family: GpuFamily.Rtx50 or GpuFamily.Newer }) return (false, false, null);
+        bool needs = xemfg || (gpu != null && GpuInfoService.NeedsMfgUnlocker(gpu.Family));
         bool nextToExe = MainViewModel.HsfMfgNextToExe(card);
 
         var content = new StackPanel { Spacing = 8 };
@@ -282,7 +287,11 @@ public partial class DetailPanelBuilder
             LineHeight = 20,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
-        Para("RTX 20, 30 and 40 cards need Universal MFG Unlocker for HSF: RTX 20 and 30 for any frame generation, RTX 40 for more than 2x. RTX 50 cards don't need it.");
+        if (xemfg)
+            Para("This game's HSF is set to XeMFG (Intel's frame generation). XeMFG needs Universal MFG Unlocker for 3x to 6x on every RTX card, "
+                + "RTX 50 included. Without it, XeMFG is limited to 2x.");
+        else
+            Para("RTX 20, 30 and 40 cards need Universal MFG Unlocker for HSF: RTX 20 and 30 for any frame generation, RTX 40 for more than 2x. RTX 50 cards don't need it.");
         Para(gpu == null
             ? "RHI couldn't find an NVIDIA graphics card in this PC."
             : $"Your graphics card: {gpu.Name} ({gpu.FamilyLabel}). {(needs ? "It needs the unlocker." : "It isn't an RTX card, so it can't run DLSS frame generation.")}");
@@ -378,11 +387,16 @@ public partial class DetailPanelBuilder
             cog.AddNote("HSF isn't installed in this game.");
         else
         {
-            cog.AddNote(rhiInstalled
-                ? $"Installed: HSF {HsfService.ReadMarker(installPath).Version ?? "(unknown version)"}. RHI updates it when a new release comes out."
-                : "Installed by hand. Reinstall it with RHI to get updates.");
+            var beta = rhiInstalled ? HsfService.ReadBeta(installPath).Label : null;
+            cog.AddNote(beta != null
+                ? $"Installed: HSF test build '{beta}' (dropped on RHI). RHI keeps it until the next HSF release, then updates the game to that. Reinstall HSF in the Extras section to go back to the release now."
+                : rhiInstalled
+                    ? $"Installed: HSF {HsfService.ReadMarker(installPath).Version ?? "(unknown version)"}. RHI updates it when a new release comes out."
+                    : "Installed by hand. Reinstall it with RHI to get updates.");
             cog.AddNote($"DirectX 12 route: {HsfService.RouteText(installPath)}.");
         }
+
+        if (isInstalled) AddHsfFgEngineSection(cog, card, svc);
 
         // D3D12 route: HSF can only start it before the game makes its device, so on its own it asks for a restart
         // after the first DirectX 12 run. Setting it here (RHI does it by itself for DirectX 12 games) avoids that.

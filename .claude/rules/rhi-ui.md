@@ -163,6 +163,7 @@ Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of bloc
 - `RHI.DropHelper.exe`: non-elevated overlay for Discord URL drops
 - `Opacity = 0.01` (NOT TransparencyKey or WS_EX_TRANSPARENT — those block OLE)
 - Toggle: `SettingsViewModel.DropHelperEnabled` (default true)
+- The helper saves drops (files and links) into the watch folder (`AddonWatchFolder`, default Downloads); RHI's `AddonFileWatcher` only acts on archives named renodx / luma, or any archive the helper noted in `%TEMP%` `rhi_drop_saved.txt` (ticks | path, written before the file, last 10, 2-minute window, `SavedByDropHelper`). Without that note an HSF build dropped from Discord in Admin Mode was saved and ignored (Nov 2026).
 
 ### Two Separate Drop Code Paths
 - `Grid_Drop` (non-admin): XAML routing

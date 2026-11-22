@@ -103,6 +103,13 @@ public partial class DragDropHandler
                 return false;
             }
 
+            // An HSF build (hsf.addon64 / hsf.addon32 + HSF_streamline\): a test build shared on Discord
+            if (HsfService.FindPackageRoot(tempDir) is { } hsfRoot)
+            {
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] '{archiveName}' holds an HSF build — offering to install it");
+                return await OfferHsfBetaAsync(hsfRoot, archiveName);
+            }
+
             // Search for renodx- prefixed .addon64, .addon32, and .addon files in the extracted contents
             // .addon files (no bitness suffix) are treated as .addon64 for compatibility
             var addonFiles = Directory.GetFiles(tempDir, "*.addon64", SearchOption.AllDirectories)
@@ -739,8 +746,31 @@ public partial class DragDropHandler
             var lumaTemp = Path.Combine(Path.GetTempPath(), filename);
             try
             {
-                var bytes = await s_httpClient.GetByteArrayAsync(url);
+                _window.ShowStatusBarMessage($"Downloading {filename}...", TimeSpan.FromSeconds(60));
+                byte[] bytes;
+                try { bytes = await s_httpClient.GetByteArrayAsync(url); }
+                catch (HttpRequestException ex)
+                {
+                    // Discord attachment links expire after a while; a fresh copy of the link works again
+                    _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Download failed for '{filename}' — {ex.Message}");
+                    _window.ShowStatusBarMessage($"Couldn't download {filename}", TimeSpan.FromSeconds(6));
+                    await ShowDropMessageAsync("Download failed",
+                        $"Couldn't download {filename} ({(ex.StatusCode is { } code ? $"{(int)code} {code}" : ex.Message)}). "
+                        + "If it's a Discord attachment, the link may have expired: drag it from Discord again, or save the file and drop that.");
+                    return;
+                }
+                // A zip starts with "PK", a 7z with "7z": anything else is a web page (expired or private link)
+                if (bytes.Length < 2 || !((bytes[0] == 'P' && bytes[1] == 'K') || (bytes[0] == '7' && bytes[1] == 'z')))
+                {
+                    _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] '{filename}' download isn't an archive ({bytes.Length} bytes)");
+                    _window.ShowStatusBarMessage($"Couldn't download {filename}", TimeSpan.FromSeconds(6));
+                    await ShowDropMessageAsync("Download failed",
+                        $"The link didn't give back the archive itself (got a web page instead). If it's a Discord attachment, the link may have "
+                        + "expired: drag it from Discord again, or save the file and drop that.");
+                    return;
+                }
                 await File.WriteAllBytesAsync(lumaTemp, bytes);
+                _window.ShowStatusBarMessage($"Downloaded {filename}", TimeSpan.FromSeconds(4));
 
                 if (IsLumaArchive(lumaTemp))
                 {
