@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56156,
-  "generated": "2026-11-22T21:25:50Z",
+  "game_count": 56158,
+  "generated": "2026-11-22T23:26:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -631,6 +631,7 @@
     "1914: Prelude to Chaos": {
       "steam_appid": 627950
     },
+    "1914: Shells of Fury": {},
     "1914: The Great War": {
       "config_path": "<path-to-game>\\data\\settings.cfg"
     },
@@ -190679,6 +190680,7 @@
     "Waterloo": {
       "steam_appid": 1157860
     },
+    "Waterloo: Napoleon's Last Battle": {},
     "Waterpark Simulator": {
       "steam_appid": 3293260,
       "dx11": true,
