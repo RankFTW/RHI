@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56152,
-  "generated": "2026-11-22T15:25:50Z",
+  "game_count": 56153,
+  "generated": "2026-11-22T17:25:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -1021,6 +1021,7 @@
     },
     "30XX": {
       "steam_appid": 1029210,
+      "dx9": true,
       "engine": "GameMaker"
     },
     "33 Immortals": {
@@ -3485,6 +3486,7 @@
     "Ace Meerkats": {
       "steam_appid": 859510
     },
+    "Ace of Aces": {},
     "Ace of Protectors": {
       "steam_appid": 398150
     },
@@ -67499,6 +67501,7 @@
       "steam_appid": 2523720,
       "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Coalition\\WarGame\\Config",
+      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\Microsoft.Pender_8wekyb3d8bbwe\\SystemAppData",
       "engine": "Unreal Engine 3"
     },
     "Gears of War: Ultimate Edition": {
