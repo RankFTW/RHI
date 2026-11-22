@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56147,
-  "generated": "2026-11-22T03:42:50Z",
+  "game_count": 56150,
+  "generated": "2026-11-22T05:35:32Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -54800,6 +54800,10 @@
     "Eon Fleet": {
       "steam_appid": 838980
     },
+    "Eona": {
+      "steam_appid": 3779800,
+      "engine": "Unreal Engine 5"
+    },
     "Eonia": {
       "steam_appid": 826180
     },
@@ -100753,6 +100757,7 @@
     "Mars Taken": {
       "steam_appid": 754610
     },
+    "Mars Taxi": {},
     "Mars Troopers": {
       "steam_appid": 890680
     },
@@ -149162,6 +149167,12 @@
       "config_path": "<Steam-folder>\\userdata\\<user-id>\\368070\\remote\\profiles\\default\\",
       "engine": "CryEngine (4th generation)"
     },
+    "Sniper: Ghost Warrior Contracts": {
+      "steam_appid": 973580,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\Saved Games\\Sniper Ghost Warrior Contracts\\Profiles\\default\\",
+      "engine": "CryEngine V"
+    },
     "Sniper: Ghost Warrior Contracts 2": {
       "steam_appid": 1338770,
       "dx11": true,
@@ -178545,7 +178556,7 @@
     "Tony Hawk's Pro Skater 1 + 2": {
       "steam_appid": 2395210,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\VicariousVisions\\THPS\\",
+      "config_path": "%LOCALAPPDATA%\\VicariousVisions\\THPS\\GraphicsSettings.ini, %LOCALAPPDATA%\\VicariousVisions\\THPS\\InputSettings.ini",
       "engine": "Unreal Engine 4"
     },
     "Tony Hawk's Pro Skater 2": {
