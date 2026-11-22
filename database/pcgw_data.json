@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56152,
-  "generated": "2026-11-22T13:25:50Z",
+  "generated": "2026-11-22T15:25:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -174903,7 +174903,8 @@
       "steam_appid": 1152230
     },
     "The Void Rains upon Her Heart": {
-      "steam_appid": 790060
+      "steam_appid": 790060,
+      "dx11": true
     },
     "The Voidness": {
       "steam_appid": 2276850,
