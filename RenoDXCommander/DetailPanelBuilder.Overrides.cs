@@ -864,113 +864,21 @@ public partial class DetailPanelBuilder
             "User overrides set here take precedence over manifest and auto-detected values.\n" +
             "Reset Overrides reverts to auto-detection.");
 
-        var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DirectX11", "DirectX12", "Vulkan", "OpenGL" };
-        var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
-
-        // Determine current selection
-        string defaultApiSelection = "Auto";
-        if (existingApiOverride != null && existingApiOverride.Count > 0)
-        {
-            // Map stored override back to dropdown label
-            if (existingApiOverride.Contains("DirectX12", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DirectX12";
-            else if (existingApiOverride.Contains("DirectX11", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DirectX11";
-            else if (existingApiOverride.Contains("Vulkan", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "Vulkan";
-            else if (existingApiOverride.Contains("OpenGL", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "OpenGL";
-            else if (existingApiOverride.Contains("DirectX10", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DirectX10";
-            else if (existingApiOverride.Contains("DirectX9", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DirectX9";
-            else if (existingApiOverride.Contains("DirectX8", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DirectX8";
-        }
-
         var apiCombo = new ComboBox
         {
-            ItemsSource = apiDropdownItems,
-            SelectedItem = defaultApiSelection,
+            ItemsSource = ApiItems,
+            SelectedItem = GetApiDisplay(card),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(apiCombo,
             "Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection.");
 
+        // Shared with the ReShade cog's Game overrides section (DetailPanelBuilder.Overrides.ApiShared.cs)
         apiCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = apiCombo.SelectedItem as string;
-
-            // Map dropdown label to enum names for persistence
-            List<string>? apiEnumNames = selected switch
-            {
-                "DirectX8"  => new() { "DirectX8" },
-                "DirectX9"  => new() { "DirectX9" },
-                "DirectX10" => new() { "DirectX10" },
-                "DirectX11" => new() { "DirectX11" },
-                "DirectX12" => new() { "DirectX12" },
-                "Vulkan"    => new() { "Vulkan" },
-                "OpenGL"    => new() { "OpenGL" },
-                _ => null, // "Auto" clears the override
-            };
-
-            _window.ViewModel.SetApiOverride(capturedName, apiEnumNames, card.Source);
-
-            // Update card properties
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard != null)
-            {
-                bool wasVulkan = targetCard.RequiresVulkanInstall;
-
-                if (apiEnumNames != null)
-                {
-                    var newApis = new HashSet<GraphicsApiType>();
-                    foreach (var name in apiEnumNames)
-                    {
-                        if (Enum.TryParse<GraphicsApiType>(name, out var apiType))
-                            newApis.Add(apiType);
-                    }
-                    targetCard.DetectedApis = newApis;
-                }
-                else
-                {
-                    // "Auto" — re-detect from scanning
-                    targetCard.DetectedApis = _window.ViewModel._DetectAllApisForCard(targetCard.InstallPath, capturedName, targetCard.Source);
-                }
-                targetCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(targetCard.DetectedApis);
-                targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
-                    targetCard.InstallPath, EngineType.Unknown, capturedName, targetCard.Source);
-
-                // Now that GraphicsApi is resolved, check if Vulkan state changed
-                bool willBeVulkan = targetCard.GraphicsApi == GraphicsApiType.Vulkan && !targetCard.IsDualApiGame;
-
-                // ── Clean up ReShade when switching between DX and Vulkan ──────────────
-                // Switching TO Vulkan: uninstall any DX ReShade DLL (dxgi.dll, d3d12.dll etc.)
-                // — leaving it behind causes conflicts with the Vulkan layer.
-                if (!wasVulkan && willBeVulkan && targetCard.IsRsInstalled)
-                {
-                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' to Vulkan — uninstalling DX ReShade ({targetCard.RsInstalledFile})");
-                    _window.ViewModel.UninstallReShade(targetCard);
-                }
-                // Switching FROM Vulkan: uninstall Vulkan ReShade footprint if present.
-                else if (wasVulkan && !willBeVulkan && targetCard.VulkanRsIniExists)
-                {
-                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' from Vulkan — uninstalling Vulkan ReShade");
-                    _window.ViewModel.UninstallVulkanReShadeCommand.Execute(targetCard);
-                }
-
-                // Re-evaluate Luma injection inline (synchronous) so LumaMod is updated
-                // before the panel rebuilds.
-                _window.ViewModel.ReevaluateLumaForCard(targetCard);
-
-                targetCard.NotifyAll();
-
-                // Rebuild the detail panel immediately — don't rely on RequestReselect
-                // since it's a no-op when the game is already selected.
-                _window.PopulateDetailPanel(targetCard);
-                _window.RequestReselect(capturedName);            }
+            if (apiCombo.SelectedItem is string selected)
+                ApplyApiOverride(card, capturedName, selected, rebuildNow: true);
         };
 
         // Add API dropdown to bitness panel (right column, side by side)

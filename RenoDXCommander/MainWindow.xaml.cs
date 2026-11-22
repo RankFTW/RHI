@@ -284,6 +284,9 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(RebuildCustomFilterChips);
         // Startup prompts must not race for the same modal slot after an update.
         _dialogService.ShowStartupDialogsAsync().SafeFireAndForget("MainWindow.StartupDialogs");
+        // GitHub rejecting the token later in the session (expired / revoked): tell the user once
+        GitHubTokenHandler.TokenWasRejected += () => DispatcherQueue.TryEnqueue(() =>
+            _dialogService.ShowGitHubTokenNoticeIfNeededAsync().SafeFireAndForget("MainWindow.GitHubTokenNotice"));
         // Register .addon64/.addon32 file associations (per-user, no admin)
         FileAssociationService.Register(crashReporter);
         // Watch Downloads folder for addon files

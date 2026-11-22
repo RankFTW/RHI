@@ -26,6 +26,8 @@
 - Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
 - Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
 - ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
+- When GitHub stops accepting your GitHub token (it expired or was revoked), RHI now tells you in a pop-up instead of only a line in the status bar, with a link to make a new token and a button to Settings. It shows once per token.
+- ReShade's ⚙ is reorganised into Setup (Graphics API, ReShade channel, ReShade DLL name, Load ReShade as ASI), Shaders and addons, Hotkeys, Updates and Files. Graphics API is new there, the same setting as in Game Overrides, and Updates has a new Update All choice (whether Update All updates ReShade in this game, the same as its tick in Game Overrides › Update inclusion) next to Keep ReShade.ini updated.
 
 ### Bug Fixes
 - Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.

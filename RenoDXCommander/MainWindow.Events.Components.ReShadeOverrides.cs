@@ -1,6 +1,7 @@
-// MainWindow.Events.Components.ReShadeOverrides.cs — "Game overrides" section of the ReShade ⚙.
-// The same per-game settings as Game Overrides (ReShade Channel, Shaders, Addons, ReShade DLL name, Select ReShade Preset),
-// kept in both places so people find them either way. Both call the shared methods in DetailPanelBuilder.Overrides.RsShared.cs.
+// MainWindow.Events.Components.ReShadeOverrides.cs — the ReShade ⚙'s Setup and Shaders and addons sections (and Updates).
+// The same per-game settings as Game Overrides (Graphics API, ReShade Channel, Shaders, Addons, ReShade DLL name, Select
+// ReShade Preset), kept in both places so people find them either way. Both call the shared methods in
+// DetailPanelBuilder.Overrides.RsShared.cs (Graphics API: DetailPanelBuilder.Overrides.ApiShared.cs).
 
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Services;
@@ -16,16 +17,33 @@ public sealed partial class MainWindow
     /// the action runs, and the cog opens again. In Tabs / Spotlight the cog isn't a dialog and they run in place.
     /// Returns the ReShade DLL name dropdown (null when not shown) so "Load ReShade as ASI" can grey it out.
     /// </summary>
-    private ComboBox? AddRsGameOverridesSection(CogDialog cog, GameCardViewModel card, Action<Func<Task>> closeThenRun)
+    private ComboBox? AddRsGameOverridesSection(CogDialog cog, GameCardViewModel card, Action<Func<Task>> closeThenRun,
+        Action<ComboBox?> addLoadingRows)
     {
         var dp = _detailPanelBuilder;
         if (dp == null) return null;
         var gameName = card.GameName;
 
-        cog.AddSection("Game overrides");
+        // ── Setup: which ReShade, for which API, under which name ──
+        cog.AddSection("Setup");
         cog.AddNote("The same settings as in this game's Game Overrides section. A change in one place shows in the other.");
 
         ComboBox? addonCombo = null;
+
+        AddSharedOverrideCombo(cog, "Graphics API",
+            "The graphics API RHI treats this game as using. Auto uses the detected one. Switching between DirectX and Vulkan "
+            + "removes the ReShade install of the other kind (install ReShade again afterwards). Reset Overrides goes back to Auto.",
+            () => (DetailPanelBuilder.ApiItems, dp.GetApiDisplay(card)),
+            _ => false,
+            sel =>
+            {
+                bool removed = dp.ApplyApiOverride(card, gameName, sel, rebuildNow: false);
+                cog.SetSuccess(removed
+                    ? $"Graphics API set to {sel}. ReShade was removed because the game moved between DirectX and Vulkan: install it again."
+                    : $"Graphics API set to {sel}.");
+                return Task.FromResult(true);
+            },
+            reopenItem: null, closeThenRun: closeThenRun);
 
         AddSharedOverrideCombo(cog, "ReShade channel",
             "The ReShade build for this game. Vulkan games share one ReShade, so a change applies to every Vulkan game.",
@@ -39,6 +57,32 @@ public sealed partial class MainWindow
             },
             reopenItem: "Custom", closeThenRun: closeThenRun);
 
+        // Vulkan games load ReShade as a layer, not a DLL in the game folder, so there's no name to change
+        ComboBox? dllCombo = null;
+        if (!card.RequiresVulkanInstall)
+        {
+            dllCombo = AddSharedOverrideCombo(cog, "ReShade DLL name",
+                "Renames ReShade's DLL in this game's folder. -------- uses the default name. Names used by Display Commander or OptiScaler aren't listed. Greyed out while Load ReShade as ASI is on.",
+                () => { var (items, sel) = dp.GetRsDllNameChoices(card); return (items, sel); },
+                _ => false,
+                sel =>
+                {
+                    bool ok = dp.ApplyRsDllName(card, gameName, sel);
+                    if (ok)
+                    {
+                        _detailPanelBuilder?.UpdateDetailComponentRows(card);
+                        dp.QueueOverridesRebuild(gameName);
+                    }
+                    else cog.SetError("That name is used by OptiScaler in this game.");
+                    return Task.FromResult(ok);
+                },
+                reopenItem: null, closeThenRun: closeThenRun,
+                enabled: () => !ViewModel.GetRsAsiMode(gameName, card.Source ?? ""));
+        }
+        addLoadingRows(dllCombo); // Load ReShade as ASI, right under the DLL name it replaces
+
+        // ── Shaders and addons: what ReShade loads ──
+        cog.AddSection("Shaders and addons");
         var shaderCombo = AddSharedOverrideCombo(cog, "Shaders",
             "Global uses the shaders chosen in Settings, Custom your own shader folders, Select picks packs for this game, Off installs none.",
             () => (DetailPanelBuilder.ShaderModeItems, dp.GetShaderModeDisplay(card)),
@@ -64,29 +108,6 @@ public sealed partial class MainWindow
             reopenItem: "Select", closeThenRun: closeThenRun,
             enabled: () => !card.UseNormalReShade);
 
-        // Vulkan games load ReShade as a layer, not a DLL in the game folder, so there's no name to change
-        ComboBox? dllCombo = null;
-        if (!card.RequiresVulkanInstall)
-        {
-            dllCombo = AddSharedOverrideCombo(cog, "ReShade DLL name",
-                "Renames ReShade's DLL in this game's folder. -------- uses the default name. Names used by Display Commander or OptiScaler aren't listed. Greyed out while Load ReShade as ASI is on.",
-                () => { var (items, sel) = dp.GetRsDllNameChoices(card); return (items, sel); },
-                _ => false,
-                sel =>
-                {
-                    bool ok = dp.ApplyRsDllName(card, gameName, sel);
-                    if (ok)
-                    {
-                        _detailPanelBuilder?.UpdateDetailComponentRows(card);
-                        dp.QueueOverridesRebuild(gameName);
-                    }
-                    else cog.SetError("That name is used by OptiScaler in this game.");
-                    return Task.FromResult(ok);
-                },
-                reopenItem: null, closeThenRun: closeThenRun,
-                enabled: () => !ViewModel.GetRsAsiMode(gameName, card.Source ?? ""));
-        }
-
         var presetBtn = cog.MakeButton("Select ReShade Preset", CogButtonKind.Secondary, async () =>
         {
             if (!cog.IsEmbedded) { closeThenRun(() => dp.PickReShadePresetAsync(card, gameName)); return; }
@@ -99,6 +120,43 @@ public sealed partial class MainWindow
         cog.AddButtons(presetBtn);
 
         return dllCombo;
+    }
+
+    /// <summary>
+    /// The ReShade ⚙'s Updates section: whether Update All updates ReShade in this game (the same choice as the ReShade
+    /// tick in Game Overrides' Update inclusion; Vulkan games share it), and whether RHI keeps its reshade.ini updated.
+    /// </summary>
+    private void AddRsUpdatesSection(CogDialog cog, GameCardViewModel card)
+    {
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
+        cog.AddSection("Updates");
+        cog.AddCombo("Update All",
+            "Include: Update All and automatic updates update ReShade in this game. Exclude: they leave it as it is. The same choice as "
+            + "the ReShade tick in Game Overrides › Update inclusion." + (card.RequiresVulkanInstall ? " Vulkan games share one ReShade, so this applies to every Vulkan game." : ""),
+            new[] { "Include", "Exclude" },
+            ViewModel.IsUpdateAllExcludedReShade(gameName, store) ? 1 : 0,
+            i =>
+            {
+                bool exclude = i == 1;
+                if (ViewModel.IsUpdateAllExcludedReShade(gameName, store) != exclude)
+                    ViewModel.ToggleUpdateAllExclusionReShade(gameName, store);
+                _detailPanelBuilder?.UpdateDetailComponentRows(card);
+                _detailPanelBuilder?.QueueOverridesRebuild(gameName);
+                cog.SetSuccess(exclude ? "Update All leaves ReShade alone in this game." : "Update All updates ReShade in this game.");
+            });
+
+        cog.AddCombo("Keep ReShade.ini updated",
+            "No stops RHI from changing this game's reshade.ini when ReShade is installed or updated, or when you use the Settings buttons that write to all games.",
+            new[] { "Yes", "No" },
+            ViewModel.GetKeepRsIniUpdated(gameName, store) ? 0 : 1,
+            i =>
+            {
+                ViewModel.SetKeepRsIniUpdated(gameName, i == 0, store);
+                cog.SetSuccess(i == 0
+                    ? "RHI will keep this game's reshade.ini updated."
+                    : "RHI will leave this game's reshade.ini alone.");
+            });
     }
 
     /// <summary>

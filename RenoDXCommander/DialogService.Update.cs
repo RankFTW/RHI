@@ -17,6 +17,8 @@ public partial class DialogService
         if (_window.IsShuttingDown) return;
         await ShowMotdIfNewAsync();
         if (_window.IsShuttingDown) return;
+        await ShowGitHubTokenNoticeIfNeededAsync(); // a token GitHub rejected during startup (or the dev demo)
+        if (_window.IsShuttingDown) return;
         await CheckForAppUpdateAsync();
     }
 

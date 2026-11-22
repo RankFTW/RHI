@@ -81,6 +81,9 @@ public sealed class GitHubTokenHandler : DelegatingHandler
     /// </summary>
     public static bool TokenRejected { get; private set; }
 
+    /// <summary>Raised once when GitHub rejects the token (on the request's thread). The window shows a pop-up.</summary>
+    public static event Action? TokenWasRejected;
+
     /// <summary>
     /// Sends the request. If GitHub answers 401 to the token, the token is dropped for the session
     /// and the request is sent again without it. Without this, every API call failed and callers
@@ -102,7 +105,11 @@ public sealed class GitHubTokenHandler : DelegatingHandler
             if (_token == token) { _token = null; TokenRejected = true; dropped = true; }
         }
         if (dropped)
+        {
             CrashReporter.Log("[GitHubTokenHandler.SendAsync] GitHub rejected the token (401, expired or revoked) — not using it this session; add a new one in Settings");
+            try { TokenWasRejected?.Invoke(); }
+            catch (Exception ex) { CrashReporter.Log($"[GitHubTokenHandler.SendAsync] TokenWasRejected handler — {ex.Message}"); }
+        }
 
         var retry = new HttpRequestMessage(request.Method, request.RequestUri) { Version = request.Version };
         foreach (var h in request.Headers)
