@@ -88,6 +88,10 @@ public sealed partial class MainWindow
             // ── RTX HDR / Auto HDR ────────────────────────────────────────────────
             await AddRdxHdrToggleSectionsAsync(cog, card);
 
+            // ── Which mod (wiki name and lookup, from Game Overrides) and Update All ──
+            AddRdxModMatchingSection(cog, card);
+            AddUpdateAllSection(cog, card, UpdateAllComponent.RenoDx);
+
             await cog.ShowAsync();
             _detailPanelBuilder?.UpdateDetailComponentRows(card);
         }

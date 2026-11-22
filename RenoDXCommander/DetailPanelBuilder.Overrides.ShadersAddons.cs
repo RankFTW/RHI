@@ -564,6 +564,7 @@ public partial class DetailPanelBuilder
                 _window.RequestReselect(ctx.CapturedName);
         };
         ctx.ResetAction = resetAction;
+        RegisterResetAction(ctx.Card, resetAction); // the game settings ⚙'s Reset uses it too (GameShared)
         resetOverridesBtn.Click += (s, ev) => resetAction();
         // The only Reset Overrides button (Management's was removed in v2.9.6: it duplicated this one)
         _window.OverridesPanel.Children.Add(resetOverridesBtn);

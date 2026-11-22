@@ -20,7 +20,8 @@ internal sealed partial class DetailLayoutHost
         var root = new StackPanel { Spacing = 14 };
         root.Children.Add(MutedText("Settings that apply to this game only."));
 
-        root.Children.Add(TabsTheme.MakeCard(BuildGameSettingsRows(card, openDisplayModes: null), 16));
+        foreach (var (title, rows) in BuildGameSettingsGroups(card, openDisplayModes: null))
+            root.Children.Add(TabsTheme.TitledCard(title, rows));
         return root;
     }
 
@@ -34,19 +35,41 @@ internal sealed partial class DetailLayoutHost
         bool openDisplayModes = false;
         var cog = new CogDialog("Game", xamlRoot);
         cog.AddIntro("Settings that apply to this game only.");
-        cog.AddContent(BuildGameSettingsRows(card, () => { openDisplayModes = true; cog.Hide(); }));
+        foreach (var (title, rows) in BuildGameSettingsGroups(card, () => { openDisplayModes = true; cog.Hide(); }))
+        {
+            cog.AddSection(title);
+            cog.AddContent(rows);
+        }
         await cog.ShowAsync();
         if (openDisplayModes) await _window.ShowDisplayModeGameDialogAsync(card);
     }
 
-    private StackPanel BuildGameSettingsRows(GameCardViewModel card, Action? openDisplayModes)
+    /// <summary>The settings in groups (a titled card each in Spotlight, a section each in the cog). New rows go in the matching group.</summary>
+    private List<(string Title, StackPanel Rows)> BuildGameSettingsGroups(GameCardViewModel card, Action? openDisplayModes)
     {
-        var rows = new StackPanel { Spacing = 16 };
-        AddOverlayRow(rows, card);
-        AddDisplayModeRow(rows, card, openDisplayModes);
-        AddLaunchRows(rows, card);
-        AddSteamUpdateBlockRow(rows, card);
-        return rows;
+        StackPanel Group() => new() { Spacing = 16 };
+
+        var game = Group();
+        AddIdentityRows(game, card);          // name, bitness, Graphics API (from Game Overrides)
+
+        var launching = Group();
+        AddLaunchRows(launching, card);
+        AddSteamUpdateBlockRow(launching, card);
+
+        var overlay = Group();
+        AddOverlayRow(overlay, card);
+        AddDisplayModeRow(overlay, card, openDisplayModes);
+
+        var reset = Group();
+        AddResetRow(reset, card);             // from Game Overrides
+
+        return new()
+        {
+            ("Game", game),
+            ("Launching", launching),
+            ("Overlay and display", overlay),
+            ("Reset", reset),
+        };
     }
 
     /// <summary>

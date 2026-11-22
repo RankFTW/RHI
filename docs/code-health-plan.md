@@ -197,6 +197,19 @@ These make future features cheaper to build. Do them in this order; each is safe
 
 ---
 
+## Remove Game Overrides in 2.9.8 (user decision, 22 Nov 2026)
+
+Since 2.9.6 every Game Overrides setting is also in its new home, sharing the same code, and Game Overrides shows a note saying it goes away in 2.9.8. In 2.9.8:
+- [ ] Move Reset Overrides' logic out of `BuildShadersAddonsSection` (`DetailPanelBuilder.Overrides.ShadersAddons.cs`, the `resetAction` that also resets the panel's controls) into `DetailPanelBuilder.Overrides.GameShared.cs` (`ResetGameSettings`), which the game settings ⚙'s Reset calls. Today `ResetGameSettings` runs the Game Overrides builder for the game first.
+- [ ] Remove the section: key `GameOverrides` from `SettingsViewModel.DefaultSectionOrder` (migrate saved orders), `OverridesContainer` / `OverridesPanel` / `OverridesHeaderRow` from `MainWindow.xaml` (XAML constraint: removing named elements is fine), `DetailLayoutHost.GetContainer`, the Tabs `FixedTabOrder` tab, Spotlight's Tune tile, `ArrangeOverrides`, its header summary (`MakeSectionSummaryInlines`), `CollapsedDetailSections` entries.
+- [ ] Delete `BuildOverridesPanel` and the `DetailPanelBuilder.Overrides*.cs` parts only it uses (DLL naming boxes, bitness / API / channel / shader / addon combos, `UpdateInclusionHelper` dialog, `OverridesPanelCtx`, `MakeOverridesMovingNote`). Keep the shared files (`RsShared`, `DllShared`, `ApiShared`, `GameShared`) and the DLSS / Driver Settings / Management builders that live in the same partials.
+- [ ] Callers of `BuildOverridesPanel` / `QueueOverridesRebuild` (cogs, Management, Display modes, Load as ASI) stop rebuilding it.
+- [ ] Take out the "same setting as in Game Overrides" wording left in the cogs: the ReShade ⚙ Setup note (`AddRsGameOverridesSection`), the ReShade / Display Commander DLL name tooltips, and the Graphics API help (`MainWindow.Events.Components.ReShadeOverrides.cs`, `.DisplayCommander.cs`). `grep -rn "Game Overrides" RenoDXCommander --include=*.cs` lists every mention.
+- [ ] Update `.claude/rules/rhi-ui.md` (+ `.kiro` copy): section list (6 sections), the two-places rule.
+- [ ] Patch notes: "Game Overrides is gone; its settings are in ..." (once, in 2.9.8).
+
+New homes (2.9.6): game settings ⚙ = Game name, Bitness, Graphics API, Launch executable / arguments, Reset (`DetailLayoutHost.GameSettings.Identity.cs`); RenoDX ⚙ = Mod matching (wiki mod name, wiki lookup; `MainWindow.Events.Components.Rdx.ModMatching.cs`); ReShade ⚙ = Graphics API, channel, DLL name, Load as ASI, Shaders, Addons, preset, Update All, Keep ReShade.ini updated; Display Commander / OptiScaler ⚙ = their DLL names; every component ⚙ = Update All (`MainWindow.Events.Components.UpdateAll.cs`: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK).
+
 ## Tooling and release
 
 - [ ] **CI** (GitHub Actions on `windows-latest`):

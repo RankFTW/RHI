@@ -191,6 +191,8 @@ public sealed partial class MainWindow
                 }, isEnabled: presentIsYes);
             if (!presentIsYes) flagsCombo.Opacity = CogDialog.DisabledOpacity;
 
+            AddUpdateAllSection(cog, card, UpdateAllComponent.Dxvk);
+
             await cog.ShowAsync();
         }
         catch (Exception ex)

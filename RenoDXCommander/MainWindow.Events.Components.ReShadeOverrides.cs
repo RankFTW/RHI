@@ -12,7 +12,7 @@ namespace RenoDXCommander;
 public sealed partial class MainWindow
 {
     /// <summary>
-    /// Adds the "Game overrides" section. Picks that open a dialog (pickers, the Vulkan confirmation) can't open over the
+    /// Adds the Setup and Shaders and addons sections. Picks that open a dialog (pickers, the Vulkan confirmation) can't open over the
     /// cog when it is itself a dialog (Classic layout), so they go through <paramref name="closeThenRun"/>: the cog closes,
     /// the action runs, and the cog opens again. In Tabs / Spotlight the cog isn't a dialog and they run in place.
     /// Returns the ReShade DLL name dropdown (null when not shown) so "Load ReShade as ASI" can grey it out.
@@ -130,21 +130,7 @@ public sealed partial class MainWindow
     {
         var gameName = card.GameName;
         var store = card.Source ?? "";
-        cog.AddSection("Updates");
-        cog.AddCombo("Update All",
-            "Include: Update All and automatic updates update ReShade in this game. Exclude: they leave it as it is. The same choice as "
-            + "the ReShade tick in Game Overrides › Update inclusion." + (card.RequiresVulkanInstall ? " Vulkan games share one ReShade, so this applies to every Vulkan game." : ""),
-            new[] { "Include", "Exclude" },
-            ViewModel.IsUpdateAllExcludedReShade(gameName, store) ? 1 : 0,
-            i =>
-            {
-                bool exclude = i == 1;
-                if (ViewModel.IsUpdateAllExcludedReShade(gameName, store) != exclude)
-                    ViewModel.ToggleUpdateAllExclusionReShade(gameName, store);
-                _detailPanelBuilder?.UpdateDetailComponentRows(card);
-                _detailPanelBuilder?.QueueOverridesRebuild(gameName);
-                cog.SetSuccess(exclude ? "Update All leaves ReShade alone in this game." : "Update All updates ReShade in this game.");
-            });
+        AddUpdateAllSection(cog, card, UpdateAllComponent.ReShade);
 
         cog.AddCombo("Keep ReShade.ini updated",
             "No stops RHI from changing this game's reshade.ini when ReShade is installed or updated, or when you use the Settings buttons that write to all games.",

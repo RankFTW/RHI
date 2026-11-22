@@ -530,6 +530,8 @@ public sealed partial class MainWindow
                     BuildOsNeuralRenderingSection(ctx);
             }
 
+            AddUpdateAllSection(cog, card, UpdateAllComponent.OptiScaler);
+
             // ── Every setting in the game's OptiScaler.ini (all versions) ────
             BuildOsAllSettingsSection(ctx);
 

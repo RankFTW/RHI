@@ -694,8 +694,18 @@ internal sealed partial class DetailLayoutHost
             }
         }
 
+        // The "Game Overrides is going away" note stays on top (until 2.9.8)
+        foreach (var r in rest.Where(r => r is FrameworkElement { Tag: DetailPanelBuilder.OverridesMovingNoteTag }))
+        {
+            TabsTheme.Restyle(r);
+            panel.Children.Add(r);
+        }
         panel.Children.Add(cards);
-        foreach (var r in rest) { TabsTheme.Restyle(r); panel.Children.Add(r); }
+        foreach (var r in rest.Where(r => r is not FrameworkElement { Tag: DetailPanelBuilder.OverridesMovingNoteTag }))
+        {
+            TabsTheme.Restyle(r);
+            panel.Children.Add(r);
+        }
     }
 
     /// <summary>Removes a group's own heading when the card title already says it.</summary>

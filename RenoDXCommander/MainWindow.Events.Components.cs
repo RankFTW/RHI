@@ -308,6 +308,7 @@ public sealed partial class MainWindow
             bool storageExists = Directory.Exists(storageDir);
 
             var cog = new CogDialog("RE Framework", Content.XamlRoot);
+            AddUpdateAllSection(cog, card, UpdateAllComponent.ReFramework);
             cog.AddSection("Files");
             cog.AddIntro("The _storage_ folder in the game folder holds data saved by RE Framework and its scripts. Deleting it clears that data.");
             var foundNote = cog.AddNote(storageExists ? $"Found: {storageDir}" : "No _storage_ folder in the game folder.");

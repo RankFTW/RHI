@@ -257,6 +257,8 @@ public sealed partial class MainWindow
                 dlssHooksCombo.IsTabStop = false;
             }
 
+            AddUpdateAllSection(cog, card, UpdateAllComponent.ReLimiter);
+
             // ── Files ─────────────────────────────────────────────────────────────
             cog.AddSection("Files");
             var openIniBtn = cog.MakeOpenFileButton("Open relimiter.ini", ulIniFile);

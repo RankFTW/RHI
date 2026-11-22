@@ -87,7 +87,7 @@ public sealed partial class MainWindow
             if (_detailPanelBuilder is { } dp)
             {
                 var capturedName = card.GameName;
-                cog.AddSection("Game overrides");
+                cog.AddSection("Setup");
                 AddSharedOverrideCombo(cog, "DLL name",
                     "Renames Display Commander's DLL in this game's folder. -------- uses the default name. Names used by ReShade or OptiScaler aren't listed. Same setting as in Game Overrides.",
                     () => { var (items, sel) = dp.GetDcDllNameChoices(card); return (items, sel); },
@@ -157,6 +157,8 @@ public sealed partial class MainWindow
                 null);
             cog.AddNote("Target Display and Display Commander's ReShade options (global shaders path, screenshots path) are left to its in-game menu. " +
                         "RHI manages ReShade's shader and screenshot folders itself.");
+
+            AddUpdateAllSection(cog, card, UpdateAllComponent.DisplayCommander);
 
             // ── Files ─────────────────────────────────────────────────────────────
             cog.AddSection("Files");

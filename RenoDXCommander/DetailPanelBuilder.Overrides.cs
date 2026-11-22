@@ -62,6 +62,7 @@ public partial class DetailPanelBuilder
 
         _window.OverridesPanel.Children.Clear();
         _window.OverridesHeaderRow.Children.Clear();
+        _window.OverridesPanel.Children.Add(MakeOverridesMovingNote());
 
         var gameName = card.GameName;
         bool isLumaMode = _window.ViewModel.IsLumaEnabled(gameName, card.Source ?? "");
@@ -188,21 +189,11 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(resetBtn, "Reset game name back to auto-detected and clear wiki name mapping.");
         resetBtn.Click += (s, ev) =>
         {
-            var resetName = (originalStoreName ?? gameName).Trim();
+            var resetName = GetOriginalGameName(capturedName);
             detectedBox.Text = resetName;
             wikiBox.Text = "";
-
-            // Persist wiki mapping removal
-            if (_window.ViewModel.GetNameMapping(capturedName) != null)
-                _window.ViewModel.RemoveNameMapping(capturedName);
-
-            // Persist rename back to original if name was changed
-            if (!resetName.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
-            {
-                _window.ViewModel.RenameGame(capturedName, resetName);
-                capturedName = resetName;
-                _window.RequestReselect(resetName);
-            }
+            SetWikiName(capturedName, "");
+            if (RenameGameTo(capturedName, resetName)) capturedName = resetName;
         };
 
         // ── DLL naming override (placed in Top Row right column) ───────────
@@ -484,7 +475,7 @@ public partial class DetailPanelBuilder
         var wikiExcludeCombo = new ComboBox
         {
             ItemsSource = wikiExcludeItems,
-            SelectedItem = _window.ViewModel.IsWikiExcluded(gameName) ? WikiExcludedItem : WikiIncludedItem,
+            SelectedItem = GetWikiLookupDisplay(gameName),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -492,10 +483,7 @@ public partial class DetailPanelBuilder
             "Use wiki: look this game up on the RenoDX and Luma wikis to find its mod.\nIgnore wiki: skip wiki lookups for this game.");
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = wikiExcludeCombo.SelectedItem as string;
-            bool shouldExclude = selected == WikiExcludedItem;
-            if (shouldExclude != _window.ViewModel.IsWikiExcluded(capturedName))
-                _window.ViewModel.ToggleWikiExclusion(capturedName);
+            if (wikiExcludeCombo.SelectedItem is string selected) SetWikiLookup(capturedName, selected);
         };
         Grid.SetColumn(wikiExcludeCombo, 1);
         resetWikiRow.Children.Add(wikiExcludeCombo);
@@ -650,34 +638,17 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(topRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Auto-save: Game name on Enter ────────────────────────────────────────
+        // ── Auto-save: Game name and wiki name on Enter (shared with the game settings ⚙ and the RenoDX ⚙) ──
         detectedBox.KeyDown += (s, e) =>
         {
             if (e.Key != Windows.System.VirtualKey.Enter) return;
-            var det = detectedBox.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(det)) return;
-            if (det.Equals(capturedName, StringComparison.OrdinalIgnoreCase)) return;
-            _window.ViewModel.RenameGame(capturedName, det);
-            _window.RequestReselect(det);
-            capturedName = det;
+            var det = detectedBox.Text?.Trim() ?? "";
+            if (RenameGameTo(capturedName, det)) capturedName = det;
         };
 
-        // ── Auto-save: Wiki name on Enter ────────────────────────────────────────
         wikiBox.KeyDown += (s, e) =>
         {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            var key = wikiBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(key))
-            {
-                var existing = _window.ViewModel.GetNameMapping(capturedName);
-                if (!key.Equals(existing, StringComparison.OrdinalIgnoreCase))
-                    _window.ViewModel.AddNameMapping(capturedName, key);
-            }
-            else
-            {
-                if (_window.ViewModel.GetNameMapping(capturedName) != null)
-                    _window.ViewModel.RemoveNameMapping(capturedName);
-            }
+            if (e.Key == Windows.System.VirtualKey.Enter) SetWikiName(capturedName, wikiBox.Text ?? "");
         };
 
         // ── Per-game Shader mode ComboBox (logic shared with the ReShade ⚙: DetailPanelBuilder.Overrides.RsShared.cs) ──
@@ -754,18 +725,11 @@ public partial class DetailPanelBuilder
             Margin = new Thickness(0, 0, 0, 8),
         };
 
-        var bitnessItems = new[] { "Auto", "32-bit", "64-bit" };
-        var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName, card.Source);
-        var defaultBitnessSelection = currentBitnessOverride switch
-        {
-            "32" => "32-bit",
-            "64" => "64-bit",
-            _ => "Auto",
-        };
+        var defaultBitnessSelection = GetBitnessDisplay(card);
 
         var bitnessCombo = new ComboBox
         {
-            ItemsSource = bitnessItems,
+            ItemsSource = BitnessItems,
             SelectedItem = defaultBitnessSelection,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -773,71 +737,11 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(bitnessCombo,
             "Override the auto-detected bitness for this game. Auto uses PE header detection. 32-bit or 64-bit forces the value.");
 
+        // Shared with the game settings ⚙ (DetailPanelBuilder.Overrides.GameShared.cs)
         bitnessCombo.SelectionChanged += (s, e) =>
         {
-            var selected = bitnessCombo.SelectedItem as string;
-            string? overrideValue = selected switch
-            {
-                "32-bit" => "32",
-                "64-bit" => "64",
-                _ => null,
-            };
-
-            _window.ViewModel.SetBitnessOverride(capturedName, overrideValue, card.Source);
-
-            // Update card.Is32Bit based on selection
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard != null)
-            {
-                var previousIs32Bit = targetCard.Is32Bit;
-
-                // Compute the new effective bitness
-                bool newIs32Bit;
-                if (overrideValue == "32")
-                    newIs32Bit = true;
-                else if (overrideValue == "64")
-                    newIs32Bit = false;
-                else
-                {
-                    // "Auto" — re-resolve from auto-detection
-                    var detectedMachine = _peHeaderService.DetectGameArchitecture(targetCard.InstallPath);
-                    newIs32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine, targetCard.Source ?? "");
-                }
-
-                // If bitness actually changed, uninstall all components BEFORE updating card.Is32Bit
-                // (uninstall methods use card.Is32Bit to resolve filenames of deployed DLLs)
-                if (previousIs32Bit != newIs32Bit && !targetCard.RequiresVulkanInstall)
-                {
-                    if (targetCard.IsRsInstalled)
-                        _window.ViewModel.UninstallReShade(targetCard);
-                    if (targetCard.DcStatus == GameStatus.Installed)
-                        _window.ViewModel.UninstallDc(targetCard);
-                    if (targetCard.InstalledRecord != null)
-                        _window.ViewModel.UninstallMod(targetCard);
-                    if (targetCard.UlStatus == GameStatus.Installed)
-                        _window.ViewModel.UninstallUl(targetCard);
-                    if (targetCard.OsStatus == GameStatus.Installed)
-                        _optiScalerService.Uninstall(targetCard);
-                    if (targetCard.DxvkStatus == GameStatus.Installed)
-                        _window.ViewModel.UninstallDxvk(targetCard);
-                    if (targetCard.RefStatus == GameStatus.Installed)
-                        _window.ViewModel.UninstallREFramework(targetCard);
-                    if (targetCard.LumaStatus == GameStatus.Installed)
-                        _window.ViewModel.UninstallLuma(targetCard);
-                }
-
-                // NOW update card.Is32Bit to the new value
-                targetCard.Is32Bit = newIs32Bit;
-
-                // Update DLL naming section placeholder text to match new bitness
-                rsNameBox.PlaceholderText = targetCard.Is32Bit ? "ReShade32.dll" : "ReShade64.dll";
-
-                targetCard.NotifyAll();
-
-                // Rebuild the detail panel so install buttons reflect the new bitness
-                _window.RequestReselect(capturedName);
-            }
+            if (bitnessCombo.SelectedItem is string selected)
+                ApplyBitnessOverride(card, capturedName, selected, rebuildNow: true);
         };
 
         var bitnessPanel = new Grid { ColumnSpacing = 12 };
