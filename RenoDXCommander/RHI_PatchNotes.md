@@ -19,13 +19,16 @@
 - Reset Overrides moved from Management to the bottom of Game Overrides.
 - What's New now starts with what changed since the version you had, so after a beta update you can see what's different without checking GitHub. The full notes for the version follow underneath as before.
 - Spotlight: the side panel has previous and next arrows at the top, so you can move between Components and the Tune this game sections without closing it. Hover an arrow to see which section it opens.
+- Spotlight: the Filters button opens the engine, mod and saved-search filters in a small pop-up beside the button, so the window's layout no longer changes when you open them.
+- Spotlight: drag the side panel's left edge to make it wider or narrower (double-click the edge to go back to the automatic width). Only the width changes; text and controls stay the same size.
+- Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
+- Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
 
 ### Bug Fixes
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
 - Fixed the mouse wheel not scrolling Settings while the pointer was over the section list on the left or the space beside it.
-- Fixed Driver Settings › Texture Filtering showing Default for games without their own value when you've set LOD Bias, Anisotropic Filtering or Quality globally (for example in Profile Inspector). It now shows the global value, such as Global (High Quality).
-- Fixed Spotlight's game covers needing a restart to fill in from SteamGridDB after saving your SteamGridDB API key.
+- Fixed ReLimiter's overlay key not working when set to a numpad, arrow or punctuation key (RHI wrote names like Num2 that ReLimiter doesn't recognise).
 
 ## v2.9.5
 

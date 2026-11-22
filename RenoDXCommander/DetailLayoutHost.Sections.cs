@@ -69,6 +69,10 @@ internal sealed partial class DetailLayoutHost
         var items = body.Children.ToList();
         body.Children.Clear();
         body.Spacing = 20;
+        // Detailed / Compact switch: Compact hides each row's description, requirements and reason lines
+        _extrasDetails.Clear();
+        _extrasRows.Clear();
+        body.Children.Add(BuildExtrasDensitySwitch());
 
         string title = "Loaders and upscalers";
         var list = new StackPanel();
@@ -101,16 +105,46 @@ internal sealed partial class DetailLayoutHost
             }
             if (byCol.TryGetValue(0, out var c0) && c0.FirstOrDefault() is TextBlock)
                 g.Children.Clear(); // free the controls for their new row (WinUI allows one parent)
-            var row = MakeListRow(byCol);
+            var row = MakeListRow(byCol, _extrasDetails);
             if (row == null) { list.Children.Add(g); continue; }
             rows.Add(row);
+            _extrasRows.Add(row);
             list.Children.Add(row);
         }
         Flush();
+        ApplyExtrasDensity();
     }
 
-    /// <summary>One mockup list row from a Classic 6-column component row.</summary>
-    private static Border? MakeListRow(Dictionary<int, List<FrameworkElement>> byCol)
+    private readonly List<UIElement> _extrasDetails = new();
+    private readonly List<Border> _extrasRows = new();
+
+    /// <summary>"Detailed | Compact" at the top right of Extras; switching only changes visibility (no rebuild).</summary>
+    private FrameworkElement BuildExtrasDensitySwitch()
+    {
+        var host = new Border { Width = 200, HorizontalAlignment = HorizontalAlignment.Right };
+        ToolTipService.SetToolTip(host, "Compact shows just the names and buttons, to save space. Hover a name for its details.");
+        void Fill() => host.Child = TabsTheme.MakeSegmented(new[] { "Detailed", "Compact" },
+            _window.ViewModel.Settings.ExtrasCompact ? 1 : 0, i =>
+            {
+                _window.ViewModel.Settings.ExtrasCompact = i == 1;
+                _window.ViewModel.SaveSettingsPublic();
+                Services.CrashReporter.Log($"[DetailLayoutHost.Extras] {(i == 1 ? "Compact" : "Detailed")}");
+                ApplyExtrasDensity();
+                Fill();
+            }, track: TabsTheme.Card);
+        Fill();
+        return host;
+    }
+
+    private void ApplyExtrasDensity()
+    {
+        bool compact = _window.ViewModel.Settings.ExtrasCompact;
+        foreach (var d in _extrasDetails) d.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var r in _extrasRows) r.Padding = compact ? new Thickness(0, 6, 0, 6) : new Thickness(0, 12, 0, 12);
+    }
+
+    /// <summary>One mockup list row from a Classic 6-column component row. Lines Compact hides go in <paramref name="details"/>.</summary>
+    private static Border? MakeListRow(Dictionary<int, List<FrameworkElement>> byCol, List<UIElement> details)
     {
         FrameworkElement? Col(int i) => byCol.TryGetValue(i, out var l) ? l.FirstOrDefault() : null;
         if (Col(0) is not TextBlock label) return null;
@@ -124,18 +158,21 @@ internal sealed partial class DetailLayoutHost
         nameCol.Children.Add(label);
         if (TooltipText(label) is { Length: > 0 } tip)
         {
-            nameCol.Children.Add(new TextBlock
+            var desc = new TextBlock
             {
                 Text = FirstSentence(tip),
                 FontSize = 13,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = TabsTheme.B(TabsTheme.TextSecondary),
-            });
+            };
+            nameCol.Children.Add(desc);
+            details.Add(desc);
             // Requirement lines from the tooltip ("GPU: …", "Game: …", "API: …"), so what each
             // frame generation tool needs is visible without hovering
             if (RequirementLines(tip) is { } req)
             {
                 nameCol.Children.Add(req);
+                details.Add(req);
                 req.Margin = new Thickness(0, 2, 0, 0);
             }
         }
@@ -176,14 +213,18 @@ internal sealed partial class DetailLayoutHost
         }
 
         if (blockedReason != null)
-            nameCol.Children.Add(new TextBlock
+        {
+            var reason = new TextBlock
             {
                 Text = BlockedSentence(blockedReason),
                 FontSize = 12,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = TabsTheme.B("#F0C35A"),
                 Margin = new Thickness(0, 2, 0, 0),
-            });
+            };
+            nameCol.Children.Add(reason);
+            details.Add(reason);
+        }
 
         foreach (var main in mains)
         {

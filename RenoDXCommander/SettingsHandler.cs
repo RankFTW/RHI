@@ -78,6 +78,8 @@ public partial class SettingsHandler
             _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
             // Initialize ReLimiter Target FPS dropdown
             InitializeUlTargetFpsCombo();
+            // Preset / Move OSD / blackout / OLED Care keys, read from ReLimiter's shared presets file
+            EnsureUlPresetKeyRows();
             // Initialize OptiScaler hotkey display
             _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
             var osCombo = _window.OsHotkeyCombo;

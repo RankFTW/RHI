@@ -109,9 +109,30 @@ public static class HotkeyManager
         if (ctrl) parts.Add("Ctrl");
         if (alt) parts.Add("Alt");
         if (shift) parts.Add("Shift");
-        // ReLimiter expects key names without spaces (e.g. "PageUp" not "Page Up")
-        var keyName = VkNames.TryGetValue(vk, out var name) ? name.Replace(" ", "") : $"0x{vk:X2}";
-        parts.Add(keyName);
+        parts.Add(UlKeyName(vk));
         return string.Join("+", parts);
+    }
+
+    /// <summary>
+    /// The key name ReLimiter reads (its KeyNameToVK in osd.cpp: ImGui names such as "PageUp", "Keypad2",
+    /// "Semicolon", "UpArrow"). Keys it has no name for use the hex form ("0x6A"), which it also reads.
+    /// </summary>
+    public static string UlKeyName(int vk)
+    {
+        if (vk >= 0x30 && vk <= 0x39) return ((char)vk).ToString();   // 0-9
+        if (vk >= 0x41 && vk <= 0x5A) return ((char)vk).ToString();   // A-Z
+        if (vk >= 0x60 && vk <= 0x69) return $"Keypad{vk - 0x60}";     // numpad 0-9
+        if (vk >= 0x70 && vk <= 0x87) return $"F{vk - 0x70 + 1}";     // F1-F24
+        return vk switch
+        {
+            0x08 => "Backspace", 0x09 => "Tab", 0x0D => "Enter", 0x13 => "Pause", 0x14 => "CapsLock",
+            0x1B => "Escape", 0x20 => "Space", 0x21 => "PageUp", 0x22 => "PageDown", 0x23 => "End",
+            0x24 => "Home", 0x25 => "LeftArrow", 0x26 => "UpArrow", 0x27 => "RightArrow", 0x28 => "DownArrow",
+            0x2C => "PrintScreen", 0x2D => "Insert", 0x2E => "Delete", 0x90 => "NumLock", 0x91 => "ScrollLock",
+            0xBA => "Semicolon", 0xBB => "Equal", 0xBC => "Comma", 0xBD => "Minus", 0xBE => "Period",
+            0xBF => "Slash", 0xC0 => "GraveAccent", 0xDB => "LeftBracket", 0xDC => "Backslash",
+            0xDD => "RightBracket", 0xDE => "Apostrophe",
+            _ => $"0x{vk:X2}",
+        };
     }
 }

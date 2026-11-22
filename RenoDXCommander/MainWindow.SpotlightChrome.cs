@@ -104,6 +104,7 @@ public sealed partial class MainWindow
                     if (child is FrameworkElement fe) Grid.SetRowSpan(fe, 2);
             }
 
+            if (!on) HideFiltersFlyout();
             _spotlightOn = on;
             var list = _searchRow.Parent as Grid;
             if (on)

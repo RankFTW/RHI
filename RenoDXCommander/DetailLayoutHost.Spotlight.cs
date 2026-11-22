@@ -358,11 +358,58 @@ internal sealed partial class DetailLayoutHost
         _panelOverlay = new Grid { Visibility = Visibility.Collapsed };
         _panelOverlay.Children.Add(scrim);
         _panelOverlay.Children.Add(_panelSheet);
-        _panelOverlay.SizeChanged += (s, e) =>
-            _panelSheet.Width = Math.Min(e.NewSize.Width, Math.Clamp(e.NewSize.Width * 0.62, 560, 980));
+        _panelOverlay.SizeChanged += (s, e) => ApplyPanelWidth(e.NewSize.Width);
+
+        // Drag the sheet's left edge to set its width (saved; only the width changes, nothing is scaled);
+        // double-click goes back to automatic
+        var settings = _window.ViewModel.Settings;
+        var grip = new Controls.ResizeGrip(horizontal: true)
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(-5, 0, 0, 0), // half outside the sheet, so it doesn't cover the content
+            Reference = () => _window.LayoutRoot,
+        };
+        ToolTipService.SetToolTip(grip, "Drag to change the panel's width. Double-click to reset.");
+        double dragStart = 0;
+        grip.DragStarted += () => dragStart = _panelSheet.ActualWidth;
+        grip.DragDelta += dx =>
+        {
+            // The edge is on the left: dragging left (negative) makes the sheet wider
+            settings.SpotlightPanelWidth = Math.Round(Math.Clamp(dragStart - dx, PanelMinWidth, MaxPanelWidth()));
+            ApplyPanelWidth(_panelOverlay.ActualWidth);
+        };
+        grip.DragCompleted += () =>
+        {
+            _window.ViewModel.SaveSettingsPublic();
+            CrashReporter.Log($"[Spotlight.Panel] Width set to {settings.SpotlightPanelWidth:0}");
+        };
+        grip.Reset += () =>
+        {
+            settings.SpotlightPanelWidth = 0;
+            ApplyPanelWidth(_panelOverlay.ActualWidth);
+            _window.ViewModel.SaveSettingsPublic();
+            CrashReporter.Log("[Spotlight.Panel] Width back to automatic");
+        };
+        sheetGrid.Children.Add(grip);
+        Grid.SetRowSpan(grip, 2);
         Grid.SetColumnSpan(_panelOverlay, 2);
         Grid.SetRowSpan(_panelOverlay, 2);
         _window.GameViewPanel.Children.Add(_panelOverlay);
+    }
+
+    private const double PanelMinWidth = 420;
+
+    /// <summary>The widest the panel may be: leaves a strip of the page showing so the scrim can close it.</summary>
+    private double MaxPanelWidth() => Math.Max(PanelMinWidth, (_panelOverlay?.ActualWidth ?? 0) - 80);
+
+    /// <summary>The user's dragged width (kept inside the page), else automatic: 62% of the page, 560-980.</summary>
+    private void ApplyPanelWidth(double pageWidth)
+    {
+        if (_panelSheet == null || pageWidth <= 0) return;
+        double w = _window.ViewModel.Settings.SpotlightPanelWidth;
+        _panelSheet.Width = w > 0
+            ? Math.Min(pageWidth, Math.Clamp(w, PanelMinWidth, Math.Max(PanelMinWidth, pageWidth - 80)))
+            : Math.Min(pageWidth, Math.Clamp(pageWidth * 0.62, 560, 980));
     }
 
     /// <summary>Opens a section (or Overview's component cards) in the slide-in panel.</summary>

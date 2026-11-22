@@ -324,14 +324,7 @@ public sealed partial class MainWindow
 
             case PadAction.Filters:
                 if (popup != null || !onGames || _filtersBtn == null) break;
-                _filtersOpen = !_filtersOpen;
-                RefreshTabsChrome();
-                AfterLayout(() =>
-                {
-                    if (_filtersOpen && _chipsRow != null && FocusManager.FindFirstFocusableElement(_chipsRow) is { } chip)
-                        PadFocus(chip);
-                    else FocusHome(xamlRoot);
-                });
+                PadToggleFilters(xamlRoot);
                 break;
         }
 

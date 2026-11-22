@@ -2574,7 +2574,7 @@
                                                     Content="Write to all ReLimiter games"
                                                     Click="ApplyUlOsdHotkey_Click"
                                                     Style="{StaticResource SettingsPrimaryButtonStyle}" Foreground="{StaticResource SettingsButtonBlueBrush}"
-                                                    ToolTipService.ToolTip="Writes the overlay key, Shared presets, DLSS hooks and Target FPS into every game's relimiter.ini. Skips hidden games.">
+                                                    ToolTipService.ToolTip="Writes the overlay key, the preset, Move OSD, blackout and OLED Care keys, Shared presets, DLSS hooks and Target FPS into every game's relimiter.ini. Skips hidden games.">
                                                 <Button.Resources>
                                                     <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="SettingsButtonBlueBrush"/>
                                                     <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="SettingsButtonBlueBrush"/>

@@ -149,7 +149,7 @@ public sealed partial class MainWindow
         _filtersBtn = new Button { Padding = new Thickness(10, 0, 10, 0), Visibility = Visibility.Collapsed };
         TabsTheme.Apply(_filtersBtn, TabsTheme.IconButton, height: 30, fontSize: 12);
         _filtersBtn.CornerRadius = new CornerRadius(6);
-        _filtersBtn.Click += (s, e) => { _filtersOpen = !_filtersOpen; RefreshTabsChrome(); };
+        _filtersBtn.Click += (s, e) => ToggleFilters();
         _countsGrid.Children.Add(_filtersBtn);
         // Spotlight only: cog with the strip's options (covers above / below the page, no background)
         _countsGrid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = GridLength.Auto });
@@ -509,7 +509,8 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(_filtersBtn, extra > 0
             ? $"Filters ({extra} on): engine and mod filters, and your saved searches"
             : "Filters: engine and mod filters, and your saved searches");
-        _chipsRow.Visibility = _filtersOpen ? Visibility.Visible : Visibility.Collapsed;
+        // Spotlight shows the chips in a flyout instead (MainWindow.SpotlightFilters.cs)
+        _chipsRow.Visibility = _filtersOpen && !_spotlightOn ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Filter icon + "Filters"; Spotlight shows the icon only (and the count when filters are on).</summary>

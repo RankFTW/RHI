@@ -206,6 +206,7 @@ public partial class SettingsHandler
             bool sharedPresets = ViewModel.Settings.UlSharedPresets;
             bool dlssHooks = ViewModel.Settings.UlDlssHooks;
             int targetFps = ViewModel.Settings.UlTargetFps;
+            var presetKeys = ReLimiterPresetKeys.ReadAll(); // the preset / blackout / OLED Care keys
             int updatedCount = 0;
             foreach (var card in ViewModel.AllCards)
             {
@@ -224,6 +225,7 @@ public partial class SettingsHandler
                     AuxInstallService.ApplyUlSharedPresets(iniFile, sharedPresets);
                     AuxInstallService.ApplyUlDlssHooks(iniFile, dlssHooks);
                     AuxInstallService.ApplyUlTargetFps(iniFile, targetFps);
+                    WriteUlPresetKeysTo(iniFile, presetKeys);
 
                     // RE Framework games also store relimiter.ini in _storage_
                     if (card.IsRefInstalled)
@@ -235,6 +237,7 @@ public partial class SettingsHandler
                             AuxInstallService.ApplyUlSharedPresets(storagePath, sharedPresets);
                             AuxInstallService.ApplyUlDlssHooks(storagePath, dlssHooks);
                             AuxInstallService.ApplyUlTargetFps(storagePath, targetFps);
+                            WriteUlPresetKeysTo(storagePath, presetKeys);
                         }
                     }
 
@@ -256,6 +259,7 @@ public partial class SettingsHandler
                     AuxInstallService.ApplyUlSharedPresets(AuxInstallService.UlIniPath, sharedPresets);
                     AuxInstallService.ApplyUlDlssHooks(AuxInstallService.UlIniPath, dlssHooks);
                     AuxInstallService.ApplyUlTargetFps(AuxInstallService.UlIniPath, targetFps);
+                    WriteUlPresetKeysTo(AuxInstallService.UlIniPath, presetKeys);
                 }
                 catch (Exception ex)
                 {

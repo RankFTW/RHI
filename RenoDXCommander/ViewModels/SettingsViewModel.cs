@@ -154,8 +154,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _spotlightShelfAtBottom;
     /// <summary>Spotlight: the search / filters / covers strip has no panel colour of its own (it shows the page colour).</summary>
     [ObservableProperty] private bool _spotlightShelfPlain;
+    /// <summary>Extras (Tabs / Spotlight): names and buttons only, no descriptions or requirements.</summary>
+    [ObservableProperty] private bool _extrasCompact;
     /// <summary>Spotlight banner height set by dragging its bottom edge; 0 = automatic (follows the window width).</summary>
     [ObservableProperty] private double _spotlightHeroHeight;
+    /// <summary>Spotlight side panel width in layout units; 0 = automatic (62% of the page, 560-980).</summary>
+    [ObservableProperty] private double _spotlightPanelWidth;
     /// <summary>Spotlight cover size set by dragging the cover strip's edge (1 = 120 x 180).</summary>
     [ObservableProperty] private double _spotlightCoverScale = 1.0;
     /// <summary>Top bar size in percent (every layout), on top of the interface size. Drag its bottom edge or Settings › General.</summary>
@@ -500,7 +504,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("RhiOverlayPauseGame", out var ropVal)) RhiOverlayPauseGame = ropVal == "true"; // default false
         if (s.TryGetValue("SpotlightShelfAtBottom", out var ssbVal)) SpotlightShelfAtBottom = ssbVal == "true"; // default false (top)
         if (s.TryGetValue("SpotlightShelfPlain", out var sshpVal)) SpotlightShelfPlain = sshpVal == "true"; // default false (panel colour)
+        if (s.TryGetValue("ExtrasCompact", out var excVal)) ExtrasCompact = excVal == "true"; // default false (detailed)
         if (s.TryGetValue("SpotlightHeroHeight", out var shhVal) && double.TryParse(shhVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var shh)) SpotlightHeroHeight = shh;
+        if (s.TryGetValue("SpotlightPanelWidth", out var spwVal) && double.TryParse(spwVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var spw)) SpotlightPanelWidth = spw;
         if (s.TryGetValue("PatchNotesFontSize", out var pnfVal) && double.TryParse(pnfVal, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pnf) && pnf > 0) PatchNotesFontSize = pnf;
         if (s.TryGetValue("PatchNotesNavHidden", out var pnhVal)) PatchNotesNavHidden = pnhVal == "true";
         if (s.TryGetValue("ColorTheme", out var ctVal) && !string.IsNullOrWhiteSpace(ctVal)) ColorTheme = ctVal;
@@ -705,7 +711,9 @@ public partial class SettingsViewModel : ObservableObject
         s["RhiOverlayPauseGame"] = RhiOverlayPauseGame ? "true" : "false";
         s["SpotlightShelfAtBottom"] = SpotlightShelfAtBottom ? "true" : "false";
         s["SpotlightShelfPlain"] = SpotlightShelfPlain ? "true" : "false";
+        s["ExtrasCompact"] = ExtrasCompact ? "true" : "false";
         s["SpotlightHeroHeight"] = SpotlightHeroHeight.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+        s["SpotlightPanelWidth"] = SpotlightPanelWidth.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesFontSize"] = PatchNotesFontSize.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
         s["PatchNotesNavHidden"] = PatchNotesNavHidden ? "true" : "false";
         s["SpotlightCoverScale"] = SpotlightCoverScale.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
