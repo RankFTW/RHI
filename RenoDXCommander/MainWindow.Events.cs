@@ -543,7 +543,8 @@ public sealed partial class MainWindow
             try
             {
                 var installPath = card.InstallPath;
-                await Task.Run(() => AuxInstallService.CopyUlIni(installPath));
+                var major = MainViewModel.UlInstalledMajor(card);
+                await Task.Run(() => AuxInstallService.CopyUlIni(installPath, major));
                 card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
             }
             catch (Exception ex)

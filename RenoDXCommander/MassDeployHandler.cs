@@ -99,7 +99,7 @@ public class MassDeployHandler
                 {
                     try
                     {
-                        AuxInstallService.CopyUlIni(card.InstallPath);
+                        AuxInstallService.CopyUlIni(card.InstallPath, MainViewModel.UlInstalledMajor(card));
                         count++;
                     }
                     catch (Exception ex)

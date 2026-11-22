@@ -400,7 +400,7 @@ public partial class MainViewModel
             var newVer = ReadUlAddonVersion(destPath);
             CrashReporter.Log($"[MainViewModel.InstallUlAsync] Deployed {(pinnedTag ?? "latest")} ({(newVer == null ? "no version" : UlV4Rules.DisplayVersion(newVer))}) to '{destPath}'");
 
-            // v3 ↔ v4: the old relimiter.ini doesn't carry over; the game gets a fresh one with only RHI's lines
+            // v3 ↔ v4: the old relimiter.ini doesn't carry over; the game gets the template without the other version's keys
             bool iniReset = false;
             if (oldMajor != null && newVer != null && oldMajor != newVer.Major)
                 iniReset = ResetUlIniForMajorChange(card, oldMajor.Value, newVer.Major);
@@ -434,10 +434,8 @@ public partial class MainViewModel
                 // Display modes: the frame rate cap / OSD key this game swaps keep its current mode's values
                 var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath, DisplayModeItemKeys.ReLimiterItems);
 
-                // Deploy relimiter.ini from AppData if not already present in game folder.
-                // v4 never gets the template (it's a v3 ini): a fresh one with only RHI's lines instead.
-                if (newVer?.Major >= UlV4Rules.V4Major) WriteFreshUlIniIfAbsent(card.InstallPath);
-                else AuxInstallService.DeployUlIniIfAbsent(card.InstallPath);
+                // relimiter.ini from the template when the game has none, without the other major version's keys
+                WriteUlIniIfAbsent(card.InstallPath, newVer?.Major ?? 3);
 
                 // Disable driver FPS limiter for this game (conflicts with ReLimiter)
                 try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }

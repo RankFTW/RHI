@@ -221,4 +221,51 @@ public class UlV4RulesTests
     [Fact]
     public void BackupName_Names_The_Old_Major() =>
         Assert.Equal("relimiter.ini.v3-backup", UlV4Rules.BackupName(3));
+
+    private const string Template = "[FrameLimiter]\nosd_toggle_key=F12\nadaptive_smoothing=true\nsmoothing_window=dual\n"
+        + "pacing_preference=latency\nnative_pcl_enabled=true\nconfig_version=6\ntarget_fps=0\n\n"
+        + "[OSD_Preset_1]\nshow_gpu_power=true\nshow_jitter=true\nshow_fps=true\n";
+
+    [Fact]
+    public void SeededIni_V4_DropsV3OnlyKeys_KeepsTheRest()
+    {
+        var ini = UlV4Rules.BuildSeededIni(Template, 4, "PageUp", sharedPresets: false, dlssHooks: false, targetFps: 0);
+        Assert.DoesNotContain("adaptive_smoothing", ini);
+        Assert.DoesNotContain("smoothing_window", ini);
+        Assert.DoesNotContain("show_gpu_power", ini);
+        Assert.Contains("pacing_preference=latency", ini);
+        Assert.Contains("show_jitter=true", ini);
+        Assert.Contains("show_fps=true", ini);
+        Assert.Contains("osd_toggle_key=F12", ini); // the template's key wins over RHI's setting
+        Assert.DoesNotContain("PageUp", ini);
+    }
+
+    [Fact]
+    public void SeededIni_V3_DropsV4OnlyKeys()
+    {
+        var ini = UlV4Rules.BuildSeededIni(Template, 3, null, sharedPresets: true, dlssHooks: true, targetFps: 141);
+        Assert.DoesNotContain("pacing_preference", ini);
+        Assert.DoesNotContain("native_pcl_enabled", ini);
+        Assert.DoesNotContain("config_version", ini);
+        Assert.DoesNotContain("show_jitter", ini);
+        Assert.Contains("adaptive_smoothing=true", ini);
+        Assert.Contains("show_gpu_power=true", ini);
+        Assert.Contains("shared_presets=true", ini);
+        Assert.Contains("dlss_info_hooks=true", ini);
+        Assert.Contains("target_fps=141", ini);
+        Assert.DoesNotContain("target_fps=0", ini);
+    }
+
+    [Fact]
+    public void SeededIni_NoTemplateOrEmpty_IsTheFreshIni()
+    {
+        var fresh = UlV4Rules.BuildFreshIni("F1", true, true, 60, nativePcl: true);
+        Assert.Equal(fresh, UlV4Rules.BuildSeededIni(null, 4, "F1", true, true, 60, nativePcl: true));
+        Assert.Equal(fresh, UlV4Rules.BuildSeededIni("[UltraLimiter]", 4, "F1", true, true, 60, nativePcl: true));
+    }
+
+    [Fact]
+    public void SeededIni_V4WithPcl_AddsNativePcl() =>
+        Assert.Contains("native_pcl_enabled=true",
+            UlV4Rules.BuildSeededIni("[FrameLimiter]\nosd_toggle_key=F12\n", 4, null, false, false, 0, nativePcl: true));
 }

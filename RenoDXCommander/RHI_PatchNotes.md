@@ -23,6 +23,7 @@
 - Spotlight: drag the side panel's left edge to make it wider or narrower (double-click the edge to go back to the automatic width). Only the width changes; text and controls stay the same size.
 - Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
 - Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
+- ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
 
 ### Bug Fixes
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.

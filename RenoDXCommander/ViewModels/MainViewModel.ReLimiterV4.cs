@@ -244,10 +244,27 @@ public partial class MainViewModel
 
     // ── relimiter.ini on a major version change ─────────────────────────────────
 
-    /// <summary>A fresh relimiter.ini with the current RHI settings (OSD key, shared presets, DLSS info hooks, frame rate cap).</summary>
-    private string FreshUlIniText(bool v4) => UlV4Rules.BuildFreshIni(
-        _settingsViewModel.UlOsdHotkey, _settingsViewModel.UlSharedPresets, _settingsViewModel.UlDlssHooks, _settingsViewModel.UlTargetFps,
-        nativePcl: v4 && PclAllowed());
+    /// <summary>
+    /// A relimiter.ini for a game on this major version: the user's template (inis\relimiter.ini) without the other
+    /// version's keys, plus RHI's settings (OSD key, shared presets, DLSS info hooks, frame rate cap, v4 PC Latency).
+    /// No template = only RHI's lines.
+    /// </summary>
+    private string UlIniTextFor(int major)
+    {
+        string? template = null;
+        try { if (File.Exists(AuxInstallService.UlIniPath)) template = File.ReadAllText(AuxInstallService.UlIniPath); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[MainViewModel.UlIniTextFor] template — {ex.Message}");
+        }
+        return UlV4Rules.BuildSeededIni(template, major,
+            _settingsViewModel.UlOsdHotkey, _settingsViewModel.UlSharedPresets, _settingsViewModel.UlDlssHooks, _settingsViewModel.UlTargetFps,
+            nativePcl: major >= UlV4Rules.V4Major && PclAllowed());
+    }
+
+    /// <summary>The major version of the ReLimiter installed in this game (its addon's FileVersion), or null.</summary>
+    internal static int? UlInstalledMajor(GameCardViewModel card)
+        => ReadUlAddonVersion(FindUlAddon(card.InstallPath, card.Is32Bit))?.Major;
 
     /// <summary>
     /// The user allowed PC Latency in Settings › Components › ReLimiter (their account is in Performance Log Users,
@@ -275,19 +292,19 @@ public partial class MainViewModel
         }
     }
 
-    /// <summary>Writes a fresh relimiter.ini (RHI's lines only) next to the addon when the game has none. Never throws.</summary>
-    private void WriteFreshUlIniIfAbsent(string installPath)
+    /// <summary>Writes relimiter.ini from the template (see <see cref="UlIniTextFor"/>) next to the addon when the game has none. Never throws.</summary>
+    private void WriteUlIniIfAbsent(string installPath, int major)
     {
         var ini = Path.Combine(ModInstallService.GetAddonDeployPath(installPath), UlV4Rules.IniName);
         try
         {
             if (File.Exists(ini)) return;
-            File.WriteAllText(ini, FreshUlIniText(v4: true)); // only called for v4 installs
-            CrashReporter.Log($"[MainViewModel.WriteFreshUlIniIfAbsent] Wrote a fresh relimiter.ini to '{ini}'");
+            File.WriteAllText(ini, UlIniTextFor(major));
+            CrashReporter.Log($"[MainViewModel.WriteUlIniIfAbsent] Wrote relimiter.ini for v{major} to '{ini}'");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            CrashReporter.Log($"[MainViewModel.WriteFreshUlIniIfAbsent] '{ini}' — {ex.Message}");
+            CrashReporter.Log($"[MainViewModel.WriteUlIniIfAbsent] '{ini}' — {ex.Message}");
         }
     }
 
@@ -299,7 +316,7 @@ public partial class MainViewModel
     private bool ResetUlIniForMajorChange(GameCardViewModel card, int oldMajor, int newMajor)
     {
         var keepModes = AuxInstallService.KeepDisplayModeValues(card.InstallPath, DisplayModeItemKeys.ReLimiterItems);
-        var content = FreshUlIniText(v4: newMajor >= UlV4Rules.V4Major);
+        var content = UlIniTextFor(newMajor);
         bool replaced = Replace(Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), UlV4Rules.IniName), whenAbsent: true);
         if (card.IsRefInstalled)
         {

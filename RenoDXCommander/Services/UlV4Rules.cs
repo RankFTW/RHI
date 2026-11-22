@@ -172,6 +172,89 @@ internal static class UlV4Rules
     /// <summary>Name of the backup made when a game's relimiter.ini is replaced on a major version change. Pure.</summary>
     internal static string BackupName(int oldMajor) => $"{IniName}.v{oldMajor}-backup";
 
+    // ── Seeding a game's relimiter.ini from the user's template ──────────────────
+    // Keys only one major version reads (from ReLimiter's config.cpp, v3.3.5 vs v4.0.1, Nov 2026). Everything else is
+    // shared, or is a v3 pacing key v4 already ignores and drops itself (its kRemovedKeys). Matched in every section
+    // (the OSD preset sections carry the show_* keys).
+
+    /// <summary>Keys v3 reads and v4 doesn't: left out when a v4 game is seeded from the template.</summary>
+    internal static readonly HashSet<string> V3OnlyKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "adaptive_smoothing", "osd_show_adaptive_smoothing", "smoothing_percentile", "smoothing_window", "smoothing_bias_us",
+        "dmfg_output_cap", "osd_show_gpu_power", "show_gpu_power", "osd_show_pqi_breakdown", "show_pqi_breakdown",
+    };
+
+    /// <summary>Keys v4 reads and v3 doesn't: left out when a v3 game is seeded from the template.</summary>
+    internal static readonly HashSet<string> V4OnlyKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "advanced_settings", "config_version", "control_file", "developer_settings", "pacing_preference", "pacing_test_mode",
+        "native_pcl_enabled", "hang_report", "hang_report_dump", "hang_report_test_after_s", "hook_installer_thread",
+        "flip_metering_off", "lead_queue_correction",
+        "fg_flip_gate_give_back", "fg_present_ahead", "fg_present_order", "fg_present_order_trailing",
+        "fg_render_break_every", "fg_render_break_window", "fg_separate_presenter_hold",
+        "gpu_present_gate_probes", "gpu_queue_probe", "gpu_queue_probe_source", "gpu_wait_ab_interleave_s",
+        "gpu_wait_late_guard", "gpu_wait_present_first", "gpu_wait_start_limit",
+        "unified_hold_share", "unified_queue_allow_us", "unified_queue_law", "unified_queue_margin_end",
+        "unified_queue_need_frames", "unified_queue_rank", "unified_queue_upstream",
+        "osd_show_jitter", "show_jitter", "osd_show_native_pcl", "show_native_pcl", "osd_show_native_pcl_breakdown",
+        "show_native_pcl_breakdown", "osd_show_pacing_quality", "show_pacing_quality",
+    };
+
+    /// <summary>The template's lines without the keys the other major version uses (comments and sections kept). Pure.</summary>
+    internal static List<string> StripOtherVersionKeys(IEnumerable<string> lines, int major)
+    {
+        var drop = major >= V4Major ? V3OnlyKeys : V4OnlyKeys;
+        var result = new List<string>();
+        foreach (var line in lines)
+        {
+            var t = line.TrimStart();
+            int eq = t.IndexOf('=');
+            if (eq > 0 && !t.StartsWith(';') && !t.StartsWith('#') && drop.Contains(t[..eq].Trim())) continue;
+            result.Add(line);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// A game's relimiter.ini from the user's template (Settings' relimiter.ini in RHI's inis folder): the template
+    /// without the other major version's keys, plus RHI's settings: shared presets / DLSS info / frame rate cap when
+    /// they're on, the OSD key when the template has none, and for v4 native PC Latency. No template (or an empty
+    /// one) = <see cref="BuildFreshIni"/>. Pure.
+    /// </summary>
+    internal static string BuildSeededIni(string? template, int major, string? osdKey, bool sharedPresets, bool dlssHooks,
+        int targetFps, bool nativePcl = false)
+    {
+        bool v4 = major >= V4Major;
+        var lines = (template ?? "").Replace("\r\n", "\n").Split('\n').ToList();
+        if (!lines.Any(l => { var t = l.Trim(); return t.Contains('=') && !t.StartsWith(';') && !t.StartsWith('#'); }))
+            return BuildFreshIni(osdKey, sharedPresets, dlssHooks, targetFps, nativePcl && v4);
+
+        lines = StripOtherVersionKeys(lines, major);
+        while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
+        const string S = "FrameLimiter";
+        if (!string.IsNullOrWhiteSpace(osdKey) && !HasKey(lines, S, "osd_toggle_key"))
+            lines = ReLimiterPresetKeys.SetKey(lines, S, "osd_toggle_key", osdKey.Trim());
+        if (sharedPresets) lines = ReLimiterPresetKeys.SetKey(lines, S, "shared_presets", "true");
+        if (dlssHooks) lines = ReLimiterPresetKeys.SetKey(lines, S, "dlss_info_hooks", "true");
+        if (targetFps > 0) lines = ReLimiterPresetKeys.SetKey(lines, S, "target_fps", targetFps.ToString());
+        if (v4 && nativePcl) lines = ReLimiterPresetKeys.SetKey(lines, S, "native_pcl_enabled", "true");
+        return string.Join("\r\n", lines) + "\r\n";
+    }
+
+    private static bool HasKey(List<string> lines, string section, string key)
+    {
+        string? current = null;
+        foreach (var raw in lines)
+        {
+            var t = raw.Trim();
+            if (t.StartsWith('[') && t.EndsWith(']')) { current = t[1..^1].Trim(); continue; }
+            int eq = t.IndexOf('=');
+            if (eq > 0 && string.Equals(current, section, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(t[..eq].Trim(), key, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// A fresh relimiter.ini with only the lines RHI writes (OSD key, shared presets, DLSS info hooks, frame rate cap,
     /// and for v4 native PC Latency on). ReLimiter fills in everything else with its own defaults on first start. Pure.
