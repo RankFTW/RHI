@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56162,
-  "generated": "2026-11-23T01:26:50Z",
+  "game_count": 56165,
+  "generated": "2026-11-23T03:26:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -19405,8 +19405,18 @@
     "Bird Game": {
       "steam_appid": 791700
     },
+    "Bird Hunter 2003: Legendary Hunting": {
+      "opengl": true,
+      "config_path": "<path-to-game>\\Scripts\\",
+      "engine": "Serious Engine"
+    },
     "Bird Hunter: Upland Edition": {
       "config_path": "<path-to-game>\\Upland.cfg"
+    },
+    "Bird Hunter: Waterfowl Edition": {},
+    "Bird Hunter: Wild Wings Edition": {
+      "config_path": "<path-to-game>\\Home\\Default.cfg, <path-to-game>\\Home\\DefCmds.cfg, <path-to-game>\\Home\\DefEquip.cfg",
+      "engine": "Sunstorm Engine 3"
     },
     "Bird Memory": {
       "steam_appid": 983200
