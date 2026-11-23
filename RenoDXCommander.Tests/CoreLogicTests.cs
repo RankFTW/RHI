@@ -310,6 +310,103 @@ public class CoreLogicTests
         }
     }
 
+    [Fact]
+    public void ApplyPeakNits_UnityLowerCaseKey_KeepsSpellingAndAddsNoMerge()
+    {
+        // Unity RenoDX mods save "toneMapPeakNits" (lower-case t); ReShade's ini is case-sensitive.
+        var tempFile = Path.GetTempFileName();
+        var prevEnabled = AuxInstallService.GlobalPeakNitsEnabled;
+        var prevPresets = AuxInstallService.GlobalPeakNitsPresets;
+        try
+        {
+            File.WriteAllText(tempFile,
+                "[renodx-preset1]\r\ntoneMapGameNits=203\r\ntoneMapPeakNits=800\r\nToneMapSDRClip=1.5\r\n" +
+                "[renodx-preset2]\r\nToneMapPeakNits=510\r\ntoneMapPeakNits=400\r\n" +
+                "[renodx-preset3]\r\nfxBloom=50\r\n");
+            AuxInstallService.GlobalPeakNitsEnabled = true;
+            AuxInstallService.GlobalPeakNitsPresets = new HashSet<int> { 1, 2, 3 };
+
+            AuxInstallService.ApplyPeakNits(tempFile, 1000);
+            var lines = File.ReadAllLines(tempFile);
+
+            // Preset 1: mod's own spelling updated, nothing added, other keys untouched
+            Assert.Equal(new[] { "[renodx-preset1]", "toneMapGameNits=203", "toneMapPeakNits=1000", "ToneMapSDRClip=1.5" }, lines[..4]);
+            // Preset 2: both spellings kept as separate lines, both updated
+            Assert.Equal(new[] { "[renodx-preset2]", "ToneMapPeakNits=1000", "toneMapPeakNits=1000" }, lines[4..7]);
+            // Preset 3: neither spelling, so both are added
+            Assert.Equal(new[] { "[renodx-preset3]", "fxBloom=50", "toneMapPeakNits=1000", "ToneMapPeakNits=1000" }, lines[7..]);
+            Assert.Contains("\r\n", File.ReadAllText(tempFile));
+        }
+        finally
+        {
+            AuxInstallService.GlobalPeakNitsEnabled = prevEnabled;
+            AuxInstallService.GlobalPeakNitsPresets = prevPresets;
+            File.Delete(tempFile);
+        }
+    }
+
+    [Theory]
+    [InlineData("renodx-unityengine.addon64", "toneMapPeakNits", "ToneMapPeakNits")]
+    [InlineData("renodx-ue-extended.addon64", "ToneMapPeakNits", "toneMapPeakNits")]
+    public void ApplyPeakNits_NewKey_UsesSpellingFoundInAddon(string addonName, string inAddon, string notInAddon)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "rhi-nits-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var ini = Path.Combine(dir, "reshade.ini");
+        var prevEnabled = AuxInstallService.GlobalPeakNitsEnabled;
+        var prevPresets = AuxInstallService.GlobalPeakNitsPresets;
+        try
+        {
+            // Fake addon: the key name as plain text among other bytes, split over no particular boundary
+            var bytes = new byte[5 * 1024 * 1024];
+            var key = System.Text.Encoding.ASCII.GetBytes(inAddon);
+            key.CopyTo(bytes, 4 * 1024 * 1024 - 5); // straddles the 4 MB read buffer
+            File.WriteAllBytes(Path.Combine(dir, addonName), bytes);
+            // Preset 1 has both spellings (left by older RHI versions): the one the addon doesn't use is removed
+            File.WriteAllText(ini, $"[GENERAL]\nEffectSearchPaths=.\\reshade-shaders\\Shaders\\**\n[renodx-preset1]\n{inAddon}=510\n{notInAddon}=510\n");
+            AuxInstallService.GlobalPeakNitsEnabled = true;
+            AuxInstallService.GlobalPeakNitsPresets = new HashSet<int> { 1, 2 };
+
+            AuxInstallService.ApplyPeakNits(ini, 900);
+            var content = File.ReadAllText(ini);
+
+            Assert.Contains($"{inAddon}=900", content);
+            Assert.DoesNotContain($"{notInAddon}=", content);
+            Assert.Contains("[renodx-preset2]", content);
+        }
+        finally
+        {
+            AuxInstallService.GlobalPeakNitsEnabled = prevEnabled;
+            AuxInstallService.GlobalPeakNitsPresets = prevPresets;
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void ApplyPeakNits_SkipsUncheckedPresets()
+    {
+        var tempFile = Path.GetTempFileName();
+        var prevEnabled = AuxInstallService.GlobalPeakNitsEnabled;
+        var prevPresets = AuxInstallService.GlobalPeakNitsPresets;
+        try
+        {
+            File.WriteAllText(tempFile, "[renodx-preset1]\ntoneMapPeakNits=800\n[renodx-preset2]\ntoneMapPeakNits=600\n");
+            AuxInstallService.GlobalPeakNitsEnabled = true;
+            AuxInstallService.GlobalPeakNitsPresets = new HashSet<int> { 1 };
+
+            AuxInstallService.ApplyPeakNits(tempFile, 1000);
+            var content = File.ReadAllText(tempFile);
+
+            Assert.Equal("[renodx-preset1]\ntoneMapPeakNits=1000\n[renodx-preset2]\ntoneMapPeakNits=600\n", content);
+        }
+        finally
+        {
+            AuxInstallService.GlobalPeakNitsEnabled = prevEnabled;
+            AuxInstallService.GlobalPeakNitsPresets = prevPresets;
+            File.Delete(tempFile);
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════════
     // 7. PeakNitsPresets serialization — HashSet round-trips through JSON
     // ═══════════════════════════════════════════════════════════════════════════════

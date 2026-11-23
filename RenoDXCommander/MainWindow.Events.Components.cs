@@ -230,27 +230,36 @@ public sealed partial class MainWindow
             cog.AddSection("Files");
             var openIniBtn = cog.MakeOpenFileButton("Open ReShade.ini", reshadeIniPath);
 
-            var deployIniBtn = cog.MakeButton("Deploy ReShade.ini", CogButtonKind.Primary, () =>
+            var deployIniBtn = cog.MakeButton("Deploy ReShade.ini", CogButtonKind.Primary, async () =>
             {
                 var screenshotPath = BuildScreenshotSavePath(card.GameName);
                 var overlayHotkey = ViewModel.Settings.OverlayHotkey;
                 var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-                if (card.RequiresVulkanInstall)
+                var installPath = card.InstallPath;
+                var gameName = card.GameName;
+                bool vulkan = card.RequiresVulkanInstall;
+                bool nativeHdr = card.UseUeExtended && card.Status == GameStatus.Installed;
+
+                // File work off the UI thread (peak nits may read the RenoDX addon to find its key spelling)
+                await Task.Run(() =>
                 {
-                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                    VulkanFootprintService.Create(card.InstallPath);
-                    ViewModel.DeployShadersForCard(card.GameName);
-                }
-                else
-                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+                    if (vulkan)
+                    {
+                        AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                        VulkanFootprintService.Create(installPath);
+                    }
+                    else
+                        AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
 
-                if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+                    if (nativeHdr)
+                        AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
 
-                // Force-apply manifest [renodx] INI overrides on redeploy
-                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
-                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var cogIniOvr))
-                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, cogIniOvr, forceOverwrite: true);
+                    // Force-apply manifest [renodx] INI overrides on redeploy
+                    if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                        && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(gameName, out var cogIniOvr))
+                        AuxInstallService.ApplyRenodxIniOverrides(installPath, cogIniOvr, forceOverwrite: true);
+                });
+                if (vulkan) ViewModel.DeployShadersForCard(gameName);
 
                 openIniBtn.IsEnabled = File.Exists(reshadeIniPath);
                 cog.SetSuccess("ReShade.ini deployed.");

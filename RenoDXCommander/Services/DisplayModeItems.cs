@@ -402,97 +402,15 @@ public static class DisplayModeItems
         Write = (c, v) => WriteRdx(c.ReShadeIni, iniKey, v),
     };
 
-    // The spelling depends on the mod: Unity / generic RenoDX mods save "toneMapPeakNits", others (e.g. UE-Extended)
-    // "ToneMapPeakNits". ReShade's ini is case-sensitive, and RHI's global peak brightness always wrote the capital-T
-    // spelling, so a section can hold both: then the lower-case one came from the mod and is read first. Writes go to
-    // every spelling present (line by line, nothing else in the file is touched); a section with neither gets both.
+    // Line-by-line edits in both key spellings (Unity mods use "toneMapPeakNits", others "ToneMapPeakNits"): RenoDxPresetIni.
+    internal static string? ReadRdx(string iniPath, string iniKey) => RenoDxPresetIni.Read(iniPath, iniKey);
 
-    /// <summary>The value from the first [renodx-preset*] section that has it (as a whole number). RenoDX's own spelling wins.</summary>
-    internal static string? ReadRdx(string iniPath, string iniKey)
-    {
-        if (!File.Exists(iniPath)) return null;
-        string? exact = null, other = null;
-        bool inPreset = false;
-        foreach (var raw in File.ReadAllLines(iniPath))
-        {
-            var line = raw.Trim();
-            if (line.StartsWith('['))
-            {
-                inPreset = line.StartsWith("[renodx-preset", StringComparison.OrdinalIgnoreCase);
-                continue;
-            }
-            if (!inPreset || line.StartsWith(';')) continue;
-            int eq = line.IndexOf('=');
-            if (eq <= 0) continue;
-            var k = line[..eq].Trim();
-            var v = line[(eq + 1)..].Trim();
-            if (exact == null && k.Equals(iniKey, StringComparison.Ordinal)) exact = v;
-            else if (other == null && k.Equals(iniKey, StringComparison.OrdinalIgnoreCase)) other = v;
-            if (exact != null) break;
-        }
-        var value = exact ?? other;
-        if (value == null) return null;
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
-            ? ((int)Math.Round(d)).ToString(CultureInfo.InvariantCulture) : value;
-    }
-
-    /// <summary>
-    /// Writes the value to every [renodx-preset*] section (all spellings of the key; RenoDX's spelling is added to a
-    /// section that has none, and [renodx-preset1] is created when there's no preset section), like the RenoDX ⚙.
-    /// </summary>
+    /// <summary>Writes the value to every [renodx-preset*] section (all spellings), like the RenoDX ⚙.</summary>
     internal static string? WriteRdx(string iniPath, string iniKey, string value)
     {
         if (!File.Exists(iniPath)) return "reshade.ini wasn't found";
-        var text = File.ReadAllText(iniPath);
-        var eol = text.Contains("\r\n") ? "\r\n" : "\n";
-        var lines = text.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
-        bool endsWithNewline = text.EndsWith('\n');
-        if (endsWithNewline && lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
-
-        int presets = 0;
-        for (int i = 0; i < lines.Count; i++)
-        {
-            if (!lines[i].Trim().StartsWith("[renodx-preset", StringComparison.OrdinalIgnoreCase)) continue;
-            presets++;
-            int end = i + 1;
-            while (end < lines.Count && !lines[end].Trim().StartsWith('[')) end++;
-            bool found = false;
-            int lastKey = i;
-            for (int j = i + 1; j < end; j++)
-            {
-                var t = lines[j].Trim();
-                if (t.Length == 0 || t.StartsWith(';')) continue;
-                lastKey = j;
-                int eq = t.IndexOf('=');
-                if (eq > 0 && t[..eq].Trim().Equals(iniKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    lines[j] = t[..eq].Trim() + "=" + value;
-                    found = true;
-                }
-            }
-            if (!found)
-            {
-                lines.InsertRange(lastKey + 1, Spellings(iniKey).Select(k => k + "=" + value));
-                end += Spellings(iniKey).Count;
-            }
-            i = end - 1;
-        }
-        if (presets == 0)
-        {
-            if (lines.Count > 0 && lines[^1].Trim().Length > 0) lines.Add("");
-            lines.Add("[renodx-preset1]");
-            lines.AddRange(Spellings(iniKey).Select(k => k + "=" + value));
-        }
-        File.WriteAllText(iniPath, string.Join(eol, lines) + (endsWithNewline || presets == 0 ? eol : ""));
+        RenoDxPresetIni.Write(iniPath, iniKey, value);
         return null;
-    }
-
-    /// <summary>Both spellings RenoDX mods use for a key: "toneMapPeakNits" and "ToneMapPeakNits".</summary>
-    private static IReadOnlyList<string> Spellings(string iniKey)
-    {
-        var lower = char.ToLowerInvariant(iniKey[0]) + iniKey[1..];
-        var upper = char.ToUpperInvariant(iniKey[0]) + iniKey[1..];
-        return lower == upper ? new[] { iniKey } : new[] { lower, upper };
     }
 
     /// <summary>Every reshade*.ini in the game folder (keys go in all of them, like the ReShade ⚙).</summary>

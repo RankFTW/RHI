@@ -1327,44 +1327,17 @@ public partial class AuxInstallService
     }
 
     /// <summary>
-    /// Writes the ToneMapPeakNits value to all [renodx-preset*] sections in the given
-    /// reshade.ini file. If no preset section exists, creates [renodx-preset1].
+    /// Writes the peak nits value to the checked [renodx-preset*] sections in the given reshade.ini
+    /// (creating checked sections that are missing). Line by line, in both key spellings: Unity mods
+    /// read "toneMapPeakNits", others "ToneMapPeakNits" (see RenoDxPresetIni).
     /// </summary>
     public static void ApplyPeakNits(string iniFilePath, int peakNits)
     {
         if (peakNits <= 0 || !File.Exists(iniFilePath)) return;
         if (!GlobalPeakNitsEnabled) return;
 
-        var ini = ParseIni(File.ReadAllLines(iniFilePath));
-
-        // Write to existing preset sections that are checked
-        var written = new HashSet<int>();
-        foreach (var section in ini)
-        {
-            if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
-            {
-                var numPart = section.Key.Substring("renodx-preset".Length);
-                if (int.TryParse(numPart, out var presetNum))
-                {
-                    if (!GlobalPeakNitsPresets.Contains(presetNum))
-                        continue; // Skip presets the user didn't check
-
-                    section.Value["ToneMapPeakNits"] = peakNits.ToString();
-                    written.Add(presetNum);
-                }
-            }
-        }
-
-        // Auto-create missing preset sections that are checked
-        foreach (var presetNum in GlobalPeakNitsPresets)
-        {
-            if (!written.Contains(presetNum))
-            {
-                ini[$"renodx-preset{presetNum}"] = new OrderedDict { ["ToneMapPeakNits"] = peakNits.ToString() };
-            }
-        }
-
-        WriteIni(iniFilePath, ini);
+        RenoDxPresetIni.Write(iniFilePath, "toneMapPeakNits",
+            peakNits.ToString(System.Globalization.CultureInfo.InvariantCulture), GlobalPeakNitsPresets.ToList());
     }
 
     /// <summary>

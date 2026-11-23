@@ -13,29 +13,44 @@
 - **HSF test builds by drag and drop.** Drop an HSF build's zip on RHI, straight from Discord or as a saved file, and pick the game. RHI installs it like a release, keeps your HSF settings, and leaves it in place until the next HSF release instead of putting the current release back over it. A build set to XeMFG offers Universal MFG Unlocker too.
 
 ### Changes
-- ReLimiter v4 can now be picked in every game in the ReLimiter cog › Version, including 32-bit, Vulkan, DXVK and OpenGL games. v4 is only tested in 64-bit DirectX 12, so these games stay on v3 unless you choose v4, and the cog says it's untested there.
-- ReShade's ⚙ has a new Game overrides section with ReShade Channel, Shaders, Addons, ReShade DLL name and Select ReShade Preset. They're the same settings as in Game Overrides, which keeps them too, so a change in one place shows in the other.
-- Installing ReLimiter v4 now warns first in games where it won't work as intended: when Dynamic Multi Frame Generation (DMFG) is turned on in the game's NVIDIA driver settings (turn it off in DLSS / Streamline › Multi Frame Gen), or when Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock or DLSS Enabler is installed from Extras. Choose Install anyway to go ahead. ReLimiter's ⚙ › Version shows the same warnings.
-- The game's ⚙ (Game settings) now has Launch executable and Launch arguments, the same settings as in Game Overrides, which keeps them too. Both now also save when you press Enter.
-- Display Commander's ⚙ and OptiScaler's ⚙ now have their DLL name, the same setting as in Game Overrides, which keeps it too.
-- Reset Overrides moved from Management to the bottom of Game Overrides.
+
+**Game Overrides is moving**
+- Game Overrides goes away in RHI 2.9.8. Each of its settings is already in the place you'd look for it, and until then a change in either place shows in both.
+- The game's settings ⚙ (next to its name) now has Game name, Bitness, Graphics API, Launch executable and arguments, and Reset this game's settings (the same as Reset Overrides), in four groups: Game, Launching, Overlay and display, and Reset. The launch options also save when you press Enter.
+- The RenoDX ⚙ has a new Mod matching section with the wiki mod name and wiki lookup.
+- Every component's ⚙ (ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK) has an Update All row, Include or Exclude, in place of Game Overrides › Update inclusion.
+- ReShade's ⚙ is reorganised into Setup (Graphics API, ReShade channel, ReShade DLL name, Load ReShade as ASI), Shaders and addons (Shaders, Addons, Select ReShade Preset), Hotkeys, Updates (Update All, Keep ReShade.ini updated) and Files.
+- Display Commander's ⚙ and OptiScaler's ⚙ have their DLL name.
+
+**General**
 - What's New now starts with what changed since the version you had, so after a beta update you can see what's different without checking GitHub. The full notes for the version follow underneath as before.
-- Spotlight: the side panel has previous and next arrows at the top, so you can move between Components and the Tune this game sections without closing it. Hover an arrow to see which section it opens.
-- Spotlight: the Filters button opens the engine, mod and saved-search filters in a small pop-up beside the button, so the window's layout no longer changes when you open them.
-- Spotlight: drag the side panel's left edge to make it wider or narrower (double-click the edge to go back to the automatic width). Only the width changes; text and controls stay the same size.
-- Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
-- Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
-- ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
 - When GitHub stops accepting your GitHub token (it expired or was revoked), RHI now tells you in a pop-up instead of only a line in the status bar, with a link to make a new token and a button to Settings. It shows once per token.
-- ReShade's ⚙ is reorganised into Setup (Graphics API, ReShade channel, ReShade DLL name, Load ReShade as ASI), Shaders and addons, Hotkeys, Updates and Files. Graphics API is new there, the same setting as in Game Overrides, and Updates has a new Update All choice (whether Update All updates ReShade in this game, the same as its tick in Game Overrides › Update inclusion) next to Keep ReShade.ini updated.
-- Game Overrides is moving. Each of its settings is now also where you'd look for it, and Game Overrides goes away in RHI 2.9.8: Game name, Bitness, Graphics API, launch options and Reset are in the game's settings ⚙ (next to its name); the wiki mod name and wiki lookup are in the RenoDX ⚙ (Mod matching); the ReShade settings are in the ReShade ⚙; DLL names are in each component's ⚙; and every component's ⚙ has an Update All row (Include / Exclude) in place of Update inclusion. A change in either place shows in both.
+
+**Spotlight**
+- The side panel has previous and next arrows at the top, so you can move between Components and the Tune this game sections without closing it. Hover an arrow to see which section it opens.
+- Drag the side panel's left edge to make it wider or narrower (double-click the edge to go back to the automatic width). Only the width changes; text and controls stay the same size.
+- The Filters button opens the engine, mod and saved-search filters in a small pop-up beside the button, so the window's layout no longer changes when you open them.
+
+**Extras**
+- Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
+
+**ReLimiter**
+- ReLimiter v4 can now be picked in every game in ReLimiter's ⚙ › Version, including 32-bit, Vulkan, DXVK and OpenGL games. v4 is only tested in 64-bit DirectX 12, so these games stay on v3 unless you choose v4, and the ⚙ says it's untested there.
+- Installing ReLimiter v4 now warns first in games where it won't work as intended: when Dynamic Multi Frame Generation (DMFG) is turned on in the game's NVIDIA driver settings (turn it off in DLSS / Streamline › Multi Frame Gen), or when Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock or DLSS Enabler is installed from Extras. Choose Install anyway to go ahead. ReLimiter's ⚙ › Version shows the same warnings.
+- ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
+- Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
 
 ### Bug Fixes
-- Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.
-- Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
-- Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
+
+**General**
 - Fixed the mouse wheel not scrolling Settings while the pointer was over the section list on the left or the space beside it.
+- Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
+- Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.
+
+**Components**
 - Fixed ReLimiter's overlay key not working when set to a numpad, arrow or punctuation key (RHI wrote names like Num2 that ReLimiter doesn't recognise).
+- Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
+- Fixed RHI's peak brightness not applying to Unity RenoDX mods, and RHI removing a toneMapPeakNits line you added to reshade.ini yourself. Unity mods spell the setting toneMapPeakNits while other mods use ToneMapPeakNits, and RHI only wrote the second. RHI now writes the spelling the installed mod uses (from Settings, the RenoDX ⚙ and Deploy ReShade.ini) and removes the other spelling that older versions added.
 
 ## v2.9.5
 

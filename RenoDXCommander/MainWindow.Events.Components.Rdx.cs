@@ -44,12 +44,10 @@ public sealed partial class MainWindow
                     {
                         var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
 
-                        // Extract current nits value
-                        var presetWithNits = ini.FirstOrDefault(kv =>
-                            kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
-                            && kv.Value.ContainsKey("ToneMapPeakNits"));
-                        if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("ToneMapPeakNits", out var nv))
-                            currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
+                        // Current nits value (the mod's own key spelling first: Unity mods use toneMapPeakNits)
+                        currentNits = RenoDxPresetIni.Read(iniPath, "toneMapPeakNits") ?? currentNits;
+                        // Reads the addon's key spelling now (cached), so the nits row's write on the UI thread stays quick
+                        RenoDxPresetIni.SpellingsForMod(iniPath, "toneMapPeakNits");
 
                         // Extract renodx section
                         if (ini.TryGetValue("renodx", out var section))
@@ -121,24 +119,10 @@ public sealed partial class MainWindow
             }
             try
             {
-                var freshIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                int updated = 0;
-                foreach (var section in freshIni)
-                {
-                    if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
-                    {
-                        section.Value["ToneMapPeakNits"] = val.ToString();
-                        updated++;
-                    }
-                }
-                if (updated == 0)
-                {
-                    freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["ToneMapPeakNits"] = val.ToString() };
-                    updated = 1;
-                }
-                AuxInstallService.WriteIni(iniPath, freshIni);
+                // Line by line in both spellings (Unity mods read toneMapPeakNits, others ToneMapPeakNits)
+                int updated = RenoDxPresetIni.Write(iniPath, "toneMapPeakNits", val.ToString());
                 nitsBox.Text = val.ToString();
-                cog.SetSuccess($"Set ToneMapPeakNits to {val} in {updated} preset(s).");
+                cog.SetSuccess($"Set peak nits to {val} in {updated} preset(s).");
                 CrashReporter.Log($"[MainWindow.AddRdxNitsRow] ToneMapPeakNits={val} in {updated} preset(s) of '{iniPath}'");
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
