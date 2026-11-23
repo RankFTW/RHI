@@ -35,6 +35,7 @@
 
 **Extras**
 - Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
+- MFG Unlock's ⚙ has a new DLSS 5 section for MFG Unlock 1.12.0, which can run NVIDIA's DLSS 5 neural rendering on the game's frames in DirectX 12 and Vulkan games. Turning it on installs NVIDIA's nvngx_dlssnr.dll beside the game's exe (MFG Unlock doesn't include it), and turning it off or removing MFG Unlock removes it again unless something else still uses it. Restart the game once after turning it on; Ctrl+F8 then turns it on and off in the game. The ⚙ warns when another DLSS 5 add-on is installed in the game, since MFG Unlock's DLSS 5 stands aside while one is loaded.
 
 **ReLimiter**
 - ReLimiter v4 is now the default for every game on an NVIDIA card, whatever its graphics API: 32-bit, Vulkan, DXVK, OpenGL and DirectX 9, 10 and 11 games move to v4 like DirectX 12 games, on their next update. v4 is only tested in 64-bit DirectX 12, so ReLimiter's ⚙ › Version says when it's untested in a game; pick v3 there if it doesn't work well. PCs without an NVIDIA card stay on v3.
@@ -51,6 +52,7 @@
 - Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.
 
 **Components**
+- Fixed switching or removing a Neural Rendering method deleting nvngx_dlssnr.dll even when the NR Cost Scaler wasn't installed, which took the DLL from other components still using it (such as MFG Unlock's DLSS 5).
 - Fixed ReLimiter's overlay key not working when set to a numpad, arrow or punctuation key (RHI wrote names like Num2 that ReLimiter doesn't recognise).
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed RHI's peak brightness not applying to Unity RenoDX mods, and RHI removing a toneMapPeakNits line you added to reshade.ini yourself. Unity mods spell the setting toneMapPeakNits while other mods use ToneMapPeakNits, and RHI only wrote the second. RHI now writes the spelling the installed mod uses (from Settings, the RenoDX ⚙ and Deploy ReShade.ini) and removes the other spelling that older versions added.

@@ -555,6 +555,9 @@ public partial class Rtx40MfgService
             {
                 foreach (var g in list.Where(g => !g.AdaInstalled && HasAdaXessMarker(g.InstallPath)))
                     RemoveAdaXessFiles(g.InstallPath);
+                // The NR DLL RHI installed for the mod's DLSS 5 (1.12.0+), when the mod went some other way
+                foreach (var g in list.Where(g => !g.AdaInstalled && OwnsNrDll(g.InstallPath, MfgUnlockNrOwnerName)))
+                    RemoveNrDll(g.InstallPath, MfgUnlockNrOwnerName);
 
                 var withMod = list.Where(g => g.AdaInstalled).Select(g => g.InstallPath)
                     .Distinct(StringComparer.OrdinalIgnoreCase).ToList();

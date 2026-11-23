@@ -1,7 +1,7 @@
-// Rtx40MfgService.Dlss5.cs — Universal MFG Unlocker: the optional NVIDIA NR DLL (nvngx_dlssnr.dll) for the mod's
+// Rtx40MfgService.Dlss5.cs — Universal MFG Unlocker and MFG Unlock: the optional NVIDIA NR DLL (nvngx_dlssnr.dll) for the mods'
 // DLSS 5 tab (docs/menu.md, "DLSS 5": the tab appears when a DLL that supports the card is beside the game's exe).
 // The mod doesn't ship or download it. RHI copies only that DLL beside the exe, with no add-on or host, and records
-// "Umfg" as an owner in rhi_install.txt's shared files so other NR components (DLSS5 Tool, ShortFuse, Feeder,
+// "Umfg" (or "MfgUnlock", MFG Unlock 1.12.0+'s [DLSS5]) as an owner in rhi_install.txt's shared files so other NR components (DLSS5 Tool, ShortFuse, Feeder,
 // OptiScaler, RTX Encore) keep it while they still use it. A game's own DLL (no .original beside it) is never
 // replaced, and a copy another RHI component placed keeps that component's version.
 
@@ -16,6 +16,8 @@ public partial class Rtx40MfgService
 {
     /// <summary>Owner name for the NR DLL in rhi_install.txt's shared files.</summary>
     public const string NrOwnerName = "Umfg";
+    /// <summary>Owner name for MFG Unlock's (MFGAdaUnlock) claim on the same DLL.</summary>
+    public const string MfgUnlockNrOwnerName = "MfgUnlock";
     public const string NrDllName   = "nvngx_dlssnr.dll";
 
     /// <summary>dlss_manifest.json "dlssnr" version NVIDIA made for RTX 50 and newer (signed, unmodified).</summary>
@@ -29,11 +31,11 @@ public partial class Rtx40MfgService
 
     public enum NrDeployResult { Deployed, Replaced, AlreadySelected, SharedWithOther, GamesOwn, Failed }
 
-    /// <summary>True when the mod is recorded as an owner of the NR DLL beside the exe.</summary>
-    public static bool OwnsNrDll(string installPath)
+    /// <summary>True when <paramref name="owner"/> (default Universal MFG Unlocker) is recorded as an owner of the NR DLL beside the exe.</summary>
+    public static bool OwnsNrDll(string installPath, string owner = NrOwnerName)
         => !string.IsNullOrEmpty(installPath)
            && RhiInstallManifest.GetSharedFileOwners(installPath, NrDllName)
-                  .Contains(NrOwnerName, StringComparer.OrdinalIgnoreCase);
+                  .Contains(owner, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Puts <paramref name="cachedNrPath"/> beside the exe as nvngx_dlssnr.dll for the mod's DLSS 5 tab.
@@ -41,7 +43,7 @@ public partial class Rtx40MfgService
     /// only by the mod (or nobody) and different → replaced, behind the NR Cost Scaler's proxy when installed.
     /// RHI's copy owned by another component → kept as is (its version), the mod is added as an owner.
     /// </summary>
-    public NrDeployResult DeployNrDll(string installPath, string cachedNrPath)
+    public NrDeployResult DeployNrDll(string installPath, string cachedNrPath, string owner = NrOwnerName)
     {
         var dest     = Path.Combine(installPath, NrDllName);
         var sentinel = dest + ".original";
@@ -51,8 +53,8 @@ public partial class Rtx40MfgService
             {
                 File.Copy(cachedNrPath, dest, overwrite: false);
                 if (!File.Exists(sentinel)) File.WriteAllBytes(sentinel, Array.Empty<byte>());
-                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
-                _crashReporter.Log($"[Rtx40MfgService.DeployNrDll] Copied {NrDllName} to '{installPath}'");
+                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, owner);
+                _crashReporter.Log($"[Rtx40MfgService.DeployNrDll] {owner}: copied {NrDllName} to '{installPath}'");
                 return NrDeployResult.Deployed;
             }
             if (!File.Exists(sentinel))
@@ -61,22 +63,22 @@ public partial class Rtx40MfgService
                 return NrDeployResult.GamesOwn;
             }
             var others = RhiInstallManifest.GetSharedFileOwners(installPath, NrDllName)
-                .Where(o => !o.Equals(NrOwnerName, StringComparison.OrdinalIgnoreCase)).ToList();
+                .Where(o => !o.Equals(owner, StringComparison.OrdinalIgnoreCase)).ToList();
             if (others.Count > 0)
             {
-                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
-                _crashReporter.Log($"[Rtx40MfgService.DeployNrDll] {NrDllName} in '{installPath}' belongs to {string.Join(", ", others)} — kept, mod added as an owner");
+                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, owner);
+                _crashReporter.Log($"[Rtx40MfgService.DeployNrDll] {NrDllName} in '{installPath}' belongs to {string.Join(", ", others)} — kept, {owner} added as an owner");
                 return NrDeployResult.SharedWithOther;
             }
             var real = DlssNrCostScalerService.ResolveRealNrDllPath(dest);
             if (VulkanLayerService.FilesIdentical(cachedNrPath, real))
             {
-                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
+                RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, owner);
                 return NrDeployResult.AlreadySelected;
             }
             if (!DlssNrCostScalerService.ReplaceRealNrDll(dest, cachedNrPath))
                 File.Copy(cachedNrPath, dest, overwrite: true);
-            RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, NrOwnerName);
+            RhiInstallManifest.AddSharedFileOwner(installPath, NrDllName, owner);
             _crashReporter.Log($"[Rtx40MfgService.DeployNrDll] Replaced RHI's {NrDllName} in '{installPath}'");
             return NrDeployResult.Replaced;
         }
@@ -91,12 +93,12 @@ public partial class Rtx40MfgService
     /// Drops the mod's claim on the NR DLL and removes it (sentinel restore) when nothing else owns it.
     /// No-op when the mod never installed it. Kept while the NR Cost Scaler is installed (its uninstall puts the real DLL back first).
     /// </summary>
-    public void RemoveNrDll(string installPath)
+    public void RemoveNrDll(string installPath, string owner = NrOwnerName)
     {
-        if (!OwnsNrDll(installPath)) return;
-        if (!RhiInstallManifest.RemoveSharedFileOwner(installPath, NrDllName, NrOwnerName))
+        if (!OwnsNrDll(installPath, owner)) return;
+        if (!RhiInstallManifest.RemoveSharedFileOwner(installPath, NrDllName, owner))
         {
-            _crashReporter.Log($"[Rtx40MfgService.RemoveNrDll] {NrDllName} in '{installPath}' still used by another component — kept");
+            _crashReporter.Log($"[Rtx40MfgService.RemoveNrDll] {owner}: {NrDllName} in '{installPath}' still used by another component — kept");
             return;
         }
         var dest = Path.Combine(installPath, NrDllName);

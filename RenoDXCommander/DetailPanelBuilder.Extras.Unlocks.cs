@@ -57,10 +57,11 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Unlock — DLSS multi frame generation (3x to 6x) on RTX 40, DLSS frame generation on RTX 20 and 30 (experimental), and Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to 50, as a ReShade add-on.\n"
+        ToolTipService.SetToolTip(label, "MFG Unlock — DLSS multi frame generation (3x to 6x) on RTX 40, DLSS frame generation on RTX 20 and 30 (experimental), and Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to 50, and NVIDIA's DLSS 5 neural rendering on the game's frames, as a ReShade add-on.\n"
+            + "DLSS 5: off by default; turn it on in the ⚙, which also installs NVIDIA's nvngx_dlssnr.dll beside the game's exe. Works in DirectX 12 and Vulkan games on RTX cards, best in games with DLSS Super Resolution or Ray Reconstruction.\n"
             + "Methods: DLSS-G (NVIDIA's generator), XeMFG DLSS-G (Intel's model inside the game's DLSS frame generation) and XeMFG (Intel's model with its own presentation).\n"
-            + "Game: DLSS-G and XeMFG DLSS-G need the game's DLSS Frame Generation, or Add frame generation (experimental) in games with DLSS Super Resolution only. XeMFG can also use the game's XeSS or FSR 3.1 frame generation, or DLSS upscaling.\n"
-            + "API: DirectX 12, Vulkan experimental. 64-bit games only. Needs ReShade with add-on support. Not for games with anti-cheat.");
+            + "Game: DLSS-G and XeMFG DLSS-G need the game's DLSS Frame Generation, or Add frame generation (experimental) in games with DLSS Super Resolution only. XeMFG can also use the game's XeSS or FSR 3.1 frame generation, or DLSS upscaling. DLSS 5 works in any DirectX 12 or Vulkan game.\n"
+            + "API: DirectX 12, Vulkan experimental (DLSS 5: DirectX 12 and Vulkan, no DirectX 11). 64-bit games only. Needs ReShade with add-on support. Not for games with anti-cheat.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -269,7 +270,11 @@ public partial class DetailPanelBuilder
 
                 // RHI's copies of Intel's XeSS files (hashing runs off the UI thread)
                 var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
-                _ = Task.Run(() => mfgSvc.RemoveAdaXessFiles(installPath));
+                _ = Task.Run(() =>
+                {
+                    mfgSvc.RemoveAdaXessFiles(installPath);
+                    mfgSvc.RemoveNrDll(installPath, Rtx40MfgService.MfgUnlockNrOwnerName); // DLSS 5's NR DLL, if RHI installed it for the mod
+                });
 
                 // Also remove from addon selections so SyncGameFolder doesn't redeploy it.
                 // MFG Ada Unlock installed via Extras greys out the picker toggle — the user
@@ -388,7 +393,8 @@ public partial class DetailPanelBuilder
 
         cog.AddIntro("MFG Unlock unlocks DLSS multi frame generation (3x to 6x) on RTX 40 Series GPUs, " +
                      "brings DLSS frame generation (DLSS-G and XeMFG DLSS-G) to RTX 20 and 30 Series GPUs (experimental), " +
-                     "and runs Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs.");
+                     "runs Intel XeSS multi frame generation (XeMFG, 2x to 6x) on RTX 20 to RTX 50 Series GPUs, " +
+                     "and can run NVIDIA's DLSS 5 neural rendering on the game's frames (DLSS 5 below).");
 
         // Graphics API support, from the mod's README (1.10.1). Dual-API games with
         // DirectX 12 get no warning: the user can run the DX12 version.
@@ -481,6 +487,10 @@ public partial class DetailPanelBuilder
         cog.AddNote("If XeMFG doesn't start, other copies of Intel's libxess_fg.dll or libxell.dll elsewhere in the game folder may be a " +
                     "different version: use Install / update files in the mod's panel.");
 
+        // [DLSS5] (1.12.0): NVIDIA's DLSS 5 neural rendering, plus the NR DLL it needs
+        AddMfgUnlockDlss5Section(cog, card, iniPath, apis);
+
+        cog.AddSection("Files");
         cog.AddNote("Other settings are in the mod's panel in the ReShade overlay.");
         openIniBtn = cog.MakeOpenFileButton("Open MFGAdaUnlock.ini", string.IsNullOrEmpty(iniPath) ? null : iniPath);
         cog.AddButtons(

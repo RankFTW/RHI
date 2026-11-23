@@ -291,6 +291,17 @@ public class DlssNrCostScalerService
     // ── Uninstall ─────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// True when <paramref name="nrDllPath"/> is the Cost Scaler's proxy: its ini sits beside it (the install
+    /// always adds it, the uninstall removes it), or it's the same file as the staged proxy.
+    /// </summary>
+    private bool IsProxy(string nrDllPath, string iniPath)
+    {
+        if (File.Exists(iniPath)) return true;
+        var staged = Path.Combine(_stagingDir, ProxyDllName);
+        return File.Exists(staged) && VulkanLayerService.FilesIdentical(staged, nrDllPath);
+    }
+
+    /// <summary>
     /// Called BEFORE the NR method uninstall runs.
     /// Restores _real.dll → nvngx_dlssnr.dll so the normal NR uninstall can handle it.
     /// </summary>
@@ -312,11 +323,15 @@ public class DlssNrCostScalerService
                 File.Move(realDst, proxyDst);
                 _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Restored '{ProxyDllName}' from '{RealDllName}'");
             }
-            else if (File.Exists(proxyDst))
+            else if (File.Exists(proxyDst) && IsProxy(proxyDst, iniDst))
             {
                 // No _real — proxy was deployed to a game with no prior NR DLL. Delete it.
                 File.Delete(proxyDst);
+                _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Deleted the proxy '{ProxyDllName}' (no real DLL behind it)");
             }
+            // Otherwise nvngx_dlssnr.dll is a real NR DLL (the Cost Scaler isn't installed here): leave it.
+            // Every NR method switch / removal calls this first, and deleting it unconditionally removed the
+            // NR DLL other components still owned (MFG Unlock's DLSS 5 after ShortFuse was removed, Nov 2026).
 
             try { if (File.Exists(iniDst))   File.Delete(iniDst);   } catch (Exception ex) { _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Failed to delete '{IniFileName}' — {ex.Message}"); }
             try { if (File.Exists(addonDst)) File.Delete(addonDst); } catch (Exception ex) { _crashReporter.Log($"[DlssNrCostScalerService.Uninstall] Failed to delete '{CompanionAddonName}' — {ex.Message}"); }
