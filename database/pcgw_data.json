@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56158,
-  "generated": "2026-11-22T23:26:50Z",
+  "game_count": 56162,
+  "generated": "2026-11-23T01:26:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -19404,6 +19404,9 @@
     },
     "Bird Game": {
       "steam_appid": 791700
+    },
+    "Bird Hunter: Upland Edition": {
+      "config_path": "<path-to-game>\\Upland.cfg"
     },
     "Bird Memory": {
       "steam_appid": 983200
@@ -71459,6 +71462,7 @@
     "Great Battle IV: Navy Field IV": {
       "steam_appid": 481890
     },
+    "Great Battles Medieval": {},
     "Great Battles of the American Civil War": {
       "steam_appid": 1025550
     },
@@ -78468,6 +78472,7 @@
       "config_path": "<path-to-game>\\Config\\key_binding.txt",
       "engine": "CloakNT"
     },
+    "History Egypt: Engineering an Empire": {},
     "History in Letters - The Eternal Alchemist": {
       "steam_appid": 318680
     },
@@ -78477,6 +78482,7 @@
     "History Warriors": {
       "steam_appid": 1150580
     },
+    "History's Ice Road Truckers": {},
     "History's Legends of War: Patton": {},
     "Historyline: 1914-1918": {},
     "HIT": {
@@ -161423,8 +161429,7 @@
     "Sword of the Sea": {
       "steam_appid": 2453160,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\Config\\Windows",
-      "config_path_xbox": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\Config\\Windows",
+      "config_path": "%LOCALAPPDATA%\\SwordOfTheSea\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
     "Sword of the Slayer": {
