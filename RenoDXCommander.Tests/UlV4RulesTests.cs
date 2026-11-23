@@ -29,29 +29,36 @@ public class UlV4RulesTests
         Assert.False(string.IsNullOrEmpty(v.Reason));
     }
 
+    // Since 23 Nov 2026 (user decision) v4 is the default for every game on an NVIDIA card
     [Theory]
     [InlineData(true, false, false, false)]   // 32-bit
     [InlineData(false, true, false, false)]   // Vulkan
     [InlineData(false, false, true, false)]   // DXVK
     [InlineData(false, false, false, true)]   // OpenGL
-    public void Untested_Setups_Are_Allowed_With_A_Note_But_Never_Automatic(bool is32, bool vulkan, bool dxvk, bool openGl)
+    public void Untested_Setups_Are_Automatic_With_A_Note(bool is32, bool vulkan, bool dxvk, bool openGl)
     {
-        var v = Check(is32, vulkan, dxvk, openGl);   // even when the game also lists DX12
+        var v = Check(is32, vulkan, dxvk, openGl);
         Assert.True(v.Allowed);
-        Assert.False(v.Auto);
+        Assert.True(v.Auto);
         Assert.Null(v.Reason);
         Assert.Contains("untested", v.Note);
+        Assert.Contains("pick v3", v.Note);
     }
 
-    [Theory]
-    [InlineData(false)]  // not DX12
-    [InlineData(true)]   // unknown
-    public void Not_Dx12_Is_Allowed_With_A_Note_But_Not_Automatic(bool unknown)
+    [Fact]
+    public void Not_Dx12_Is_Automatic_With_A_Note()
     {
-        var v = Check(dx12: unknown ? UlDx12State.Unknown : UlDx12State.No);
-        Assert.True(v.Allowed);
-        Assert.False(v.Auto);
-        Assert.False(string.IsNullOrEmpty(v.Note));
+        var v = Check(dx12: UlDx12State.No);
+        Assert.True(v.Auto);
+        Assert.Contains("DirectX 12", v.Note);
+    }
+
+    [Fact]
+    public void Unknown_Api_Is_Automatic_Without_A_Note()
+    {
+        var v = Check(dx12: UlDx12State.Unknown);
+        Assert.True(v.Auto);
+        Assert.Null(v.Note);
     }
 
     [Fact]
@@ -67,7 +74,7 @@ public class UlV4RulesTests
     public void WantsV4_Follows_Choice_Within_The_Verdict()
     {
         var auto = Check();
-        var manualOnly = Check(dx12: UlDx12State.No);
+        var manualOnly = Check(gpu: UlGpuState.Unknown);   // GPU not detected: never moved automatically
         var blocked = Check(gpu: UlGpuState.NotNvidia);
         var untested = Check(is32: true);
 
@@ -76,8 +83,8 @@ public class UlV4RulesTests
         Assert.True(UlV4Rules.WantsV4("4", manualOnly));
         Assert.False(UlV4Rules.WantsV4("4", blocked));   // a v4 choice can't beat a block
         Assert.False(UlV4Rules.WantsV4("3", auto));
-        Assert.False(UlV4Rules.WantsV4(null, untested));   // never moved automatically
-        Assert.True(UlV4Rules.WantsV4("4", untested));     // but the user can pick it
+        Assert.True(UlV4Rules.WantsV4(null, untested));    // moved automatically since 23 Nov 2026
+        Assert.False(UlV4Rules.WantsV4("3", untested));    // the user can go back to v3
     }
 
     // Lines as ReShade 6.8 / ReLimiter write them (taken from real logs)

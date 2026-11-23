@@ -6,6 +6,7 @@
 ## v2.9.6 Beta 5
 
 ### New
+- **G-SYNC on each monitor.** A new ⚙ beside Settings › Driver Settings › G-Sync lists your monitors and lets you allow G-SYNC on each one. This is the G-SYNC switch in the NVIDIA app (System › Displays), which G-SYNC Compatible monitors that NVIDIA hasn't validated need before G-SYNC works on them; RHI's G-Sync setting couldn't turn it on for those monitors. Changes save straight away and apply the next time the graphics driver starts: restart Windows, or use Restart driver now (screens go black for a few seconds; needs Admin Mode). A driver restart resets GPU overclocks and undervolts (MSI Afterburner, the NVIDIA app's Performance tuning), so reapply them afterwards.
 - **Your Steam library artwork in Spotlight.** The covers and banners you've set for your games in Steam now show in Spotlight too, including games from other stores that you've added to Steam as non-Steam games. Art you pick in RHI still comes first. Turn it off in Settings › Accounts & Data › Artwork.
 - **Missing artwork filled in from SteamGridDB.** If you've added a SteamGridDB API key, games Steam has no cover or banner for get the top-rated one from SteamGridDB. Turn it off in Settings › Accounts & Data › Artwork.
 - **Texture Filtering in Driver Settings.** Three new per-game NVIDIA settings from Profile Inspector: LOD Bias, Anisotropic Filtering and texture filtering Quality. A negative LOD bias sharpens the blurry textures some games' DLSS leaves behind (Dead Space Remake, the RE4 DLSS mod); the list marks a starting value for each DLSS mode. RHI also turns on the transparency supersampling setting DX10, DX11 and DX12 games need for the bias to work. Anisotropic Filtering forces 2x to 16x, and High Quality turns off the driver's texture filtering shortcuts.
@@ -23,6 +24,7 @@
 - Display Commander's ⚙ and OptiScaler's ⚙ have their DLL name.
 
 **General**
+- DLDSR's Apply now warns that the graphics driver restart resets GPU overclocks and undervolts (MSI Afterburner, the NVIDIA app's Performance tuning), so you can reapply them afterwards. Applying DLDSR smoothness, which restarts the driver too, now asks first with the same warning.
 - What's New now starts with what changed since the version you had, so after a beta update you can see what's different without checking GitHub. The full notes for the version follow underneath as before.
 - When GitHub stops accepting your GitHub token (it expired or was revoked), RHI now tells you in a pop-up instead of only a line in the status bar, with a link to make a new token and a button to Settings. It shows once per token.
 
@@ -35,7 +37,7 @@
 - Extras has a Detailed / Compact switch at the top (Tabs and Spotlight). Compact shows just each item's name, status and buttons, so the list takes far less room; hover a name for its details.
 
 **ReLimiter**
-- ReLimiter v4 can now be picked in every game in ReLimiter's ⚙ › Version, including 32-bit, Vulkan, DXVK and OpenGL games. v4 is only tested in 64-bit DirectX 12, so these games stay on v3 unless you choose v4, and the ⚙ says it's untested there.
+- ReLimiter v4 is now the default for every game on an NVIDIA card, whatever its graphics API: 32-bit, Vulkan, DXVK, OpenGL and DirectX 9, 10 and 11 games move to v4 like DirectX 12 games, on their next update. v4 is only tested in 64-bit DirectX 12, so ReLimiter's ⚙ › Version says when it's untested in a game; pick v3 there if it doesn't work well. PCs without an NVIDIA card stay on v3.
 - Installing ReLimiter v4 now warns first in games where it won't work as intended: when Dynamic Multi Frame Generation (DMFG) is turned on in the game's NVIDIA driver settings (turn it off in DLSS / Streamline › Multi Frame Gen), or when Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock or DLSS Enabler is installed from Extras. Choose Install anyway to go ahead. ReLimiter's ⚙ › Version shows the same warnings.
 - ReLimiter v4 installs, and games moving between v3 and v4, now get your relimiter.ini template instead of a file with only RHI's settings. Settings that only the other version uses are left out, and Deploy relimiter.ini does the same for the version installed in the game.
 - Settings › Components › ReLimiter has keys for Previous / Next OSD preset, Move OSD, Blackout other monitors and OLED Care. They show what's in ReLimiter's shared presets file and save there straight away; Write to all ReLimiter games also puts them in every game's relimiter.ini.
@@ -43,6 +45,7 @@
 ### Bug Fixes
 
 **General**
+- Fixed the DLSS / Streamline and Driver Settings summaries (Spotlight's Tune this game tiles, the Tabs layout's At a glance tiles and collapsed section headers) showing old values after changing a DLSS preset or render scale, VSync, FPS Limit or Smooth Motion, until you moved to another game.
 - Fixed the mouse wheel not scrolling Settings while the pointer was over the section list on the left or the space beside it.
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
 - Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.

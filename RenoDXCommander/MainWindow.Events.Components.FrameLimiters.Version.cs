@@ -30,9 +30,10 @@ public sealed partial class MainWindow
 
         var combo = CogDialog.MakeCombo(new List<string> { pinned ?? UlLatestItem }, 0);
         cog.AddRow("Version", combo,
-            "Pick a ReLimiter release for this game. Automatic gives DirectX 12 games on an NVIDIA card ReLimiter v4 and " +
-            "every other game the last v3 release. A picked release stays: updates skip this game. Moving between v3 and " +
-            "v4 gives the game a fresh relimiter.ini (the old one is kept as a backup)." + (is32 ? " 32-bit builds start at v3.3.1." : ""));
+            "Pick a ReLimiter release for this game. Automatic gives every game on an NVIDIA card ReLimiter v4 (pick v3 if " +
+            "it doesn't work well in this game) and other graphics cards the last v3 release. A picked release stays: updates " +
+            "skip this game. Moving between v3 and v4 sets up relimiter.ini again from your template (the old one is kept as a backup)." +
+            (is32 ? " 32-bit builds start at v3.3.1." : ""));
 
         var installedLine = cog.AddNote(InstalledText());
         var verdictLine = cog.AddNote("");
@@ -71,7 +72,7 @@ public sealed partial class MainWindow
         {
             string? text = !hasV4 ? null
                 : !verdict.Allowed ? verdict.Reason
-                : verdict.Note ?? (verdict.Auto ? "This game runs DirectX 12 on an NVIDIA card: Automatic gives it ReLimiter v4." : null);
+                : verdict.Note ?? (verdict.Auto ? "Automatic gives this game ReLimiter v4." : null);
             if (MainViewModel.UlDevTestVersion() is { } dev)
                 text = $"Dev test: v{UlV4Rules.DisplayVersion(dev)} from relimiter-v4-test is used as the latest ReLimiter. " + (text ?? "");
             verdictLine.Text = text ?? "";

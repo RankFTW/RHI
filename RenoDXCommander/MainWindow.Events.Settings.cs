@@ -1819,7 +1819,12 @@ public sealed partial class MainWindow
             var confirm = new ContentDialog
             {
                 Title = "Apply DLDSR state?",
-                Content = $"Your screen will go black for about 15 seconds while the driver applies '{selectedLabel}'.",
+                Content = new TextBlock
+                {
+                    Text = $"Your screen will go black for about 15 seconds while the driver applies '{selectedLabel}'.\n\n"
+                        + GSyncMonitorService.OverclockResetNote,
+                    TextWrapping = TextWrapping.Wrap,
+                },
                 PrimaryButtonText = "Apply",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
@@ -2019,6 +2024,24 @@ public sealed partial class MainWindow
         try
         {
             var smoothness = (int)DldsrSmoothnessSlider.Value;
+
+            // This restarts the graphics driver too (SetSmoothnessAsync), so ask first like DLDSR Apply does
+            var confirm = new ContentDialog
+            {
+                Title = "Apply DLDSR smoothness?",
+                Content = new TextBlock
+                {
+                    Text = $"Your screen will go black for about 15 seconds while the driver applies {smoothness}% smoothness.\n\n"
+                        + GSyncMonitorService.OverclockResetNote,
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                PrimaryButtonText = "Apply",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            if (await DialogService.ShowSafeAsync(confirm) != ContentDialogResult.Primary) return;
 
             DldsrSmoothnessApplyBtn.IsEnabled = false;
             DldsrSmoothnessApplyBtn.Content = "Setting...";

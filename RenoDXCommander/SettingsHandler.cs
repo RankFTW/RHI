@@ -298,7 +298,8 @@ public partial class SettingsHandler
         // G-Sync Indicator (uses snapshot value now)
         _window.GSyncIndicatorCombo.SelectedIndex = snapshot.GSyncIndicator == true ? 1 : 0; // 0=Off, 1=On
 
-        // G-Sync Enable
+        // G-Sync Enable (+ the per-monitor ⚙)
+        EnsureGSyncMonitorsCog();
         _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
         var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == snapshot.GSyncEnabled);
         _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;

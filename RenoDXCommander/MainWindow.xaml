@@ -2121,7 +2121,7 @@
                                             </Grid>
                                         </Grid>
                                         <TextBlock Style="{StaticResource SettingsNoteStyle}" Foreground="{StaticResource AccentAmberBrush}"
-                                                   Text="The screen goes black for about 15 seconds when you set smoothness or apply a state."/>
+                                                   Text="The screen goes black for about 15 seconds when you set smoothness or apply a state, and GPU overclocks and undervolts are reset (reapply them afterwards)."/>
 
                                         <controls:WrapPanel HorizontalSpacing="8" VerticalSpacing="8">
                                             <Button x:Name="DldsrCaptureBtn" x:FieldModifier="internal"
