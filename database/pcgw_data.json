@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56166,
-  "generated": "2026-11-23T05:26:50Z",
+  "game_count": 56167,
+  "generated": "2026-11-23T09:26:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -143767,6 +143767,10 @@
     },
     "Seventh Circle": {
       "steam_appid": 1030950
+    },
+    "Seventh Lair": {
+      "steam_appid": 1909810,
+      "engine": "KiriKiri"
     },
     "Severed Steel": {
       "steam_appid": 1227690,
