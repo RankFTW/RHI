@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56175,
-  "generated": "2026-11-23T15:26:51Z",
+  "generated": "2026-11-23T17:26:51Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -59487,6 +59487,7 @@
     },
     "Farthest Frontier": {
       "steam_appid": 1044720,
+      "dx11": true,
       "engine": "Unity"
     },
     "Farworld Pioneers": {
