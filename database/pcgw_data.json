@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56179,
-  "generated": "2026-11-24T01:26:53Z",
+  "game_count": 56180,
+  "generated": "2026-11-24T05:26:54Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -184573,6 +184573,10 @@
     },
     "UniBall": {
       "steam_appid": 408030
+    },
+    "Unicorn Academy: Island of Magic": {
+      "steam_appid": 4380910,
+      "engine": "Unreal Engine 5"
     },
     "Unicorn Dungeon": {
       "steam_appid": 813250
