@@ -7,6 +7,7 @@
 //   target=popup                   (optional: render the open dialog / flyout instead of the window)
 //   page=settings[:Section]        (optional: open the Settings page, e.g. page=settings:Display)
 //   open=displaymodes              (optional: open the selected game's Display mode dialog)
+//   open=urticog                   (optional: open the selected game's URTI ⚙)
 //   close=dialogs                  (optional: close open dialogs first)
 //   open=setup                     (optional: open a preview of the first-run window; capture it from the screen)
 //   backup=<folder>                (optional: make a backup in that folder now)
@@ -201,6 +202,11 @@ public sealed partial class MainWindow
         if (string.Equals(Opt("open"), "displaymodes", StringComparison.OrdinalIgnoreCase) && ViewModel.SelectedGame is { } dmCard)
         {
             _ = ShowDisplayModeGameDialogAsync(dmCard);
+            waitMs = Math.Max(waitMs, 3000);
+        }
+        if (string.Equals(Opt("open"), "urticog", StringComparison.OrdinalIgnoreCase) && ViewModel.SelectedGame is { } urtiCard)
+        {
+            _ = _detailPanelBuilder.ShowUrtiSettingsAsync(urtiCard);
             waitMs = Math.Max(waitMs, 3000);
         }
         if (int.TryParse(Opt("wait"), out var w) && w > 0) waitMs = w;

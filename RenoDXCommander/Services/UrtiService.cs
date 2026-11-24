@@ -335,4 +335,84 @@ public class UrtiService
             .Select(f => (Path.Combine("Shaders", f), Path.Combine(StagingDir, f)))
             .ToList();
     }
+
+    // ── urti.ini (key=value lines, no sections) ───────────────────────────────
+    // URTI reads urti.ini at game start, and re-reads it every 30 frames while the game runs when the file changes
+    // (urti_live.inl LiveHotReload). live, calibration_interval and capture_presents are only read at start.
+
+    /// <summary>The value of <paramref name="key"/> (the first "key=" line, as URTI reads it), or null when absent.</summary>
+    public static string? GetValueFromText(string text, string key)
+    {
+        foreach (var raw in text.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r', ' ', '\t');
+            if (line.StartsWith(key + "=", StringComparison.Ordinal)) return line[(key.Length + 1)..];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Text with <paramref name="key"/> set to <paramref name="value"/>: the first "key=" line is replaced (later duplicates
+    /// removed), or a line is added at the end. A null value removes the key (URTI then uses its own default). Line
+    /// endings and every other line are kept.
+    /// </summary>
+    public static string SetValueInText(string text, string key, string? value)
+    {
+        var nl = text.Contains("\r\n") ? "\r\n" : "\n";
+        var lines = text.Length == 0 ? new List<string>() : text.Split(nl).ToList();
+        bool endsWithBreak = lines.Count > 0 && lines[^1].Length == 0;
+        if (endsWithBreak) lines.RemoveAt(lines.Count - 1);
+        bool done = false;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (!lines[i].StartsWith(key + "=", StringComparison.Ordinal)) continue;
+            if (done || value == null) { lines.RemoveAt(i--); continue; }
+            lines[i] = $"{key}={value}";
+            done = true;
+        }
+        if (!done && value != null) lines.Add($"{key}={value}");
+        return string.Join(nl, lines) + (lines.Count > 0 ? nl : "");
+    }
+
+    /// <summary>A key's value in the game's urti.ini, or null (missing key or file).</summary>
+    public static string? GetSetting(string installPath, string key)
+    {
+        try
+        {
+            var ini = IniPath(installPath);
+            return File.Exists(ini) ? GetValueFromText(File.ReadAllText(ini), key) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    /// <summary>Writes a key into the game's urti.ini (null removes it). False when the file can't be written.</summary>
+    public bool SetSetting(string installPath, string key, string? value)
+    {
+        var ini = IniPath(installPath);
+        try
+        {
+            var text = File.Exists(ini) ? File.ReadAllText(ini) : "";
+            var updated = SetValueInText(text, key, value);
+            if (updated == text) return true;
+            File.WriteAllText(ini, updated);
+            _crashReporter.Log($"[UrtiService.SetSetting] {key}={value ?? "(removed)"} in '{ini}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[UrtiService.SetSetting] {key} not written to '{ini}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>A key's value in the release's urti.ini (the profile RHI installs), or null.</summary>
+    public static string? GetProfileValue(string key)
+    {
+        try
+        {
+            var ini = Path.Combine(StagingDir, IniName);
+            return File.Exists(ini) ? GetValueFromText(File.ReadAllText(ini), key) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
 }
