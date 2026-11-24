@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6 Beta 7
+## v2.9.6 Beta 8
 
 ### New
 - **Experimental section.** A new section for features that are new and not fully tested yet, in Classic+, Tabs and Spotlight (between Neural Rendering and Management). The first is **URTI** by Skynizz, a ReShade add-on that adds ray-traced reflections to DirectX 12 games that don't have them: puddles, wet streets, windows and polished floors. RHI installs the add-on, its urti.ini and its effects, turns the URTI effect on in the game's ReShade preset and keeps ReShade's Generic Depth add-on on for it, and keeps it updated. F7 turns it on and off in the game, and URTI's ⚙ has its urti.ini settings (start on, shadow rays, calibration, capture length, reflection F0, jitter correction, UI snapshot, sunlight measuring and a protected UI zone), with a button to go back to RHI's profile. It needs a 64-bit DirectX 12 game, ReShade 6.8 or newer with add-on support, and a ray tracing graphics card (NVIDIA RTX 20 or newer, AMD RX 6000 or newer). It's only tested in Red Dead Redemption 2 so far, and it doesn't draw while HSF is installed in the same game (RHI warns you). Single player only: never use it online.
