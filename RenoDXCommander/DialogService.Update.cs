@@ -282,7 +282,8 @@ public partial class DialogService
 
     /// <summary>
     /// "Changed since 2.9.6 beta 2" for this version's notes: lines added or reworded since the version the user had
-    /// before, when that version's notes had a section for this version number. Null when there's nothing to show.
+    /// before, when that version's notes had a section for this version number. Betas only (user decision: not on a
+    /// full release). Null when there's nothing to show.
     /// Returns the heading of the section it belongs to.
     /// </summary>
     private static (string Heading, string Block)? BuildChangedSinceBlock()
@@ -295,6 +296,8 @@ public partial class DialogService
             if (!File.Exists(previous) || !File.Exists(previousVersion) || !File.Exists(notes)) return null;
             if (!RdxcVersion.TryParse(File.ReadAllText(previousVersion).Trim(), out var before)) return null;
             var current = AppVersionInfo.Current;
+            // Betas only: a full release shows just its notes, even to someone coming from one of its betas
+            if (!current.IsBeta) return null;
             if (!(before < current)) return null;
 
             var now = PatchNotesChanges.FindSection(File.ReadAllText(notes), current.NumberString);
