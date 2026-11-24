@@ -69,6 +69,20 @@ public class FrameWarpTests
         finally { FrameWarpService.ApplyManifestUrls(null); }
     }
 
+    [Fact]
+    public void LaunchOptions_AddOnlyMissing_RemoveOnlyWhatWasAdded()
+    {
+        var (args, added) = FrameWarpService.AddLaunchOptionsTo("-dx12 -SlViewExtension");
+        Assert.Equal("-dx12 -SlViewExtension -slforcetagging", args); // case-insensitive: the user's own is kept
+        Assert.Equal("-slforcetagging", added);
+        Assert.Equal("-dx12 -SlViewExtension", FrameWarpService.RemoveLaunchOptionsFrom(args, added));
+
+        var (fresh, all) = FrameWarpService.AddLaunchOptionsTo("");
+        Assert.Equal("-slforcetagging -slviewextension", fresh);
+        Assert.Equal("", FrameWarpService.RemoveLaunchOptionsFrom(fresh, all));
+        Assert.Equal("", FrameWarpService.AddLaunchOptionsTo(fresh).Added); // nothing to add twice
+    }
+
     [Theory]
     [InlineData("v2.4.0", "2.4.0")]
     [InlineData("2.4.0", "2.4.0")]

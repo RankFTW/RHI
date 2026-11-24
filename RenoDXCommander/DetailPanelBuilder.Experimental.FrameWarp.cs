@@ -284,8 +284,9 @@ public partial class DetailPanelBuilder
             bool hasSl = card.HasStreamline || (!string.IsNullOrEmpty(installPath) && await Task.Run(() => HsfService.FindGameStreamline(installPath)));
             if (hasSl)
             {
-                cog.AddNote($"Games with DLSS through Streamline also need the launch options {FrameWarpService.UeLaunchOptions}. "
-                    + "Add them to RHI's launch arguments (used when you start the game from RHI), and to the store's launch options if you start it there (Steam: Properties > Launch Options).");
+                cog.AddNote($"Unreal Engine games with DLSS through Streamline also need the launch options {FrameWarpService.UeLaunchOptions}. "
+                    + "Installing FrameWarp adds them to RHI's launch arguments (used when you start the game from RHI) and removing it takes them out again. "
+                    + "If you start the game from its store, add them there too (Steam: Properties > Launch Options).");
                 cog.AddButtons(
                     cog.MakeButton("Add to RHI's launch arguments", CogButtonKind.Secondary, () =>
                     {

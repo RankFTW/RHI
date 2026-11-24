@@ -96,6 +96,11 @@ public partial class MainViewModel
                 return null;
             });
             if (error != null) return error;
+            // Unreal Engine games with DLSS through Streamline need FrameWarp's launch options: added to RHI's launch
+            // arguments (used when the game starts from RHI), and taken out again with FrameWarp
+            bool knownSl = card.HasStreamline;
+            if (await Task.Run(() => FrameWarpService.NeedsUeLaunchOptions(installPath, knownSl)))
+                AddFrameWarpLaunchOptions(card);
             await DeployShadersForCardAsync(card.GameName);
             _crashReporter.Log($"[MainViewModel.InstallFrameWarp] FrameWarp {svc.StagedVersion} installed for '{card.GameName}'");
             return null;
@@ -115,11 +120,20 @@ public partial class MainViewModel
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         var installPath = card.InstallPath;
         var svc = App.Services.GetRequiredService<FrameWarpService>();
+        // The launch options RHI added (read before the marker goes with the FrameWarp folder)
+        var addedArgs = FrameWarpService.ReadMarker(installPath).TryGetValue("launch_args", out var a) ? a : "";
         await Task.Run(() =>
         {
             svc.Uninstall(installPath);
             AuxInstallService.RestoreGenericDepthDefault(installPath);
         });
+        if (addedArgs.Length > 0)
+        {
+            var current = GetLaunchArgsOverride(card.GameName) ?? "";
+            var left = FrameWarpService.RemoveLaunchOptionsFrom(current, addedArgs);
+            if (left != current.Trim()) SetLaunchArgsOverride(card.GameName, left.Length > 0 ? left : null);
+            _crashReporter.Log($"[MainViewModel.UninstallFrameWarp] '{card.GameName}': launch options '{addedArgs}' taken out");
+        }
         await DeployShadersForCardAsync(card.GameName);
     }
 
@@ -148,14 +162,22 @@ public partial class MainViewModel
         }
     }
 
-    /// <summary>Adds FrameWarp's Unreal Engine launch options to RHI's launch arguments for this game (kept if already there).</summary>
+    /// <summary>
+    /// Adds FrameWarp's Unreal Engine launch options to RHI's launch arguments for this game (only missing ones) and
+    /// remembers in FrameWarp's marker which RHI added, so removing FrameWarp takes out just those. Returns the arguments.
+    /// </summary>
     public string AddFrameWarpLaunchOptions(GameCardViewModel card)
     {
         var current = GetLaunchArgsOverride(card.GameName) ?? "";
-        var missing = FrameWarpService.UeLaunchOptions.Split(' ')
-            .Where(o => !current.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(o, StringComparer.OrdinalIgnoreCase));
-        var updated = string.Join(" ", new[] { current.Trim() }.Concat(missing).Where(s => s.Length > 0));
-        if (updated != current) SetLaunchArgsOverride(card.GameName, updated);
+        var (updated, added) = FrameWarpService.AddLaunchOptionsTo(current);
+        if (added.Length == 0) return updated;
+        SetLaunchArgsOverride(card.GameName, updated);
+        if (!string.IsNullOrEmpty(card.InstallPath))
+        {
+            var before = FrameWarpService.ReadMarker(card.InstallPath).TryGetValue("launch_args", out var b) ? b : "";
+            FrameWarpService.SetMarkerValue(card.InstallPath, "launch_args", string.Join(" ", new[] { before, added }.Where(s => s.Length > 0)));
+        }
+        _crashReporter.Log($"[MainViewModel.AddFrameWarpLaunchOptions] '{card.GameName}': added '{added}' → '{updated}'");
         return updated;
     }
 

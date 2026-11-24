@@ -285,6 +285,42 @@ public class FrameWarpService
     private static void WriteMarker(string installPath, Dictionary<string, string> values) =>
         File.WriteAllLines(MarkerPath(installPath), values.Where(kv => kv.Value.Length > 0).Select(kv => $"{kv.Key}={kv.Value}"));
 
+    /// <summary>Sets (or, with null / empty, removes) one marker value. False when FrameWarp isn't installed by RHI here.</summary>
+    public static bool SetMarkerValue(string installPath, string key, string? value)
+    {
+        if (!IsRhiInstalled(installPath)) return false;
+        var marker = ReadMarker(installPath);
+        if (string.IsNullOrEmpty(value)) marker.Remove(key); else marker[key] = value;
+        try { WriteMarker(installPath, marker); return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    /// <summary>
+    /// The game needs FrameWarp's launch options: an Unreal Engine game (its Engine.ini is found the installer's way) that
+    /// uses DLSS through Streamline (its README: "Unreal Engine games with DLSS"; the installer prints them for UE +
+    /// Streamline). Touches the disk.
+    /// </summary>
+    public static bool NeedsUeLaunchOptions(string installPath, bool knownStreamline) =>
+        !string.IsNullOrEmpty(installPath) && FindEngineIni(installPath) != null
+        && (knownStreamline || HsfService.FindGameStreamline(installPath));
+
+    /// <summary>Launch arguments with the options added (only missing ones), and which were added.</summary>
+    public static (string Args, string Added) AddLaunchOptionsTo(string current)
+    {
+        var have = (current ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var added = UeLaunchOptions.Split(' ').Where(o => !have.Contains(o, StringComparer.OrdinalIgnoreCase)).ToList();
+        var args = string.Join(" ", have.Concat(added));
+        return (args, string.Join(" ", added));
+    }
+
+    /// <summary>Launch arguments without the given options (the ones RHI added); everything else is kept in order.</summary>
+    public static string RemoveLaunchOptionsFrom(string current, string added)
+    {
+        var drop = (added ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", (current ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(a => !drop.Contains(a, StringComparer.OrdinalIgnoreCase)));
+    }
+
     public static string? InstalledVersion(string installPath) =>
         ReadMarker(installPath).TryGetValue("version", out var v) && v.Length > 0 ? v : null;
 
