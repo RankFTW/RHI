@@ -190,38 +190,63 @@ public class InstallEventHandler
     }
 
     /// <summary>
-    /// ReLimiter v4 doesn't support NVIDIA Dynamic MFG and doesn't work as intended with the Extras MFG mods
-    /// (Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, DLSS Enabler). When this install would put v4 in a game
-    /// with either, asks first (Install anyway / Cancel). True = go ahead.
+    /// Before an install that would put ReLimiter v4 in a game: NVIDIA Dynamic MFG on = warning (Install anyway / Cancel);
+    /// any Extras MFG mod installed (Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, DLSS Enabler) = one shared
+    /// notice (Continue / Cancel / Don't show this again). True = go ahead.
     /// </summary>
     private async Task<bool> ConfirmUlV4WarningsAsync(GameCardViewModel card, object sender)
     {
         if (!await ViewModel.UlInstallWillBeV4Async(card)) return true;
-        var (dmfgOn, mods) = await Task.Run(() => (ViewModel.IsDmfgOn(card), ViewModel.InstalledMfgModsForUl(card)));
-        var messages = new List<string>();
-        if (dmfgOn) messages.Add(MainViewModel.UlDmfgWarning);
-        if (MainViewModel.UlMfgModsWarning(mods) is { } modsText) messages.Add(modsText);
-        if (messages.Count == 0) return true;
+        bool noticeDismissed = ViewModel.Settings.UlMfgModsNoticeDismissed;
+        var (dmfgOn, mods) = await Task.Run(() => (ViewModel.IsDmfgOn(card),
+            noticeDismissed ? new List<string>() : ViewModel.InstalledMfgModsForUl(card)));
+        if (!dmfgOn && mods.Count == 0) return true;
 
         CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': ReLimiter v4 install with "
             + $"DMFG={(dmfgOn ? "on" : "off")}, MFG mods=[{string.Join(", ", mods)}]");
         var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;
         if (xamlRoot == null) return true;
 
+        if (dmfgOn)
+        {
+            var dmfgDialog = new ContentDialog
+            {
+                Title = "Dynamic MFG is on",
+                Content = new TextBlock { Text = MainViewModel.UlDmfgWarning, TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+                PrimaryButtonText = "Install anyway",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = xamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            bool goDmfg = await DialogService.ShowSafeAsync(dmfgDialog) == ContentDialogResult.Primary;
+            CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': DMFG warning — {(goDmfg ? "installing anyway" : "cancelled")}");
+            if (!goDmfg) return false;
+        }
+
+        if (mods.Count == 0) return true;
+        var content = new StackPanel { Spacing = 8, MaxWidth = 460 };
+        content.Children.Add(new TextBlock { Text = MainViewModel.UlMfgModsNotice, TextWrapping = TextWrapping.Wrap });
+        var dontShow = new CheckBox { Content = "Don't show this again", FontSize = 12, Margin = new Thickness(0, 4, 0, 0) };
+        content.Children.Add(dontShow);
         var dialog = new ContentDialog
         {
-            Title = dmfgOn && mods.Count == 0 ? "Dynamic MFG is on"
-                : !dmfgOn ? "Frame generation mods installed"
-                : "ReLimiter v4 and frame generation",
-            Content = new TextBlock { Text = string.Join("\n\n", messages), TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
-            PrimaryButtonText = "Install anyway",
+            Title = "ReLimiter and frame generation mods",
+            Content = content,
+            PrimaryButtonText = "Continue",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
         bool go = await DialogService.ShowSafeAsync(dialog) == ContentDialogResult.Primary;
-        CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': {(go ? "installing anyway" : "cancelled")}");
+        if (go && dontShow.IsChecked == true)
+        {
+            ViewModel.Settings.UlMfgModsNoticeDismissed = true;
+            ViewModel.SaveSettingsPublic();
+        }
+        CrashReporter.Log($"[InstallEventHandler.ConfirmUlV4WarningsAsync] '{card.GameName}': MFG mods notice — {(go ? "continue" : "cancelled")}"
+            + (go && dontShow.IsChecked == true ? " (won't show again)" : ""));
         return go;
     }
 

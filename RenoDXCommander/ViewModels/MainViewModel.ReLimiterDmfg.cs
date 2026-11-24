@@ -1,7 +1,6 @@
-// MainViewModel.ReLimiterDmfg.cs — ReLimiter v4 doesn't support NVIDIA Dynamic Multi Frame Generation (DMFG) and
-// doesn't work as intended with the Extras MFG mods.
+// MainViewModel.ReLimiterDmfg.cs — ReLimiter v4 doesn't support NVIDIA Dynamic Multi Frame Generation (DMFG).
 // Installs that would put v4 in a game whose NVIDIA profile has DMFG on warn first (InstallEventHandler), and the
-// ReLimiter ⚙ › Version shows the same warning.
+// ReLimiter ⚙ › Version shows the same warning. Games with an Extras MFG mod get one shared, dismissible notice instead.
 
 using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Services;
@@ -60,13 +59,13 @@ public partial class MainViewModel
         return names;
     }
 
-    /// <summary>Warning text for the MFG mods found by <see cref="InstalledMfgModsForUl"/>, or null when there are none.</summary>
-    internal static string? UlMfgModsWarning(IReadOnlyList<string> mods) => mods.Count == 0 ? null
-        : $"{JoinNames(mods)} {(mods.Count == 1 ? "is" : "are")} installed in this game (Extras). ReLimiter v4 won't work as intended with "
-          + $"{(mods.Count == 1 ? "it" : "these")} installed.";
-
-    private static string JoinNames(IReadOnlyList<string> n) =>
-        n.Count == 1 ? n[0] : string.Join(", ", n.Take(n.Count - 1)) + " and " + n[^1];
+    /// <summary>
+    /// One notice shared by every MFG mod found by <see cref="InstalledMfgModsForUl"/>, shown before a ReLimiter v4 install
+    /// until the user ticks "Don't show this again" (user decision, Nov 2026: replaces the per-mod warnings).
+    /// </summary>
+    internal const string UlMfgModsNotice =
+        "There's no guarantee ReLimiter v4 will work with the frame generation mods in Extras (Universal MFG Unlocker, "
+        + "MFG Ada Unlock, 20/30 FG Unlock, DLSS Enabler). Work has gone into making them compatible, and it's ongoing.";
 
     /// <summary>
     /// True when installing ReLimiter in this game now would put v4 there: the pinned release, else Automatic / the

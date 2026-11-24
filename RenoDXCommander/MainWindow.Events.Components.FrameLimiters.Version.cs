@@ -44,9 +44,6 @@ public sealed partial class MainWindow
         var dmfgWarning = cog.AddWarning(MainViewModel.UlDmfgWarning);
         dmfgWarning.Visibility = Visibility.Collapsed;
         bool dmfgOn = false;
-        // ...and doesn't work as intended with the Extras MFG mods
-        var mfgModsWarning = cog.AddWarning("");
-        mfgModsWarning.Visibility = Visibility.Collapsed;
         var switchBtn = CogDialog.StyledButton("Switch to v3", CogButtonKind.Primary);
         var switchRow = cog.AddButtons(switchBtn);
         switchRow.Visibility = Visibility.Collapsed;
@@ -88,8 +85,6 @@ public sealed partial class MainWindow
 
             bool showDmfg = dmfgOn && (onV4 || (hasV4 && verdict.Allowed));
             dmfgWarning.Visibility = showDmfg ? Visibility.Visible : Visibility.Collapsed;
-            bool v4Relevant = onV4 || (hasV4 && verdict.Allowed);
-            mfgModsWarning.Visibility = v4Relevant && mfgModsWarning.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // The driver profile is read through NVAPI, off the UI thread
@@ -98,12 +93,10 @@ public sealed partial class MainWindow
         {
             try
             {
-                var (on, mods) = await Task.Run(() => (ViewModel.IsDmfgOn(card), ViewModel.InstalledMfgModsForUl(card)));
-                dmfgOn = on;
-                mfgModsWarning.Text = MainViewModel.UlMfgModsWarning(mods) ?? "";
-                if (dmfgOn || mods.Count > 0) RefreshNotes();
+                dmfgOn = await Task.Run(() => ViewModel.IsDmfgOn(card));
+                if (dmfgOn) RefreshNotes();
             }
-            catch (Exception ex) { CrashReporter.Log($"[MainWindow.AddUlVersionSection] DMFG / MFG mods read failed — {ex.Message}"); }
+            catch (Exception ex) { CrashReporter.Log($"[MainWindow.AddUlVersionSection] DMFG read failed — {ex.Message}"); }
         }
 
         void Fill(List<UlRelease> releases)

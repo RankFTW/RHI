@@ -3,6 +3,11 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.6.1
+
+### Changes
+- Installing ReLimiter v4 in a game with Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock or DLSS Enabler no longer warns that it won't work as intended. One notice now covers all of them: there's no guarantee they'll work together, but work has gone into making them compatible and is ongoing. Choose Continue or Cancel, and tick Don't show this again to stop seeing it. ReLimiter's ⚙ › Version no longer shows the warning. The Dynamic MFG warning is unchanged.
+
 ## v2.9.6
 
 ### New
