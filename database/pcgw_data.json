@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56180,
-  "generated": "2026-11-24T05:26:54Z",
+  "game_count": 56184,
+  "generated": "2026-11-24T11:26:54Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -48616,7 +48616,7 @@
       "steam_appid": 859310
     },
     "Dragon Blaze": {
-      "steam_appid": 1279420
+      "steam_appid": 4123700
     },
     "Dragon Blood": {
       "steam_appid": 562840
@@ -60170,6 +60170,7 @@
     "Feeding The Monster": {
       "steam_appid": 722250
     },
+    "Feedn' Chloe": {},
     "Feel the Snow": {
       "steam_appid": 538100
     },
@@ -70360,6 +70361,10 @@
     "Goodbye My King": {
       "steam_appid": 647410
     },
+    "Goodbye Seoul": {
+      "steam_appid": 2551550,
+      "engine": "Unity"
+    },
     "Goodbye Volcano High": {
       "steam_appid": 1310330,
       "dx11": true,
@@ -72857,15 +72862,16 @@
       "steam_appid": 632240
     },
     "Gunbarich": {
-      "steam_appid": 1342240
+      "steam_appid": 4123560,
+      "engine": "Unity"
     },
     "Gunbird": {
-      "steam_appid": 1261970,
+      "steam_appid": 4123540,
       "dx11": true,
       "config_path": "%APPDATA%\\gunbird\\setting.bin"
     },
     "Gunbird 2": {
-      "steam_appid": 1279410
+      "steam_appid": 4123550
     },
     "Gunboat": {
       "steam_appid": 1357490
@@ -88508,6 +88514,7 @@
       "config_path": "<path-to-game>\\config.cfg, HKEY_CURRENT_USER\\Software\\Unbound Creations LLC\\Karaski: What Goes Up...\\",
       "engine": "Unity"
     },
+    "Karate 3D": {},
     "Karate Cat": {
       "steam_appid": 1152410
     },
@@ -140640,10 +140647,10 @@
       "engine": "Unity"
     },
     "Samurai Aces": {
-      "steam_appid": 1261980
+      "steam_appid": 4123500
     },
     "Samurai Aces III: Sengoku Cannon": {
-      "steam_appid": 1279390,
+      "steam_appid": 4123530,
       "config_path": "%APPDATA%\\scannon\\setting.bin"
     },
     "Samurai Defender": {},
@@ -157762,13 +157769,13 @@
       "steam_appid": 588480
     },
     "Strikers 1945": {
-      "steam_appid": 1261960
+      "steam_appid": 4123570
     },
     "Strikers 1945 II": {
-      "steam_appid": 1279380
+      "steam_appid": 4123580
     },
     "Strikers 1945 III": {
-      "steam_appid": 1279400
+      "steam_appid": 4123630
     },
     "Strikers 1945 Plus": {},
     "Strikers Edge": {
@@ -164038,7 +164045,7 @@
       "engine": "Unity"
     },
     "Tengai": {
-      "steam_appid": 1279370
+      "steam_appid": 4027800
     },
     "Tengami": {
       "steam_appid": 299680,
@@ -192527,6 +192534,7 @@
     "Wild Terra Online": {
       "steam_appid": 500710
     },
+    "Wild Turkey Hunt": {},
     "Wild Unknown": {
       "steam_appid": 592570
     },
