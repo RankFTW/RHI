@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56175,
-  "generated": "2026-11-23T19:26:51Z",
+  "game_count": 56179,
+  "generated": "2026-11-24T01:26:53Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -4809,6 +4809,7 @@
     "Africa Hunting": {
       "steam_appid": 758470
     },
+    "African Safari Trophy Hunter 3D": {},
     "After All": {
       "steam_appid": 365110
     },
@@ -19417,7 +19418,7 @@
     "Bird Hunter: Waterfowl Edition": {},
     "Bird Hunter: Wild Wings Edition": {
       "config_path": "<path-to-game>\\Home\\Default.cfg, <path-to-game>\\Home\\DefCmds.cfg, <path-to-game>\\Home\\DefEquip.cfg",
-      "engine": "Sunstorm Engine 3"
+      "engine": "Sunstorm Terrain Engine"
     },
     "Bird Memory": {
       "steam_appid": 983200
@@ -42942,7 +42943,9 @@
     "Deer Hunt Legends": {
       "steam_appid": 328670
     },
-    "Deer Hunter": {},
+    "Deer Hunter": {
+      "engine": "Sunstorm Terrain Engine"
+    },
     "Deer Hunter 2003": {
       "engine": "Serious Engine"
     },
@@ -62828,6 +62831,7 @@
     "Flux8": {
       "steam_appid": 658810
     },
+    "FLW Professional Bass Tournament 2000": {},
     "Fly and Destroy": {
       "steam_appid": 508180,
       "dx11": true,
@@ -70841,6 +70845,7 @@
       "steam_appid": 735590
     },
     "Grand Slam": {},
+    "Grand Slam Turkey Hunt": {},
     "Grand Strategy": {
       "steam_appid": 952090
     },
@@ -127260,6 +127265,7 @@
     "Pro Basketball Manager 2019": {
       "steam_appid": 880470
     },
+    "Pro Bass Fishing": {},
     "Pro Bass Fishing 2003": {},
     "Pro Cycling Manager 2012": {
       "steam_appid": 210990
