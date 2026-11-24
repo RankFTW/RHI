@@ -14,18 +14,54 @@ public partial class AuxInstallService
 
     private static bool ShippedAddonsEnabled => ShippedAddonsEnabledResolver?.Invoke() == true;
 
+    /// <summary>ReShade's Generic Depth add-on, which URTI reads the game's depth through.</summary>
+    public const string GenericDepth = "Generic Depth";
+
+    /// <summary>
+    /// True when a component RHI installed in the game folder needs Generic Depth (URTI): it then stays enabled
+    /// there whatever the Settings choice. Set at startup (App.xaml.cs).
+    /// </summary>
+    public static Func<string, bool>? GenericDepthNeededResolver { get; set; }
+
     /// <summary>
     /// After a template write: the templates already disable the add-ons, so this only acts when
-    /// the user keeps them enabled. Covers reshade.ini and ReShade's numbered ReShadeN.ini files.
+    /// the user keeps them enabled, or when a component in the game needs Generic Depth.
+    /// Covers reshade.ini and ReShade's numbered ReShadeN.ini files.
     /// </summary>
     internal static void ApplyShippedAddonsSettingToGame(string gameDir)
     {
-        if (!ShippedAddonsEnabled) return;
-        WriteShippedAddonsSetting(gameDir, enabled: true);
+        if (ShippedAddonsEnabled) WriteShippedAddonsSetting(gameDir, enabled: true);
+        else if (GenericDepthNeededResolver?.Invoke(gameDir) == true) WriteShippedAddonsSetting(gameDir, enabled: true, [GenericDepth]);
     }
 
-    /// <summary>Writes the setting into every ReShade config in <paramref name="gameDir"/>. Returns files changed.</summary>
-    public static int WriteShippedAddonsSetting(string gameDir, bool enabled)
+    /// <summary>
+    /// A component that needed Generic Depth left the game: RHI's default (disabled) comes back, unless the user keeps
+    /// the built-in add-ons on. Only configs that already have a DisabledAddons line are touched.
+    /// </summary>
+    public static void RestoreGenericDepthDefault(string gameDir)
+    {
+        if (ShippedAddonsEnabled || GenericDepthNeededResolver?.Invoke(gameDir) == true) return;
+        foreach (var ini in ReShadeConfigFiles(gameDir))
+        {
+            try
+            {
+                var text = File.ReadAllText(ini);
+                if (!text.Contains("DisabledAddons", StringComparison.OrdinalIgnoreCase)) continue;
+                var updated = SetShippedAddonsInText(text, enabled: false, [GenericDepth]);
+                if (updated != text) File.WriteAllText(ini, updated);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                CrashReporter.Log($"[AuxInstallService.RestoreGenericDepthDefault] Failed for '{ini}' — {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes the setting into every ReShade config in <paramref name="gameDir"/> (<paramref name="names"/>: only
+    /// these built-in add-ons; default both). Returns files changed.
+    /// </summary>
+    public static int WriteShippedAddonsSetting(string gameDir, bool enabled, IReadOnlyCollection<string>? names = null)
     {
         int changed = 0;
         foreach (var ini in ReShadeConfigFiles(gameDir))
@@ -33,7 +69,7 @@ public partial class AuxInstallService
             try
             {
                 var text = File.ReadAllText(ini);
-                var updated = SetShippedAddonsInText(text, enabled);
+                var updated = SetShippedAddonsInText(text, enabled, names);
                 if (updated == text) continue;
                 File.WriteAllText(ini, updated);
                 changed++;
@@ -67,8 +103,9 @@ public partial class AuxInstallService
     /// Enabling with no DisabledAddons line changes nothing; disabling adds the line (and the
     /// section) when missing.
     /// </summary>
-    public static string SetShippedAddonsInText(string text, bool enabled)
+    public static string SetShippedAddonsInText(string text, bool enabled, IReadOnlyCollection<string>? names = null)
     {
+        var addons = names ?? ShippedAddons;
         var nl = text.Contains("\r\n") ? "\r\n" : "\n";
         var lines = text.Replace("\r\n", "\n").Split('\n').ToList();
 
@@ -90,13 +127,13 @@ public partial class AuxInstallService
             var at = entry.IndexOf('@');
             return (at >= 0 ? entry[..at] : entry).Trim();
         }
-        static bool IsShipped(string entry) =>
-            ShippedAddons.Any(a => a.Equals(NameOf(entry), StringComparison.OrdinalIgnoreCase));
+        bool IsShipped(string entry) =>
+            addons.Any(a => a.Equals(NameOf(entry), StringComparison.OrdinalIgnoreCase));
 
         if (keyLine < 0)
         {
             if (enabled) return text;
-            var line = "DisabledAddons=" + string.Join(",", ShippedAddons);
+            var line = "DisabledAddons=" + string.Join(",", addons);
             if (section >= 0) lines.Insert(section + 1, line);
             else lines.InsertRange(0, ["[ADDON]", line, ""]);
             return string.Join(nl, lines);
@@ -111,7 +148,7 @@ public partial class AuxInstallService
         }
         else
         {
-            foreach (var a in ShippedAddons)
+            foreach (var a in addons)
                 if (!entries.Any(e => NameOf(e).Equals(a, StringComparison.OrdinalIgnoreCase)))
                     entries.Add(a);
         }

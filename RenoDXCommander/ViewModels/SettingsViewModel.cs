@@ -204,7 +204,7 @@ public partial class SettingsViewModel : ObservableObject
     /// Absent or incomplete = use default order.
     /// </summary>
     public static readonly IReadOnlyList<string> DefaultSectionOrder = new[]
-        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfileDlss", "NvidiaProfileDriver", "Management", "Extras" };
+        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfileDlss", "NvidiaProfileDriver", "Experimental", "Management", "Extras" };
 
     public List<string> DetailSectionOrder { get; set; } = new(DefaultSectionOrder);
 
@@ -594,6 +594,12 @@ public partial class SettingsViewModel : ObservableObject
                 {
                     var known = new HashSet<string>(DefaultSectionOrder, StringComparer.OrdinalIgnoreCase);
                     var merged = loaded.Where(k => known.Contains(k)).ToList();
+                    // Experimental (v2.9.6) goes just before Management in a saved order, as in the default
+                    if (!merged.Contains("Experimental", StringComparer.OrdinalIgnoreCase))
+                    {
+                        int mgmt = merged.FindIndex(k => k.Equals("Management", StringComparison.OrdinalIgnoreCase));
+                        if (mgmt >= 0) merged.Insert(mgmt, "Experimental");
+                    }
                     foreach (var def in DefaultSectionOrder)
                         if (!merged.Contains(def, StringComparer.OrdinalIgnoreCase)) merged.Add(def);
                     DetailSectionOrder = merged;

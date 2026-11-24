@@ -247,6 +247,7 @@ public partial class SettingsHandler
                         keepModes?.Invoke();
                         // Built-in add-ons setting, both ways (reshade.ini + ReShadeN.ini only, not presets)
                         AuxInstallService.WriteShippedAddonsSetting(card.InstallPath, shippedAddonsEnabled);
+                        if (!shippedAddonsEnabled) AuxInstallService.ApplyShippedAddonsSettingToGame(card.InstallPath); // URTI keeps Generic Depth
                         updatedCount++;
                     }
                     catch (Exception ex)

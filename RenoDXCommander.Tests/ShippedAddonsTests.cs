@@ -52,4 +52,12 @@ public class ShippedAddonsTests
         Assert.Equal("[OTHER]\nDisabledAddons=Generic Depth\n[ADDON]\nDisabledAddons=\n",
             AuxInstallService.SetShippedAddonsInText(text, enabled: true));
     }
-}
+
+    [Fact]
+    public void GenericDepthOnly_EnablesAndDisablesJustThatOne()
+    {
+        var on = AuxInstallService.SetShippedAddonsInText(Template, enabled: true, [AuxInstallService.GenericDepth]);
+        Assert.Contains("DisabledAddons=Effect Runtime Sync\r\n", on);
+        var off = AuxInstallService.SetShippedAddonsInText(on, enabled: false, [AuxInstallService.GenericDepth]);
+        Assert.Contains("DisabledAddons=Effect Runtime Sync,Generic Depth\r\n", off);
+    }}

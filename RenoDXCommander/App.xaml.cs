@@ -138,6 +138,7 @@ public partial class App : Application
         services.AddSingleton<RtxEncoreService>();
         services.AddSingleton<UpliftService>();
         services.AddSingleton<HsfService>();
+        services.AddSingleton<UrtiService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 
@@ -148,13 +149,15 @@ public partial class App : Application
 
         Services = services.BuildServiceProvider();
 
-        // GITC Uplift's and HSF's shaders stay in a game's reshade-shaders folder while they're installed there
+        // GITC Uplift's, HSF's and URTI's shaders stay in a game's reshade-shaders folder while they're installed there
         var uplift = Services.GetRequiredService<UpliftService>();
         var hsf = Services.GetRequiredService<HsfService>();
+        // URTI reads the game's depth through ReShade's Generic Depth add-on, which RHI's reshade.ini disables by default
+        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir);
         ShaderPackService.ExtraGameFiles = dir =>
         {
             var files = new List<(string Rel, string Source)>(uplift.ShaderFilesFor(dir));
-            foreach (var f in hsf.ShaderFilesFor(dir))
+            foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)))
                 if (!files.Any(x => x.Rel.Equals(f.Rel, StringComparison.OrdinalIgnoreCase))) files.Add(f); // LaunchPad: once
             return files;
         };

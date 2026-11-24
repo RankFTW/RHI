@@ -759,6 +759,8 @@ public sealed partial class MainWindow : Window
             ManagementContainer.Visibility = Visibility.Collapsed;
             ExtrasPanel.Children.Clear();
             ExtrasContainer.Visibility = Visibility.Collapsed;
+            ExperimentalPanel.Children.Clear();
+            ExperimentalContainer.Visibility = Visibility.Collapsed;
         }
     }
 }

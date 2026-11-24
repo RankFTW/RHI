@@ -51,7 +51,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, HsfTooltip);
+        // URTI (Experimental) doesn't draw while HSF is in the game: say so on the row ("Game:" lines show in Tabs / Spotlight)
+        var hsfTip = UrtiService.IsInstalledIn(installPath) ? $"{HsfTooltip}\n{UrtiHsfClashLine}" : HsfTooltip;
+        ToolTipService.SetToolTip(label, hsfTip);
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -114,7 +116,7 @@ public partial class DetailPanelBuilder
             installBtn.Opacity   = 0.35;
             installBtn.Content   = b.Short;
             // Disabled buttons show no tooltip: the label carries the reason too
-            ToolTipService.SetToolTip(label, $"{HsfTooltip}\n\n{b.Long}");
+            ToolTipService.SetToolTip(label, $"{hsfTip}\n\n{b.Long}");
         }
         else
         {
@@ -152,6 +154,7 @@ public partial class DetailPanelBuilder
                             await ShowHsfErrorAsync(mfgError, installBtn.XamlRoot, "Universal MFG Unlocker wasn't installed");
                     }
                     RequestExtrasRebuild(card);
+                    RequestExperimentalRebuild(card); // URTI's HSF warning
                     return;
                 }
                 installBtn.Content   = "Install failed";
@@ -202,6 +205,7 @@ public partial class DetailPanelBuilder
                 removeBtn.IsEnabled = false;
                 await _window.ViewModel.UninstallHsfAsync(card);
                 RequestExtrasRebuild(card);
+                RequestExperimentalRebuild(card); // URTI's HSF warning
             }
             catch (Exception ex)
             {
@@ -224,7 +228,8 @@ public partial class DetailPanelBuilder
     {
         xamlRoot ??= _window.Content.XamlRoot;
         bool osInstalled = card.IsOsInstalled;
-        if (xamlRoot == null || (_window.ViewModel.Settings.HsfNoticeDismissed && !osInstalled)) return true;
+        bool urtiInstalled = UrtiService.IsInstalledIn(card.InstallPath ?? "");
+        if (xamlRoot == null || (_window.ViewModel.Settings.HsfNoticeDismissed && !osInstalled && !urtiInstalled)) return true;
 
         var content = new StackPanel { Spacing = 8 };
         void Para(string text) => content.Children.Add(new TextBlock
@@ -239,8 +244,10 @@ public partial class DetailPanelBuilder
         Para("Turn off the game's own frame generation. HSF's menu is a tab in ReShade's overlay (Home key): set the multiplier there and turn FRAME GEN on.");
         if (osInstalled)
             Para("OptiScaler is installed in this game. HSF and OptiScaler's frame generation can clash: use only one of them, and if the game crashes, remove OptiScaler and try HSF alone.");
+        if (urtiInstalled)
+            Para(UrtiHsfClashText);
         var dontShow = new CheckBox { Content = "Don't show this again", FontSize = 12, Margin = new Thickness(0, 4, 0, 0) };
-        if (!osInstalled) content.Children.Add(dontShow);
+        if (!osInstalled && !urtiInstalled) content.Children.Add(dontShow);
 
         var dialog = new ContentDialog
         {
@@ -383,6 +390,7 @@ public partial class DetailPanelBuilder
             + "turn FRAME GEN on and pick the multiplier. Set an FPS cap there for smoother frames. The in-game keys are under Keys below.");
 
         cog.AddSection("This game");
+        if (UrtiService.IsInstalledIn(installPath)) cog.AddWarning(UrtiHsfClashText);
         if (!isInstalled)
             cog.AddNote("HSF isn't installed in this game.");
         else

@@ -15,14 +15,15 @@ fileMatchPattern: "*DetailPanel*,*MainWindow*,*Builder*,*Flyout*,*Dialog*"
 - `BuildOverridesPanel()` fills `OverridesPanel`, the DLSS / Driver Settings panels (`.Overrides.NvidiaProfile.cs`, `.Overrides.DriverSettings.cs`) and `ManagementPanel`. Neural Rendering is built by `DetailPanelBuilder.NeuralRendering*.cs`, Extras by `DetailPanelBuilder.Extras*.cs`.
 
 ## Detail Panel Section Layout
-There is only one layout (Detail). `DetailPanel` StackPanel = 2 header Grids (game info) at index 0–1, then 7 section Borders. Default order (`SettingsViewModel.DefaultSectionOrder`, key → container → panel):
+There is only one layout (Detail). `DetailPanel` StackPanel = 2 header Grids (game info) at index 0–1, then 8 section Borders. Default order (`SettingsViewModel.DefaultSectionOrder`, key → container → panel):
 1. `Components` → `DetailComponentSection` — component install rows (in XAML)
 2. `GameOverrides` → `OverridesContainer` → `OverridesPanel`
 3. `NeuralRendering` → `NeuralRenderingContainer` → `NeuralRenderingPanel`
 4. `NvidiaProfileDlss` → `NvidiaProfileDlssContainer` → `NvidiaProfileDlssPanel` ("DLSS / Streamline")
 5. `NvidiaProfileDriver` → `NvidiaProfileDriverContainer` → `NvidiaProfileDriverPanel` ("Driver Settings"; driver version is the first summary item)
-6. `Management` → `ManagementContainer` → `ManagementPanel` (Change install folder, Reset / Remove game, Copy Report; Reset Overrides is at the bottom of Game Overrides since v2.9.6, the only one)
-7. `Extras` → `ExtrasContainer` → `ExtrasPanel` (ASI Loader, OptiScaler, MFG unlocks, DXVK, dgVoodoo2)
+6. `Experimental` → `MainWindow.ExperimentalContainer` → `ExperimentalPanel` (v2.9.6: new, not fully tested features; URTI first). **Built in C#** (`MainWindow.ExperimentalSection.cs`, XAML rule), inserted before `ManagementContainer` on first use; builder `DetailPanelBuilder.Experimental.cs` (header like Extras, one-line notice, Extras-shaped 6-column rows under separators; Tabs / Spotlight arrange them with `ArrangeExperimental`, Extras' list cards without the Compact switch). Shown for every game. Tabs: tab between Neural Rendering and Management (`FixedTabOrder`). Spotlight Tune tiles: two rows, 3 then 4 (`_tuneGrid` / `_tuneGrid2`, `TuneTiles` for the controller). Saved Classic orders without it get it just before Management (`LoadSettingsFromDict`, tests `DetailSectionOrderTests`). Items can be pulled by the manifest: `featureFlags.experimentalHidden` (ids, `FeatureFlags.IsExperimentalHidden`); a pulled item still shows where installed, for removal only. New experimental items go here, not in Extras.
+7. `Management` → `ManagementContainer` → `ManagementPanel` (Change install folder, Reset / Remove game, Copy Report; Reset Overrides is at the bottom of Game Overrides since v2.9.6, the only one)
+8. `Extras` → `ExtrasContainer` → `ExtrasPanel` (ASI Loader, OptiScaler, MFG unlocks, DXVK, dgVoodoo2)
 
 - `NvidiaProfileContainer` is a legacy Border kept collapsed for migration; never show it. Old setting key `NvidiaProfile` migrates to `NvidiaProfileDlss` + `NvidiaProfileDriver`.
 - Every section collapses (heading click, `CollapsedDetailSections`) and reorders (≡ drag handle, `DetailSectionOrder`); both persist in settings. `ApplySectionOrder()` must run after all sections are populated and visible. Collapsed headers show a summary (`MakeSectionSummaryInlines`).

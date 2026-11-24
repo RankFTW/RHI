@@ -68,6 +68,7 @@ internal sealed partial class DetailLayoutHost
         "NvidiaProfileDriver" => _window.NvidiaProfileDriverContainer,
         "Management"          => _window.ManagementContainer,
         "Extras"              => _window.ExtrasContainer,
+        "Experimental"        => _window.ExperimentalContainer,
         _                     => null,
     };
 
@@ -90,6 +91,7 @@ internal sealed partial class DetailLayoutHost
         "NvidiaProfileDriver" => "Driver Settings",
         "Management"          => "Management",
         "Extras"              => "Extras",
+        "Experimental"        => "Experimental",
         OverviewKey           => "Overview",
         _                     => key,
     };
@@ -145,7 +147,7 @@ internal sealed partial class DetailLayoutHost
     /// <summary>Tabs in order: Overview, then every section except Components (shown by Overview).</summary>
     // Tabs has its own fixed order; Classic's drag order (DetailSectionOrder) doesn't apply
     private static readonly string[] FixedTabOrder =
-        { OverviewKey, "GameOverrides", "Extras", "NvidiaProfileDlss", "NvidiaProfileDriver", "NeuralRendering", "Management" };
+        { OverviewKey, "GameOverrides", "Extras", "NvidiaProfileDlss", "NvidiaProfileDriver", "NeuralRendering", "Experimental", "Management" };
 
     private IEnumerable<string> TabKeys =>
         FixedTabOrder.Where(k => k == OverviewKey || GetContainer(k) != null);

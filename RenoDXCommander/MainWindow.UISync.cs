@@ -299,6 +299,14 @@ public sealed partial class MainWindow
                         _detailPanelBuilder.RequestExtrasRebuild(card);
                 }
                 ExtrasContainer.SizeChanged += OnResized;
+                // Experimental's rows are the same shape
+                void OnExperimentalResized(object s, SizeChangedEventArgs e)
+                {
+                    ExperimentalContainer.SizeChanged -= OnExperimentalResized;
+                    if (ReferenceEquals(ViewModel.SelectedGame, card))
+                        _detailPanelBuilder.RequestExperimentalRebuild(card);
+                }
+                ExperimentalContainer.SizeChanged += OnExperimentalResized;
             }
         }
         _detailPanelBuilder.ApplySectionOrder();

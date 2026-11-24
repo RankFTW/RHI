@@ -144,6 +144,7 @@ internal sealed partial class DetailLayoutHost
         "NvidiaProfileDriver" => "NVIDIA driver settings for this game",
         "Management"          => "Install folder, reset and report",
         "Extras"              => "OptiScaler, frame generation unlocks, DXVK and more",
+        "Experimental"        => "New features that are still being tested",
         _                     => "",
     };
 

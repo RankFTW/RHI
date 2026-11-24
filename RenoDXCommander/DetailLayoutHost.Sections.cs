@@ -73,8 +73,33 @@ internal sealed partial class DetailLayoutHost
         _extrasDetails.Clear();
         _extrasRows.Clear();
         body.Children.Add(BuildExtrasDensitySwitch());
+        AddListGroups(body, items, "Loaders and upscalers", _extrasDetails, _extrasRows);
+        ApplyExtrasDensity();
+    }
 
-        string title = "Loaders and upscalers";
+    /// <summary>
+    /// Tabs / Spotlight Experimental: the one-line notice on top, then a titled card per group (the builder's
+    /// separators), with Extras' list rows. Always detailed (no Compact switch: each item's warnings stay visible).
+    /// </summary>
+    internal void ArrangeExperimental(StackPanel body, FrameworkElement notice)
+    {
+        var items = body.Children.Where(c => !ReferenceEquals(c, notice)).ToList();
+        body.Children.Clear();
+        body.Spacing = 20;
+        TabsTheme.Restyle(notice);
+        body.Children.Add(notice);
+        AddListGroups(body, items, "Experimental", new List<UIElement>(), new List<Border>());
+    }
+
+    /// <summary>
+    /// Moves Classic 6-column component rows into titled list cards: each separator row starts a new card (its label
+    /// is the title; rows before the first one go under <paramref name="firstTitle"/>). Lines Compact hides go in
+    /// <paramref name="details"/>, the list rows in <paramref name="rowsOut"/>.
+    /// </summary>
+    private static void AddListGroups(StackPanel body, IEnumerable<UIElement> items, string firstTitle,
+        List<UIElement> details, List<Border> rowsOut)
+    {
+        string title = firstTitle;
         var list = new StackPanel();
         var rows = new List<Border>();
 
@@ -105,14 +130,13 @@ internal sealed partial class DetailLayoutHost
             }
             if (byCol.TryGetValue(0, out var c0) && c0.FirstOrDefault() is TextBlock)
                 g.Children.Clear(); // free the controls for their new row (WinUI allows one parent)
-            var row = MakeListRow(byCol, _extrasDetails);
+            var row = MakeListRow(byCol, details);
             if (row == null) { list.Children.Add(g); continue; }
             rows.Add(row);
-            _extrasRows.Add(row);
+            rowsOut.Add(row);
             list.Children.Add(row);
         }
         Flush();
-        ApplyExtrasDensity();
     }
 
     private readonly List<UIElement> _extrasDetails = new();

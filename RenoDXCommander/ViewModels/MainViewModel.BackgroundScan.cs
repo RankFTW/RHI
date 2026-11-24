@@ -518,6 +518,9 @@ public partial class MainViewModel
                 // HSF: same for the frame generation add-on
                 await RefreshHsfInstallsAsync("RunBackgroundScanAndMergeAsync");
 
+                // URTI: same for the ray-traced reflections add-on
+                await RefreshUrtiInstallsAsync("RunBackgroundScanAndMergeAsync");
+
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
 

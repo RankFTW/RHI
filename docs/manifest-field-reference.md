@@ -352,6 +352,11 @@ Override base download URLs for components. Active keys:
 
 ## Other Fields
 
+### `featureFlags` — `ManifestFeatureFlags`
+Switches features on or off for everyone without a release (`Services/FeatureFlags.cs`, applied in the cache, Init and BackgroundScan paths). `unlock.txt` turns the boolean ones on locally.
+- `dlssNr`, `nexusMods`, `resolutionControl`, `hsf`, `anrFg`: `bool`
+- `experimentalHidden`: `string[]` of Experimental section item ids to pull (currently `"urti"`). A pulled item isn't offered for new installs; games that have it still show its row, for removal only (`FeatureFlags.IsExperimentalHidden`). Not affected by `unlock.txt`.
+
 ### `version` — `int`
 Manifest version integer. Logged on every `ApplyManifest` call for diagnostics.
 

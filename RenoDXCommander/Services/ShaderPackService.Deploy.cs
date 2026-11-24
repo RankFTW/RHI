@@ -335,6 +335,8 @@ public partial class ShaderPackService
                 && File.Exists(existing))
                 src = existing;
             var sub = rel.Split('\\', '/')[0];
+            // A component's own copy of a shared header (URTI ships ReShade.fxh) never replaces a selected pack's
+            if (rel.EndsWith(".fxh", StringComparison.OrdinalIgnoreCase) && plan.ContainsKey(rel.Replace('/', '\\'))) continue;
             plan.Add(sub, rel.Substring(sub.Length).TrimStart('\\', '/'), src);
         }
 

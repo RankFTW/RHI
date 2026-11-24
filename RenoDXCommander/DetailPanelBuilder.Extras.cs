@@ -232,14 +232,15 @@ public partial class DetailPanelBuilder
         statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
     }
 
-    private Grid MakeExtrasSeparator(string label)
+    private Grid MakeExtrasSeparator(string label, Border? container = null)
     {
+        container ??= _window.ExtrasContainer;
         var grid = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 2) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
         // Same width as the rows' button column, so the label centres over the buttons
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(PanelColW(1, 0, 350, _window.ExtrasContainer.ActualWidth)) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(PanelColW(1, 0, 350, container.ActualWidth)) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
 

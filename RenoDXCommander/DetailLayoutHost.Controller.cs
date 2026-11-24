@@ -53,9 +53,8 @@ internal sealed partial class DetailLayoutHost
     private List<string> PanelStepKeys()
     {
         var keys = new List<string> { OverviewKey };
-        if (_tuneGrid != null)
-            foreach (var child in _tuneGrid.Children)
-                if (child is FrameworkElement { Visibility: Visibility.Visible, Tag: string key }) keys.Add(key);
+        foreach (var child in TuneTiles)
+            if (child is FrameworkElement { Visibility: Visibility.Visible, Tag: string key }) keys.Add(key);
         return keys;
     }
 
@@ -79,9 +78,8 @@ internal sealed partial class DetailLayoutHost
             var status = _statusTiles.FirstOrDefault(t => t.Root.Visibility == Visibility.Visible)?.Root;
             if (status != null) return status;
         }
-        if (_tuneGrid != null)
-            foreach (var child in _tuneGrid.Children)
-                if (child is Control c && Equals(c.Tag, key)) return c;
+        foreach (var child in TuneTiles)
+            if (child is Control c && Equals(c.Tag, key)) return c;
         return _hLaunchBtn;
     }
 }

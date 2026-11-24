@@ -767,4 +767,11 @@ public class ManifestFeatureFlags
     /// <summary>ANR FG preset in the OptiScaler ⚙.</summary>
     [JsonPropertyName("anrFg")]
     public bool? AnrFg { get; set; }
+
+    /// <summary>
+    /// Items to take out of the Experimental section by id (e.g. "urti"), when one misbehaves. Hidden for new installs;
+    /// still shown in games that have it, so it can be removed.
+    /// </summary>
+    [JsonPropertyName("experimentalHidden")]
+    public List<string>? ExperimentalHidden { get; set; }
 }

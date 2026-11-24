@@ -261,7 +261,9 @@ public partial class InstallFolderMigrationService
                 if (component.Equals(RtxEncoreService.ComponentName, StringComparison.OrdinalIgnoreCase)) continue; // above
                 var g = b.Group(NrLabel(component), newManifest?.Components.ContainsKey(component) == true);
                 bool isHsf = component.Equals(HsfService.Component, StringComparison.OrdinalIgnoreCase);
-                bool addonFirst = isHsf || component.Equals(UpliftService.Component, StringComparison.OrdinalIgnoreCase);
+                bool isUplift = component.Equals(UpliftService.Component, StringComparison.OrdinalIgnoreCase);
+                // URTI's files sit in the add-on folder too (no folder of its own)
+                bool addonFirst = isHsf || isUplift || component.Equals(UrtiService.Component, StringComparison.OrdinalIgnoreCase);
                 // HSF's Streamline / DLSS-G copies are its own files, never backed up game DLLs
                 foreach (var f in record.Files) b.Recorded(g, f, addonFirst, requireBackupForDlss: !isHsf);
                 if (component.Equals("Feeder", StringComparison.OrdinalIgnoreCase))
@@ -273,7 +275,7 @@ public partial class InstallFolderMigrationService
                         b.File(g, "dgVoodoo.conf");
                     }
                 }
-                if (addonFirst) b.AddonDir(g, isHsf ? HsfService.StreamlineFolder : UpliftService.DllFolder);
+                if (isHsf || isUplift) b.AddonDir(g, isHsf ? HsfService.StreamlineFolder : UpliftService.DllFolder);
             }
             if (oldManifest.SharedFiles.Count > 0)
             {
@@ -455,6 +457,7 @@ public partial class InstallFolderMigrationService
         "Feeder" => "DLSS5 Feeder",
         "Uplift" => "GITC Uplift",
         "HSF" => "HSF",
+        "Urti" => "URTI",
         _ => component,
     };
 

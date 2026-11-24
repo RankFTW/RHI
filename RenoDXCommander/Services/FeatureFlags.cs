@@ -47,4 +47,14 @@ public static class FeatureFlags
     /// <summary>ANR FG preset in the OptiScaler ⚙. Turned on for everyone with "anrFg": true in the manifest.</summary>
     public static bool AnrFg
         => DevUnlockService.IsUnlocked || _manifestFlags?.AnrFg == true;
+
+    /// <summary>Experimental section item ids ("urti").</summary>
+    public const string ExperimentalUrti = "urti";
+
+    /// <summary>
+    /// An Experimental item the manifest took out ("experimentalHidden": ["urti"]): not offered for new installs, but
+    /// still shown where it's installed so it can be removed. Not affected by unlock.txt (the switch is for pulling an item).
+    /// </summary>
+    public static bool IsExperimentalHidden(string id)
+        => _manifestFlags?.ExperimentalHidden?.Any(x => string.Equals(x?.Trim(), id, StringComparison.OrdinalIgnoreCase)) == true;
 }

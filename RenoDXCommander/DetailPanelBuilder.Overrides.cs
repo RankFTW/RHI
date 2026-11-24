@@ -841,6 +841,10 @@ public partial class DetailPanelBuilder
         BuildManagementSection(card, capturedName, ctx);
         CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
+        BuildExperimentalSection(card);
+        CrashReporter.Log($"[BuildOverridesPanel] Experimental done: '{card.GameName}'");
+
+        // Extras last: its SummaryChanged refreshes every section's tile / glance summary
         BuildExtrasSection(card);
         CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");
     }
