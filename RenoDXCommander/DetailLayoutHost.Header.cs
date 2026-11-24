@@ -318,7 +318,13 @@ internal sealed partial class DetailLayoutHost
         }
         if (w.HeaderApiBadges.Visibility == Visibility.Visible)
             foreach (var badge in w.HeaderApiBadges.Children)
-                if (FirstText(badge) is { } api) _hChips.Children.Add(MakeChip(api, accent: false));
+                if (FirstText(badge) is { } api)
+                {
+                    // API tags, an API override and the Launch args tag: their tooltips come along
+                    var chip = MakeChip(api, accent: false);
+                    if (TooltipText(badge) is { } tip) ToolTipService.SetToolTip(chip, tip);
+                    _hChips.Children.Add(chip);
+                }
         if (card != null) _hChips.Children.Add(MakeChip(card.Is32Bit ? "32-bit" : "64-bit", accent: false));
         if (w.HeaderAuthorBadges.Visibility == Visibility.Visible)
             foreach (var badge in w.HeaderAuthorBadges.Children)

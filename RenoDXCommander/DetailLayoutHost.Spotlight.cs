@@ -588,6 +588,9 @@ internal sealed partial class DetailLayoutHost
                 FontSize = 12,
                 Foreground = TabsTheme.B(TabsTheme.TextSecondary),
                 TextTrimming = TextTrimming.CharacterEllipsis,
+                // two lines: the version, then the component's overrides when it has any
+                TextWrapping = TextWrapping.Wrap,
+                MaxLines = 2,
             };
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(_name);
@@ -638,6 +641,8 @@ internal sealed partial class DetailLayoutHost
                 : tone != TabsTheme.Tone.Purple ? status
                 : status.StartsWith("Update", StringComparison.OrdinalIgnoreCase) ? "Update available"
                 : $"Update available · {status}";
+            // The component's overrides (channel, DLL name, Update All), as Game Overrides' summary showed them
+            if (_host.OverrideNotes(r.Key, rsModes: true) is { } notes) _status.Text += " · " + notes;
             _dot.Fill = TabsTheme.B(notInstalled ? "#3A4458" : tone switch
             {
                 TabsTheme.Tone.Purple => "#B898E8",

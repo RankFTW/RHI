@@ -426,12 +426,53 @@ public partial class DetailPanelBuilder
     {
         window.DetailGraphicsApiBadgePanel.Children.Clear();
 
-        if (!card.HasGraphicsApiBadge)
+        // The game's Graphics API override (game settings ⚙) replaces the detected APIs, marked as an override
+        var vm = window.ViewModel;
+        var overrideApis = vm.GetApiOverride(card.GameName, card.Source ?? "");
+        if (overrideApis is { Count: > 0 })
         {
-            window.DetailGraphicsApiBadgePanel.Visibility = Visibility.Collapsed;
-            return;
+            var detected = card.HasGraphicsApiBadge ? card.GraphicsApiLabel : "unknown";
+            foreach (var name in overrideApis)
+            {
+                var label = Enum.TryParse<GraphicsApiType>(name, ignoreCase: true, out var api) ? Services.GraphicsApiDetector.GetLabel(api) : name;
+                if (string.IsNullOrEmpty(label)) label = name;
+                AddHeaderBadge(window, $"{label} (override)",
+                    $"Graphics API set in the game's settings ⚙ (detected: {detected}). RHI installs for this API.");
+            }
         }
+        else if (card.HasGraphicsApiBadge)
+            AddDetectedApiBadges(window, card);
 
+        // Launch arguments (game settings ⚙): a tag when set, the arguments on hover
+        var args = vm.GetLaunchArgsOverride(card.GameName);
+        if (!string.IsNullOrWhiteSpace(args))
+            AddHeaderBadge(window, "Launch args", $"Launch arguments, used when you start the game from RHI (game settings ⚙): {args}");
+
+        window.DetailGraphicsApiBadgePanel.Visibility =
+            window.DetailGraphicsApiBadgePanel.Children.Count > 0
+            ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>A small header tag in the API badge panel (same look as the API tags).</summary>
+    private static void AddHeaderBadge(MainWindow window, string text, string tooltip)
+    {
+        var badge = new Border
+        {
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(6, 2, 6, 2),
+            Background = UIFactory.Brush(ResourceKeys.ChipDefaultBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock { Text = text, FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush) },
+        };
+        ToolTipService.SetToolTip(badge, tooltip);
+        window.DetailGraphicsApiBadgePanel.Children.Add(badge);
+    }
+
+    /// <summary>The detected graphics APIs as header tags.</summary>
+    private static void AddDetectedApiBadges(MainWindow window, GameCardViewModel card)
+    {
         var rawApis = card.DetectedApis.Count > 0
             ? card.DetectedApis
             : new HashSet<GraphicsApiType> { card.GraphicsApi };
@@ -497,10 +538,6 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(badge, $"Detected graphics API: {apiName}");
             window.DetailGraphicsApiBadgePanel.Children.Add(badge);
         }
-
-        window.DetailGraphicsApiBadgePanel.Visibility =
-            window.DetailGraphicsApiBadgePanel.Children.Count > 0
-            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ── OverridesHeaderRow event handler refs — stored so we can unsubscribe on rebuild ──
@@ -859,14 +896,19 @@ public partial class DetailPanelBuilder
 
         if (card.IsRefInstalled)
             entries.Add(("RE Framework", card.RefInstalledVersion));
+        // Each component's overrides in brackets after its version (Game Overrides' old summary items)
+        var vm = App.Services.GetService(typeof(MainViewModel)) as MainViewModel;
+        string? With(string key, string? version) =>
+            vm != null && ComponentOverrideNotes.Line(vm, card, key) is { } notes
+                ? $"{version} ({notes.Replace(" · ", ", ")})" : version;
         if (card.IsRsInstalled && card.LumaStatus is not GameStatus.Installed and not GameStatus.UpdateAvailable)
-            entries.Add(("ReShade", card.RsInstalledVersion));
+            entries.Add(("ReShade", With("Rs", card.RsInstalledVersion)));
         if (card.IsRdxInstalled)
-            entries.Add(("RenoDX", card.RdxInstalledVersion));
+            entries.Add(("RenoDX", With("Rdx", card.RdxInstalledVersion)));
         if (card.IsUlInstalled)
-            entries.Add(("ReLimiter", card.UlInstalledVersion));
+            entries.Add(("ReLimiter", With("Ul", card.UlInstalledVersion)));
         if (card.IsDcInstalled)
-            entries.Add(("DC", card.DcInstalledVersion));
+            entries.Add(("DC", With("Dc", card.DcInstalledVersion)));
         if (card.IsLumaInstalled)
             entries.Add(("Luma", "On"));
 
@@ -899,65 +941,9 @@ public partial class DetailPanelBuilder
     }
 
     /// <summary>
-    /// Builds the summary for the Game Overrides section.
-    /// Shows active non-default per-game overrides: RS channel, API, launch args.
-    /// Returns null when everything is at default.
+    /// The summary for the Game Overrides section: nothing any more (it goes away in 2.9.8). Its items show where they
+    /// belong (ComponentOverrideNotes: on the component cards, the Components summary and OptiScaler's Extras row; the
+    /// Graphics API override and launch arguments as header tags), so its header and tile show their plain text.
     /// </summary>
-    internal TextBlock? BuildGameOverridesSummary(GameCardViewModel card)
-    {
-        var entries = new List<(string Label, string? Version)>();
-
-        var channel = _window.ViewModel.GetReShadeChannelOverride(card.GameName, card.Source ?? "");
-        if (!string.IsNullOrEmpty(channel))
-            entries.Add(("RS Channel:", channel));
-
-        var apis = _window.ViewModel.GetApiOverride(card.GameName, card.Source ?? "");
-        if (apis is { Count: > 0 })
-            entries.Add(("API:", string.Join("+", apis)));
-
-        // Shaders / Addons — show when set to non-default
-        var shaderMode = _window.ViewModel.GetPerGameShaderMode(card.GameName, card.Source ?? "");
-        if (!string.IsNullOrEmpty(shaderMode) && shaderMode != "Global")
-            entries.Add(("Shaders:", shaderMode));
-
-        var addonMode = _window.ViewModel.GetPerGameAddonMode(card.GameName, card.Source ?? "");
-        if (!string.IsNullOrEmpty(addonMode) && addonMode != "Global")
-            entries.Add(("Addons:", addonMode));
-
-        // Update inclusion — show only when any component is excluded
-        var excluded = new List<string>();
-        if (_window.ViewModel.IsUpdateAllExcludedReShade(card.GameName, card.Source ?? "")) excluded.Add("RS");
-        if (_window.ViewModel.IsUpdateAllExcludedRenoDx(card.GameName, card.Source ?? "")) excluded.Add("RDX");
-        if (_window.ViewModel.IsUpdateAllExcludedUl(card.GameName, card.Source ?? ""))     excluded.Add("RL");
-        if (_window.ViewModel.IsUpdateAllExcludedDc(card.GameName, card.Source ?? ""))     excluded.Add("DC");
-        if (_window.ViewModel.IsUpdateAllExcludedOs(card.GameName, card.Source ?? ""))     excluded.Add("OS");
-        if (excluded.Count > 0)
-            entries.Add(("Excluded:", string.Join(" ", excluded)));
-
-        var launchArgs = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var la)
-            ? la : null;
-        if (!string.IsNullOrWhiteSpace(launchArgs))
-            entries.Add(("Args:", launchArgs));
-
-        // DLL naming overrides — show each custom filename that's set
-        if (_window.ViewModel.HasDllOverride(card.GameName))
-        {
-            var cfg = _window.ViewModel.GetDllOverride(card.GameName);
-            if (cfg != null)
-            {
-                if (!string.IsNullOrEmpty(cfg.ReShadeFileName) && cfg.ReShadeFileName != "--------")
-                    entries.Add(("RS DLL:", cfg.ReShadeFileName));
-                if (!string.IsNullOrEmpty(cfg.DcFileName) && cfg.DcFileName != "--------")
-                    entries.Add(("DC DLL:", cfg.DcFileName));
-                if (!string.IsNullOrEmpty(cfg.OsFileName) && cfg.OsFileName != "--------")
-                    entries.Add(("OS DLL:", cfg.OsFileName));
-            }
-        }
-
-        return MakeSectionSummaryInlines(entries,
-            "Game overrides that differ from the defaults.\n"
-            + "RS = ReShade, RDX = RenoDX, RL = ReLimiter, DC = Display Commander, OS = OptiScaler.\n"
-            + "API = graphics API override. Args = launch arguments. DLL = custom DLL file name.\n"
-            + "Excluded = components Update All skips for this game.");
-    }
+    internal TextBlock? BuildGameOverridesSummary(GameCardViewModel card) => null;
 }

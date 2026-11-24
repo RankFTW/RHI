@@ -77,7 +77,9 @@ public partial class DetailPanelBuilder
         if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("Universal MFG", "On"));
         if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Unlock", "On"));
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
-        if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
+        if (card.IsOsInstalled)
+            exSummaryEntries.Add(("OptiScaler", ComponentOverrideNotes.Line(vm, card, "Os") is { } osNotes
+                ? $"{card.OsInstalledVersion} ({osNotes.Replace(" · ", ", ")})" : card.OsInstalledVersion));
         if (HsfService.IsInstalledIn(installPath, card.Is32Bit))                           exSummaryEntries.Add(("HSF", "On"));
         var encoreSvc = App.Services.GetRequiredService<RtxEncoreService>();
         if (encoreSvc.IsInstalledIn(installPath, vm.GetRtxEncoreInstalledAs(gn, gs)))      exSummaryEntries.Add(("RTX Encore", encoreSvc.StagedVersion ?? "On"));
@@ -288,9 +290,13 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         // osGreyed == 32-bit: the install button and cog are disabled (no tooltips), so say why here.
+        // The game's OptiScaler overrides (DLL name, Update All) as a Game: line, shown under the name in Tabs / Spotlight
+        var osNotes2 = ComponentOverrideNotes.For(_window.ViewModel, card, "Os");
+        var osNoteLine = osNotes2.Count == 0 ? ""
+            : "\nGame: " + string.Join(" · ", osNotes2.Select(n => n.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || n.EndsWith(".asi", StringComparison.OrdinalIgnoreCase) ? "installs as " + n : n));
         ToolTipService.SetToolTip(label, osGreyed
-            ? "OptiScaler: upscaler and frame generation injector.\nNot available for 32-bit games."
-            : "OptiScaler: upscaler and frame generation injector.");
+            ? "OptiScaler: upscaler and frame generation injector.\nNot available for 32-bit games." + osNoteLine
+            : "OptiScaler: upscaler and frame generation injector." + osNoteLine);
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 

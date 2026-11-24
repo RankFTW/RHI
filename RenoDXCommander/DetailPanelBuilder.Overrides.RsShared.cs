@@ -24,7 +24,41 @@ public partial class DetailPanelBuilder
         if (refreshCard != null)
             _window.DispatcherQueue?.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                () => BuildOverridesPanel(refreshCard));
+                () =>
+                {
+                    BuildOverridesPanel(refreshCard);
+                    if (ReferenceEquals(_window.ViewModel.SelectedGame, refreshCard)) RefreshOverrideNotes(refreshCard);
+                });
+    }
+
+    /// <summary>
+    /// Shows a changed override where it now lives (ComponentOverrideNotes and the header tags): the API / Launch args
+    /// tags, the Components summary, the Overview cards and Spotlight's What's installed tiles.
+    /// </summary>
+    internal void RefreshOverrideNotes(GameCardViewModel card)
+    {
+        try
+        {
+            UpdateGraphicsApiBadges(_window, card);
+            if (_componentsSummaryCard == card && _componentsSummary != null)
+            {
+                var visibility = _componentsSummary.Visibility;
+                _window.DetailComponentsHeader.Children.Remove(_componentsSummary);
+                _componentsSummary = BuildComponentsSummary(card);
+                if (_componentsSummary != null)
+                {
+                    _componentsSummary.Visibility = visibility;
+                    _window.DetailComponentsHeader.Children.Add(_componentsSummary);
+                }
+            }
+            if (Layout.IsTabs) Layout.RefreshHeader();
+            Layout.RefreshOverviewCards();
+            if (Layout.IsSpotlight) Layout.RefreshSpotStatus();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            CrashReporter.Log($"[DetailPanelBuilder.RefreshOverrideNotes] {ex.Message}");
+        }
     }
 
     private GameCardViewModel? FindCard(string gameName) =>

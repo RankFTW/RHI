@@ -138,7 +138,7 @@ internal sealed partial class DetailLayoutHost
 
     private static string GlanceFallback(string key) => key switch
     {
-        "GameOverrides"       => "Name, DLL names, launch options, shaders and addons",
+        "GameOverrides"       => "Moving to each component's ⚙ and the game's settings ⚙ in 2.9.8",
         "NeuralRendering"     => "Not set up",
         "NvidiaProfileDlss"   => "No DLSS or Streamline files found",
         "NvidiaProfileDriver" => "NVIDIA driver settings for this game",
@@ -277,13 +277,14 @@ internal sealed partial class DetailLayoutHost
                 var line = string.Equals(shaders, addons, StringComparison.OrdinalIgnoreCase)
                     ? $"{channel} channel · {shaders.ToLowerInvariant()} shaders and addons"
                     : $"{channel} channel · {shaders.ToLowerInvariant()} shaders · {addons.ToLowerInvariant()} addons";
-                return card.RequiresVulkanInstall ? line + " · Vulkan layer" : line;
+                if (card.RequiresVulkanInstall) line += " · Vulkan layer";
+                return WithNotes(line, "Rs");
             }
             case "Rdx":
-                return !string.IsNullOrEmpty(card.InstalledAddonFileName) ? card.InstalledAddonFileName
+                return WithNotes(!string.IsNullOrEmpty(card.InstalledAddonFileName) ? card.InstalledAddonFileName
                     : card.IsRtxHdrEnabled  ? "NVIDIA RTX HDR is on for this game"
                     : card.IsAutoHdrEnabled ? "Windows Auto HDR is on for this game"
-                    : "HDR mod for this game";
+                    : "HDR mod for this game", "Rdx");
             case "Luma":
             {
                 // The mod's Name is just the game's name, so describe it instead
@@ -299,9 +300,17 @@ internal sealed partial class DetailLayoutHost
             }
             case "Ref":    return "Needed for ReShade in RE Engine games";
             case "DofFix": return "Fixes depth of field with RenoDX in Unreal Engine 5 games";
-            default:       return null;
+            default:       return OverrideNotes(rowKey); // ReLimiter / Display Commander: only their overrides
         }
+
+        // The card line, then the component's overrides (Game Overrides' old summary items), " · " between
+        string WithNotes(string line, string key) =>
+            ComponentOverrideNotes.Line(vm, card, key, rsModes: false) is { } notes ? $"{line} · {notes}" : line;
     }
+
+    /// <summary>A component's overrides as one line ("d3d12.dll · not in Update All"), or null. See <see cref="ComponentOverrideNotes"/>.</summary>
+    internal string? OverrideNotes(string rowKey, bool rsModes = false) =>
+        _window.ViewModel.SelectedGame is { } card ? ComponentOverrideNotes.Line(_window.ViewModel, card, rowKey, rsModes) : null;
 
     private bool _lumaBuildRequested;
 
@@ -559,7 +568,8 @@ internal sealed partial class DetailLayoutHost
             // Description, or the ReLimiter / Display Commander switch
             bool showSwitch = visible.Count > 1;
             UpdateSwitch(showSwitch ? visible : null, r);
-            var desc = showSwitch ? null : _host.DescribeRow(r.Key);
+            // (with the switch showing, the shown limiter's overrides still get their line)
+            var desc = showSwitch ? _host.OverrideNotes(r.Key) : _host.DescribeRow(r.Key);
             _desc.Text = desc ?? "";
             _desc.Visibility = string.IsNullOrEmpty(desc) ? Visibility.Collapsed : Visibility.Visible;
 
