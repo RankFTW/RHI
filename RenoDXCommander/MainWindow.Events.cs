@@ -19,6 +19,9 @@ public sealed partial class MainWindow
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         _crashReporter.Log("[MainWindow.RefreshButton_Click] User clicked Refresh");
+        // Refresh is a user check: component updates run even in Minimal mode and inside the cooldown
+        // (Settings says "component checks only run when you check now, Refresh or Update All")
+        ViewModel.ForceNextUpdateCheck();
         _ = RefreshWithScrollRestore();
     }
 

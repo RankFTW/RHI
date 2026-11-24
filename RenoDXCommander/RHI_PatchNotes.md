@@ -58,6 +58,7 @@
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 
 **General**
+- Fixed the Refresh button not checking for component updates when Settings › General › Background checks is Minimal (and, with it On, until the hourly check was due), so new versions such as a ReLimiter release didn't show and the last check time didn't move. Refresh now always checks, like Check for updates in Settings.
 - Fixed dropping an archive link (for example from Discord) doing nothing when it couldn't be downloaded, such as an expired Discord link. RHI now shows that it's downloading, and says why when it fails.
 - Fixed Spotlight artwork, the Steam Community link and PCGamingWiki details missing for games whose store name leaves out punctuation from the official title, such as Assassin's Creed Black Flag Resynced on Ubisoft Connect.
 - Fixed the DLSS / Streamline and Driver Settings summaries (Spotlight's Tune this game tiles, the Tabs layout's At a glance tiles and collapsed section headers) showing old values after changing a DLSS preset or render scale, VSync, FPS Limit or Smooth Motion, until you moved to another game.
