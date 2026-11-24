@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6 Beta 6
+## v2.9.6 Beta 7
 
 ### New
 - **G-SYNC on each monitor.** A new ⚙ beside Settings › Driver Settings › G-Sync lists your monitors and lets you allow G-SYNC on each one. This is the G-SYNC switch in the NVIDIA app (System › Displays), which G-SYNC Compatible monitors that NVIDIA hasn't validated need before G-SYNC works on them; RHI's G-Sync setting couldn't turn it on for those monitors. Changes save straight away and apply the next time the graphics driver starts: restart Windows, or use Restart driver now (screens go black for a few seconds; needs Admin Mode). A driver restart resets GPU overclocks and undervolts (MSI Afterburner, the NVIDIA app's Performance tuning), so reapply them afterwards.
