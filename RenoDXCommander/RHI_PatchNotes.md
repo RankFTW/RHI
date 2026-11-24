@@ -53,6 +53,7 @@
 
 **Components**
 - Fixed switching or removing a Neural Rendering method deleting nvngx_dlssnr.dll even when the NR Cost Scaler wasn't installed, which took the DLL from other components still using it (such as MFG Unlock's DLSS 5).
+- Fixed RHI's VRR frame rate caps for ReLimiter (its ⚙ and Settings) and Display Commander sometimes being one higher than ReLimiter's own VRR Cap, so picking it in one showed as Custom in the other. RHI now works the caps out from your display's exact refresh rate like ReLimiter does: a 240Hz display running at 239.96Hz gives 223, not 224. The 200Hz and 500Hz caps are now 188 and 430, which is also ReLimiter's number.
 - Fixed ReLimiter's overlay key not working when set to a numpad, arrow or punctuation key (RHI wrote names like Num2 that ReLimiter doesn't recognise).
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed RHI's peak brightness not applying to Unity RenoDX mods, and RHI removing a toneMapPeakNits line you added to reshade.ini yourself. Unity mods spell the setting toneMapPeakNits while other mods use ToneMapPeakNits, and RHI only wrote the second. RHI now writes the spelling the installed mod uses (from Settings, the RenoDX ⚙ and Deploy ReShade.ini) and removes the other spelling that older versions added.

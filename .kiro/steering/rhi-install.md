@@ -89,6 +89,7 @@ fileMatchPattern: "*Install*,*Update*,*Orchestration*"
 - Only fires when `card.UseUeExtended` is true during install
 
 ### ReLimiter / Display Commander
+- **VRR cap presets** (ReLimiter / DC ⚙, Settings ReLimiter Target FPS): computed by `Services/VrrCaps.cs` like ReLimiter (`osd.cpp`: hz - hz²/3600, floored, from the active path's exact refresh rate), using an attached display's exact rate when it rounds to the preset's Hz (239.96 → 223). Don't go back to a hardcoded list: rounded values (224 on 239.96 Hz, 189, 431) showed as Custom in ReLimiter's own VRR Cap. Driver / OptiScaler / MFG lists are still fixed.
 - Standard addon deployment
 - Auto-disable driver FPS cap on install. Delete setting on uninstall.
 - **ReLimiter version pin** (⚙ › Version, `MainWindow.Events.Components.FrameLimiters.Version.cs`): per-game `GameNameService.UlPinnedVersion` (`"Game|Store"` → release tag; `Get/SetUlPinnedVersion`, `IsUlPinned`). `UlReleaseService` lists releases (32-bit builds only from v3.3.1) and stages a pinned build in `framelimiter\pinned\<tag>\`. `InstallUlAsync` deploys the pin when set and then **doesn't write `ul_meta.json`** (that file tracks the global latest build). The update check, Update All and the cached update snapshot skip pinned games. A version change on an installed game = `SwitchUlVersionAsync` (binary only: no ini, driver FPS cap or global-setting writes).

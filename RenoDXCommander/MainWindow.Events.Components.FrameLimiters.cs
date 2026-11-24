@@ -17,24 +17,12 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
-    /// <summary>VRR frame rate caps (same as the global settings), used by the ReLimiter and Display Commander ⚙.</summary>
-    private static readonly (int Fps, string Label)[] VrrFpsPresets =
-    {
-        (59,  "59 (60Hz VRR)"),
-        (73,  "73 (75Hz VRR)"),
-        (97,  "97 (100Hz VRR)"),
-        (116, "116 (120Hz VRR)"),
-        (138, "138 (144Hz VRR)"),
-        (157, "157 (165Hz VRR)"),
-        (171, "171 (180Hz VRR)"),
-        (189, "189 (200Hz VRR)"),
-        (224, "224 (240Hz VRR)"),
-        (258, "258 (280Hz VRR)"),
-        (275, "275 (300Hz VRR)"),
-        (324, "324 (360Hz VRR)"),
-        (416, "416 (480Hz VRR)"),
-        (431, "431 (500Hz VRR)"),
-    };
+    /// <summary>
+    /// VRR frame rate caps (same as the global settings), used by the ReLimiter and Display Commander ⚙.
+    /// Computed like ReLimiter from the displays' exact refresh rates (<see cref="VrrCaps"/>); read once per dialog.
+    /// </summary>
+    private static (int Fps, string Label)[] VrrFpsPresets
+        => VrrCaps.Presets().Select(p => (p.Fps, $"{p.Fps} ({p.Hz}Hz VRR)")).ToArray();
 
     private async void UlCogButton_Click(object sender, RoutedEventArgs e)
     {

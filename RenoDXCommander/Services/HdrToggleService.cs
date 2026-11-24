@@ -235,6 +235,38 @@ public static class HdrToggleService
         return (default, 0);
     }
 
+    /// <summary>
+    /// Exact refresh rates (e.g. 239.96) of every active display, from the active paths' target modes:
+    /// the same source ReLimiter uses for its VRR cap. Empty on failure.
+    /// </summary>
+    public static List<double> GetActiveRefreshRates()
+    {
+        var result = new List<double>();
+        try
+        {
+            int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+            if (err != 0) return result;
+
+            var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+            var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+            err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+            if (err != 0) return result;
+
+            for (int i = 0; i < pathCount; i++)
+            {
+                var rate = paths[i].targetInfo.refreshRate;
+                if (rate.Denominator == 0) continue;
+                double hz = (double)rate.Numerator / rate.Denominator;
+                if (hz >= 1.0) result.Add(hz);
+            }
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or MarshalDirectiveException)
+        {
+            CrashReporter.Log($"[HdrToggleService.GetActiveRefreshRates] Failed — {ex.Message}");
+        }
+        return result;
+    }
+
     /// <summary>Returns all active display targets (adapterId + targetId + friendly name + HDR supported).</summary>
     /// <summary>
     /// Returns a dictionary mapping GDI device name (e.g. "\\.\DISPLAY1") → EDID friendly name.
