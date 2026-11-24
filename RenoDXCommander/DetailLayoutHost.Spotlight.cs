@@ -637,12 +637,25 @@ internal sealed partial class DetailLayoutHost
             var tone = TabsTheme.ToneOf(r.Status.Foreground);
             bool notInstalled = status.Length == 0 || status == "—"
                 || string.Equals(status, "Ready", StringComparison.OrdinalIgnoreCase);
-            _status.Text = notInstalled ? "Not installed"
-                : tone != TabsTheme.Tone.Purple ? status
-                : status.StartsWith("Update", StringComparison.OrdinalIgnoreCase) ? "Update available"
-                : $"Update available · {status}";
-            // The component's overrides (channel, DLL name, Update All), as Game Overrides' summary showed them
-            if (_host.OverrideNotes(r.Key, rsModes: true) is { } notes) _status.Text += " · " + notes;
+            // Values in the Tune tiles' green (the version, then the component's overrides: channel, DLL name,
+            // Update All, as Game Overrides' summary showed them), " · " between them in the normal text colour
+            _status.Inlines.Clear();
+            var parts = new List<(string Text, bool Value)>();
+            if (notInstalled) parts.Add(("Not installed", false));
+            else if (tone != TabsTheme.Tone.Purple) parts.Add((status, true));
+            else if (status.StartsWith("Update", StringComparison.OrdinalIgnoreCase)) parts.Add(("Update available", false));
+            else { parts.Add(("Update available", false)); parts.Add((status, true)); }
+            if (!notInstalled && _host._window.ViewModel is { SelectedGame: { } game } vm)
+                foreach (var note in ComponentOverrideNotes.For(vm, game, r.Key, rsModes: true))
+                    parts.Add((note, true));
+            for (int i = 0; i < parts.Count; i++)
+            {
+                if (i > 0) _status.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " · " });
+                var run = new Microsoft.UI.Xaml.Documents.Run { Text = parts[i].Text };
+                if (parts[i].Value && tone is not (TabsTheme.Tone.Amber or TabsTheme.Tone.Red))
+                    run.Foreground = TabsTheme.B(TabsTheme.Value);
+                _status.Inlines.Add(run);
+            }
             _dot.Fill = TabsTheme.B(notInstalled ? "#3A4458" : tone switch
             {
                 TabsTheme.Tone.Purple => "#B898E8",
