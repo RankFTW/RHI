@@ -3,7 +3,8 @@
 //
 // RHI keeps a copy of the notes it last ran with (DialogService.Update.cs). After an update, this version's section
 // (matched by number, so "v2.9.6 Beta 3" matches "v2.9.6 Beta 2" and "v2.9.6") is compared line by line with the same
-// version's section in that copy. Lines that are new or reworded are listed under the heading they sit in.
+// version's section in that copy. New lines are listed under the heading they sit in; a line that mostly repeats
+// wording already there (a bullet split up or tidied) isn't.
 // Nothing to maintain by hand: a release from 2.9.5 (no 2.9.6 section before) shows no block, a beta user moving to the
 // release sees what changed since their beta.
 
@@ -41,15 +42,17 @@ internal static class PatchNotesChanges
     }
 
     /// <summary>
-    /// Lines of <paramref name="currentBody"/> that aren't in <paramref name="previousBody"/> (ignoring spacing),
+    /// Lines of <paramref name="currentBody"/> that aren't in <paramref name="previousBody"/> (ignoring spacing, and
+    /// skipping rewordings of what was already there, see <see cref="RewordingThreshold"/>),
     /// each with the "### " heading it sits under (null before the first one). Headings and "---" are never listed;
     /// a line that is only a bold sub-heading ("**General**") isn't either.
     /// </summary>
     internal static List<(string? Heading, string Line)> NewLines(string previousBody, string currentBody)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seenPhrases = new HashSet<string>(StringComparer.Ordinal);
         foreach (var raw in previousBody.Split('\n'))
-            if (ContentKey(raw) is { } key) seen.Add(key);
+            if (ContentKey(raw) is { } key) { seen.Add(key); seenPhrases.UnionWith(Phrases(key)); }
 
         var result = new List<(string?, string)>();
         string? heading = null;
@@ -57,10 +60,35 @@ internal static class PatchNotesChanges
         {
             var line = raw.TrimEnd('\r').Trim();
             if (line.StartsWith("### ", StringComparison.Ordinal)) { heading = line[4..].Trim(); continue; }
-            if (ContentKey(line) is not { } key || seen.Contains(key)) continue;
+            if (ContentKey(line) is not { } key || seen.Contains(key) || IsRewording(key, seenPhrases)) continue;
             result.Add((heading, line));
         }
         return result;
+    }
+
+    /// <summary>
+    /// Share of a line's three-word phrases that the earlier notes already had, at or above which the line counts as a
+    /// rewording (an old bullet split up, shortened or moved), not news. Measured on every 2.9.6 beta-to-beta update:
+    /// new lines scored 0.17 or less, rewordings 0.35 or more (Beta 6's split Game Overrides bullets were listed as changed).
+    /// </summary>
+    internal const double RewordingThreshold = 0.3;
+
+    private static bool IsRewording(string key, HashSet<string> seenPhrases)
+    {
+        var phrases = Phrases(key);
+        if (phrases.Count == 0) return false; // too short to judge: only an exact match counts
+        int known = phrases.Count(seenPhrases.Contains);
+        return (double)known / phrases.Count >= RewordingThreshold;
+    }
+
+    /// <summary>Lower-case three-word phrases of a line (letters and digits only).</summary>
+    private static HashSet<string> Phrases(string text)
+    {
+        var words = Regex.Matches(text.ToLowerInvariant(), "[a-z0-9]+").Select(m => m.Value).ToList();
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i + 2 < words.Count; i++)
+            set.Add(words[i] + " " + words[i + 1] + " " + words[i + 2]);
+        return set;
     }
 
     /// <summary>Normalised text of a content line, or null for blank lines, headings, rules and bold-only sub-headings.</summary>

@@ -62,6 +62,21 @@ public class PatchNotesChangesTests
     }
 
     [Fact]
+    public void NewLines_Skips_A_Bullet_Split_Out_Of_An_Old_One_But_Lists_New_Ones()
+    {
+        // Beta 5 → Beta 6: one long bullet became several; only the genuinely new line should be listed.
+        const string before =
+            "### Changes\n- Game Overrides is moving. Game name, Bitness, Graphics API, launch options and Reset are in the game's settings ⚙ (next to its name); the wiki mod name and wiki lookup are in the RenoDX ⚙ (Mod matching); and every component's ⚙ has an Update All row (Include / Exclude) in place of Update inclusion.\n";
+        const string now =
+            "### Changes\n- The RenoDX ⚙ has a new Mod matching section with the wiki mod name and wiki lookup.\n" +
+            "- The game's settings ⚙ (next to its name) now has Game name, Bitness, Graphics API, launch options and Reset.\n" +
+            "- **G-SYNC on each monitor.** A new ⚙ beside Settings lists your monitors and lets you allow G-SYNC on each one.\n";
+        var lines = PatchNotesChanges.NewLines(before, now);
+        Assert.Single(lines);
+        Assert.StartsWith("- **G-SYNC on each monitor.**", lines[0].Line);
+    }
+
+    [Fact]
     public void BuildBlock_Groups_Lines_And_Is_Null_When_Nothing_Changed()
     {
         Assert.Null(PatchNotesChanges.BuildBlock(new List<(string?, string)>(), "2.9.6 beta 2"));
