@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56185,
-  "generated": "2026-11-24T13:26:54Z",
+  "generated": "2026-11-24T15:26:54Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -74068,7 +74068,9 @@
       "steam_appid": 3400,
       "engine": "PopCap Games Framework"
     },
-    "Hammer of the Gods": {},
+    "Hammer of the Gods": {
+      "steam_appid": 4622690
+    },
     "HAMMER WORLD: DIMENSION TRAVELER": {
       "steam_appid": 819440
     },
