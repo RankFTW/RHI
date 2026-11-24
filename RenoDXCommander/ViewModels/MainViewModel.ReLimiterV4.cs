@@ -292,6 +292,46 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>
+    /// After the PC Latency permission is granted or removed in Settings: native_pcl_enabled=true / false in every game
+    /// that has ReLimiter v4 (its relimiter.ini next to the addon, and RE Framework's _storage_ copy), so they don't wait
+    /// for their next ReLimiter update. Games that are running are skipped: ReLimiter writes its settings back when it
+    /// saves, which would undo the change (they get it at their next ReLimiter install or update). Touches the disk:
+    /// call off the UI thread with a snapshot of the cards. Returns (inis written, running games skipped).
+    /// </summary>
+    internal static (int Written, int Running) SetUlNativePclInV4Games(IEnumerable<GameCardViewModel> cards, bool on)
+    {
+        int written = 0, running = 0;
+        var done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var card in cards)
+        {
+            if (!card.IsUlInstalled || string.IsNullOrEmpty(card.InstallPath)) continue;
+            if ((UlInstalledMajor(card) ?? 0) < UlV4Rules.V4Major) continue;
+            var ini = Path.Combine(ModInstallService.GetAddonDeployPath(card.InstallPath), UlV4Rules.IniName);
+            if (!done.Add(ini)) continue;
+            if (card.IsRunning) { running++; continue; }
+            var targets = new List<string> { ini };
+            var storage = Path.Combine(card.InstallPath, "_storage_", UlV4Rules.IniName);
+            if (File.Exists(storage)) targets.Add(storage);
+            foreach (var path in targets)
+            {
+                // Off: only where an ini exists (no file = ReLimiter's default, off). On: a missing ini gets just this line.
+                if (!on && !File.Exists(path)) continue;
+                try
+                {
+                    AuxInstallService.ApplyUlNativePcl(path, on);
+                    written++;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    CrashReporter.Log($"[MainViewModel.SetUlNativePclInV4Games] '{path}' — {ex.Message}");
+                }
+            }
+        }
+        CrashReporter.Log($"[MainViewModel.SetUlNativePclInV4Games] native_pcl_enabled={(on ? "true" : "false")} in {written} relimiter.ini file(s); {running} running game(s) skipped");
+        return (written, running);
+    }
+
     /// <summary>Writes relimiter.ini from the template (see <see cref="UlIniTextFor"/>) next to the addon when the game has none. Never throws.</summary>
     private void WriteUlIniIfAbsent(string installPath, int major)
     {

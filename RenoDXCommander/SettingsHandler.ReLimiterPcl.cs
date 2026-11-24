@@ -143,6 +143,17 @@ public partial class SettingsHandler
             var (ok, error) = await PclPermissionService.SetAsync(enable);
             _pclBusy = false;
             await RefreshPclRowAsync();
+            if (ok)
+            {
+                // ReLimiter v4 games already installed get native_pcl_enabled now, not at their next ReLimiter update
+                var cards = ViewModel.AllCards.ToList();
+                var (written, running) = await Task.Run(() => ViewModels.MainViewModel.SetUlNativePclInV4Games(cards, enable));
+                if (written > 0 || running > 0)
+                    _window.ShowStatusBarMessage(
+                        $"PC Latency turned {(enable ? "on" : "off")} in {written} ReLimiter v4 game{(written == 1 ? "" : "s")}"
+                        + (running > 0 ? $"; {running} running game{(running == 1 ? "" : "s")} left as {(running == 1 ? "it is" : "they are")} (changed at the next ReLimiter update)" : ""),
+                        TimeSpan.FromSeconds(10));
+            }
             if (!ok && error != null)
             {
                 _pclStatusText.Text = error;

@@ -275,4 +275,22 @@ public class UlV4RulesTests
     public void SeededIni_V4WithPcl_AddsNativePcl() =>
         Assert.Contains("native_pcl_enabled=true",
             UlV4Rules.BuildSeededIni("[FrameLimiter]\nosd_toggle_key=F12\n", 4, null, false, false, 0, nativePcl: true));
+
+    [Fact]
+    public void ApplyNativePcl_TurnsItOnAndOff_KeepingOtherKeys()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "rhi-pcl-" + Guid.NewGuid().ToString("N") + ".ini");
+        try
+        {
+            File.WriteAllText(path, "[FrameLimiter]\r\ntarget_fps=116\r\nnative_pcl_enabled=true\r\n");
+            AuxInstallService.ApplyUlNativePcl(path, on: false);
+            var off = File.ReadAllText(path);
+            Assert.Contains("native_pcl_enabled=false", off);
+            Assert.Contains("target_fps=116", off);
+            AuxInstallService.ApplyUlNativePcl(path, on: true);
+            Assert.Contains("native_pcl_enabled=true", File.ReadAllText(path));
+            Assert.DoesNotContain("native_pcl_enabled=false", File.ReadAllText(path));
+        }
+        finally { File.Delete(path); }
+    }
 }

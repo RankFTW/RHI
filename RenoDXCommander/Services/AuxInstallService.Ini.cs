@@ -1490,10 +1490,10 @@ public partial class AuxInstallService
     }
 
     /// <summary>
-    /// Turns ReLimiter v4's native PC Latency on (native_pcl_enabled=true in [FrameLimiter]).
-    /// Only for v4 games whose Windows account has the PCL permission (Settings › Components › ReLimiter).
+    /// Turns ReLimiter v4's native PC Latency on or off (native_pcl_enabled=true / false in [FrameLimiter]).
+    /// On only for v4 games whose Windows account has the PCL permission (Settings › Components › ReLimiter).
     /// </summary>
-    public static void ApplyUlNativePcl(string iniFilePath)
+    public static void ApplyUlNativePcl(string iniFilePath, bool on = true)
     {
         var ini = File.Exists(iniFilePath)
             ? ParseIni(File.ReadAllLines(iniFilePath))
@@ -1504,7 +1504,7 @@ public partial class AuxInstallService
         if (!ini.ContainsKey(section))
             ini[section] = new OrderedDict();
 
-        ini[section]["native_pcl_enabled"] = "true";
+        ini[section]["native_pcl_enabled"] = on ? "true" : "false";
 
         WriteIni(iniFilePath, ini);
     }
