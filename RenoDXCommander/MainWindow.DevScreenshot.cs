@@ -8,6 +8,7 @@
 //   page=settings[:Section]        (optional: open the Settings page, e.g. page=settings:Display)
 //   open=displaymodes              (optional: open the selected game's Display mode dialog)
 //   open=urticog                   (optional: open the selected game's URTI ⚙)
+//   open=framewarpcog              (optional: open the selected game's FrameWarp ⚙)
 //   close=dialogs                  (optional: close open dialogs first)
 //   open=setup                     (optional: open a preview of the first-run window; capture it from the screen)
 //   backup=<folder>                (optional: make a backup in that folder now)
@@ -208,6 +209,11 @@ public sealed partial class MainWindow
         {
             _ = _detailPanelBuilder.ShowUrtiSettingsAsync(urtiCard);
             waitMs = Math.Max(waitMs, 3000);
+        }
+        if (string.Equals(Opt("open"), "framewarpcog", StringComparison.OrdinalIgnoreCase) && ViewModel.SelectedGame is { } fwCard)
+        {
+            _ = _detailPanelBuilder.ShowFrameWarpSettingsAsync(fwCard);
+            waitMs = Math.Max(waitMs, 3500);
         }
         if (int.TryParse(Opt("wait"), out var w) && w > 0) waitMs = w;
         bool detail = string.Equals(Opt("target"), "detail", StringComparison.OrdinalIgnoreCase);

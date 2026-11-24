@@ -139,6 +139,7 @@ public partial class App : Application
         services.AddSingleton<UpliftService>();
         services.AddSingleton<HsfService>();
         services.AddSingleton<UrtiService>();
+        services.AddSingleton<FrameWarpService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 
@@ -152,12 +153,15 @@ public partial class App : Application
         // GITC Uplift's, HSF's and URTI's shaders stay in a game's reshade-shaders folder while they're installed there
         var uplift = Services.GetRequiredService<UpliftService>();
         var hsf = Services.GetRequiredService<HsfService>();
-        // URTI reads the game's depth through ReShade's Generic Depth add-on, which RHI's reshade.ini disables by default
-        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir);
+        // URTI reads the game's depth through ReShade's Generic Depth add-on, which RHI's reshade.ini disables by default.
+        // FrameWarp does too in games without DLSS or FSR, except Red Dead Redemption 2, where its README says to keep it
+        // off (the ReShade menu crashes the game).
+        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir)
+            || (FrameWarpService.IsRhiInstalled(dir) && !File.Exists(Path.Combine(dir, "RDR2.exe")));
         ShaderPackService.ExtraGameFiles = dir =>
         {
             var files = new List<(string Rel, string Source)>(uplift.ShaderFilesFor(dir));
-            foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)))
+            foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)).Concat(FrameWarpService.ShaderFilesFor(dir)))
                 if (!files.Any(x => x.Rel.Equals(f.Rel, StringComparison.OrdinalIgnoreCase))) files.Add(f); // LaunchPad: once
             return files;
         };

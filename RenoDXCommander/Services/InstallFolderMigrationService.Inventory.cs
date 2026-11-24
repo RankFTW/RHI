@@ -263,7 +263,8 @@ public partial class InstallFolderMigrationService
                 bool isHsf = component.Equals(HsfService.Component, StringComparison.OrdinalIgnoreCase);
                 bool isUplift = component.Equals(UpliftService.Component, StringComparison.OrdinalIgnoreCase);
                 // URTI's files sit in the add-on folder too (no folder of its own)
-                bool addonFirst = isHsf || isUplift || component.Equals(UrtiService.Component, StringComparison.OrdinalIgnoreCase);
+                bool isFrameWarp = component.Equals(FrameWarpService.Component, StringComparison.OrdinalIgnoreCase);
+                bool addonFirst = isHsf || isUplift || isFrameWarp || component.Equals(UrtiService.Component, StringComparison.OrdinalIgnoreCase);
                 // HSF's Streamline / DLSS-G copies are its own files, never backed up game DLLs
                 foreach (var f in record.Files) b.Recorded(g, f, addonFirst, requireBackupForDlss: !isHsf);
                 if (component.Equals("Feeder", StringComparison.OrdinalIgnoreCase))
@@ -276,6 +277,7 @@ public partial class InstallFolderMigrationService
                     }
                 }
                 if (isHsf || isUplift) b.AddonDir(g, isHsf ? HsfService.StreamlineFolder : UpliftService.DllFolder);
+                if (isFrameWarp) b.AddonDir(g, FrameWarpService.Folder); // presenter, logs, learned camera model
             }
             if (oldManifest.SharedFiles.Count > 0)
             {
@@ -458,6 +460,7 @@ public partial class InstallFolderMigrationService
         "Uplift" => "GITC Uplift",
         "HSF" => "HSF",
         "Urti" => "URTI",
+        "FrameWarp" => "FrameWarp",
         _ => component,
     };
 

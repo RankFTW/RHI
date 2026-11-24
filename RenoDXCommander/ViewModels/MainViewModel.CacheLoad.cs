@@ -435,6 +435,7 @@ public partial class MainViewModel
         FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
         OsForkService.SetDefinitions(cachedManifest?.OsForks); // recommended OptiScaler forks
         WikiService.ApplyManifestUnityUrls(cachedManifest?.ComponentUrls); // generic Unity addon links
+        FrameWarpService.ApplyManifestUrls(cachedManifest?.ComponentUrls); // NVIDIA Latewarp link / hash
         SetRtxEncoreDllNames(cachedManifest); // RTX Encore picker's recommended name
 
         // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder

@@ -344,6 +344,7 @@ public partial class MainViewModel
                 await RefreshUpliftInstallsAsync("MainViewModel.Periodic");
                 await RefreshHsfInstallsAsync("MainViewModel.Periodic");
                 await RefreshUrtiInstallsAsync("MainViewModel.Periodic");
+                await RefreshFrameWarpInstallsAsync("MainViewModel.Periodic");
 
                 try
                 {

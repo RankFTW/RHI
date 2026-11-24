@@ -625,6 +625,7 @@ public partial class MainViewModel
             if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl) == true && !string.IsNullOrEmpty(dcApiUrl))
                 DcReleasesApiUrlOverride = dcApiUrl;
             WikiService.ApplyManifestUnityUrls(_manifest?.ComponentUrls); // generic Unity addon links
+            FrameWarpService.ApplyManifestUrls(_manifest?.ComponentUrls); // NVIDIA Latewarp link / hash
 
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

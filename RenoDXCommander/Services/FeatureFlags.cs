@@ -50,6 +50,7 @@ public static class FeatureFlags
 
     /// <summary>Experimental section item ids ("urti").</summary>
     public const string ExperimentalUrti = "urti";
+    public const string ExperimentalFrameWarp = "framewarp";
 
     /// <summary>
     /// An Experimental item the manifest took out ("experimentalHidden": ["urti"]): not offered for new installs, but

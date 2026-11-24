@@ -180,6 +180,7 @@ public class InstallEventHandler
             if (card == null) return;
             if (!await EnsureGameFolderAsync(card, sender)) return;
             if (!await ConfirmUlV4WarningsAsync(card, sender)) return;
+            if (!card.IsUlInstalled && !await ConfirmLimiterWithFrameWarpAsync(card, sender, "ReLimiter")) return;
             await ViewModel.InstallUlAsync(card);
         }
         catch (Exception unhandledEx)
@@ -224,6 +225,36 @@ public class InstallEventHandler
         return go;
     }
 
+    /// <summary>
+    /// FrameWarp (Experimental) paces the game itself and asks for frame rate limiters to be off. A fresh ReLimiter /
+    /// Display Commander install in a game that has it asks first (Install anyway / Cancel). True = go ahead.
+    /// </summary>
+    private async Task<bool> ConfirmLimiterWithFrameWarpAsync(GameCardViewModel card, object sender, string limiter)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath) || !FrameWarpService.IsInstalledIn(card.InstallPath)) return true;
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;
+        if (xamlRoot == null) return true;
+        var dialog = new ContentDialog
+        {
+            Title = "FrameWarp is installed in this game",
+            Content = new TextBlock
+            {
+                Text = $"FrameWarp paces the game itself and asks for frame rate limiters to be off. With {limiter}, reprojection may not reach your refresh rate: "
+                     + $"keep {limiter}'s frame rate cap off, or remove FrameWarp (Experimental).",
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 460,
+            },
+            PrimaryButtonText = "Install anyway",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        bool go = await DialogService.ShowSafeAsync(dialog) == ContentDialogResult.Primary;
+        CrashReporter.Log($"[InstallEventHandler.ConfirmLimiterWithFrameWarpAsync] '{card.GameName}': {limiter} with FrameWarp — {(go ? "installing anyway" : "cancelled")}");
+        return go;
+    }
+
     public void UninstallUlButton_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
@@ -237,6 +268,7 @@ public class InstallEventHandler
             var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
             if (card == null) return;
             if (!await EnsureGameFolderAsync(card, sender)) return;
+            if (!card.IsDcInstalled && !await ConfirmLimiterWithFrameWarpAsync(card, sender, "Display Commander")) return;
             await ViewModel.InstallDcAsync(card);
         }
         catch (Exception unhandledEx)

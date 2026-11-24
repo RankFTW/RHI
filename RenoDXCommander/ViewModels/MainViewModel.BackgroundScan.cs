@@ -271,6 +271,7 @@ public partial class MainViewModel
             if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl2) == true && !string.IsNullOrEmpty(dcApiUrl2))
                 DcReleasesApiUrlOverride = dcApiUrl2;
             WikiService.ApplyManifestUnityUrls(_manifest?.ComponentUrls); // generic Unity addon links
+            FrameWarpService.ApplyManifestUrls(_manifest?.ComponentUrls); // NVIDIA Latewarp link / hash
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
@@ -520,6 +521,7 @@ public partial class MainViewModel
 
                 // URTI: same for the ray-traced reflections add-on
                 await RefreshUrtiInstallsAsync("RunBackgroundScanAndMergeAsync");
+                await RefreshFrameWarpInstallsAsync("RunBackgroundScanAndMergeAsync");
 
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
