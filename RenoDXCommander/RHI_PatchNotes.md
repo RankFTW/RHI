@@ -58,6 +58,9 @@
 - Fixed choosing -------- for Display Commander's DLL name not clearing the saved name when Display Commander wasn't installed.
 - Fixed RHI's peak brightness not applying to Unity RenoDX mods, and RHI removing a toneMapPeakNits line you added to reshade.ini yourself. Unity mods spell the setting toneMapPeakNits while other mods use ToneMapPeakNits, and RHI only wrote the second. RHI now writes the spelling the installed mod uses (from Settings, the RenoDX ⚙ and Deploy ReShade.ini) and removes the other spelling that older versions added.
 
+### Manifest Updates
+- Updated the description of SD Shaders by Starodubysko in Shaders & Addons to cover the whole pack.
+
 ## v2.9.5
 
 ### New
