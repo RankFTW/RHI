@@ -154,6 +154,10 @@ public static class Catalog
             new() { Key = "legacyReShadeVersions", Kind = FieldKind.Choice, Label = "Legacy ReShade version",
                 Help = "Locks the game to an older ReShade. Doesn't replace a ReShade version the user picked.",
                 Options = d => (d.Get("legacyReShadeAvailable")?.Items ?? new()).Where(i => i.IsString).Select(i => i.Str!) },
+            new() { Key = "noAddonReShadeGames", Kind = FieldKind.Flag, Label = "ReShade without add-ons by default",
+                Help = "The game gets ReShade without add-on support (the No Addons channel), e.g. for anti-cheat that blocks add-on ReShade. "
+                     + "Applied once per game (RHI 2.9.6.2+): an add-on ReShade already installed is swapped, and RenoDX, ReLimiter and "
+                     + "Display Commander are removed there, since they need add-ons. A user who switches back keeps their choice." },
             new() { Key = "launchExeOverrides", Kind = FieldKind.Text, Label = "Game exe",
                 Help = "Exe path inside the install folder. Used to launch the game and to find its NVIDIA profile.", Placeholder = @"e.g. bin\game.exe" },
             new() { Key = "profileNameOverrides", Kind = FieldKind.Text, Label = "NVIDIA profile name",
@@ -253,7 +257,7 @@ public static class Catalog
     {
         "blacklist", "wikiUnlinks", "thirtyTwoBitGames", "sixtyFourBitGames", "dlssSkipGames",
         "nativeHdrGames", "ueExtendedGames", "noUeExtendedGames", "lumaRenodxCompat", "lumaRequiresDgVoodoo",
-        "dxvkBlacklist", "dofFixForceGames", "dofFixSkipGames",
+        "dxvkBlacklist", "dofFixForceGames", "dofFixSkipGames", "noAddonReShadeGames",
     };
 
     /// <summary>Fields that are dictionaries keyed by game name.</summary>

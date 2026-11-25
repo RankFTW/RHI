@@ -159,6 +159,12 @@ Routes XNA Framework games (e.g. Terraria) through a GAC symlink install instead
 Auto-assigns a locked legacy ReShade channel per game (e.g. `"Max Payne 3": "6.4.1"`). Never overwrites existing user overrides.
 - `MainViewModel.Init`, `BackgroundScan` → calls `SetReShadeChannelOverride(gameName, version)` if no existing override (checks both name-only and composite keys)
 
+### `noAddonReShadeGames` — `List<string>` (RHI 2.9.6.2+)
+Games that get ReShade **without add-on support** (the No Addons channel) by default, e.g. `HELLDIVERS™ 2`, whose anti-cheat blocks add-on ReShade. Names must match the detected name exactly (`™` included).
+- `MainViewModel.NoAddonReShade.cs` `ApplyManifestNoAddonReShade`, called from both init paths after the cards are built.
+- Applied **once per game** (`GameNameService.ManifestNoAddonApplied`, settings.json `ManifestNoAddonApplied`, `Game|Store` keys): a user who switches back to add-on ReShade keeps that. A game the user already set up (No Addons, or a channel / legacy / custom pick) is only marked; Vulkan games are skipped (shared layer); a running game is retried next start.
+- An add-on ReShade already installed there is swapped at once: `SetUseNormalReShade` removes it with the components that need add-ons (managed add-ons, RenoDX, ReLimiter, Display Commander), then ReShade is installed again without add-ons.
+
 ### `legacyReShadeAvailable` — `List<string>`
 List of version strings shown in the legacy ReShade version picker dialog. Server-managed.
 - `DetailPanelBuilder.Overrides.RsChannel` → RS channel picker, populates `RadioButtons` in the `"Legacy..."` selection dialog

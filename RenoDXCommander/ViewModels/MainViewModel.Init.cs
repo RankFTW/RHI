@@ -828,6 +828,8 @@ public partial class MainViewModel
 
             // Auto-reinstall ReShade for WindowsApps games whose path changed during this build
             ReinstallPendingWindowsAppsReShade("InitializeAsync");
+            // Manifest noAddonReShadeGames: ReShade without add-ons by default (once per game)
+            ApplyManifestNoAddonReShade("InitializeAsync");
 
             // Apply manifest DLL name overrides to any existing installs whose filenames don't match
             ApplyManifestDllRenames();

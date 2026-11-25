@@ -43,6 +43,8 @@ public partial class GameNameService : IGameNameService
     /// <summary>Games where Luma TAA Engine.ini settings are enabled (r.DefaultFeature.AntiAliasing=2, r.PostProcessAAQuality=4).</summary>
     private HashSet<string> _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _normalReShadeGames = new(StringComparer.OrdinalIgnoreCase);
+    // "Game|Store" keys the manifest's noAddonReShadeGames default was applied to (once each; the user's choice then sticks)
+    private HashSet<string> _manifestNoAddonApplied = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Games where RHI should NOT automatically re-merge reshade.ini. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _rsIniLockedGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _rsAsiGames = new(StringComparer.OrdinalIgnoreCase);
@@ -212,6 +214,7 @@ public partial class GameNameService : IGameNameService
     /// <summary>Games where Luma TAA Engine.ini settings are deployed.</summary>
     public HashSet<string> LumaTaaEnabled => _lumaTaaEnabled;
     public HashSet<string> NormalReShadeGames => _normalReShadeGames;
+    public HashSet<string> ManifestNoAddonApplied => _manifestNoAddonApplied;
     /// <summary>Games where reshade.ini auto-update is locked (Keep ReShade.ini Updated = No).</summary>
     public HashSet<string> RsIniLockedGames => _rsIniLockedGames;
     public HashSet<string> RsAsiGames => _rsAsiGames;
@@ -394,6 +397,7 @@ public partial class GameNameService : IGameNameService
         _lumaEnabledGames       = new(StringComparer.OrdinalIgnoreCase);
         _lumaDisabledGames      = new(StringComparer.OrdinalIgnoreCase);
         _normalReShadeGames     = new(StringComparer.OrdinalIgnoreCase);
+        _manifestNoAddonApplied = new(StringComparer.OrdinalIgnoreCase);
         _rsIniLockedGames       = new(StringComparer.OrdinalIgnoreCase);
         _rsAsiGames             = new(StringComparer.OrdinalIgnoreCase);
         _hiddenGames            ??= new(StringComparer.OrdinalIgnoreCase);
@@ -530,6 +534,9 @@ public partial class GameNameService : IGameNameService
 
         _normalReShadeGames = new HashSet<string>(
             Load<List<string>>("NormalReShadeGames", new()),
+            StringComparer.OrdinalIgnoreCase);
+        _manifestNoAddonApplied = new HashSet<string>(
+            Load<List<string>>("ManifestNoAddonApplied", new()),
             StringComparer.OrdinalIgnoreCase);
 
         _rsIniLockedGames = new HashSet<string>(
@@ -942,6 +949,7 @@ public partial class GameNameService : IGameNameService
                 s["LumaEnabledGames"]   = JsonSerializer.Serialize(_lumaEnabledGames.ToList());
                 s["LumaDisabledGames"]  = JsonSerializer.Serialize(_lumaDisabledGames.ToList());
                 s["NormalReShadeGames"] = JsonSerializer.Serialize(_normalReShadeGames.ToList());
+                s["ManifestNoAddonApplied"] = JsonSerializer.Serialize(_manifestNoAddonApplied.ToList());
                 s["RsIniLockedGames"]   = JsonSerializer.Serialize(_rsIniLockedGames.ToList());
                 s["RsAsiGames"]         = JsonSerializer.Serialize(_rsAsiGames.ToList());
                 s["GameRenames"]         = JsonSerializer.Serialize(_gameRenames);
@@ -1160,6 +1168,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeHashSet(_lumaEnabledGames, oldName, newName);
         MigrateCompositeHashSet(_lumaDisabledGames, oldName, newName);
         MigrateCompositeHashSet(_normalReShadeGames, oldName, newName);
+        MigrateCompositeHashSet(_manifestNoAddonApplied, oldName, newName);
         MigrateCompositeHashSet(_rsIniLockedGames, oldName, newName);
         MigrateCompositeHashSet(_rsAsiGames, oldName, newName);
         MigrateCompositeHashSet(_osDeployStreamline, oldName, newName);

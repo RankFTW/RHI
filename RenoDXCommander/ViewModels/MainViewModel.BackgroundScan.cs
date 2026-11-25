@@ -469,6 +469,7 @@ public partial class MainViewModel
             await MergeCardsAsync(freshCards);
             PublishFolderMigrationNotices();
             ReinstallPendingWindowsAppsReShade("RunBackgroundScanAndMergeAsync"); // marked by BuildCards above
+            ApplyManifestNoAddonReShade("RunBackgroundScanAndMergeAsync"); // manifest noAddonReShadeGames, once per game
 
             // Save updated library
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } });
@@ -522,6 +523,8 @@ public partial class MainViewModel
 
                 // URTI: same for the ray-traced reflections add-on
                 await RefreshUrtiInstallsAsync("RunBackgroundScanAndMergeAsync");
+            // CRCGI: same for the global illumination effect + add-on
+            await RefreshCrcgiInstallsAsync("RunBackgroundScanAndMergeAsync");
                 await RefreshFrameWarpInstallsAsync("RunBackgroundScanAndMergeAsync");
 
                 // Start periodic update check timer (fires every 4h while app is running)

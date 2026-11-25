@@ -42,6 +42,7 @@ fileMatchPattern: "*manifest*,*Manifest*,*RemoteManifest*"
 |-------|---------|
 | `legacyReShadeVersions` | Game → forced RS version string |
 | `legacyReShadeAvailable` | Array of picker versions |
+| `noAddonReShadeGames` | Array — ReShade without add-on support (No Addons) by default; applied once per game (`ManifestNoAddonApplied`), an installed add-on ReShade is swapped, the user's later choice sticks (`MainViewModel.NoAddonReShade.cs`) |
 | `lumaDefaultGames` | Array — auto-enable Luma mode on first detection |
 | `lumaRenodxCompat` | Array — games where RenoDX coexists with Luma |
 | `nativeHdrGames` | Array — UE-Extended with Set_Path=0 (supersedes `ueExtendedGames`) |

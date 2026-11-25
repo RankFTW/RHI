@@ -6,10 +6,12 @@
 ## v2.9.6.2 Beta 2
 
 ### New
+- **CRCGI (Experimental).** Global illumination for your games: light bouncing off lit surfaces onto nearby ones, and soft contact shadows, from CRCGI by FlibbertigibbetLollygagger, a ReShade effect built on radiance cascades. Its CRCGI Injector add-on hands it the game's own normals, colours, motion and depth and keeps the UI and fog out of it. Install it from Experimental › Global Illumination: RHI adds the add-on and the effect, turns the effect on and keeps it updated. Works in DirectX 10, 11 and 12, Vulkan and OpenGL games (DirectX 9 through DXVK), 32 and 64-bit. Its ⚙ has the main settings (GI intensity, shadows, multibounce, sky light, dark area boost, smoothing, effect resolution and range, and the add-on's level), the author's own preset for games that have one (Batman: Arkham Knight, The Witcher 3), and a reset to CRCGI's defaults; everything else is in ReShade's overlay. Single player only.
 - **RTX Video in Settings.** Settings › Display & HDR has a new RTX Video card with the NVIDIA App's video settings, for videos in browsers and video players (not games). Super Resolution: Off, Auto (with GPU priority) or a fixed quality level, and its status indicator. Video HDR: on or off, peak brightness, middle grey, contrast, saturation, and its status indicator. Changes apply straight away, without admin rights and without opening the NVIDIA App. Needs the NVIDIA App installed and an RTX graphics card; Video HDR also needs Windows HDR on.
 - **Monitors in Settings.** Settings › Display & HDR has a new Monitors card listing every connected monitor, where you can change its desktop resolution and refresh rate and turn Windows HDR on or off for that monitor alone. It also shows the exact refresh rate in use (such as 239.96 Hz). After a resolution or refresh rate change, choose Keep within 15 seconds or the monitor goes back to how it was, so one that goes blank comes back on its own.
 
 ### Changes
+- **ReShade without add-ons for games that need it.** RHI can now give a game ReShade without add-on support by default, for games whose anti-cheat blocks add-on ReShade (set by RHI, starting with HELLDIVERS 2). It's applied once: an add-on ReShade already installed there is swapped (with RenoDX, ReLimiter and Display Commander, which need add-ons), and if you switch the game back in ReShade's ⚙ your choice stays.
 - **Realtime GPU priority for BFI Presenter.** BFI Presenter's ⚙ has a new GPU priority section, so you no longer need BFI Presenter's Manager for it. Allow for my account gives your Windows account the Increase scheduling priority right (one administrator prompt; sign out and back in afterwards), so games run the presenter at realtime GPU priority, which stops flicker in GPU-heavy moments. Remove takes it away again. Presenter GPU priority (Normal, High or Realtime) sets it per game.
 - ReLimiter's frame rate cap shows Auto VRR instead of Off (Settings › Components › ReLimiter, ReLimiter's ⚙ and Display modes), matching ReLimiter, which since 4.0.4 has no Off: it follows your display's VRR range.
 - Scrungus is now in the About page's credits, as the creator of RHI's database of RenoDX mods. RHI's own entry moved up to sit with the people who work on it, and now says it isn't affiliated with any of the projects above it.
@@ -17,6 +19,7 @@
 - **Save ReLimiter settings without changing your games.** Settings › Components › ReLimiter has a new Save to global relimiter.ini button beside Write to all ReLimiter games. It saves the settings above only into RHI's global relimiter.ini, which new ReLimiter installs are set up from; games that already have ReLimiter keep their own relimiter.ini. The ReLimiter settings there now show what the global relimiter.ini holds. Write to all ReLimiter games works as before.
 
 ### Bug Fixes
+- Fixed driver settings and DLSS presets from RHI not reaching some games that have two NVIDIA profiles whose names differ only in capitals, such as FINAL FANTASY VII REBIRTH: RHI wrote to the older one, while the driver and the NVIDIA App use the other. RHI now asks the driver which one the game uses.
 - Fixed adding or removing the NR DLL from Universal MFG Unlocker's, MFG Unlock's (DLSS 5) or RTX Encore's ⚙ not showing in the DLSS / Streamline and Neural Rendering sections until you picked another game: the Neural Rendering column stayed greyed out with None, so its NR DLL version couldn't be changed there either.
 - Fixed games on RHI's anti-cheat list not being treated as such after a normal start (only after Refresh): DXVK wasn't blocked and the anti-cheat warnings for frame generation unlocks and HSF didn't show. The same applied to the manifest's DXVK API overrides.
 - Fixed Game Pass games whose folder changed after a game update showing ReShade as installed with no ReShade in the game until Refresh: RHI now reinstalls it at the new folder on a normal start too.
@@ -24,6 +27,9 @@
 - Fixed installing DLSS5 Feeder from Neural Rendering removing the game's other ReShade shaders: it switched the game's shaders to Select with only Feeder's own. Feeder's shaders are now added on top of whatever the game uses, and its shader setting is left alone. A game it already switched can go back to Global in ReShade's ⚙ › Shaders.
 - Fixed a game's Driver Settings not showing the NVIDIA FPS limit change straight away after installing or removing ReLimiter or Display Commander (or installing FrameWarp), which turn it off or back to global. It only showed after selecting another game and coming back.
 - Fixed RHI's HDR switching on Windows 11 24H2 and later reading HDR as on whenever Auto Colour Management was on, and turning Auto Colour Management on or off instead of HDR. The HDR button for launching games, the HDR display list in Settings and turning HDR off after a game now use Windows' own HDR switch.
+
+### Manifest Updates
+- HELLDIVERS™ 2 now gets ReShade without add-on support by default (its anti-cheat blocks add-on ReShade). A game that already has add-on ReShade is switched once at the next start.
 
 ## v2.9.6.1
 

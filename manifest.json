@@ -1018,6 +1018,9 @@
   "legacyReShadeVersions": {
     "Max Payne 3": "6.4.1"
   },
+  "noAddonReShadeGames": [
+    "HELLDIVERS™ 2"
+  ],
   "legacyReShadeAvailable": [
     "6.7.3",
     "6.7.2",

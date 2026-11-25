@@ -98,6 +98,9 @@ public interface IGameNameService
     /// <summary>Games configured to use normal (non-addon) ReShade.</summary>
     HashSet<string> NormalReShadeGames { get; }
 
+    /// <summary>Games the manifest's noAddonReShadeGames default was applied to (once each).</summary>
+    HashSet<string> ManifestNoAddonApplied { get; }
+
     /// <summary>Games where reshade.ini auto-update is locked. Composite-keyed "GameName|Store".</summary>
     HashSet<string> RsIniLockedGames { get; }
 

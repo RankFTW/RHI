@@ -30,7 +30,8 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - URL pattern: `https://reshade.me/downloads/ReShade_Setup_X.Y.Z_Addon.exe`
 - Game excluded from RS update checks when on legacy version
 - Staging: `%LocalAppData%\RHI\LegacyReshade\{version}\` (on-demand download)
-- Manifest `legacyReShadeVersions`: forced per-game versions
+- Manifest `legacyReShadeVersions`: forced per-game versions (re-applied every start while the user has no channel override, since Stable clears it)
+- Manifest `noAddonReShadeGames` (2.9.6.2): No Addons by default, once per game, user's choice sticks; see rhi-manifest.md
 - Addon compatibility warning shown for legacy versions
 - `InstallReShadeAsync` must download on-demand if staged DLLs don't exist
 
