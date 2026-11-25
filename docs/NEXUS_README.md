@@ -1,167 +1,118 @@
 [center][size=6][b]RHI — ReShade HDR Installer[/b][/size]
 
-[i]HDR mods, ReShade, DLSS and NVIDIA driver settings for your whole PC game library, from one window.[/i][/center]
+[i]HDR, ReShade, DLSS and NVIDIA driver settings for your whole PC game library, from one window.[/i][/center]
 
-RHI finds your games on Steam, Epic, GOG, EA App, Ubisoft Connect, Xbox / Game Pass, Battle.net and Rockstar. It then installs, updates and removes ReShade, RenoDX and Luma HDR mods, frame limiters, DLSS/Streamline files, OptiScaler, Neural Rendering tools and more, with per-game control over every one of them.
+RHI finds your games on Steam, Epic, GOG, EA App, Ubisoft Connect, Xbox / Game Pass, Battle.net and Rockstar, then installs, updates and removes the mods that make them look and run better. One click per game, with everything backed up and reversible.
 
 [center][img]https://raw.githubusercontent.com/RankFTW/RHI/main/docs/images/game_view.png[/img][/center]
 
-[color=#FF6600][b]Single-player only.[/b][/color] ReShade with addon support, OptiScaler and DLSS/Streamline changes can trigger anti-cheat in online games. Uninstall them before playing multiplayer.
+[color=#FF6600][b]Single-player only.[/b][/color] ReShade with addon support, OptiScaler, frame generation mods and DLSS/Streamline changes can trigger anti-cheat in online games. Uninstall them before playing multiplayer.
 
 [b]Links:[/b] [url=https://github.com/RankFTW/RHI/blob/main/docs/DETAILED_GUIDE.md]Detailed Guide[/url] · [url=https://github.com/RankFTW/RHI]GitHub[/url] · [url=https://discord.gg/ultraplace]Discord[/url]
 
 [line]
 
-[size=5][b]Three Layouts, One App[/b][/size]
-
-Switch layouts from the top bar at any time. Every setting is available in every layout.
+[size=5][b]Why RHI[/b][/size]
 
 [list]
-[*][b]Classic+[/b] (default): your game list on the left and the game's page on the right, in collapsible sections you can reorder
-[*][b]Tabs[/b]: the same game page, one tab at a time, with a card for each component and an At a glance summary of everything else
-[*][b]Spotlight[/b]: your games as a shelf of cover art under a large banner of the selected game, using Steam artwork or your own images. Sections slide in from the side. Put the covers above or below the game page, and drag the banner and covers to the size you like. Buttons beside the game's name open its ReShade screenshots and its own Game settings
-[*][b]Steam and Xbox achievements[/b] in Spotlight: progress, latest unlock and the full list with unlock dates, rarity and search. Read from your PC, so no sign-in is needed. Off until you turn it on in Settings
-[*][b]Game collections[/b]: make your own lists of games (Racing, Souls-likes and so on) and show one with a click. A game can be in as many as you like
-[*][b]Controller support[/b] in Spotlight: browse, install, tweak and launch with an Xbox, PlayStation or Steam controller (DualShock 4, DualSense and DualSense Edge over USB or Bluetooth; Steam Controllers by USB or wireless dongle; nothing extra to install). RHI comes back to the front when your game closes
-[*][b]Interface size[/b] from 50% to 200% in 5% steps (or Ctrl + mouse wheel), for TVs and high-DPI screens. Resize the top bar and the game list on their own too
-[*][b]Game search[/b] that works like Steam's: words in any order, initials (gta, rdr2, hl2), roman numerals as numbers, and small typos
+[*][b]HDR in a minute.[/b] Pick a game, click Install twice. RHI finds the right RenoDX or Luma mod, installs ReShade under the right name and keeps both updated
+[*][b]No more tool juggling.[/b] It replaces the ReShade installer, DLSS Swapper, NVIDIA Profile Inspector and a folder of downloaded mods
+[*][b]Safe to try.[/b] RHI backs up what it replaces, warns before touching another tool's files, and removes cleanly
+[*][b]Per-game control.[/b] Every setting can be set once for all games and changed for any one of them
+[*][b]Always current.[/b] New game support and fixes arrive without waiting for an app update
 [/list]
 
 [line]
 
 [size=5][b]HDR for Every Game[/b][/size]
 
-[b]RenoDX[/b]: hundreds of game-specific HDR mods, matched and installed automatically and kept up to date.
-
-[b]Unreal Engine and Unity[/b]: games without a dedicated mod get a generic one. UE4/UE5 games get UE-Extended, with reshade.ini and Engine.ini configured for you. Unity games get the generic Unity addon, in 32-bit and 64-bit versions.
-
-[b]Source engine[/b] (Half-Life 2, Portal 2, Left 4 Dead 2, Garry's Mod and more): RenoDX's Source mod in one click, with ReShade, DXVK and the ini settings set up for you.
-
-[b]Luma Framework[/b]: named Luma mods, plus generic Luma for DX11 Unreal Engine games. Engine.ini keys, launch arguments and TAA settings from the Luma wiki are applied on install. DX9 Luma games get dgVoodoo2 automatically.
-
-[b]RTX HDR and Windows Auto HDR[/b]: enable either per game. RTX HDR peak brightness, contrast, saturation, middle grey and debanding are written straight to the game's NVIDIA profile.
-
-[b]DXVK + Lilium HDR[/b]: scRGB HDR for DX8–DX11 games, with presets from Safest to Experimental.
-
-[b]DOF Fix[/b]: recommended for Unreal Engine 5.0–5.6 games.
-
-[b]Available Mods[/b]: one searchable list of every game with a RenoDX, Luma or Ultra+ mod.
-
-[line]
-
-[size=5][b]Replaces the ReShade Installer[/b][/size]
-
 [list]
-[*]Picks the right DLL name for each game from its graphics API and bitness (dxgi.dll, d3d9.dll, d3d8.dll, opengl32.dll), or use your own name per game
-[*]Per-game channels: Stable, Nightly, Custom (your own DLL), No Addons, and Legacy (older versions)
-[*]Vulkan games use ReShade's global Vulkan layer
-[*]Warns before overwriting another tool's DLL (DXVK, Special K, ENB) and backs up what it replaces
-[*]Keeps reshade.ini set up: hotkeys, screenshot folder, peak brightness and effect list style, applied to one game or all of them. Lock any game's ini to stop RHI touching it
-[*][b]56 shader packs[/b]: Lilium HDR, crosire, PumboAutoHDR, MaxG2D, RenoFX, UltraShade, iMMERSE, qUINT, SweetFX and many more. Pick packs or single .fx files, globally or per game. Save selections as profiles and share them as a zip
-[*][b]Addon manager[/b]: the official ReShade addon list plus extras, globally or per game, and your own .addon64/.addon32 files
-[*][b]ReShade presets[/b]: deploy presets to any game, along with the shaders they need
+[*][b]RenoDX[/b]: hundreds of game-specific HDR mods, matched automatically. Unreal Engine, Unity and Source engine games without their own mod get a generic one, set up for you
+[*][b]Luma Framework[/b]: named Luma mods, plus generic Luma for DX11 Unreal Engine games
+[*][b]RTX HDR and Windows Auto HDR[/b]: switch either on per game and tune it without opening the NVIDIA App
+[*][b]DXVK + Lilium HDR[/b]: scRGB HDR for DX8 to DX11 games
+[*][b]Available Mods[/b]: one searchable list of every game with a RenoDX, Luma or Ultra+ mod
 [/list]
 
 [line]
 
-[size=5][b]DLSS and Streamline[/b][/size]
+[size=5][b]ReShade, Fully Managed[/b][/size]
 
 [list]
-[*]Swap Super Resolution, Ray Reconstruction, Frame Generation, Neural Rendering and Streamline versions per game. Originals are backed up and can be restored at any time
-[*]Presets (including the DLSS 4.5 presets L and M) and render scale (33–100%, or DLAA), written to the NVIDIA driver profile. No Profile Inspector needed
-[*]NVIDIA Override: turn on the driver's "use latest DLL" override per component
-[*]Defaults + Quick Apply: choose your preferred versions and presets once, apply them to any game in one click
-[*]Batch Deploy: push versions and presets to many games at once
-[*]Optional auto-update to the newest DLSS or Streamline release
+[*]The right DLL name for every game's graphics API, or your own
+[*]Stable, Nightly, Legacy, No Addons or your own build, per game. Vulkan games handled too
+[*][b]57 shader packs[/b], an addon manager and ReShade presets, for all games or just one. Save shader selections as profiles and share them
+[*]Your hotkeys, screenshot folder and peak brightness written to every game
 [/list]
 
 [line]
 
-[size=5][b]Neural Rendering (DLSS 5)[/b][/size]
-
-Every game has a Neural Rendering section that installs one of five methods, and recommends the right one for the game:
+[size=5][b]DLSS, Streamline and Neural Rendering[/b][/size]
 
 [list]
-[*][b]GITC Uplift[/b] by ghostinthecamera: DLSS Neural Rendering on almost any game on an RTX card, even games without DLSS (DX9 to DX12, Vulkan and OpenGL, 64-bit and 32-bit). Drop it in and switch it on, with a choice of Look, Keep faces, and a Resolution setting for more speed. The default for 64-bit DX11, DX12 and Vulkan games without DLSS
-[*][b]ShortFuse DLSS Tool[/b]: most games with native DLSS (DX9, DX11, DX12, Vulkan)
-[*][b]DLSS5 Tool[/b]: DX12 games with native DLSS
-[*][b]DLSS5 Tool + DX11 Bridge[/b]: DX11 and Vulkan games with native DLSS. Both DLSS5 Tool methods can use [b]FoveatedDLSS5[/b] by maximedgoulet instead, which runs Neural Rendering at full resolution only in the centre of the screen, for much higher frame rates
-[*][b]DLSS5 Feeder[/b]: games without DLSS, recommended for OpenGL, DX9 and 32-bit games
-[/list]
-
-Pin versions of each tool and of nvngx_dlssnr.dll, and optionally add the NR Cost Scaler to run the neural model at reduced cost.
-
-[line]
-
-[size=5][b]Frame Generation and Upscaling[/b][/size]
-
-[b]OptiScaler[/b]: Stable, Nightly (with build pinning), DLSS NR and F5 DLSSNR, plus popular forks (Venom, NR PreSR MFG, OpenNR), with a default version of your choice for new installs. Pin a game to an older release, see the installed and latest version in the ⚙, and update with one click. Upscaler, frame generation, Reflex, preset, DXGI spoofing and Neural Rendering settings are set from a menu that writes OptiScaler.ini for you, and All Settings lists every setting in the game's ini, with descriptions. Save a game's ini under any name and load it into other games. GPU-specific templates for NVIDIA, AMD and Intel. OptiPatcher included.
-
-[b]Custom OptiScaler builds[/b]: add any OptiScaler build from a download link (GitHub, Discord or anywhere else), a zip, 7z or rar, a folder or a single OptiScaler.dll, then install it like the built-in versions.
-
-[b]Multi Frame Generation[/b]: Fixed or Dynamic MFG (2x–6x) with a target frame rate on RTX 50 Series.
-
-[b]Unlocks for older cards[/b]: Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock, RTX Encore and DLSS Enabler.
-
-[b]Ultimate ASI Loader[/b] and [b]dgVoodoo2[/b], with a filename picker. Frame generation unlocks and RTX Encore can run alongside ASI Loader under its Hooked name.
-
-[line]
-
-[size=5][b]Frame Limiters[/b][/size]
-
-Choose one per game. Both support 32-bit and 64-bit games, and installing either one turns off the driver frame limiter for that game.
-
-[b]ReLimiter[/b]: frame pacing limiter with an on-screen display, VRR caps and DLSS hooks.
-
-[b]Display Commander[/b]: alternative limiter with display tools.
-
-[line]
-
-[size=5][b]NVIDIA Driver Settings[/b][/size]
-
-[i]Written directly to the driver: no NVIDIA App or Profile Inspector needed.[/i]
-
-[b]Per game:[/b] VSync, Tear Control, Low Latency, Smooth Motion (RTX 40+), Power Mode, G-Sync, ReBAR (enable, mode, size).
-
-[b]Global:[/b] Shader Cache Size and Pre-Compile, G-Sync and G-Sync Mode, FPS Limit, Preferred Refresh Rate, VSync, Power Mode, ReBAR.
-
-[list]
-[*][b]Digital Vibrance[/b] per display, reapplied every time RHI starts
-[*][b]DLDSR Control[/b]: save and switch DLDSR factor setups without NVIDIA Control Panel
-[*][b]Backup / Restore[/b] of your per-game profiles, for example after a driver reinstall
-[*][b]Output colour[/b]: colour depth (8/10/12 bpc) and dynamic range per display
+[*]Swap [b]Super Resolution, Ray Reconstruction, Frame Generation and Streamline[/b] versions per game. Originals are always restorable
+[*]Set [b]presets[/b] (including the DLSS 4.5 presets L and M) and [b]render scale[/b] straight in the driver profile
+[*][b]Quick Apply[/b] your favourite setup to a game in one click, or [b]Batch deploy[/b] it to many
+[*][b]Neural Rendering (DLSS 5)[/b] on almost any game, with five methods and the right one picked for you: GITC Uplift, ShortFuse DLSS Tool, DLSS5 Tool (with optional foveated rendering), DX11 Bridge and DLSS5 Feeder
 [/list]
 
 [line]
 
-[size=5][b]Everyday Conveniences[/b][/size]
+[size=5][b]Frame Generation for Any Card[/b][/size]
 
 [list]
-[*][b]RHI overlay[/b]: press Alt + ` in a game (or hold View + Menu on a controller) for a full-screen RHI page over it: achievements, your ReShade screenshots, playtime, your own notes, the game's mod setup and its links. Nothing is installed into the game. Turn it off for any game in Spotlight's Game settings
-[*][b]Update All[/b]: ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across your library. You choose what's included. [b]Automatic Updates[/b] can install them in the background
-[*][b]Game launch[/b] from RHI, the tray, the taskbar jump list or a desktop shortcut. Custom exe and arguments per game
-[*][b]HDR and resolution auto-toggle[/b]: Windows HDR and your target resolution switch on when a game starts and back when it closes, on the monitors you choose
-[*][b]Moving games[/b]: after you change a game's install folder, RHI offers to move its mods, settings and presets to the new folder
-[*][b]Custom game folders[/b]: point RHI at the folders where you keep DRM-free or other non-store games. It finds the games in them and lets you pick which to add, with the right exe chosen for you
-[*][b]Remove from RHI[/b]: take a game out of every list for good (optionally uninstalling its components), and restore it later from Settings
-[*][b]Drag and drop[/b] a game exe, addon, archive, Luma mod, ReShade preset or link onto the window
-[*]Per-game links to [b]Nexus Mods, PCGamingWiki, ultrawide fixes and Ultra+[/b]
-[*][b]RE Framework[/b] for RE Engine games, and [b]Ryubing[/b] emulator support
-[*]New game support and fixes arrive through a remote manifest, without waiting for an app update
+[*][b]Multi Frame Generation[/b] (2x to 6x, fixed or dynamic) on RTX 50
+[*][b]HSF[/b] and [b]RTX Encore[/b]: frame generation in games that don't have it
+[*][b]Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock and DLSS Enabler[/b]: multi frame generation on RTX 20, 30 and 40, and on AMD and Intel cards
+[*][b]OptiScaler[/b]: Stable, Nightly, Neural Rendering forks and your own builds, with ready-made presets and every ini setting in a searchable menu
 [/list]
+
+[line]
+
+[size=5][b]NVIDIA Driver Settings, Without the NVIDIA App[/b][/size]
+
+[list]
+[*][b]Per game[/b]: VSync, Low Latency, Smooth Motion, G-Sync, FPS limit, ReBAR, LOD bias and texture filtering
+[*][b]Global[/b]: shader cache and Compile shaders now, G-SYNC on each monitor, DLDSR setups, digital vibrance, output colour depth, and RTX Video Super Resolution and HDR
+[*][b]Monitors[/b]: resolution, refresh rate and HDR for every connected display
+[*]Back up and restore your profiles after a driver reinstall
+[/list]
+
+[line]
+
+[size=5][b]Frame Limiters and Smoother Motion[/b][/size]
+
+[list]
+[*][b]ReLimiter[/b] or [b]Display Commander[/b]: one per game, with VRR-aware caps
+[*][b]BFI Presenter[/b]: black frame insertion for sharper motion
+[*][b]Experimental[/b]: FrameWarp reprojection, URTI ray-traced reflections and CRCGI global illumination
+[/list]
+
+[line]
+
+[size=5][b]A Launcher You'll Want to Use[/b][/size]
+
+[list]
+[*][b]Three layouts[/b]: Classic+, Tabs, and Spotlight with cover art, banners and full controller support (Xbox, PlayStation and Steam controllers)
+[*][b]RHI overlay[/b]: press Alt + ` in a game for your achievements, screenshots, playtime, notes and mod setup. Nothing is installed into the game
+[*][b]Display modes[/b]: save a Monitor setup and a TV setup, and switch a game (or every game) between them in one click
+[*][b]HDR and resolution switching[/b] when a game starts, and back when it closes
+[*][b]Collections[/b], Steam-style search, Steam and Xbox achievements, colour themes, and interface scaling from 50% to 200%
+[*][b]Update All[/b], optional automatic updates, and [b]backup and restore[/b] that carries your whole setup to a new PC
+[/list]
+
+Everything is covered step by step in the [url=https://github.com/RankFTW/RHI/blob/main/docs/DETAILED_GUIDE.md]Detailed Guide[/url].
 
 [line]
 
 [size=5][b]Requirements[/b][/size]
 
 [list]
-[*]Windows 10 or 11 (64-bit)
-[*][url=https://dotnet.microsoft.com/download/dotnet/8.0].NET 8 Desktop Runtime[/url] and the [url=https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe]Windows App Runtime 2.5[/url]. If the Windows App Runtime is missing, RHI says so and offers to open the download
-[*]An NVIDIA GPU for DLSS presets, driver settings and Neural Rendering. ReShade, RenoDX, Luma and OptiScaler work on any GPU
-[*]Admin Mode (Settings → General → Windows and Admin Mode) for per-game driver settings, ReBAR and DLDSR Control
+[*]Windows 10 or 11 (64-bit) and the [url=https://dotnet.microsoft.com/download/dotnet/8.0].NET 8 Desktop Runtime[/url]. If the Windows App Runtime 2.5 is missing, RHI says so and offers the download
+[*]An NVIDIA card for DLSS presets, driver settings and Neural Rendering. ReShade, RenoDX, Luma and OptiScaler work on any card
 [*][b]Recommended:[/b] a free GitHub token with no permissions (Settings → Accounts & Data → GitHub token). Without one, GitHub allows only 60 requests an hour, which can make downloads and update checks fail
 [/list]
 
 [line]
 
-[i]RHI is free. ReShade, RenoDX, Luma, OptiScaler, DXVK, dgVoodoo2, the shader packs and every other third-party component are the work of their respective authors. Full credits are in the Detailed Guide.[/i]
+[i]RHI is free. ReShade, RenoDX, Luma, OptiScaler, DXVK, HSF, RTX Encore, the shader packs and every other third-party component are the work of their respective authors. Full credits are in the Detailed Guide.[/i]
