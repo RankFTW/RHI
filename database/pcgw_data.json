@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56193,
-  "generated": "2026-11-25T09:27:14Z",
+  "game_count": 56195,
+  "generated": "2026-11-25T13:27:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -177759,6 +177759,7 @@
       "steam_appid": 785480,
       "engine": "DreamFactory"
     },
+    "Titanic: The Lost Mission": {},
     "Titanis": {
       "steam_appid": 365060
     },
@@ -185464,6 +185465,9 @@
     },
     "USA 2020": {
       "steam_appid": 859700
+    },
+    "USA Bass Championship": {
+      "engine": "Gamestudio"
     },
     "Usagi Yojimbo: Way of the Ronin": {
       "steam_appid": 338260
