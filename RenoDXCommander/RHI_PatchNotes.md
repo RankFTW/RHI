@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6.2 Beta 1
+## v2.9.6.2 Beta 2
 
 ### New
 - **RTX Video in Settings.** Settings › Display & HDR has a new RTX Video card with the NVIDIA App's video settings, for videos in browsers and video players (not games). Super Resolution: Off, Auto (with GPU priority) or a fixed quality level, and its status indicator. Video HDR: on or off, peak brightness, middle grey, contrast, saturation, and its status indicator. Changes apply straight away, without admin rights and without opening the NVIDIA App. Needs the NVIDIA App installed and an RTX graphics card; Video HDR also needs Windows HDR on.
