@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6.2 Beta 3
+## v2.9.6.2 Beta 4
 
 ### New
 - **CRCGI (Experimental).** Global illumination for your games: light bouncing off lit surfaces onto nearby ones, and soft contact shadows, from CRCGI by FlibbertigibbetLollygagger, a ReShade effect built on radiance cascades. Its CRCGI Injector add-on hands it the game's own normals, colours, motion and depth and keeps the UI and fog out of it. Install it from Experimental › Global Illumination: RHI adds the add-on and the effect, turns the effect on and keeps it updated. Works in DirectX 10, 11 and 12, Vulkan and OpenGL games (DirectX 9 through DXVK), 32 and 64-bit. Its ⚙ has the main settings (GI intensity, shadows, multibounce, sky light, dark area boost, smoothing, effect resolution and range, and the add-on's level), the author's own preset for games that have one (Batman: Arkham Knight, The Witcher 3), and a reset to CRCGI's defaults; everything else is in ReShade's overlay. Single player only.
