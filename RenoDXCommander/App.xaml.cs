@@ -161,7 +161,8 @@ public partial class App : Application
         ShaderPackService.ExtraGameFiles = dir =>
         {
             var files = new List<(string Rel, string Source)>(uplift.ShaderFilesFor(dir));
-            foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)).Concat(FrameWarpService.ShaderFilesFor(dir)))
+            foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)).Concat(FrameWarpService.ShaderFilesFor(dir))
+                         .Concat(FeederShaders.ShaderFilesFor(dir)))
                 if (!files.Any(x => x.Rel.Equals(f.Rel, StringComparison.OrdinalIgnoreCase))) files.Add(f); // LaunchPad: once
             return files;
         };

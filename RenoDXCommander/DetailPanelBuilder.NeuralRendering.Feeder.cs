@@ -285,25 +285,11 @@ public partial class DetailPanelBuilder
             if (useLumenite)
                 await _shaderPackService.EnsurePacksAsync(new[] { "LumeniteFX" }).ConfigureAwait(false);
 
-            // Build exclusion sets — only DLSS5_Feed.fx from DLSS5Feeder, only lumenite_Kernel.fx from LumeniteFX
-            var feederExclude = _shaderPackService.GetPackShaderFiles(new[] { "DLSS5Feeder" })
-                .Where(f => !f.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var exclusions = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["DLSS5Feeder"] = feederExclude,
-            };
-            if (useLumenite)
-                exclusions["LumeniteFX"] = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
-                    .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var packs = useLumenite ? new[] { "LumeniteFX", "DLSS5Feeder" } : new[] { "DLSS5Feeder" };
-
+            // The effects themselves are component files (FeederShaders, via ShaderPackService.ExtraGameFiles): the
+            // shader sync after rhi_install.txt is written below deploys them on top of the game's own shader
+            // selection, which is left as it is (issue #182: forcing Select wiped a Global game's shaders).
             await Task.Run(() =>
             {
-                _shaderPackService.DeployToGameFolder(installPath, packs, exclusions);
-                CrashReporter.Log($"[NeuralRendering] Deployed {(useLumenite ? "lumenite_Kernel.fx + " : "")}DLSS5_Feed.fx to '{installPath}'");
-
                 try
                 {
                     // ReShade.ini: drop RHI's old global DLSS5_MV_PROVIDER (ignored there) and point at the preset
@@ -329,44 +315,6 @@ public partial class DetailPanelBuilder
                     CrashReporter.Log($"[NeuralRendering] reshade.ini/preset update failed — {iniEx.Message}");
                 }
             }).ConfigureAwait(false);
-
-            // Add to PerGameShaderSelection so SyncGameFolder keeps them deployed
-
-            // Add DLSS5Feeder and LumeniteFX to PerGameShaderSelection so SyncGameFolder
-            // keeps them deployed on every startup refresh.
-            // Dict writes and save happen on the background install thread (no UI dependency).
-            // card.ShaderModeOverride is dispatched to the UI thread separately.
-            {
-                // Persist pack-level exclusions (SetExcludedFiles acquires _settingsLock —
-                // run synchronously here; we're already on a background thread).
-                var feederAllFiles = _shaderPackService.GetPackShaderFiles(new[] { "DLSS5Feeder" })
-                    .Where(f => !f.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-                if (useLumenite)
-                    _shaderPackService.SetExcludedFiles("LumeniteFX", _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
-                        .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
-                        .ToList());
-                _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
-
-                var gameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
-                var current = _gameNameService.PerGameShaderSelection.TryGetValue(gameKey, out var sel)
-                    ? sel.ToList() : new List<string>();
-                if (!current.Contains("DLSS5Feeder", StringComparer.OrdinalIgnoreCase))
-                    current.Add("DLSS5Feeder");
-                if (useLumenite && !current.Contains("LumeniteFX", StringComparer.OrdinalIgnoreCase))
-                    current.Add("LumeniteFX");
-                _gameNameService.PerGameShaderSelection[gameKey] = current;
-                CrashReporter.Log($"[NeuralRendering.FeederShaders] Wrote PerGameShaderSelection['{gameKey}'] = [{string.Join(", ", current)}]");
-                _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
-                // Set ShaderModeOverride synchronously before DeployShadersForCard reads it.
-                // TryEnqueue alone is too late — DeployShadersForCard fires on the same background
-                // thread and reads card.ShaderModeOverride before the UI-thread dispatch runs.
-                card.ShaderModeOverride = "Select";
-                _window.DispatcherQueue?.TryEnqueue(() => card.ShaderModeOverride = "Select");
-                _window.ViewModel.SaveSettingsPublic();
-                // Deploy shaders with the now-persisted selection
-                _window.ViewModel.DeployShadersForCard(card.GameName);
-            }
         }
         catch (Exception ex)
         {
@@ -514,6 +462,10 @@ public partial class DetailPanelBuilder
             }
             Models.RhiInstallManifest.SetComponent(installPath, "Feeder", feederFiles);
         }
+
+        // Shader sync now that Feeder is recorded: DLSS5_Feed.fx (+ lumenite_Kernel.fx) join the game's own shaders
+        await _window.ViewModel.DeployShadersForCardAsync(card.GameName).ConfigureAwait(false);
+        CrashReporter.Log($"[NeuralRendering] Feeder shaders synced for '{card.GameName}' ({(useLumenite ? "DLSS5_Feed.fx + lumenite_Kernel.fx" : "DLSS5_Feed.fx")}), shader selection unchanged");
 
         // Re-detect DLSS so the Nvidia Profile section shows the newly deployed DLLs.
         var feederDetection = _dlssStreamlineService.Detect(card.InstallPath ?? "");

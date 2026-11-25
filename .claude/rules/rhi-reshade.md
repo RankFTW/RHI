@@ -67,6 +67,7 @@ paths:
 - Direct `.fx`/`.fxh` file support: copied to `Shaders/{packId}/` directly (no archive open)
 - Pack update cleanup: after a complete extraction, `RemoveFilesNoLongerInPack` deletes files in `Shaders\{packId}` / `Textures\{packId}` that the new version didn't write (renamed/removed shaders). Never before extraction, and never with an empty keep-set. Game folders are already cleaned by the mirror, which deploys only recorded files.
 - Deploy-time dependency expansion: `ExpandDependencies` (BFS) transitively resolves `Requires`
+- **Component shaders never change a game's shader mode** (issue #182): a component's effects (Uplift, HSF, URTI, FrameWarp, DLSS5 Feeder `FeederShaders`) go through `ShaderPackService.ExtraGameFiles`, added to every sync on top of the game's selection. Feeder used to force Select with only its packs, wiping Global games' shaders.
 - Three expansion points: (1) UI picker, (2) deploy-time, (3) `ApplyPresetShadersAsync`
 - `Blending.fxh` cross-pack: `CrosireLegacy` requires `CrosireMaster`
 
