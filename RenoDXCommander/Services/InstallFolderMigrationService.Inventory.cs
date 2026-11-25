@@ -262,9 +262,10 @@ public partial class InstallFolderMigrationService
                 var g = b.Group(NrLabel(component), newManifest?.Components.ContainsKey(component) == true);
                 bool isHsf = component.Equals(HsfService.Component, StringComparison.OrdinalIgnoreCase);
                 bool isUplift = component.Equals(UpliftService.Component, StringComparison.OrdinalIgnoreCase);
-                // URTI's files sit in the add-on folder too (no folder of its own)
+                // URTI's and CRCGI's files sit in the add-on folder too (no folder of their own)
                 bool isFrameWarp = component.Equals(FrameWarpService.Component, StringComparison.OrdinalIgnoreCase);
-                bool addonFirst = isHsf || isUplift || isFrameWarp || component.Equals(UrtiService.Component, StringComparison.OrdinalIgnoreCase);
+                bool addonFirst = isHsf || isUplift || isFrameWarp || component.Equals(UrtiService.Component, StringComparison.OrdinalIgnoreCase)
+                    || component.Equals(CrcgiService.Component, StringComparison.OrdinalIgnoreCase);
                 // HSF's Streamline / DLSS-G copies are its own files, never backed up game DLLs
                 foreach (var f in record.Files) b.Recorded(g, f, addonFirst, requireBackupForDlss: !isHsf);
                 if (component.Equals("Feeder", StringComparison.OrdinalIgnoreCase))
@@ -460,6 +461,7 @@ public partial class InstallFolderMigrationService
         "Uplift" => "GITC Uplift",
         "HSF" => "HSF",
         "Urti" => "URTI",
+        "Crcgi" => "CRCGI",
         "FrameWarp" => "FrameWarp",
         _ => component,
     };

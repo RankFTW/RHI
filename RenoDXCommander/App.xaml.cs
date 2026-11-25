@@ -139,6 +139,7 @@ public partial class App : Application
         services.AddSingleton<UpliftService>();
         services.AddSingleton<HsfService>();
         services.AddSingleton<UrtiService>();
+        services.AddSingleton<CrcgiService>();
         services.AddSingleton<FrameWarpService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
@@ -156,13 +157,13 @@ public partial class App : Application
         // URTI reads the game's depth through ReShade's Generic Depth add-on, which RHI's reshade.ini disables by default.
         // FrameWarp does too in games without DLSS or FSR, except Red Dead Redemption 2, where its README says to keep it
         // off (the ReShade menu crashes the game).
-        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir)
+        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir) || CrcgiService.IsRhiInstalled(dir)
             || (FrameWarpService.IsRhiInstalled(dir) && !File.Exists(Path.Combine(dir, "RDR2.exe")));
         ShaderPackService.ExtraGameFiles = dir =>
         {
             var files = new List<(string Rel, string Source)>(uplift.ShaderFilesFor(dir));
             foreach (var f in hsf.ShaderFilesFor(dir).Concat(UrtiService.ShaderFilesFor(dir)).Concat(FrameWarpService.ShaderFilesFor(dir))
-                         .Concat(FeederShaders.ShaderFilesFor(dir)))
+                         .Concat(FeederShaders.ShaderFilesFor(dir)).Concat(CrcgiService.ShaderFilesFor(dir)))
                 if (!files.Any(x => x.Rel.Equals(f.Rel, StringComparison.OrdinalIgnoreCase))) files.Add(f); // LaunchPad: once
             return files;
         };

@@ -2,7 +2,7 @@
 // Shown for every game in all layouts: Classic+ (collapsible, reorderable, before Management by default), Tabs (a tab
 // between Neural Rendering and Management) and Spotlight (a Tune tile in the second row). Rows use the Extras row shape
 // (6 columns), so Tabs / Spotlight arrange them with Extras' list cards (DetailLayoutHost.ArrangeExperimental).
-// Items: URTI (Ray Tracing), FrameWarp (Reprojection).
+// Items: URTI (Ray Tracing), CRCGI (Global Illumination), FrameWarp (Reprojection).
 // The manifest can take an item out ("featureFlags": { "experimentalHidden": ["urti", "framewarp"] }); it stays where installed.
 
 using Microsoft.UI.Xaml;
@@ -67,6 +67,8 @@ public partial class DetailPanelBuilder
         bool urtiInstalled = UrtiService.IsInstalledIn(installPath);
         var summaryEntries = new List<(string, string?)>();
         if (urtiInstalled) summaryEntries.Add(("URTI", "On"));
+        bool crcgiInstalled = CrcgiService.IsInstalledIn(installPath);
+        if (crcgiInstalled) summaryEntries.Add(("CRCGI", CrcgiService.InstalledVersion(installPath) is { } cv ? "v" + cv : "On"));
         bool frameWarpInstalled = FrameWarpService.IsInstalledIn(installPath);
         if (frameWarpInstalled) summaryEntries.Add(("FrameWarp", FrameWarpService.InstalledVersion(installPath) ?? "On"));
         var summary = MakeSectionSummaryInlines(summaryEntries, "Experimental features installed for this game.");
@@ -103,6 +105,12 @@ public partial class DetailPanelBuilder
         {
             body.Children.Add(MakeExtrasSeparator("Ray Tracing", _window.ExperimentalContainer));
             BuildUrtiRow(card, body);
+            items++;
+        }
+        if (!FeatureFlags.IsExperimentalHidden(FeatureFlags.ExperimentalCrcgi) || crcgiInstalled)
+        {
+            body.Children.Add(MakeExtrasSeparator("Global Illumination", _window.ExperimentalContainer));
+            BuildCrcgiRow(card, body);
             items++;
         }
         if (!FeatureFlags.IsExperimentalHidden(FeatureFlags.ExperimentalFrameWarp) || frameWarpInstalled)

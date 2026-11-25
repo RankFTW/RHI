@@ -1,4 +1,4 @@
-﻿// MainViewModel.Update.cs -- Update-all commands, update checking, UL caching, and version management.
+// MainViewModel.Update.cs -- Update-all commands, update checking, UL caching, and version management.
 
 using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
@@ -344,6 +344,7 @@ public partial class MainViewModel
                 await RefreshUpliftInstallsAsync("MainViewModel.Periodic");
                 await RefreshHsfInstallsAsync("MainViewModel.Periodic");
                 await RefreshUrtiInstallsAsync("MainViewModel.Periodic");
+                await RefreshCrcgiInstallsAsync("MainViewModel.Periodic");
                 await RefreshFrameWarpInstallsAsync("MainViewModel.Periodic");
 
                 try

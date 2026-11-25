@@ -50,6 +50,7 @@ public static class FeatureFlags
 
     /// <summary>Experimental section item ids ("urti").</summary>
     public const string ExperimentalUrti = "urti";
+    public const string ExperimentalCrcgi = "crcgi";
     public const string ExperimentalFrameWarp = "framewarp";
 
     /// <summary>
