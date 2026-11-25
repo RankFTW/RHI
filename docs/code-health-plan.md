@@ -129,7 +129,7 @@ Measured from logs on a 102-game library.
 - [ ] **The installer doesn't install the .NET runtime.**
   - Add a runtime check and install to `RHI Setup.iss`, or publish self-contained.
   - It currently installs the Windows App Runtime, which isn't needed if the app is self-contained. Pick one approach.
-- [ ] Fix the wrong `PublishDir` default in `RHI Setup.iss`.
+- [x] Fix the wrong `PublishDir` default in `RHI Setup.iss`. (25 Nov 2026: now the `Publish\RHI` folder publish.bat writes to.)
 
 ---
 
@@ -193,7 +193,7 @@ These make future features cheaper to build. Do them in this order; each is safe
 
 - [ ] `BuildCards`, `CacheLoad` and the background scan share about 48 property assignments by copy-paste. The RTX 40 MFG block is duplicated.
   - Use a `CardFactory` plus `ICardEnricher`s (one per component), so a new feature is added in one place.
-- [ ] **Check first:** some newer components are set only in the background scan, not in the `InitializeAsync(forceRescan: true)` path that Refresh uses. Fix that as a bug fix before the refactor.
+- [x] **Check first:** some newer components are set only in the background scan, not in the `InitializeAsync(forceRescan: true)` path that Refresh uses. Fix that as a bug fix before the refactor. (25 Nov 2026: the real gaps were the other way round, in the background merge after a cached start: anti-cheat / DXVK API flags, DOF Fix fields and the DXVK update badge weren't merged, and the WindowsApps ReShade reinstall only ran on Refresh. Fixed. Still only in the background scan, harmless on Refresh because launch already ran them: DLSS auto-update, OptiPatcher move, MFG placement, ASI Loader auto-update, Streamline redeploy; they matter only on a first launch with no saved library.)
 
 ---
 

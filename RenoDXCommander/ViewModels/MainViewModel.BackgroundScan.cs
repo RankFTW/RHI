@@ -468,6 +468,7 @@ public partial class MainViewModel
             // Merge fresh cards into displayed cards
             await MergeCardsAsync(freshCards);
             PublishFolderMigrationNotices();
+            ReinstallPendingWindowsAppsReShade("RunBackgroundScanAndMergeAsync"); // marked by BuildCards above
 
             // Save updated library
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } });
@@ -751,6 +752,39 @@ public partial class MainViewModel
     /// cached cards. Updates existing cards in-place (so WinUI bindings fire),
     /// adds new games, and removes stale games.
     /// </summary>
+    /// <summary>
+    /// Reinstalls ReShade for WindowsApps (Game Pass) games whose folder changed during this BuildCards (it marks them in
+    /// <c>_pendingRsReinstall</c>). Windows deletes the old folder on a game update, so the DLL can't be moved across.
+    /// Both card paths call it: the full scan (InitializeAsync, Refresh) and the background merge after a cached start,
+    /// which until Nov 2026 marked the games and never reinstalled (Installed shown, no DLL, until Refresh).
+    /// </summary>
+    private void ReinstallPendingWindowsAppsReShade(string caller)
+    {
+        if (_pendingRsReinstall.Count == 0) return;
+        var toReinstall = _allCards
+            .Where(c => _pendingRsReinstall.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey())
+                     && !string.IsNullOrEmpty(c.InstallPath))
+            .ToList();
+        _pendingRsReinstall.Clear();
+        if (toReinstall.Count == 0) return;
+        _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstalling ReShade for {toReinstall.Count} WindowsApps game(s) after path update");
+        _ = Task.Run(async () =>
+        {
+            foreach (var card in toReinstall)
+            {
+                try
+                {
+                    _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstalling ReShade for '{card.GameName}' at new path '{card.InstallPath}'");
+                    await InstallReShadeInternalAsync(card, forceFilename: null);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstall failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+        });
+    }
+
     private async Task MergeCardsAsync(List<GameCardViewModel> freshCards)
     {
         _crashReporter.Log($"[MergeCards] Merging {freshCards.Count} fresh cards into {_allCards.Count} existing cards...");
@@ -867,8 +901,20 @@ public partial class MainViewModel
                     e.RefRecord               = f.RefRecord;
                     e.RefInstalledVersion     = f.RefInstalledVersion;
 
+                    // ── Manifest per-game flags ──────────────────────────────
+                    // The cache phase has no manifest yet (ApplyManifestCardOverrides is a no-op there), so
+                    // without these the anti-cheat list / DXVK API overrides stayed off until Refresh.
+                    e.IsDxvkBlacklisted       = f.IsDxvkBlacklisted;
+                    e.HasDxvkApiOverride      = f.HasDxvkApiOverride;
+
+                    // ── DOF Fix (eligibility uses the manifest's skip / force lists, unknown in the cache phase) ──
+                    e.IsDofFixEligible        = f.IsDofFixEligible;
+                    e.DofFixStatus            = (e.DofFixStatus == GameStatus.UpdateAvailable && f.DofFixStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DofFixStatus;
+                    e.DofFixInstalledVersion  = f.DofFixInstalledVersion;
+
                     // ── DXVK fields ──────────────────────────────────────────
-                    e.DxvkStatus              = f.DxvkStatus;
+                    // Keep an update the check already found, like the other components
+                    e.DxvkStatus              = (e.DxvkStatus == GameStatus.UpdateAvailable && f.DxvkStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DxvkStatus;
                     e.DxvkInstalledVersion    = f.DxvkInstalledVersion;
                     e.DxvkRecord              = f.DxvkRecord;
                     e.DxvkEnabled             = f.DxvkEnabled;

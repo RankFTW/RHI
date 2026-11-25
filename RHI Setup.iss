@@ -4,7 +4,8 @@
 
 #define MyAppName "RHI"
 #ifndef PublishDir
-  #define PublishDir SourcePath + "RenoDXCommander\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64"
+  ; Where publish.bat puts the build (same folder tools/release-beta.ps1 passes with /DPublishDir)
+  #define PublishDir "C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI"
 #endif
 #ifndef InstallerOutputDir
   #define InstallerOutputDir SourcePath

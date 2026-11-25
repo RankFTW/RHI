@@ -17,6 +17,10 @@
 - **Save ReLimiter settings without changing your games.** Settings › Components › ReLimiter has a new Save to global relimiter.ini button beside Write to all ReLimiter games. It saves the settings above only into RHI's global relimiter.ini, which new ReLimiter installs are set up from; games that already have ReLimiter keep their own relimiter.ini. The ReLimiter settings there now show what the global relimiter.ini holds. Write to all ReLimiter games works as before.
 
 ### Bug Fixes
+- Fixed games on RHI's anti-cheat list not being treated as such after a normal start (only after Refresh): DXVK wasn't blocked and the anti-cheat warnings for frame generation unlocks and HSF didn't show. The same applied to the manifest's DXVK API overrides.
+- Fixed Game Pass games whose folder changed after a game update showing ReShade as installed with no ReShade in the game until Refresh: RHI now reinstalls it at the new folder on a normal start too.
+- Fixed the DXVK update badge disappearing shortly after start, and DOF Fix eligibility and status sometimes being wrong for the session after a normal start.
+- Fixed installing DLSS5 Feeder from Neural Rendering removing the game's other ReShade shaders: it switched the game's shaders to Select with only Feeder's own. Feeder's shaders are now added on top of whatever the game uses, and its shader setting is left alone. A game it already switched can go back to Global in ReShade's ⚙ › Shaders.
 - Fixed a game's Driver Settings not showing the NVIDIA FPS limit change straight away after installing or removing ReLimiter or Display Commander (or installing FrameWarp), which turn it off or back to global. It only showed after selecting another game and coming back.
 - Fixed RHI's HDR switching on Windows 11 24H2 and later reading HDR as on whenever Auto Colour Management was on, and turning Auto Colour Management on or off instead of HDR. The HDR button for launching games, the HDR display list in Settings and turning HDR off after a game now use Windows' own HDR switch.
 
