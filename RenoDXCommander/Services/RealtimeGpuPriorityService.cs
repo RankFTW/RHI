@@ -2,8 +2,10 @@
 // only in a game whose token holds Windows' "Increase scheduling priority" right (SeIncreaseBasePriorityPrivilege);
 // otherwise it falls back to high. Same change as the BFI Presenter Manager's GPU priority row (manager/core.cpp
 // GrantRealtimeGpuPriority): add / remove the right for the current account through the local security policy.
-// Reading needs no admin (LsaEnumerateAccountRights needs POLICY_LOOKUP_NAMES only). Changing it does: an elevated
-// Windows PowerShell runs the same LSA calls (one admin prompt). It reaches games after signing out and back in.
+// Changing it needs admin: an elevated Windows PowerShell runs the same LSA calls (one admin prompt; its exit code is
+// the result). Reading the policy needs admin too (LsaEnumerateAccountRights returns access denied otherwise, seen
+// Nov 2026), so without it the status is what RHI last did (realtime_gpu_priority.txt, per account SID) or this
+// sign-in's token. It reaches games after signing out and back in.
 
 using System.ComponentModel;
 using System.Diagnostics;
@@ -25,9 +27,13 @@ internal static class RealtimeGpuPriorityService
     {
         try
         {
+            bool elevated = VulkanLayerService.IsRunningAsAdmin();
             using var id = WindowsIdentity.GetCurrent();
-            bool? granted = id.User is { } sid ? HasRight(sid) : null;
-            bool? inToken = VulkanLayerService.IsRunningAsAdmin() ? null : TokenHasRight();
+            // The policy can only be read with admin rights (LsaEnumerateAccountRights: access denied otherwise),
+            // so without them: what RHI last did, else this sign-in's token
+            bool? granted = elevated && id.User is { } sid ? HasRight(sid) : null;
+            bool? inToken = elevated ? null : TokenHasRight();
+            granted ??= ReadMarker() ?? (inToken == true ? true : null);
             return new Status(granted, inToken);
         }
         catch (Exception ex) when (ex is SystemException)
@@ -65,12 +71,13 @@ internal static class RealtimeGpuPriorityService
                 exit = p.ExitCode;
             }
 
-            bool? has = HasRight(new SecurityIdentifier(sid));
-            CrashReporter.Log($"[RealtimeGpuPriorityService.SetAsync] exit {exit}, granted now {has?.ToString() ?? "unknown"}");
-            if (has == grant) return (true, null);
-            return (false, has == null
-                ? "RHI couldn't read the security policy afterwards."
-                : $"Windows didn't make the change (error {exit}).");
+            // The script's exit code is the LSA result (0 = done); the policy itself is readable only when elevated
+            bool? has = elevated ? HasRight(new SecurityIdentifier(sid)) : null;
+            bool ok = has.HasValue ? has == grant : exit == 0;
+            CrashReporter.Log($"[RealtimeGpuPriorityService.SetAsync] exit {exit}, granted now {has?.ToString() ?? "unreadable without admin"}, ok={ok}");
+            if (!ok) return (false, $"Windows didn't make the change (error {exit}).");
+            WriteMarker(grant);
+            return (true, null);
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223) // the admin prompt was declined
         {
@@ -118,7 +125,43 @@ internal static class RealtimeGpuPriorityService
         exit [RhiLsa]::Run($b, %REMOVE%)
         """;
 
-    // ── Reading (no admin) ────────────────────────────────────────────────────
+    // ── What RHI last did (the policy can't be read without admin) ────────────
+    private static string MarkerPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "realtime_gpu_priority.txt");
+
+    /// <summary>True / false = RHI last granted / removed the right for this account; null = never changed it here.</summary>
+    private static bool? ReadMarker()
+    {
+        try
+        {
+            if (!File.Exists(MarkerPath)) return null;
+            var lines = File.ReadAllLines(MarkerPath);
+            using var id = WindowsIdentity.GetCurrent();
+            if (lines.Length < 2 || !string.Equals(lines[1].Trim(), id.User?.Value, StringComparison.OrdinalIgnoreCase)) return null;
+            return lines[0].Trim() switch { "granted" => true, "removed" => false, _ => null };
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[RealtimeGpuPriorityService.ReadMarker] {ex.Message}");
+            return null;
+        }
+    }
+
+    private static void WriteMarker(bool granted)
+    {
+        try
+        {
+            using var id = WindowsIdentity.GetCurrent();
+            Directory.CreateDirectory(Path.GetDirectoryName(MarkerPath)!);
+            File.WriteAllLines(MarkerPath, new[] { granted ? "granted" : "removed", id.User?.Value ?? "" });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CrashReporter.Log($"[RealtimeGpuPriorityService.WriteMarker] {ex.Message}");
+        }
+    }
+
+    // ── Reading ───────────────────────────────────────────────────────────────
 
     private static bool? HasRight(SecurityIdentifier sid)
     {

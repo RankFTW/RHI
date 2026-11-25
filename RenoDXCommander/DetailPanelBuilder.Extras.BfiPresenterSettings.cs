@@ -201,7 +201,7 @@ public partial class DetailPanelBuilder
             { Granted: true } => "Allowed: games get the realtime GPU queue.",
             { Granted: false, InToken: true } => "Removed from your account. Games keep realtime until you sign out of Windows.",
             { Granted: false } => "Not allowed: games use the high-priority GPU queue unless they run as administrator. Allow it if BFI Presenter flashes or flickers in GPU-heavy moments.",
-            _ => "RHI couldn't read whether your account has the Increase scheduling priority right.",
+            _ => "Not allowed yet as far as RHI knows (Windows only shows this setting to administrators). If you allowed it with BFI Presenter's Manager, sign out and back in and this updates; otherwise Allow it here.",
         };
         var prioNote = cog.AddNote(PrioStatus(prio));
         bool prioGranted = prio.Granted == true;
