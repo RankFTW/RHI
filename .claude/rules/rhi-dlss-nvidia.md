@@ -73,6 +73,7 @@ vngx_dlssnr.dll`) match by relative path. Treating every bare name as "any folde
 5. Profile NAME == exe filename
 - **Cache**: `_profileLookupCache` per session. Invalidated on session reload + `ApplyManifestProfileConfig`.
 - **Auto-create**: `CreateProfileForGame` if all passes fail. Commas stripped from name.
+- **Profiles whose names differ only in case** (issue #180): NVIDIA ships some games twice (`Final Fantasy VII Rebirth` app `ff7rebirth_.exe` + `FINAL FANTASY VII REBIRTH` app `end/binaries/win64/ff7rebirth_.exe`). `_cachedProfiles` is case-insensitive and keeps the first, which the driver doesn't use (it prefers the path-qualified app). Name lookups go through `ProfileByName` (exact case first, `_exactProfiles` built from the session), and a match with a twin goes through `ResolveCaseTwin`: `_session.FindApplicationProfile(<full exe path>)` = the profile the driver really uses. A persisted cache entry naming a twin is matched again. A manifest `profileNameOverrides` entry still wins and is taken as written.
 - **`EnsureExeRegistered`**: adds exe to existing profile's Applications list (only when `AutoCreateProfiles`).
 
 ### Manifest-Driven Presets

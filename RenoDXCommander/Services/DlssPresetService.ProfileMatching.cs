@@ -244,6 +244,94 @@ public partial class DlssPresetService
 
     // ── Profile lookup ────────────────────────────────────────────────────────
 
+    // ── Profiles whose names differ only in case (issue #180) ──────────────────
+    // NVIDIA ships some games twice: "Final Fantasy VII Rebirth" (app ff7rebirth_.exe) and "FINAL FANTASY VII REBIRTH"
+    // (app end/binaries/win64/ff7rebirth_.exe). _cachedProfiles is case-insensitive and keeps only the first, so RHI wrote
+    // to the old profile while the driver (more specific, path-qualified app) and the NVIDIA App use the other one:
+    // nothing RHI set reached the game. Lookups by name go through ProfileByName (exact case first), and a match with a
+    // case twin is checked against the driver for the game's real exe path (ResolveCaseTwin).
+    private Dictionary<string, DriverSettingsProfile>? _exactProfiles;
+    private HashSet<string>? _caseTwinNames;
+    private object? _exactProfilesFor;
+
+    private void EnsureExactProfiles()
+    {
+        var map = _cachedProfiles;
+        if (map == null || _session == null || ReferenceEquals(_exactProfilesFor, map)) return;
+        var exact = new Dictionary<string, DriverSettingsProfile>(StringComparer.Ordinal);
+        var twins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var p in _session.Profiles)
+            {
+                exact.TryAdd(p.Name, p);
+                if (!seen.Add(p.Name)) twins.Add(p.Name);
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.EnsureExactProfiles] {ex.Message}"); }
+        _exactProfiles = exact;
+        _caseTwinNames = twins;
+        _exactProfilesFor = map;
+        if (twins.Count > 0) CrashReporter.Log($"[DlssPresetService.EnsureExactProfiles] {twins.Count} profile name(s) exist in two spellings");
+    }
+
+    /// <summary>The profile with exactly this name, else the case-insensitive match (null when neither).</summary>
+    private DriverSettingsProfile? ProfileByName(string name)
+    {
+        if (_cachedProfiles == null) return null;
+        if (_cachedProfiles.TryGetValue(name, out var p) && string.Equals(p.Name, name, StringComparison.Ordinal)) return p;
+        EnsureExactProfiles();
+        return _exactProfiles != null && _exactProfiles.TryGetValue(name, out var e) ? e : p;
+    }
+
+    private bool HasCaseTwin(string profileName)
+    {
+        EnsureExactProfiles();
+        return _caseTwinNames?.Contains(profileName) == true;
+    }
+
+    /// <summary>
+    /// For a profile whose name exists in two spellings: the one the driver really uses for the game's exe, asked with
+    /// the exe's full path (NvAPI_DRS_FindApplicationByName picks path-qualified entries first). Unchanged when the exe
+    /// isn't found or the driver answers with neither.
+    /// </summary>
+    private DriverSettingsProfile ResolveCaseTwin(DriverSettingsProfile matched, string gameName, string installPath, CancellationToken ct)
+    {
+        if (_session == null || string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath)) return matched;
+        EnsureExactProfiles();
+        var twins = _exactProfiles!.Values.Where(p => string.Equals(p.Name, matched.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+        var appFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var t in twins)
+        {
+            try { foreach (var a in t.Applications) appFiles.Add(Path.GetFileName(a.ApplicationName.Replace('/', '\\'))); }
+            catch (Exception ex) { CrashReporter.Log($"[DlssPresetService.ResolveCaseTwin] Applications of '{t.Name}': {ex.Message}"); }
+        }
+        if (appFiles.Count == 0) return matched;
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(installPath, "*.exe", SearchOption.AllDirectories))
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!appFiles.Contains(Path.GetFileName(file))) continue;
+                var used = _session.FindApplicationProfile(file);
+                if (used == null) continue;
+                var pick = twins.FirstOrDefault(t => string.Equals(t.Name, used.Name, StringComparison.Ordinal));
+                if (pick == null) continue;
+                if (!ReferenceEquals(pick, matched))
+                    CrashReporter.Log($"[DlssPresetService.ResolveCaseTwin] '{gameName}': the driver uses '{pick.Name}' for '{file}', not '{matched.Name}'");
+                return pick;
+            }
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException
+                                    or NvAPIWrapper.Native.Exceptions.NVIDIAApiException)
+        {
+            CrashReporter.Log($"[DlssPresetService.ResolveCaseTwin] '{gameName}': {ex.Message}");
+        }
+        return matched;
+    }
+
     /// <summary>
     /// Finds the NVIDIA driver profile for a game by matching title or exe names.
     /// Checks the persistent on-disk cache before doing the expensive exe scan.
@@ -262,7 +350,7 @@ public partial class DlssPresetService
         EnsurePersistentProfileCacheLoaded();
         if (_profileNameOverrides != null
             && _profileNameOverrides.TryGetValue(gameName, out var overrideName)
-            && _cachedProfiles.TryGetValue(overrideName, out var overrideProfile))
+            && ProfileByName(overrideName) is { } overrideProfile)
         {
             if (!string.Equals(_persistentProfileNameCache!.GetValueOrDefault(gameName), overrideProfile.Name, StringComparison.Ordinal))
             {
@@ -274,17 +362,22 @@ public partial class DlssPresetService
             return overrideProfile;
         }
 
-        // Check the persistent across-session name cache
-        if (_persistentProfileNameCache!.TryGetValue(gameName, out var cachedProfileName))
+        // Check the persistent across-session name cache. A name that exists in two spellings is matched again:
+        // older versions cached whichever twin the case-insensitive map held (issue #180).
+        if (_persistentProfileNameCache!.TryGetValue(gameName, out var cachedProfileName)
+            && (cachedProfileName == null || !HasCaseTwin(cachedProfileName)))
         {
             // null = confirmed miss (no profile exists for this game)
-            var profile = cachedProfileName != null && _cachedProfiles.TryGetValue(cachedProfileName, out var p) ? p : null;
+            var profile = cachedProfileName != null ? ProfileByName(cachedProfileName) : null;
             _profileLookupCache[gameName] = profile;
             return profile;
         }
 
         // Cache miss — run the full matching logic
         var result = FindProfileUncached(gameName, installPath, ct);
+        // Two profiles with the same name in different case: use the one the driver uses for the game's exe
+        if (result != null && HasCaseTwin(result.Name) && _profileNameOverrides?.ContainsKey(gameName) != true)
+            result = ResolveCaseTwin(result, gameName, installPath, ct);
 
         // Only persist and cache when not cancelled — a partial scan result would be a false negative
         if (!ct.IsCancellationRequested)
@@ -308,7 +401,7 @@ public partial class DlssPresetService
         // Check manifest profile name override first (handles cases like "Dead Space" → "Dead Space (Remake)")
         if (_profileNameOverrides != null
             && _profileNameOverrides.TryGetValue(gameName, out var overrideName)
-            && _cachedProfiles.TryGetValue(overrideName, out var overrideProfile))
+            && ProfileByName(overrideName) is { } overrideProfile)
         {
             CrashReporter.Log($"[DlssPresetService.FindProfile] Override matched: '{gameName}' → profile '{overrideName}'");
             return overrideProfile;
@@ -318,8 +411,8 @@ public partial class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.FindProfile] Override '{gameName}' → '{missedName}' NOT FOUND in cached profiles");
         }
 
-        // Try exact title match first
-        if (_cachedProfiles.TryGetValue(gameName, out var exactProfile))
+        // Try exact title match first (exact case wins over another spelling)
+        if (ProfileByName(gameName) is { } exactProfile)
             return exactProfile;
 
         // Try fuzzy title match early (strip special characters like ™, ®, colons)
