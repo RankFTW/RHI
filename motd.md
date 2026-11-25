@@ -1,3 +1,7 @@
-Hi everyone. RHI betas now come through the normal in-app updates. Turn on "Get beta updates" in Settings › General › Updates and RHI offers you each new beta like any other update, then moves you to the full release when it's out. Turning it off never downgrades you, and there's no more downloading betas from the Discord pins.
+Hi everyone. I need you to try ReLimiter v4. We make ReLimiter ourselves, and v4 is a whole new pacing core, the best it has ever been. If you've never used it, please give it a go: pick a game, install ReLimiter from its card, and RHI does the rest.
 
-Betas are tested and stable before they go out, so they're a safe way to try new features early. If you'd like to help with testing, switch it on and let me know on Discord if anything breaks. Thank you, Rank
+v4 paces every frame to one even rhythm and works out by itself the best place to hold each frame, on the GPU where the game allows it. The defaults are the recommended settings, so there's nothing to tune. Its cap follows your display's VRR range on its own, so you stay inside G-SYNC without tearing. DLSS Frame Generation needs no setup either: v4 picks it up, from 2x right up to 6x, and paces the real frames so the generated ones land evenly. In Phantom Blade Zero with 2x frame generation, the 1% low went from 48 to 70 fps and hitches dropped from 325 a minute to 48. It also gets along with HSF and MFG Unlocker.
+
+The overlay shows what's happening: frame pacing, jitter and hitches, NVIDIA PC Latency (press the PC Latency (PCL) button in Settings › Components › ReLimiter once, then sign out and back in), DLSS info, and a clock if you want one. Save your own OSD presets and share them across games.
+
+v4 needs an NVIDIA card and is built and tested for 64-bit DirectX 12 games with Reflex. If another game doesn't get along with it, pick v3 in ReLimiter's ⚙ › Version and please tell me on Discord which game so we can fix it. Every report helps. Thank you, Rank
