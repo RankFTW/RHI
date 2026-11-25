@@ -70,6 +70,8 @@ public partial class SettingsHandler
             // Initialize screenshot hotkey display
             _currentScreenshotHotkeyString = ViewModel.Settings.ScreenshotHotkey;
             _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
+            // ReLimiter boxes show the global relimiter.ini's values (copied into settings first)
+            SyncUlSettingsFromTemplate();
             // Initialize ReLimiter OSD hotkey display
             _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
             _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
@@ -80,6 +82,7 @@ public partial class SettingsHandler
             InitializeUlTargetFpsCombo();
             // Preset / Move OSD / blackout / OLED Care keys, read from ReLimiter's shared presets file
             EnsureUlPresetKeyRows();
+            EnsureUlSaveTemplateButton();
             // Initialize OptiScaler hotkey display
             _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
             var osCombo = _window.OsHotkeyCombo;

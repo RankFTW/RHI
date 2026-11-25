@@ -1,6 +1,6 @@
 // SettingsHandler.ReLimiterKeys.cs: Settings › Components › ReLimiter rows for the preset, Move OSD, blackout and
-// OLED Care keys (built in C#, inserted under the Overlay key row). The values are read from ReLimiter's shared
-// presets file only (ReLimiterPresetKeys); a change is written there straight away, and "Write to all ReLimiter
+// OLED Care keys (built in C#, inserted under the Overlay key row). The values are read from the global relimiter.ini
+// where it has them, else ReLimiter's shared presets file (ReLimiterPresetKeys); a change is written there straight away, and "Write to all ReLimiter
 // games" also writes them into every game's relimiter.ini.
 
 using Microsoft.UI.Xaml;
@@ -33,6 +33,7 @@ public partial class SettingsHandler
                     column.Children.Insert(at++, MakeUlPresetKeyRow(bind));
             }
             var values = ReLimiterPresetKeys.ReadAll();
+            OverlayUlPresetKeysFromTemplate(values); // the global relimiter.ini wins where it has a key
             foreach (var (key, box) in _ulPresetKeyBoxes)
                 box.Text = values.TryGetValue(key, out var v) ? v : "";
         }
