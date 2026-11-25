@@ -259,7 +259,8 @@ public partial class MainViewModel
         }
         return UlV4Rules.BuildSeededIni(template, major,
             _settingsViewModel.UlOsdHotkey, _settingsViewModel.UlSharedPresets, _settingsViewModel.UlDlssHooks, _settingsViewModel.UlTargetFps,
-            nativePcl: major >= UlV4Rules.V4Major && PclAllowed());
+            nativePcl: major >= UlV4Rules.V4Major && PclAllowed(),
+            pacingPreference: _settingsViewModel.UlPacingPreference);
     }
 
     /// <summary>The major version of the ReLimiter installed in this game (its addon's FileVersion), or null.</summary>

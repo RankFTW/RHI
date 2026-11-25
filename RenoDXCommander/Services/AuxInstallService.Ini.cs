@@ -1489,6 +1489,24 @@ public partial class AuxInstallService
         WriteIni(iniFilePath, ini);
     }
 
+    /// <summary>Writes ReLimiter v4's pacing_preference (latency | balanced | smooth) to [FrameLimiter]. v3 doesn't read it.</summary>
+    public static void ApplyUlPacingPreference(string iniFilePath, string value)
+    {
+        if (UlV4Rules.NormalizePacing(value) is not { } pacing) return;
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "FrameLimiter";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section][UlV4Rules.PacingKey] = pacing;
+
+        WriteIni(iniFilePath, ini);
+    }
+
     /// <summary>
     /// Turns ReLimiter v4's native PC Latency on or off (native_pcl_enabled=true / false in [FrameLimiter]).
     /// On only for v4 games whose Windows account has the PCL permission (Settings › Components › ReLimiter).

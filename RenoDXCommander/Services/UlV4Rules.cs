@@ -221,12 +221,13 @@ internal static class UlV4Rules
     /// one) = <see cref="BuildFreshIni"/>. Pure.
     /// </summary>
     internal static string BuildSeededIni(string? template, int major, string? osdKey, bool sharedPresets, bool dlssHooks,
-        int targetFps, bool nativePcl = false)
+        int targetFps, bool nativePcl = false, string? pacingPreference = null)
     {
         bool v4 = major >= V4Major;
+        var pacing = v4 ? NormalizePacing(pacingPreference) : null;
         var lines = (template ?? "").Replace("\r\n", "\n").Split('\n').ToList();
         if (!lines.Any(l => { var t = l.Trim(); return t.Contains('=') && !t.StartsWith(';') && !t.StartsWith('#'); }))
-            return BuildFreshIni(osdKey, sharedPresets, dlssHooks, targetFps, nativePcl && v4);
+            return BuildFreshIni(osdKey, sharedPresets, dlssHooks, targetFps, nativePcl && v4, pacing);
 
         lines = StripOtherVersionKeys(lines, major);
         while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
@@ -237,7 +238,22 @@ internal static class UlV4Rules
         if (dlssHooks) lines = ReLimiterPresetKeys.SetKey(lines, S, "dlss_info_hooks", "true");
         if (targetFps > 0) lines = ReLimiterPresetKeys.SetKey(lines, S, "target_fps", targetFps.ToString());
         if (v4 && nativePcl) lines = ReLimiterPresetKeys.SetKey(lines, S, "native_pcl_enabled", "true");
+        if (pacing != null && pacing != DefaultPacingPreference) lines = ReLimiterPresetKeys.SetKey(lines, S, PacingKey, pacing);
         return string.Join("\r\n", lines) + "\r\n";
+    }
+
+    // ── v4 pacing preference ([FrameLimiter] pacing_preference; ReLimiter's config.h: latency | balanced | smooth,
+    //    default balanced; its overlay shows them as Lower latency / Balanced / Smoother). v3 doesn't read it.
+    internal const string PacingKey = "pacing_preference";
+    internal const string DefaultPacingPreference = "balanced";
+    internal static readonly string[] PacingPreferences = { "latency", "balanced", "smooth" };
+    internal static readonly string[] PacingLabels = { "Lower latency", "Balanced", "Smoother" };
+
+    /// <summary>The value as ReLimiter writes it, or null when it isn't one of the three. Pure.</summary>
+    internal static string? NormalizePacing(string? value)
+    {
+        var v = value?.Trim();
+        return PacingPreferences.FirstOrDefault(p => string.Equals(p, v, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool HasKey(List<string> lines, string section, string key)
@@ -258,8 +274,10 @@ internal static class UlV4Rules
     /// A fresh relimiter.ini with only the lines RHI writes (OSD key, shared presets, DLSS info hooks, frame rate cap,
     /// and for v4 native PC Latency on). ReLimiter fills in everything else with its own defaults on first start. Pure.
     /// </summary>
-    internal static string BuildFreshIni(string? osdKey, bool sharedPresets, bool dlssHooks, int targetFps, bool nativePcl = false)
+    internal static string BuildFreshIni(string? osdKey, bool sharedPresets, bool dlssHooks, int targetFps, bool nativePcl = false,
+        string? pacingPreference = null)
     {
+        var pacing = NormalizePacing(pacingPreference); // callers pass it for v4 only
         var sb = new StringBuilder();
         sb.Append("[FrameLimiter]\r\n");
         if (!string.IsNullOrWhiteSpace(osdKey)) sb.Append("osd_toggle_key=").Append(osdKey.Trim()).Append("\r\n");
@@ -268,6 +286,7 @@ internal static class UlV4Rules
         if (targetFps > 0) sb.Append("target_fps=").Append(targetFps).Append("\r\n");
         // v4 only reads PC Latency with this on (and the account in Performance Log Users, Settings › Components)
         if (nativePcl) sb.Append("native_pcl_enabled=true\r\n");
+        if (pacing != null && pacing != DefaultPacingPreference) sb.Append(PacingKey).Append('=').Append(pacing).Append("\r\n");
         return sb.ToString();
     }
 }

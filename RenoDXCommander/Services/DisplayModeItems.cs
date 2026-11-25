@@ -105,7 +105,8 @@ public sealed class DisplayModeItem
                 return value.Length == 0 ? "None" : value;
             case DisplayModeValueKind.Number:
             case DisplayModeValueKind.Decimal:
-                if (Key is DisplayModeItemKeys.UlTargetFps or DisplayModeItemKeys.DcFpsLimit && IsZero(value)) return "Off";
+                if (Key is DisplayModeItemKeys.UlTargetFps && IsZero(value)) return "Auto VRR"; // ReLimiter 4.0.4+: no Off
+                if (Key is DisplayModeItemKeys.DcFpsLimit && IsZero(value)) return "Off";
                 return Unit == null ? value : $"{value} {Unit}";
             default:
                 return value;

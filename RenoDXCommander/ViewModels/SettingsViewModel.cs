@@ -26,6 +26,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _ulSharedPresets = false;
     [ObservableProperty] private bool _ulDlssHooks = true;
     [ObservableProperty] private int _ulTargetFps; // 0 = off/disabled
+    [ObservableProperty] private string _ulPacingPreference = UlV4Rules.DefaultPacingPreference; // v4 pacing_preference: latency | balanced | smooth
     [ObservableProperty] private string _osHotkey = "Insert";
     [ObservableProperty] private string _osGpuType = "NVIDIA";
     /// <summary>OptiScaler version for games that don't have one chosen: "Stable", "Nightly", "DlssNr" or "F5".</summary>
@@ -342,6 +343,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("UlTargetFps", out var ultfVal) && int.TryParse(ultfVal, out var ultfInt))
             UlTargetFps = ultfInt;
 
+        if (s.TryGetValue("UlPacingPreference", out var ulppVal) && UlV4Rules.NormalizePacing(ulppVal) is { } ulpp)
+            UlPacingPreference = ulpp;
+
         if (s.TryGetValue("OsHotkey", out var oshVal))
             OsHotkey = oshVal ?? "Insert";
 
@@ -635,6 +639,7 @@ public partial class SettingsViewModel : ObservableObject
         s["UlOsdHotkey"] = UlOsdHotkey;
         s["UlSharedPresets"] = UlSharedPresets ? "true" : "false";
         s["UlDlssHooks"] = UlDlssHooks ? "true" : "false";
+        s["UlPacingPreference"] = UlPacingPreference;
         if (UlTargetFps > 0) s["UlTargetFps"] = UlTargetFps.ToString();
         else s.Remove("UlTargetFps"); // 0 = off — remove stale value
         s["OsHotkey"] = OsHotkey;

@@ -52,9 +52,12 @@ public partial class SettingsHandler
         if (TryBool(t, "dlss_info_hooks", out bool hooks) && s.UlDlssHooks != hooks) { s.UlDlssHooks = hooks; changed = true; }
         if (t.TryGetValue("target_fps", out var fpsText) && int.TryParse(fpsText.Trim(), out int fps) && fps >= 0 && s.UlTargetFps != fps)
         { s.UlTargetFps = fps; changed = true; }
+        if (t.TryGetValue(UlV4Rules.PacingKey, out var pacingText) && UlV4Rules.NormalizePacing(pacingText) is { } pacing
+            && !string.Equals(s.UlPacingPreference, pacing, StringComparison.Ordinal))
+        { s.UlPacingPreference = pacing; changed = true; }
         if (!changed) return;
         ViewModel.SaveSettingsPublic();
-        CrashReporter.Log($"[SettingsHandler.SyncUlSettingsFromTemplate] From global relimiter.ini: osd={s.UlOsdHotkey}, shared={s.UlSharedPresets}, hooks={s.UlDlssHooks}, fps={s.UlTargetFps}");
+        CrashReporter.Log($"[SettingsHandler.SyncUlSettingsFromTemplate] From global relimiter.ini: osd={s.UlOsdHotkey}, shared={s.UlSharedPresets}, hooks={s.UlDlssHooks}, fps={s.UlTargetFps}, pacing={s.UlPacingPreference}");
 
         static bool TryBool(Dictionary<string, string> d, string key, out bool value)
         {
@@ -157,7 +160,8 @@ public partial class SettingsHandler
             AuxInstallService.ApplyUlDlssHooks(path, s.UlDlssHooks);
             AuxInstallService.ApplyUlTargetFps(path, s.UlTargetFps);
             ReLimiterPresetKeys.WriteToGameIni(path, presetKeys);
-            CrashReporter.Log($"[SettingsHandler.UlSaveTemplate_Click] Saved to '{path}': osd={_currentUlHotkeyString}, shared={s.UlSharedPresets}, hooks={s.UlDlssHooks}, fps={s.UlTargetFps}");
+            AuxInstallService.ApplyUlPacingPreference(path, s.UlPacingPreference);
+            CrashReporter.Log($"[SettingsHandler.UlSaveTemplate_Click] Saved to '{path}': osd={_currentUlHotkeyString}, shared={s.UlSharedPresets}, hooks={s.UlDlssHooks}, fps={s.UlTargetFps}, pacing={s.UlPacingPreference}");
             SetUlSaveTemplateStatus($"Saved to the global relimiter.ini at {DateTime.Now:HH:mm}. Games' relimiter.ini files weren't changed.", false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

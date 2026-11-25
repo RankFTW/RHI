@@ -207,6 +207,7 @@ public partial class SettingsHandler
             bool dlssHooks = ViewModel.Settings.UlDlssHooks;
             int targetFps = ViewModel.Settings.UlTargetFps;
             var presetKeys = ReLimiterPresetKeys.ReadAll(); // the preset / blackout / OLED Care keys
+            string pacing = ViewModel.Settings.UlPacingPreference; // v4 only: v3 doesn't read it
             int updatedCount = 0;
             foreach (var card in ViewModel.AllCards)
             {
@@ -226,6 +227,8 @@ public partial class SettingsHandler
                     AuxInstallService.ApplyUlDlssHooks(iniFile, dlssHooks);
                     AuxInstallService.ApplyUlTargetFps(iniFile, targetFps);
                     WriteUlPresetKeysTo(iniFile, presetKeys);
+                    bool v4 = (MainViewModel.UlInstalledMajor(card) ?? 0) >= UlV4Rules.V4Major;
+                    if (v4) AuxInstallService.ApplyUlPacingPreference(iniFile, pacing);
 
                     // RE Framework games also store relimiter.ini in _storage_
                     if (card.IsRefInstalled)
@@ -238,6 +241,7 @@ public partial class SettingsHandler
                             AuxInstallService.ApplyUlDlssHooks(storagePath, dlssHooks);
                             AuxInstallService.ApplyUlTargetFps(storagePath, targetFps);
                             WriteUlPresetKeysTo(storagePath, presetKeys);
+                            if (v4) AuxInstallService.ApplyUlPacingPreference(storagePath, pacing);
                         }
                     }
 
@@ -260,6 +264,8 @@ public partial class SettingsHandler
                     AuxInstallService.ApplyUlDlssHooks(AuxInstallService.UlIniPath, dlssHooks);
                     AuxInstallService.ApplyUlTargetFps(AuxInstallService.UlIniPath, targetFps);
                     WriteUlPresetKeysTo(AuxInstallService.UlIniPath, presetKeys);
+                    // The template seeds both versions; v3 seeding strips it (UlV4Rules.V4OnlyKeys)
+                    AuxInstallService.ApplyUlPacingPreference(AuxInstallService.UlIniPath, pacing);
                 }
                 catch (Exception ex)
                 {

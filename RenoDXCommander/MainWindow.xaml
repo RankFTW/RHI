@@ -2537,7 +2537,7 @@
                                                 <TextBlock Text="Target FPS" Style="{StaticResource SettingsLabelStyle}"/>
                                                 <ComboBox Grid.Column="1" x:Name="UlTargetFpsCombo" x:FieldModifier="internal"
                                                           Style="{StaticResource SettingsComboStyle}"
-                                                          ToolTipService.ToolTip="Global FPS cap written to all relimiter.ini files. Select a VRR preset or Custom for a manual value."
+                                                          ToolTipService.ToolTip="Global FPS cap written to all relimiter.ini files. Auto VRR (ReLimiter's default) follows your display's VRR range; pick a VRR preset or Custom for a fixed value."
                                                           SelectionChanged="UlTargetFpsCombo_SelectionChanged">
                                                     <!-- Items populated in code-behind -->
                                                 </ComboBox>
@@ -3081,6 +3081,21 @@
                                         <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
                                                    Text="Fixes depth-of-field stepping and tiling artifacts in Unreal Engine 5 games."/>
                                         <HyperlinkButton NavigateUri="https://github.com/RankFTW/rhi-repo/releases" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/RankFTW/rhi-repo"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- RHI DB (RenoDX mod database) -->
+                                <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="RHI DB" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text=" by Scrungus" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Created the RHI database of RenoDX mods that RHI uses to match games with their mods."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/RankFTW/rhi-repo" Padding="0,2,0,0" FontSize="11">
                                             <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/RankFTW/rhi-repo"/>
                                         </HyperlinkButton>
                                     </StackPanel>

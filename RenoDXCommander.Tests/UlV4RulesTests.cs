@@ -293,4 +293,32 @@ public class UlV4RulesTests
         }
         finally { File.Delete(path); }
     }
+
+    [Theory]
+    [InlineData("smooth", "smooth")]
+    [InlineData("Latency", "latency")]
+    [InlineData(" balanced ", "balanced")]
+    [InlineData("smoother", null)]
+    [InlineData(null, null)]
+    public void NormalizePacing_AcceptsOnlyReLimitersValues(string? input, string? expected)
+        => Assert.Equal(expected, UlV4Rules.NormalizePacing(input));
+
+    [Fact]
+    public void Seeding_WritesPacingForV4Only_AndNotWhenBalanced()
+    {
+        const string template = "[FrameLimiter]\r\ntarget_fps=116\r\npacing_preference=latency\r\n";
+        var v4 = UlV4Rules.BuildSeededIni(template, 4, null, false, false, 0, pacingPreference: "smooth");
+        Assert.Contains("pacing_preference=smooth", v4);
+        Assert.DoesNotContain("pacing_preference=latency", v4);
+
+        var v3 = UlV4Rules.BuildSeededIni(template, 3, null, false, false, 0, pacingPreference: "smooth");
+        Assert.DoesNotContain("pacing_preference", v3);
+
+        // Balanced = ReLimiter's default: the template's own value is left as it is
+        var balanced = UlV4Rules.BuildSeededIni(template, 4, null, false, false, 0, pacingPreference: "balanced");
+        Assert.Contains("pacing_preference=latency", balanced);
+
+        Assert.Contains("pacing_preference=smooth", UlV4Rules.BuildSeededIni(null, 4, null, false, false, 0, pacingPreference: "smooth"));
+        Assert.DoesNotContain("pacing_preference", UlV4Rules.BuildSeededIni(null, 3, null, false, false, 0, pacingPreference: "smooth"));
+    }
 }

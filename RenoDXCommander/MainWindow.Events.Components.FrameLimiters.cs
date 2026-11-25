@@ -83,10 +83,10 @@ public sealed partial class MainWindow
             var vrrPresets = VrrFpsPresets;
             var vrrFpsSet = new HashSet<int>(vrrPresets.Select(p => p.Fps));
 
-            // Items: Off, presets, "<n> (Custom)" when the current value isn't a preset, "Custom..."
+            // Items: Auto VRR (0 = ReLimiter's automatic VRR cap since 4.0.4), presets, "<n> (Custom)" when the current value isn't a preset, "Custom..."
             List<string> BuildFpsItems(int fps)
             {
-                var items = new List<string> { "Off" };
+                var items = new List<string> { SettingsHandler.UlAutoVrrLabel };
                 items.AddRange(vrrPresets.Select(p => p.Label));
                 if (fps > 0 && !vrrFpsSet.Contains(fps))
                     items.Add($"{fps} (Custom)");
@@ -95,9 +95,9 @@ public sealed partial class MainWindow
             }
             int FpsIndex(List<string> items, int fps)
             {
-                if (fps == 0) return 0; // Off
+                if (fps == 0) return 0; // Auto VRR
                 int matchIdx = Array.FindIndex(vrrPresets, p => p.Fps == fps);
-                return matchIdx >= 0 ? matchIdx + 1 : items.Count - 2; // +1 for "Off"; custom item sits before "Custom..."
+                return matchIdx >= 0 ? matchIdx + 1 : items.Count - 2; // +1 for "Auto VRR"; custom item sits before "Custom..."
             }
 
             var fpsItems = BuildFpsItems(currentTargetFps);
@@ -106,7 +106,7 @@ public sealed partial class MainWindow
 
             var targetFpsRow = cog.AddRow("Target FPS", targetFpsCombo,
                 "Frame rate cap for this game, saved in its relimiter.ini. Each VRR preset sits just under that refresh rate. " +
-                "Off removes the cap; Custom... lets you type your own value.");
+                "Auto VRR leaves the cap to ReLimiter, which follows your display's VRR range; Custom... lets you type your own value.");
 
             // Inline custom FPS input (shown when "Custom..." is selected; no nested dialogs)
             var customFpsBox = CogDialog.MakeTextBox("", "20-1000");
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
                 {
                     AuxInstallService.ApplyUlTargetFps(iniFile, fps);
                     currentTargetFps = fps;
-                    cog.SetSuccess(fps == 0 ? "Target FPS turned off for this game." : $"Target FPS set to {fps} for this game.");
+                    cog.SetSuccess(fps == 0 ? "Target FPS set to Auto VRR for this game." : $"Target FPS set to {fps} for this game.");
                     CrashReporter.Log($"[MainWindow.UlCogButton_Click] target_fps={fps} for '{card.GameName}'");
                     return true;
                 }

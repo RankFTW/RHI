@@ -78,6 +78,7 @@ public partial class SettingsHandler
             // Initialize ReLimiter shared presets toggle
             _window.UlSharedPresetsCombo.SelectedIndex = ViewModel.Settings.UlSharedPresets ? 1 : 0;
             _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
+            EnsureUlPacingRow(); // v4 pacing preference, under DLSS hooks
             // Initialize ReLimiter Target FPS dropdown
             InitializeUlTargetFpsCombo();
             // Preset / Move OSD / blackout / OLED Care keys, read from ReLimiter's shared presets file

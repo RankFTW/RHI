@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -20,6 +20,9 @@ public partial class SettingsHandler
 
     private bool _suppressUlTargetFpsChange;
 
+    /// <summary>ReLimiter's frame rate cap 0 (no target_fps): since ReLimiter 4.0.4 there's no Off, it holds the display's VRR cap.</summary>
+    public const string UlAutoVrrLabel = "Auto VRR";
+
     private void InitializeUlTargetFpsCombo()
     {
         _suppressUlTargetFpsChange = true;
@@ -28,7 +31,7 @@ public partial class SettingsHandler
         var combo = _window.UlTargetFpsCombo;
         combo.Items.Clear();
 
-        combo.Items.Add("Off");
+        combo.Items.Add(UlAutoVrrLabel); // ReLimiter 4.0.4+: 0 / no target_fps = its automatic VRR cap (no Off)
         foreach (var preset in _ulTargetFpsPresets)
             combo.Items.Add(preset.Label);
 
@@ -41,12 +44,12 @@ public partial class SettingsHandler
 
         // Select based on current value
         if (currentFps == 0)
-            combo.SelectedIndex = 0; // Off
+            combo.SelectedIndex = 0; // Auto VRR
         else
         {
             int matchIdx = Array.FindIndex(_ulTargetFpsPresets, p => p.Fps == currentFps);
             if (matchIdx >= 0)
-                combo.SelectedIndex = matchIdx + 1; // +1 for "Off" at index 0
+                combo.SelectedIndex = matchIdx + 1; // +1 for "Auto VRR" at index 0
             else
             {
                 // Custom value — select the "(Custom)" item
@@ -112,7 +115,7 @@ public partial class SettingsHandler
             // Handle preset/Off selection
             int newFps;
             if (combo.SelectedIndex == 0)
-                newFps = 0; // Off
+                newFps = 0; // Auto VRR
             else if (combo.SelectedIndex - 1 < _ulTargetFpsPresets.Length)
                 newFps = _ulTargetFpsPresets[combo.SelectedIndex - 1].Fps;
             else
