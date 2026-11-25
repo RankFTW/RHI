@@ -7,9 +7,14 @@
 
 ### New
 - **RTX Video in Settings.** Settings › Display & HDR has a new RTX Video card with the NVIDIA App's video settings, for videos in browsers and video players (not games). Super Resolution: Off, Auto (with GPU priority) or a fixed quality level, and its status indicator. Video HDR: on or off, peak brightness, middle grey, contrast, saturation, and its status indicator. Changes apply straight away, without admin rights and without opening the NVIDIA App. Needs the NVIDIA App installed and an RTX graphics card; Video HDR also needs Windows HDR on.
+- **Monitors in Settings.** Settings › Display & HDR has a new Monitors card listing every connected monitor, where you can change its desktop resolution and refresh rate and turn Windows HDR on or off for that monitor alone. It also shows the exact refresh rate in use (such as 239.96 Hz). After a resolution or refresh rate change, choose Keep within 15 seconds or the monitor goes back to how it was, so one that goes blank comes back on its own.
 
 ### Changes
+- **Realtime GPU priority for BFI Presenter.** BFI Presenter's ⚙ has a new GPU priority section, so you no longer need BFI Presenter's Manager for it. Allow for my account gives your Windows account the Increase scheduling priority right (one administrator prompt; sign out and back in afterwards), so games run the presenter at realtime GPU priority, which stops flicker in GPU-heavy moments. Remove takes it away again. Presenter GPU priority (Normal, High or Realtime) sets it per game.
 - **Save ReLimiter settings without changing your games.** Settings › Components › ReLimiter has a new Save to global relimiter.ini button beside Write to all ReLimiter games. It saves the settings above only into RHI's global relimiter.ini, which new ReLimiter installs are set up from; games that already have ReLimiter keep their own relimiter.ini. The ReLimiter settings there now show what the global relimiter.ini holds. Write to all ReLimiter games works as before.
+
+### Bug Fixes
+- Fixed RHI's HDR switching on Windows 11 24H2 and later reading HDR as on whenever Auto Colour Management was on, and turning Auto Colour Management on or off instead of HDR. The HDR button for launching games, the HDR display list in Settings and turning HDR off after a game now use Windows' own HDR switch.
 
 ## v2.9.6.1
 
