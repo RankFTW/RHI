@@ -9,7 +9,7 @@ namespace RenoDXCommander.Services;
 /// Enumerates supported display resolutions and changes/restores the desktop resolution.
 /// Used by the Resolution Auto-Toggle feature (dev-only, gated by DevUnlockService).
 /// </summary>
-public static class ResolutionToggleService
+public static partial class ResolutionToggleService
 {
     // ── Win32 P/Invoke ────────────────────────────────────────────────────────
 
