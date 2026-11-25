@@ -269,8 +269,8 @@ public partial class DetailPanelBuilder
     }
 
     /// <summary>
-    /// Asked on every HSF install: should Universal MFG Unlocker go in too (RTX 20 / 30 / 40 cards need it)?
-    /// Not asked when it's already in the game, MFG Unlock (add-on) is, or the card is RTX 50 or newer.
+    /// Asked on every HSF install, on every card: should Universal MFG Unlocker go in too? XeMFG relies on it for 3x-6x on
+    /// every RTX card; RTX 20 / 30 / 40 also need it for DLSS-G. Not asked when it or MFG Unlock (add-on) is already in the game.
     /// The detected card sets the default answer. A yes in a 64-bit game (any API) goes on to the DLL name
     /// picker, next to the exe; 32-bit games get it in HSF_streamline\mods. Cancelled = install nothing.
     /// </summary>
@@ -278,11 +278,11 @@ public partial class DetailPanelBuilder
     {
         xamlRoot ??= _window.Content.XamlRoot;
         if (xamlRoot == null || card.Rtx40MfgInstalled || card.MfgAdaInstalled) return (false, false, null);
-        // XeMFG (HSF's Intel frame generation) needs the unlocker for 3x to 6x on every RTX card, RTX 50 too
-        bool xemfg = !string.IsNullOrEmpty(card.InstallPath) && HsfService.ReadFgEngine(card.InstallPath) == HsfService.EngineXeMfg;
+        // Asked on every HSF install, RTX 50 too (user decision, 25 Nov 2026): HSF 0.10's XeMFG (Intel's XeSS frame generation)
+        // relies on the unlocker for 3x to 6x on every RTX card, and RTX 20 / 30 / 40 need it for DLSS-G as well.
         var gpu = GpuInfoService.Primary(await GpuInfoService.GetNvidiaGpusAsync());
-        if (!xemfg && gpu is { Family: GpuFamily.Rtx50 or GpuFamily.Newer }) return (false, false, null);
-        bool needs = xemfg || (gpu != null && GpuInfoService.NeedsMfgUnlocker(gpu.Family));
+        bool rtx = gpu != null && gpu.Family != GpuFamily.NotRtx;
+        bool needsForDlssg = gpu != null && GpuInfoService.NeedsMfgUnlocker(gpu.Family);
         bool nextToExe = MainViewModel.HsfMfgNextToExe(card);
 
         var content = new StackPanel { Spacing = 8 };
@@ -294,17 +294,21 @@ public partial class DetailPanelBuilder
             LineHeight = 20,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
-        if (xemfg)
-            Para("This game's HSF is set to XeMFG (Intel's frame generation). XeMFG needs Universal MFG Unlocker for 3x to 6x on every RTX card, "
-                + "RTX 50 included. Without it, XeMFG is limited to 2x.");
-        else
-            Para("RTX 20, 30 and 40 cards need Universal MFG Unlocker for HSF: RTX 20 and 30 for any frame generation, RTX 40 for more than 2x. RTX 50 cards don't need it.");
+        Para("HSF's XeMFG engine (Intel's XeSS frame generation, picked in HSF's menu or ⚙) relies on Universal MFG Unlocker: "
+            + "without it XeMFG is limited to 2x on every RTX card, RTX 50 included. With it, XeMFG runs 2x to 6x.");
+        Para("For NVIDIA's own DLSS-G engine, RTX 20 and 30 cards need it for any frame generation and RTX 40 for more than 2x; RTX 50 doesn't.");
         Para(gpu == null
             ? "RHI couldn't find an NVIDIA graphics card in this PC."
-            : $"Your graphics card: {gpu.Name} ({gpu.FamilyLabel}). {(needs ? "It needs the unlocker." : "It isn't an RTX card, so it can't run DLSS frame generation.")}");
-        Para(nextToExe
-            ? "It goes next to the game's exe. Next you choose the DLL name it's installed as, so it doesn't clash with other mods."
-            : "This is a 32-bit game, so the unlocker goes in HSF_streamline\\mods, where HSF's helper loads it.");
+            : !rtx
+                ? $"Your graphics card: {gpu.Name}. It isn't an RTX card, so it can't run DLSS frame generation."
+                : $"Your graphics card: {gpu.Name} ({gpu.FamilyLabel}). "
+                  + (needsForDlssg ? "It needs the unlocker for HSF either way." : "It needs the unlocker for XeMFG."));
+        bool versionDll = _window.ViewModel.HsfMfgNeedsVersionDll(card);
+        Para(!nextToExe
+            ? "This is a 32-bit game, so the unlocker goes in HSF_streamline\\mods, where HSF's helper loads it."
+            : versionDll
+                ? "It goes next to the game's exe as version.dll: in DirectX 12 games HSF only loads it under that name."
+                : "It goes next to the game's exe. Next you choose the DLL name it's installed as, so it doesn't clash with other mods.");
 
         var dialog = new ContentDialog
         {
@@ -313,7 +317,7 @@ public partial class DetailPanelBuilder
             PrimaryButtonText = "Install both",
             SecondaryButtonText = "HSF only",
             CloseButtonText = "Cancel",
-            DefaultButton = needs ? ContentDialogButton.Primary : ContentDialogButton.Secondary,
+            DefaultButton = rtx ? ContentDialogButton.Primary : ContentDialogButton.Secondary,
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -321,6 +325,16 @@ public partial class DetailPanelBuilder
         if (result == ContentDialogResult.Secondary) return (false, false, null);
         if (result != ContentDialogResult.Primary) return (true, false, null);
         if (!nextToExe) return (false, true, null);
+        if (versionDll)
+        {
+            var (auto, err) = _window.ViewModel.HsfMfgAutoName(card);
+            if (err != null)
+            {
+                await ShowHsfErrorAsync(err, xamlRoot, "Universal MFG Unlocker can't go in");
+                return (false, false, null); // HSF still installs
+            }
+            return (false, true, auto);
+        }
 
         var name = await ShowMfgDllPickerAsync(card, null);
         return name == null ? (true, false, null) : (false, true, name);

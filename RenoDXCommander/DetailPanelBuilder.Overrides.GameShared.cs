@@ -127,7 +127,7 @@ public partial class DetailPanelBuilder
     {
         var text = new Microsoft.UI.Xaml.Controls.TextBlock
         {
-            Text = "Game Overrides is going away in RHI 2.9.8. Everything here is already in its new place, and a change in "
+            Text = "Game Overrides is going away in RHI 2.9.6.3. Everything here is already in its new place, and a change in "
                  + "either place shows in both:\n"
                  + "• Game name, Bitness, Graphics API, Launch executable and arguments, Reset: this game's settings ⚙ (next to its name)\n"
                  + "• Wiki mod name and wiki lookup: the RenoDX ⚙\n"

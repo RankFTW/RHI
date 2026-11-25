@@ -54,10 +54,11 @@ public partial class HsfService
     private const string MarkerName     = "rhi-hsf.txt"; // in HSF_streamline\
     public const string LicenseFile     = "LICENSE.txt";
 
-    /// <summary>Files HSF writes next to its add-on (removed with it).</summary>
+    /// <summary>Files HSF writes next to its add-on (removed with it; HSF 0.10 installers.md › Uninstall adds HSF_safe_try.ini).</summary>
     private static readonly string[] HsfLogs =
     {
         "HSF_sl_bring.log", "HSF_sl_bring.old.log", "HSF_sl_probe.log", "HSF_sl_probe.old.log",
+        "HSF_safe_try.ini", // HSF.log / HSF.previous.log are kept on purpose (user decision 25 Nov 2026: logs stay for troubleshooting)
     };
     private const string ProfilesFolder = "HSF_profiles";
 

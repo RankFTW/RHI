@@ -18,15 +18,31 @@ public partial class DetailPanelBuilder
         cog.AddIntro("XeMFG runs Intel's XeSS frame generation inside DLSS-G in place of NVIDIA's own (experimental). "
             + "The change applies the next time the game starts. HSF's own menu has the same choice (FG ENGINE).");
         var unlockerNote = cog.AddNote("");
+        // XeMFG needs Universal MFG Unlocker for 3x-6x on every RTX card: offer it right here (HSF 0.10 expects it)
+        Microsoft.UI.Xaml.Controls.Button? installMfgBtn = null;
+        Microsoft.UI.Xaml.FrameworkElement? mfgButtons = null;
+        installMfgBtn = cog.MakeButton("Install Universal MFG Unlocker", CogButtonKind.Primary, async () =>
+        {
+            installMfgBtn!.IsEnabled = false;
+            cog.SetStatus("Installing Universal MFG Unlocker...");
+            var error = await _window.ViewModel.InstallMfgForHsfAutoAsync(card);
+            installMfgBtn.IsEnabled = true;
+            if (error != null) { cog.SetError(error); return; }
+            cog.SetSuccess("Universal MFG Unlocker installed. XeMFG can now run 2x to 6x; HSF follows the multiplier the unlocker sets. Restart the game.");
+            ShowUnlocker(true);
+            RequestExtrasRebuild(card);
+        }, "Installs Universal MFG Unlocker by dashdogy for this game: as version.dll next to the exe in 64-bit games "
+           + "(HSF 0.10: in DirectX 12 games it only loads as version.dll), in HSF_streamline\\mods in 32-bit games.");
+        mfgButtons = cog.AddButtons(installMfgBtn);
         void ShowUnlocker(bool xemfg)
         {
             bool missing = xemfg && !card.Rtx40MfgInstalled && !card.MfgAdaInstalled;
             unlockerNote.Text = !xemfg
                 ? "DLSS-G: NVIDIA's frame generation, as before."
                 : missing
-                    ? "Limited to 2x: Universal MFG Unlocker isn't installed. XeMFG needs it for 3x to 6x on every RTX card, RTX 50 included. "
-                      + "Install it from its row in this section."
-                    : "XeMFG with the unlocker: 2x to 6x (set the multiplier in HSF's menu).";
+                    ? "Limited to 2x: Universal MFG Unlocker isn't installed. XeMFG needs it for 3x to 6x on every RTX card, RTX 50 included."
+                    : "XeMFG with the unlocker: 2x to 6x. HSF follows the multiplier the unlocker sets (Universal MFG Unlocker's menu).";
+            if (mfgButtons != null) mfgButtons.Visibility = missing ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         }
 
         bool isXeMfg = HsfService.ReadFgEngine(installPath) == HsfService.EngineXeMfg;

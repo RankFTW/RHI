@@ -138,7 +138,7 @@ internal sealed partial class DetailLayoutHost
 
     private static string GlanceFallback(string key) => key switch
     {
-        "GameOverrides"       => "Moving to each component's ⚙ and the game's settings ⚙ in 2.9.8",
+        "GameOverrides"       => "Moving to each component's ⚙ and the game's settings ⚙ in 2.9.6.3",
         "NeuralRendering"     => "Not set up",
         "NvidiaProfileDlss"   => "No DLSS or Streamline files found",
         "NvidiaProfileDriver" => "NVIDIA driver settings for this game",

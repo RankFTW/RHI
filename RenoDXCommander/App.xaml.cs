@@ -157,7 +157,7 @@ public partial class App : Application
         // URTI reads the game's depth through ReShade's Generic Depth add-on, which RHI's reshade.ini disables by default.
         // FrameWarp does too in games without DLSS or FSR, except Red Dead Redemption 2, where its README says to keep it
         // off (the ReShade menu crashes the game).
-        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir) || CrcgiService.IsRhiInstalled(dir)
+        AuxInstallService.GenericDepthNeededResolver = dir => UrtiService.IsRhiInstalled(dir) || CrcgiService.IsRhiInstalled(dir) || HsfService.IsRhiInstalled(dir)
             || (FrameWarpService.IsRhiInstalled(dir) && !File.Exists(Path.Combine(dir, "RDR2.exe")));
         ShaderPackService.ExtraGameFiles = dir =>
         {
