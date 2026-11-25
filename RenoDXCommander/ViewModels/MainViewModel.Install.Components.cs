@@ -10,6 +10,13 @@ namespace RenoDXCommander.ViewModels;
 
 public partial class MainViewModel
 {
+    /// <summary>
+    /// RHI changed this game's NVIDIA driver profile outside the Driver Settings section (e.g. ReLimiter / Display Commander
+    /// install turning the driver FPS limit off). May fire off the UI thread. The detail page rebuilds Driver Settings
+    /// when the game is shown, since that section reads the profile only when it's built.
+    /// </summary>
+    public event Action<GameCardViewModel>? DriverProfileChanged;
+
 
     /// <summary>
     /// Runs background detection for Display Commander, OptiScaler, DXVK, and DLSS/Streamline
@@ -440,6 +447,7 @@ public partial class MainViewModel
                 // Disable driver FPS limiter for this game (conflicts with ReLimiter)
                 try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
                 catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallUlAsync] Failed to disable driver FPS limiter — {ex.Message}"); }
+                DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit
 
                 // Apply shared presets setting to the newly deployed INI if enabled
                 if (_settingsViewModel.UlSharedPresets)
@@ -676,6 +684,7 @@ public partial class MainViewModel
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
             try { _dlssPresetService.ClearPerGameFpsLimit(card.GameName, card.InstallPath); }
             catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallUl] Failed to restore driver FPS limiter — {ex.Message}"); }
+            DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit
 
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
@@ -938,6 +947,7 @@ public partial class MainViewModel
             // Disable driver FPS limiter for this game (conflicts with Display Commander)
             try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
             catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallDcAsync] Failed to disable driver FPS limiter — {ex.Message}"); }
+            DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit
 
             // Create and persist AuxInstalledRecord for DC tracking
             var dcRecord = new AuxInstalledRecord
@@ -1007,6 +1017,7 @@ public partial class MainViewModel
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
             try { _dlssPresetService.ClearPerGameFpsLimit(card.GameName, card.InstallPath); }
             catch (Exception ex) { CrashReporter.Log($"[MainViewModel.UninstallDc] Failed to restore driver FPS limiter — {ex.Message}"); }
+            DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit
 
             card.DcInstalledFile = null;
             card.DcInstalledVersion = null;

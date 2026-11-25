@@ -89,6 +89,8 @@ public sealed partial class MainWindow : Window
             App.Services.GetRequiredService<IOptiScalerWikiService>(),
             App.Services.GetRequiredService<IHdrDatabaseService>(),
             App.Services.GetRequiredService<IOptiScalerService>());
+        // Driver profile changed elsewhere (limiter install turning the driver FPS limit off): rebuild Driver Settings
+        ViewModel.DriverProfileChanged += card => _detailPanelBuilder.RefreshDriverSettingsIfShown(card);
 
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);

@@ -281,7 +281,7 @@ public partial class DetailPanelBuilder
     /// The game's Driver Settings section reads the NVIDIA profile when it's built: rebuild it after BFI Presenter
     /// changed G-SYNC, VSync, the frame limit, power or Smooth Motion, or it keeps showing the old values.
     /// </summary>
-    private void RefreshDriverSettingsIfShown(GameCardViewModel card) =>
+    internal void RefreshDriverSettingsIfShown(GameCardViewModel card) =>
         _window.DispatcherQueue?.TryEnqueue(() =>
         {
             if (_currentDetailCard == card) BuildDriverProfileSection(card, card.GameName);

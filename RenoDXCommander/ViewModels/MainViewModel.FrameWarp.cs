@@ -66,6 +66,7 @@ public partial class MainViewModel
         {
             bool ok = _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0);
             _crashReporter.Log($"[MainViewModel.TurnOffDriverFpsLimitForGame] '{card.GameName}': {(ok ? "off" : "not changed")}");
+            if (ok) DriverProfileChanged?.Invoke(card);
             return ok;
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
