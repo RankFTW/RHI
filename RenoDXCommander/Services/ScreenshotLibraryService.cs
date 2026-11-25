@@ -2,17 +2,21 @@
 // Folder: the game's reshade.ini [SCREENSHOT] SavePath (relative paths are from the game folder), else the
 // folder RHI would set (Settings › ReShade › Screenshot folder, per game when that's on), else the game folder.
 // ReShade names screenshots "<exe name> <date> <time>", so a folder shared by several games is filtered by
-// the game's exe name.
+// the game's exe name. A folder the user chose for the game (other screenshot tools) comes first and shows every
+// picture in it (top level only: Steam keeps thumbnails in a subfolder).
 namespace RenoDXCommander.Services;
 
 internal static class ScreenshotLibraryService
 {
     internal static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".bmp", ".jxr" };
 
-    /// <summary>The folder the game's ReShade screenshots go to, or null when none exists.</summary>
-    internal static string? FindFolder(string? installPath, string? rhiFolder)
+    /// <summary>
+    /// The folder the game's screenshots go to, or null when none exists. <paramref name="customFolder"/> (the folder
+    /// the user chose for the game: Steam, NVIDIA App…) wins when it exists; a missing one is skipped.
+    /// </summary>
+    internal static string? FindFolder(string? installPath, string? rhiFolder, string? customFolder = null)
     {
-        var candidates = new List<string?>();
+        var candidates = new List<string?> { customFolder };
         if (!string.IsNullOrEmpty(installPath))
             candidates.Add(ReadIniSavePath(installPath));
         candidates.Add(rhiFolder);
@@ -24,6 +28,18 @@ internal static class ScreenshotLibraryService
             catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException or System.Security.SecurityException) { }
         }
         return null;
+    }
+
+    /// <summary>True when <paramref name="folder"/> is set and exists.</summary>
+    internal static bool FolderExists(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder)) return false;
+        try { return Directory.Exists(folder); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException or System.Security.SecurityException)
+        {
+            CrashReporter.Log($"[ScreenshotLibraryService.FolderExists] {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>[SCREENSHOT] SavePath from the game's reshade.ini, made absolute; null when not set.</summary>

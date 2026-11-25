@@ -65,6 +65,9 @@ public partial class GameNameService : IGameNameService
     /// <summary>Per-game pinned ReLimiter version. Key = "GameName|Store", Value = release tag e.g. "v3.3.4". Absent = Latest (auto-update).</summary>
     private Dictionary<string, string> _ulPinnedVersion = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game custom screenshot folder (Spotlight's Screenshots panel, RHI overlay). Key = "GameName|Store", Value = folder path. Absent = ReShade's folder.</summary>
+    private Dictionary<string, string> _screenshotFolderOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game ReLimiter major version choice. Key = "GameName|Store", Value = "3" or "4". Absent = Automatic (v4 where it qualifies).</summary>
     private Dictionary<string, string> _ulMajorChoice = new(StringComparer.OrdinalIgnoreCase);
 
@@ -237,6 +240,8 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> OsNightlyBuild => _osNightlyBuild;
     /// <summary>Per-game pinned ReLimiter version. Key = "GameName|Store", Value = release tag. Absent = Latest.</summary>
     public Dictionary<string, string> UlPinnedVersion => _ulPinnedVersion;
+    /// <summary>Per-game custom screenshot folder. Key = "GameName|Store", Value = folder path. Absent = ReShade's folder.</summary>
+    public Dictionary<string, string> ScreenshotFolderOverrides => _screenshotFolderOverrides;
     /// <summary>Per-game ReLimiter major version choice ("3" / "4"). Absent = Automatic.</summary>
     public Dictionary<string, string> UlMajorChoice => _ulMajorChoice;
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
@@ -624,6 +629,11 @@ public partial class GameNameService : IGameNameService
         _ulPinnedVersion = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in ulPinnedDict) _ulPinnedVersion[kv.Key] = kv.Value;
 
+        var shotFolderDict = Load<Dictionary<string, string>>("ScreenshotFolderOverrides",
+            new(StringComparer.OrdinalIgnoreCase));
+        _screenshotFolderOverrides = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in shotFolderDict) _screenshotFolderOverrides[kv.Key] = kv.Value;
+
         var ulMajorDict = Load<Dictionary<string, string>>("UlMajorChoice",
             new(StringComparer.OrdinalIgnoreCase));
         _ulMajorChoice = new(StringComparer.OrdinalIgnoreCase);
@@ -967,6 +977,8 @@ public partial class GameNameService : IGameNameService
                 else s.Remove("OsNightlyBuild");
                 if (_ulPinnedVersion.Count > 0) s["UlPinnedVersion"] = JsonSerializer.Serialize(_ulPinnedVersion);
                 else s.Remove("UlPinnedVersion");
+                if (_screenshotFolderOverrides.Count > 0) s["ScreenshotFolderOverrides"] = JsonSerializer.Serialize(_screenshotFolderOverrides);
+                else s.Remove("ScreenshotFolderOverrides");
                 if (_ulMajorChoice.Count > 0) s["UlMajorChoice"] = JsonSerializer.Serialize(_ulMajorChoice);
                 else s.Remove("UlMajorChoice");
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
@@ -1224,6 +1236,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_osNightlyBuild, oldName, newName);
         MigrateCompositeDict(_ulPinnedVersion, oldName, newName);
+        MigrateCompositeDict(_screenshotFolderOverrides, oldName, newName);
         MigrateCompositeDict(_ulMajorChoice, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_upliftLaunchpad, oldName, newName);

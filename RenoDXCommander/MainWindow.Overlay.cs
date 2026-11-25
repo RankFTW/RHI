@@ -110,7 +110,8 @@ public sealed partial class MainWindow
                 return;
             }
             _overlayWindow ??= new OverlayWindow(RhiOverlayHotkeyText, () => ViewModel.Manifest,
-                () => ViewModel.Settings, ViewModel.SaveSettingsPublic, BuildScreenshotSavePath);
+                () => ViewModel.Settings, ViewModel.SaveSettingsPublic, BuildScreenshotSavePath,
+                (name, store) => ViewModel.GetScreenshotFolder(name, store));
             _overlayWindow.Open(game);
         }
         catch (Exception ex)

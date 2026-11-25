@@ -340,6 +340,26 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── Custom screenshot folder ──────────────────────────────────────────────
+
+    /// <summary>The folder the user chose for a game's screenshots (Steam, NVIDIA App…), or null = ReShade's folder.</summary>
+    public string? GetScreenshotFolder(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.ScreenshotFolderOverrides.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        return null;
+    }
+
+    /// <summary>Sets a game's screenshot folder. Null or empty = back to ReShade's folder.</summary>
+    public void SetScreenshotFolder(string gameName, string? folder, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(folder)) _gameNameService.ScreenshotFolderOverrides.Remove(key);
+        else _gameNameService.ScreenshotFolderOverrides[key] = folder;
+        CrashReporter.Log($"[MainViewModel.SetScreenshotFolder] '{key}' → {(string.IsNullOrEmpty(folder) ? "Default" : folder)}");
+        SaveNameMappings();
+    }
+
     /// <summary>
     /// Version shown on a card with ReLimiter installed: the game's own addon file version, else the pinned release,
     /// else the global installed version (old builds without a version resource).

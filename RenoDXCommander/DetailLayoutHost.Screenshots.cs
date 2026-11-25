@@ -1,7 +1,8 @@
 // DetailLayoutHost.Screenshots.cs -- Spotlight's Screenshots panel (the picture button beside the game's title):
 // the game's ReShade screenshots as thumbnails, newest first, in the slide-in panel. Click = open in the default
 // viewer; right-click = open, set as banner, copy, show in folder, delete (Recycle Bin). Same folder rules as the
-// RHI overlay (ScreenshotLibraryService).
+// RHI overlay (ScreenshotLibraryService). Choose folder sets a per-game folder (other screenshot tools); Use default
+// clears it.
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -26,23 +27,38 @@ internal sealed partial class DetailLayoutHost
     {
         if (_window.ViewModel.SelectedGame is not { } card) return null;
         _shotsRoot = new StackPanel { Spacing = 14 };
+        LoadScreenshots(card);
+        return _shotsRoot;
+    }
+
+    /// <summary>(Re)fills <see cref="_shotsRoot"/>: reads the folder in the background, then renders.</summary>
+    private void LoadScreenshots(GameCardViewModel card)
+    {
+        if (_shotsRoot == null) return;
+        _shotsRoot.Children.Clear();
         _shotsRoot.Children.Add(MutedText("Looking for screenshots…"));
         int seq = ++_shotsSeq;
 
         var rhiFolder = _window.ViewModel.BuildScreenshotSavePath(card.GameName);
         bool perGame = _window.ViewModel.Settings.PerGameScreenshotFolders;
+        var custom = _window.ViewModel.GetScreenshotFolder(card.GameName, card.Source ?? "");
         var installPath = card.InstallPath;
         _ = Task.Run(() =>
         {
             string? folder = null;
+            bool customMissing = false;
             List<FileInfo> shots = new();
             try
             {
-                folder = ScreenshotLibraryService.FindFolder(installPath, rhiFolder);
+                // A chosen folder that's gone is reported, not silently swapped for ReShade's
+                customMissing = custom != null && !ScreenshotLibraryService.FolderExists(custom);
+                folder = customMissing ? null : ScreenshotLibraryService.FindFolder(installPath, rhiFolder, custom);
                 if (folder != null)
                 {
-                    bool own = (perGame && rhiFolder != null && SameFolder(folder, rhiFolder)) || SameFolder(folder, installPath);
-                    string? exe = string.IsNullOrEmpty(installPath) ? null
+                    // Other tools don't name files after the exe: show everything in the chosen folder
+                    bool isCustom = custom != null && SameFolder(folder, custom);
+                    bool own = isCustom || (perGame && rhiFolder != null && SameFolder(folder, rhiFolder)) || SameFolder(folder, installPath);
+                    string? exe = isCustom || string.IsNullOrEmpty(installPath) ? null
                         : App.Services.GetRequiredService<IPeHeaderService>().FindGameExe(installPath);
                     shots = ScreenshotLibraryService.List(folder, exe, own);
                 }
@@ -50,10 +66,44 @@ internal sealed partial class DetailLayoutHost
             catch (Exception ex) { CrashReporter.Log($"[DetailLayoutHost.Screenshots] {card.GameName}: {ex.Message}"); }
             _window.DispatcherQueue.TryEnqueue(() =>
             {
-                if (seq == _shotsSeq && _panelKey == ScreenshotsKey) RenderShots(card, folder, shots);
+                if (seq == _shotsSeq && _panelKey == ScreenshotsKey) RenderShots(card, folder, shots, custom, customMissing);
             });
         });
-        return _shotsRoot;
+    }
+
+    /// <summary>Reloads the panel after the game's screenshot folder changed, if it's still showing that game.</summary>
+    private void ReloadScreenshots(GameCardViewModel card)
+    {
+        if (_shotsRoot != null && _panelKey == ScreenshotsKey && ReferenceEquals(_window.ViewModel.SelectedGame, card))
+            LoadScreenshots(card);
+    }
+
+    private async Task ChooseScreenshotFolderAsync(GameCardViewModel card, string? startAt)
+    {
+        try
+        {
+            var picked = await _window.PickFolderAsync(startAt);
+            if (string.IsNullOrEmpty(picked)) return;
+            _window.ViewModel.SetScreenshotFolder(card.GameName, picked, card.Source ?? "");
+            ReloadScreenshots(card);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DetailLayoutHost.ScreenshotsChooseFolder] {card.GameName}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private void UseDefaultScreenshotFolder(GameCardViewModel card)
+    {
+        try
+        {
+            _window.ViewModel.SetScreenshotFolder(card.GameName, null, card.Source ?? "");
+            ReloadScreenshots(card);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DetailLayoutHost.ScreenshotsUseDefault] {card.GameName}: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     private void ReturnScreenshotsPanel()
@@ -77,12 +127,13 @@ internal sealed partial class DetailLayoutHost
         Foreground = TabsTheme.B(TabsTheme.TextMuted),
     };
 
-    private void RenderShots(GameCardViewModel card, string? folder, List<FileInfo> shots)
+    private void RenderShots(GameCardViewModel card, string? folder, List<FileInfo> shots, string? custom, bool customMissing)
     {
         if (_shotsRoot == null) return;
         _shotsRoot.Children.Clear();
+        bool usingCustom = custom != null && !customMissing && folder != null && SameFolder(folder, custom);
 
-        // Summary card: how many, where, Open folder
+        // Summary card: how many, where, Open folder / Choose folder / Use default
         var head = new StackPanel { Spacing = 8 };
         head.Children.Add(new TextBlock
         {
@@ -93,18 +144,41 @@ internal sealed partial class DetailLayoutHost
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = TabsTheme.B(TabsTheme.TextPrimary),
         });
-        if (folder != null)
+        if (customMissing)
+            head.Children.Add(MutedText($"Your folder for this game wasn't found: {custom}"));
+        else if (folder != null)
         {
+            if (usingCustom) head.Children.Add(MutedText("Your folder for this game"));
             head.Children.Add(MutedText(folder));
-            var open = new Button { Content = "Open folder", HorizontalAlignment = HorizontalAlignment.Left };
-            TabsTheme.Apply(open, TabsTheme.IconButton, height: 34, fontSize: 12);
-            open.Click += (_, _) => ShowInExplorer(folder, select: null);
-            head.Children.Add(open);
         }
-        if (shots.Count == 0)
-            head.Children.Add(MutedText(folder == null
-                ? "Take a screenshot in the game with ReShade's screenshot key (Print Screen by default), or set a folder in Settings › ReShade › Screenshot folder."
-                : "Take one in the game with ReShade's screenshot key (Print Screen by default)."));
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Left };
+        Button AddButton(string text, string? tip, Action click)
+        {
+            var b = new Button { Content = text };
+            TabsTheme.Apply(b, TabsTheme.IconButton, height: 34, fontSize: 12);
+            if (tip != null) ToolTipService.SetToolTip(b, tip);
+            b.Click += (_, _) => click();
+            buttons.Children.Add(b);
+            return b;
+        }
+        if (folder != null) AddButton("Open folder", null, () => ShowInExplorer(folder, select: null));
+        AddButton("Choose folder…",
+            "Pick the folder your screenshot tool saves to for this game (Steam, NVIDIA App, Game Bar…). RHI shows every picture in it.",
+            () => _ = ChooseScreenshotFolderAsync(card, customMissing ? card.InstallPath : folder ?? card.InstallPath));
+        if (custom != null)
+            AddButton("Use default", "Go back to ReShade's screenshot folder", () => UseDefaultScreenshotFolder(card));
+        head.Children.Add(buttons);
+
+        const string otherTool = "Screenshots from another tool (Steam, NVIDIA App, Game Bar…) show up here once you pick its folder with Choose folder.";
+        if (customMissing)
+            head.Children.Add(MutedText("Choose the folder again, or use Use default to go back to ReShade's screenshot folder."));
+        else if (shots.Count == 0)
+            head.Children.Add(MutedText(usingCustom
+                ? "No pictures in this folder yet. Screenshots saved to it show up here."
+                : folder == null
+                ? "Take a screenshot in the game with ReShade's screenshot key (Print Screen by default), or set a folder in Settings › ReShade › Screenshot folder. " + otherTool
+                : "Take one in the game with ReShade's screenshot key (Print Screen by default). " + otherTool));
         else
             head.Children.Add(MutedText("Click a screenshot to open it. Right-click for more: set it as the banner, copy it or delete it."));
         _shotsRoot.Children.Add(TabsTheme.MakeCard(head, 16));

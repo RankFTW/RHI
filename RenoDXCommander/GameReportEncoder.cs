@@ -390,6 +390,7 @@ public static class GameReportEncoder
             ["updateExcludedRDX"] = vm.IsUpdateAllExcludedRenoDx(gameName, card.Source ?? ""),
             ["updateExcludedUL"] = vm.IsUpdateAllExcludedUl(gameName, card.Source ?? ""),
             ["ulPinnedVersion"] = vm.GetUlPinnedVersion(gameName, card.Source ?? ""),
+            ["customScreenshotFolder"] = vm.GetScreenshotFolder(gameName, card.Source ?? "") != null,
             ["ulMajorChoice"] = vm.GetUlMajorChoice(gameName, card.Source ?? "") ?? "auto",
             ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName, card.Source ?? ""),
             ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName, card.Source ?? ""),

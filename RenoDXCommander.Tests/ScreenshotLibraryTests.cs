@@ -48,4 +48,19 @@ public class ScreenshotLibraryTests
         var files = new List<FileInfo> { new("C:\\s\\renamed shot.png") };
         Assert.Single(ScreenshotLibraryService.Filter(files, @"C:\Games\Game.exe", folderIsGamesOwn: true));
     }
+
+    [Fact]
+    public void CustomFolderWinsWhenItExistsAndIsSkippedWhenMissing()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "rhi-shots-" + Guid.NewGuid().ToString("N"));
+        var install = Directory.CreateDirectory(Path.Combine(root, "Game")).FullName;
+        var custom = Directory.CreateDirectory(Path.Combine(root, "Steam shots")).FullName;
+        try
+        {
+            Assert.Equal(custom, ScreenshotLibraryService.FindFolder(install, null, custom), ignoreCase: true);
+            Assert.Equal(install, ScreenshotLibraryService.FindFolder(install, null, Path.Combine(root, "Gone")), ignoreCase: true);
+            Assert.Equal(install, ScreenshotLibraryService.FindFolder(install, null), ignoreCase: true);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
 }

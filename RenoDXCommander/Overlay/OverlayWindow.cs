@@ -24,6 +24,7 @@ internal sealed partial class OverlayWindow : Window
     private readonly Func<RenoDXCommander.ViewModels.SettingsViewModel> _settings;
     private readonly Action _saveSettings;  // after the overlay changes a setting (hidden achievements)
     private readonly Func<string, string?> _screenshotFolder; // RHI's screenshot folder for a game name
+    private readonly Func<string, string, string?> _customScreenshotFolder; // the folder the user chose for (game name, store), or null
     private readonly IntPtr _hwnd;
     private readonly TextBlock _title = new();
     private readonly TextBlock _subtitle = new();
@@ -41,13 +42,15 @@ internal sealed partial class OverlayWindow : Window
     internal bool IsOpen { get; private set; }
 
     internal OverlayWindow(Func<string> hotkeyText, Func<RemoteManifest?> manifest,
-        Func<RenoDXCommander.ViewModels.SettingsViewModel> settings, Action saveSettings, Func<string, string?> screenshotFolder)
+        Func<RenoDXCommander.ViewModels.SettingsViewModel> settings, Action saveSettings, Func<string, string?> screenshotFolder,
+        Func<string, string, string?> customScreenshotFolder)
     {
         _hotkeyText = hotkeyText;
         _manifest = manifest;
         _settings = settings;
         _saveSettings = saveSettings;
         _screenshotFolder = screenshotFolder;
+        _customScreenshotFolder = customScreenshotFolder;
         Title = "RHI Overlay";
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 

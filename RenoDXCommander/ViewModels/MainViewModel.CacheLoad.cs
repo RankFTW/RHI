@@ -438,6 +438,13 @@ public partial class MainViewModel
         FrameWarpService.ApplyManifestUrls(cachedManifest?.ComponentUrls); // NVIDIA Latewarp link / hash
         SetRtxEncoreDllNames(cachedManifest); // RTX Encore picker's recommended name
 
+        // Manifest DLL names from cache, so ReconcileDefaultNaming below leaves those games alone.
+        // Without them it renamed e.g. 007 First Light's dinput8.dll ReShade to dxgi.dll on every start,
+        // and ApplyManifestDllRenames renamed it back once the fresh manifest arrived.
+        if (_manifestDllNameOverrides.Count == 0 && cachedManifest?.DllNameOverrides != null)
+            foreach (var (key, value) in cachedManifest.DllNameOverrides)
+                _manifestDllNameOverrides[key] = value;
+
         // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder
         // (e.g. Witcher 2 → bin\, Cyberpunk → bin\x64). Without this, games added to the manifest
         // after the cache was written would show the wrong path until a Refresh.

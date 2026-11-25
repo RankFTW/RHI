@@ -30,19 +30,24 @@ internal sealed partial class OverlayWindow
     {
         _viewerIndex = -1;
         var rhiFolder = _screenshotFolder(card.GameName);
-        _shotFolder = ScreenshotLibraryService.FindFolder(card.InstallPath, rhiFolder);
+        var custom = _customScreenshotFolder(card.GameName, card.Source ?? "");
+        _shotFolder = ScreenshotLibraryService.FindFolder(card.InstallPath, rhiFolder, custom);
         if (_shotFolder == null)
         {
             _shotBox.Children.Add(MakeCard("Screenshots", SmallText(
                 "No screenshot folder found for this game. Take a screenshot with ReShade (Print Screen by default), "
-              + "or set a folder in RHI's Settings › ReShade › Screenshot folder.")));
+              + "or set a folder in RHI's Settings › ReShade › Screenshot folder. For another screenshot tool, "
+              + "choose its folder with Choose folder in the game's Screenshots panel in RHI.")));
             StopShotWatcher();
             return;
         }
 
-        bool own = (_settings().PerGameScreenshotFolders && rhiFolder != null && SamePath(_shotFolder, rhiFolder))
+        // Other tools don't name files after the exe: show everything in the folder the user chose
+        bool isCustom = custom != null && SamePath(_shotFolder, custom);
+        bool own = isCustom
+                   || (_settings().PerGameScreenshotFolders && rhiFolder != null && SamePath(_shotFolder, rhiFolder))
                    || SamePath(_shotFolder, card.InstallPath);
-        _shots = ScreenshotLibraryService.List(_shotFolder, _game?.ExePath, own);
+        _shots = ScreenshotLibraryService.List(_shotFolder, isCustom ? null : _game?.ExePath, own);
         _shotsShown = 0;
         StartShotWatcher(_shotFolder);
         RenderShotGrid();

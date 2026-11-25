@@ -414,7 +414,7 @@ public class DisplayModeTests : IDisposable
     public void Format_ShowsReadableValues()
     {
         Assert.Equal("700 nits", DisplayModeItems.Get(DisplayModeItemKeys.RdxPeakNits)!.Format("700"));
-        Assert.Equal("Off", DisplayModeItems.Get(DisplayModeItemKeys.UlTargetFps)!.Format("0"));
+        Assert.Equal("Auto VRR", DisplayModeItems.Get(DisplayModeItemKeys.UlTargetFps)!.Format("0")); // ReLimiter's name for 0 since 4.0.4
         Assert.Equal("4x", DisplayModeItems.Get(DisplayModeItemKeys.MfgMode)!.Format("fixed:3"));
         Assert.Equal("End", DisplayModeItems.Get(DisplayModeItemKeys.RsOverlayKey)!.Format("35,0,0,0"));
     }

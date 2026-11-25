@@ -1352,8 +1352,26 @@ public partial class OptiScalerService
             bool hasUpdate = !isFixedDir && (isF5 ? HasUpdateF5 : isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate);
             if (hasUpdate && isNightly && effectiveNightlyBuild == null)
             {
-                // No pinned build — update to latest
+                // Nothing staged yet: the "staging not ready" step below downloads the latest
                 CrashReporter.Log("[OptiScalerService.UpdateAsync] Nightly update available — will fetch latest");
+            }
+            else if (hasUpdate && isNightly && string.IsNullOrEmpty(nightlyBuildHint))
+            {
+                // Not pinned to a nightly date: stage the newest build before deploying. Before this the
+                // latest *staged* build (an older one) was deployed and the flag cleared, so the update
+                // was offered again on every check and the new nightly never downloaded.
+                var before = effectiveNightlyBuild;
+                CrashReporter.Log($"[OptiScalerService.UpdateAsync] Nightly update available (staged {before}) — downloading");
+                await EnsureNightlyStagingAsync(progress);
+                var after = GetLatestStagedNightlyBuild();
+                if (after == null || string.Equals(before, after, StringComparison.Ordinal))
+                {
+                    CrashReporter.Log($"[OptiScalerService.UpdateAsync] Nightly update couldn't be downloaded — '{card.GameName}' left on {before}");
+                    progress?.Report(("OptiScaler Nightly update couldn't be downloaded", 0));
+                    return;
+                }
+                effectiveNightlyBuild = after;
+                effectiveStagingDir = GetNightlyBuildDir(after);
             }
             else if (hasUpdate && !isNightly)
             {

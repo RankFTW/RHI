@@ -624,8 +624,15 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
             if (new FileInfo(backup).Length == 0)
             {
                 // Sentinel — RHI placed this file; game had nothing → delete both
-                try { if (File.Exists(filePath)) File.Delete(filePath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.SentinelRestore] Failed to delete '{Path.GetFileName(filePath)}' — {ex.Message}"); }
-                File.Delete(backup); // always clean up sentinel
+                try { if (File.Exists(filePath)) File.Delete(filePath); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // Keep the sentinel: it is what marks the file as RHI's. Deleting it anyway (as before)
+                    // left RHI's file behind looking like the game's own, so nothing would remove it later.
+                    CrashReporter.Log($"[AuxInstallService.SentinelRestore] Failed to delete '{Path.GetFileName(filePath)}' (is the game running?) — sentinel kept — {ex.Message}");
+                    return;
+                }
+                File.Delete(backup);
                 CrashReporter.Log($"[SentinelRestore] Cleaned up sentinel-placed file: {Path.GetFileName(filePath)}");
             }
             else
