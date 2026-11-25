@@ -394,6 +394,7 @@ public partial class SettingsHandler
         EnsureReLimiterPclSetting();
         EnsureBetaUpdatesSetting();
         EnsureUpliftKeySetting();
+        EnsureRtxVideoCard();
         EnsureDisplayModesCard();
         EnsureColorThemeCard();
         EnsureLaunchButtonRows();
