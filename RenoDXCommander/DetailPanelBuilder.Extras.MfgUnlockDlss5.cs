@@ -117,6 +117,7 @@ public partial class DetailPanelBuilder
                 CrashReporter.Log($"[MfgAdaCog] '{card.GameName}': DLSS 5 = Off");
                 cog.SetSuccess("DLSS 5 off. Restart the game if it's running.");
                 RequestExtrasRebuild(card);
+                await RefreshDlssAfterNrDllChangeAsync(card);
                 return;
             }
             if (combo != null) combo.IsEnabled = false;
@@ -152,6 +153,7 @@ public partial class DetailPanelBuilder
                 CrashReporter.Log($"[MfgAdaCog] '{card.GameName}': DLSS 5 = On");
                 cog.SetSuccess("DLSS 5 on. Restart the game once (it has to be on when the game starts); then Ctrl+F8 turns it on and off.");
                 RequestExtrasRebuild(card);
+                await RefreshDlssAfterNrDllChangeAsync(card);
             }
             finally
             {

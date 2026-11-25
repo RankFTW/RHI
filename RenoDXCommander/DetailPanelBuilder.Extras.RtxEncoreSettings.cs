@@ -490,6 +490,7 @@ public partial class DetailPanelBuilder
                         cog.SetError("Couldn't copy nvngx_dlssnr.dll beside RTX Encore.");
                     }
                     RequestExtrasRebuild(card);
+                    await RefreshDlssAfterNrDllChangeAsync(card);
                 }
                 finally
                 {
@@ -502,6 +503,7 @@ public partial class DetailPanelBuilder
                 nrOn = false;
                 cog.SetSuccess("Removed nvngx_dlssnr.dll.");
                 RequestExtrasRebuild(card);
+                await RefreshDlssAfterNrDllChangeAsync(card);
             }
         }
 

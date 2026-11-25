@@ -215,6 +215,34 @@ public partial class DetailPanelBuilder
     
     private bool _extrasRebuildPending;
 
+    /// <summary>
+    /// After an Extras ⚙ adds or removes nvngx_dlssnr.dll (Universal MFG Unlocker, MFG Unlock DLSS 5, RTX Encore):
+    /// re-detect the game's DLSS files as the Neural Rendering installer does, then rebuild the DLSS / Streamline and
+    /// Neural Rendering sections for the shown game. Without it the NR column stayed greyed out with "None" and the NR
+    /// section had no ✓ until switching games (issue #174).
+    /// </summary>
+    internal async Task RefreshDlssAfterNrDllChangeAsync(GameCardViewModel card)
+    {
+        var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+        var path = card.InstallPath ?? "";
+        if (path.Length == 0) return;
+        var detection = await Task.Run(() => dlssSvc.Detect(path));
+        if (detection.HasAny)
+        {
+            dlssSvc.RecordDlssFound(card.GameName);
+            dlssSvc.RecordTrustedPath(card.GameName, detection);
+        }
+        _window.DispatcherQueue?.TryEnqueue(() =>
+        {
+            card.DlssDetection = detection;
+            card.ApplyDlssDetection(detection);
+            card.RefreshDlssVersions(dlssSvc);
+            if (_currentDetailCard != card) return;
+            BuildNvidiaProfileSection(card, card.GameName);
+            BuildNeuralRenderingSection(card);
+        });
+    }
+
     public void RequestExtrasRebuild(GameCardViewModel card)
     {
         if (_extrasRebuildPending) return;

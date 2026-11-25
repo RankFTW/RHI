@@ -126,6 +126,7 @@ public partial class DetailPanelBuilder
                     ? "The mod no longer uses its own copy; nvngx_dlssnr.dll stays for the other components that use it."
                     : "Removed nvngx_dlssnr.dll.");
                 RequestExtrasRebuild(card);
+                await RefreshDlssAfterNrDllChangeAsync(card); // #174: NR column / NR section
                 return;
             }
             if (combo != null) combo.IsEnabled = false;
@@ -166,6 +167,7 @@ public partial class DetailPanelBuilder
                 dlssS.RecordDlssFound(card.GameName);
                 on = true;
                 RequestExtrasRebuild(card);
+                await RefreshDlssAfterNrDllChangeAsync(card); // #174: NR column / NR section
             }
             finally
             {

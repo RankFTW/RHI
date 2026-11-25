@@ -17,6 +17,7 @@
 - **Save ReLimiter settings without changing your games.** Settings › Components › ReLimiter has a new Save to global relimiter.ini button beside Write to all ReLimiter games. It saves the settings above only into RHI's global relimiter.ini, which new ReLimiter installs are set up from; games that already have ReLimiter keep their own relimiter.ini. The ReLimiter settings there now show what the global relimiter.ini holds. Write to all ReLimiter games works as before.
 
 ### Bug Fixes
+- Fixed adding or removing the NR DLL from Universal MFG Unlocker's, MFG Unlock's (DLSS 5) or RTX Encore's ⚙ not showing in the DLSS / Streamline and Neural Rendering sections until you picked another game: the Neural Rendering column stayed greyed out with None, so its NR DLL version couldn't be changed there either.
 - Fixed games on RHI's anti-cheat list not being treated as such after a normal start (only after Refresh): DXVK wasn't blocked and the anti-cheat warnings for frame generation unlocks and HSF didn't show. The same applied to the manifest's DXVK API overrides.
 - Fixed Game Pass games whose folder changed after a game update showing ReShade as installed with no ReShade in the game until Refresh: RHI now reinstalls it at the new folder on a normal start too.
 - Fixed the DXVK update badge disappearing shortly after start, and DOF Fix eligibility and status sometimes being wrong for the session after a normal start.
