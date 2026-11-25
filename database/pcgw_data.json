@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "game_count": 56195,
+  "game_count": 56155,
   "generated": "2026-11-25T15:27:14Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
-    "AssassinÔÇÖs Creed┬« III": "Assassin's Creed III",
+    "Assassin’s Creed® III": "Assassin's Creed III",
     "Batman: Arkham City GOTY": "Batman: Arkham City",
-    "BatmanÔäó: Arkham Knight": "Batman: Arkham Knight",
+    "Batman™: Arkham Knight": "Batman: Arkham Knight",
     "CONTROL Resonant": "Control Resonant",
     "Control Ultimate Edition": "Control",
     "Crimson Desert Enhanced": "Crimson Desert",
     "DAEMON X MACHINA": "Daemon X Machina",
-    "DARK SOULSÔäó II: Scholar of the First Sin": "Dark Souls II: Scholar of the First Sin",
+    "DARK SOULS™ II: Scholar of the First Sin": "Dark Souls II: Scholar of the First Sin",
     "Denshattack!": "Denshattack!",
     "DOOM": "Doom (2016)",
     "DOOM (DOS)": "Doom (1993)",
     "DOOM + DOOM II": "Doom + Doom II",
     "Dragon Age Inquisition": "Dragon Age: Inquisition",
     "Far Cry 2 Fortune's Edition": "Far Cry 2",
-    "Far Cry┬« 2: Fortune's Edition": "Far Cry 2",
+    "Far Cry® 2: Fortune's Edition": "Far Cry 2",
     "FINAL FANTASY RESONANCE": "Final Fantasy Resonance",
     "FINAL FANTASY XV WINDOWS EDITION": "Final Fantasy XV",
     "Fortnite": "Fortnite",
@@ -28,15 +28,15 @@
     "Gothic II: Gold Classic": "Gothic II",
     "Halo: Campaign Evolved": "Halo: Campaign Evolved",
     "Halo: The Master Chief Collection": "Halo: The Master Chief Collection",
-    "Kingdoms of Amalur: ReckoningÔäó": "Kingdoms of Amalur: Reckoning",
+    "Kingdoms of Amalur: Reckoning™": "Kingdoms of Amalur: Reckoning",
     "Lords of the Fallen": "Lords of the Fallen (2023)",
     "Mass Effect Andromeda": "Mass Effect: Andromeda",
     "Prey": "Prey (2017)",
     "Reckoning": "Kingdoms of Amalur: Reckoning",
-    "SekiroÔäó: Shadows Die Twice": "Sekiro: Shadows Die Twice",
+    "Sekiro™: Shadows Die Twice": "Sekiro: Shadows Die Twice",
     "SILENT HILL: Townfall": "Silent Hill: Townfall",
     "STAR WARS: Galactic Racer™": "Star Wars: Galactic Racer",
-    "Stellar BladeÔäó": "Stellar Blade",
+    "Stellar Blade™": "Stellar Blade",
     "The Sinking City Remastered": "The Sinking City Remastered",
     "The Witcher 3: Wild Hunt — Remastered": "The Witcher 3: Wild Hunt",
     "Tomb Raider": "Tomb Raider (2013)",
@@ -188,7 +188,7 @@
       "config_path": "%APPDATA%\\0RBITALIS\\",
       "engine": "Adobe AIR"
     },
-    "0┬░N 0┬░W": {
+    "0°N 0°W": {
       "steam_appid": 670750,
       "engine": "Unity"
     },
@@ -205,7 +205,7 @@
       "config_path": "%LOCALAPPDATA%\\OneScreenPlatformStaticGM14\\",
       "engine": "GameMaker"
     },
-    "1 ÔøÀ 1": {
+    "1 ⛷ 1": {
       "steam_appid": 932490
     },
     "1, 2, 3... Bruegel!": {
@@ -228,7 +228,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Dejobaan Games\\Ugly Baby",
       "engine": "Unity"
     },
-    "1/4Õ╣│µû╣þ▒│þÜäµÿƒþ®║": {
+    "1/4平方米的星空": {
       "steam_appid": 899190
     },
     "10 Miles to Safety": {
@@ -417,7 +417,7 @@
     "11th Dream": {
       "steam_appid": 949450
     },
-    "11ÕÅÀÕ░ÅÚòçþ╗╝ÕÉêþùç": {
+    "11号小镇综合症": {
       "steam_appid": 2055390,
       "engine": "GameMaker"
     },
@@ -739,7 +739,7 @@
       "config_path": "<path-to-game>\\package.json",
       "engine": "RPG Maker"
     },
-    "1┬¢ Ritter: Auf der Suche nach der hinrei├ƒenden Herzelinde": {
+    "1½ Ritter: Auf der Suche nach der hinreißenden Herzelinde": {
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\WarnerBros\\AnderthalbRitter\\"
     },
     "2 Ninjas 1 Cup": {
@@ -1639,7 +1639,7 @@
     "8-Bit Commando": {
       "steam_appid": 287860,
       "config_path": "%APPDATA%\\8bitcommando\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "8-in-1 IQ Scale Bundle": {
       "steam_appid": 772470
@@ -1810,7 +1810,7 @@
     "994 W 24th": {
       "steam_appid": 536050
     },
-    "996þÜäþ£ƒÕ«×ÞÇüµØ┐þ»ç": {
+    "996的真实老板篇": {
       "steam_appid": 1086470
     },
     "999": {
@@ -2168,7 +2168,7 @@
       "config_path": "%APPDATA%\\A Good Snowman Is Hard To Build\\config.json",
       "engine": "PuzzleScript"
     },
-    "A Grande Bagun├ºa Espacial - The Big Space Mess": {
+    "A Grande Bagunça Espacial - The Big Space Mess": {
       "steam_appid": 449220,
       "engine": "Unity"
     },
@@ -2442,7 +2442,7 @@
     "A Normal Quiz Game where you try to solve questions but the questions have tricks and gimmicks and if you get them wrong you have to beat a wacky punishment but they are kinda fun so you lowkey wanna do them even if it means getting the question wrong.": {
       "steam_appid": 5109940
     },
-    "A Nova Calif├│rnia": {
+    "A Nova Califórnia": {
       "steam_appid": 699510
     },
     "A Number's life": {
@@ -2602,7 +2602,7 @@
     },
     "A Solitaire Mystery": {
       "steam_appid": 3743220,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "A Song in the Void": {
       "steam_appid": 746900
@@ -3351,7 +3351,7 @@
       "dx11": true,
       "engine": "Unreal Engine 5"
     },
-    "Abz├╗": {
+    "Abzû": {
       "steam_appid": 384190,
       "dx11": true,
       "config_path": "%LOCALAPPDATA%\\AbzuGame\\Saved\\Config\\WindowsNoEditor\\",
@@ -3780,7 +3780,7 @@
       "steam_appid": 1954750,
       "engine": "GameMaker"
     },
-    "Acqu├íria: O Jogo": {
+    "Acquária: O Jogo": {
       "config_path": "<path-to-game>\\config.cfg",
       "engine": "Blitz3D"
     },
@@ -4564,7 +4564,7 @@
     },
     "Aeon of Sands - The Trail": {
       "steam_appid": 907820,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Aeon's End": {
       "steam_appid": 1063580
@@ -4581,7 +4581,7 @@
       "steam_appid": 356580,
       "opengl": true,
       "config_path": "%APPDATA%\\Aerannis\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "AereA": {
       "steam_appid": 573660,
@@ -5568,7 +5568,7 @@
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\SenseGames\\AILIMIT",
       "engine": "Unity"
     },
-    "Ai no Uta ÒüéÒüäÒü«ÒüåÒüƒ": {
+    "Ai no Uta あいのうた": {
       "steam_appid": 1212780
     },
     "AI Rebellion": {
@@ -6066,7 +6066,7 @@
     "Aivolution": {
       "steam_appid": 1014990
     },
-    "AI´╝èShoujo": {
+    "AI＊Shoujo": {
       "steam_appid": 1250650,
       "engine": "Unity"
     },
@@ -6211,7 +6211,7 @@
       "engine": "Blazing Renderer"
     },
     "Aladdin Pinball": {},
-    "AladdinÔÇÖs Magic Carpet Racing": {},
+    "Aladdin’s Magic Carpet Racing": {},
     "Aladin & the Enchanted Lamp": {
       "steam_appid": 827100
     },
@@ -7005,7 +7005,7 @@
     "Alight": {
       "steam_appid": 1050270
     },
-    "ALILIA-õ║ÜÕê®Õê®õ║ÜþÜäþ▓¥þüÁõ╗¼": {
+    "ALILIA-亚利利亚的精灵们": {
       "steam_appid": 1047680
     },
     "Alimardan Meets Merlin": {
@@ -7652,7 +7652,7 @@
       "config_path": "%APPDATA%\\RenPy\\Always The Same Blue Sky-1334743217\\persistent",
       "engine": "Ren'Py"
     },
-    "AL´¢ÑFINE": {
+    "AL･FINE": {
       "steam_appid": 545330
     },
     "Am I Nima": {
@@ -8277,7 +8277,7 @@
     "Amulet of the Seven Souls": {
       "steam_appid": 702060
     },
-    "Amulet Zero ÚøÂþë®Þ»¡ - Optimize": {
+    "Amulet Zero 零物语 - Optimize": {
       "steam_appid": 907330
     },
     "Amulets & Armor": {
@@ -9077,7 +9077,7 @@
     "Anime Girls VR": {
       "steam_appid": 767110
     },
-    "Anime Otaku Girl õ║îµ¼íÕàâÕ«àÕÑ│": {
+    "Anime Otaku Girl 二次元宅女": {
       "steam_appid": 1164350
     },
     "Anime Pixel Girls": {
@@ -9132,7 +9132,7 @@
       "config_path": "<path-to-game>\\media\\Ankh.ini, <path-to-game>\\media\\keybinds.ini",
       "engine": "Ogre"
     },
-    "Ankh Guardian - Treasure of the Demon's Temple/Òé┤ÒââÒâëÒâ╗Òé¬ÒâûÒâ╗ÒéªÒé®Òâ╝Òâ½ Ú¡öÕ««Òü«þºÿÕ«Ø": {
+    "Ankh Guardian - Treasure of the Demon's Temple/ゴッド・オブ・ウォール 魔宮の秘宝": {
       "steam_appid": 975160
     },
     "Ankh: Anniversary Edition": {
@@ -9488,9 +9488,7 @@
     },
     "Anstoss": {},
     "Anstoss 2: Der Fußballmanager": {},
-    "Anstoss 2: Der Fu├ƒballmanager": {},
     "Anstoss 3: Der Fußballmanager": {},
-    "Anstoss 3: Der Fu├ƒballmanager": {},
     "Answer Knot": {
       "steam_appid": 1049400
     },
@@ -9514,7 +9512,7 @@
       "steam_appid": 585260,
       "engine": "RPG Maker"
     },
-    "Antarctic Girl ÕìùµÑÁÕ¿ÿ": {
+    "Antarctic Girl 南極娘": {
       "steam_appid": 1160900
     },
     "Antares": {
@@ -9764,7 +9762,7 @@
       "dx11": true,
       "engine": "BGI/Ethornell"
     },
-    "Aoki ┼îkami to Shiroki Mejika": {
+    "Aoki Ōkami to Shiroki Mejika": {
       "steam_appid": 545000
     },
     "Aooni": {
@@ -11579,7 +11577,7 @@
     "Artificial Mansion": {
       "steam_appid": 920200
     },
-    "Artificiality-õ║║ÚÇáþë®-": {
+    "Artificiality-人造物-": {
       "steam_appid": 1023140
     },
     "Artillerists": {
@@ -11616,7 +11614,7 @@
     },
     "Artura": {},
     "Artus et le grimoire secret": {},
-    "ART├®: Mecenas": {
+    "ARTé: Mecenas": {
       "steam_appid": 934950
     },
     "Arvale": {
@@ -11936,7 +11934,7 @@
     "Ashland Dossier": {
       "steam_appid": 1174680
     },
-    "Ashland Õó▓õ║║õ╣ïÕóâ": {
+    "Ashland 墲人之境": {
       "steam_appid": 887690
     },
     "Ashley Clark: Secret of the Ruby": {
@@ -11944,7 +11942,7 @@
       "dx9": true,
       "dx11": true,
       "opengl": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\N-Tri Studio\\Ashley Clark´╝Ü Secret of the Ruby",
+      "config_path": "HKEY_CURRENT_USER\\Software\\N-Tri Studio\\Ashley Clark： Secret of the Ruby",
       "engine": "Unity"
     },
     "Ashley Clark: The Secrets of the Ancient Temple": {
@@ -12505,7 +12503,7 @@
       "config_path": "%USERPROFILE%\\Saved Games\\Astral Ascent\\<user-id>\\aa_options.sav",
       "engine": "Chowdren"
     },
-    "Astral Battlefield / µÿƒþòîµêÿÕ£║": {
+    "Astral Battlefield / 星界战场": {
       "steam_appid": 1098500
     },
     "Astral Breakers": {
@@ -12714,8 +12712,6 @@
     },
     "Astérix & Obélix: Take on Caesar": {},
     "Astérix: Caesar's Challenge": {},
-    "Ast├®rix & Ob├®lix: Take on Caesar": {},
-    "Ast├®rix: Caesar's Challenge": {},
     "Asuka 120% Return BURNING Fest.": {},
     "Asura": {
       "steam_appid": 524640,
@@ -12751,7 +12747,7 @@
     "Asymmetric Ops": {
       "steam_appid": 1037040
     },
-    "Asyula µû╣Þêƒõ╣ïÚô¥": {
+    "Asyula 方舟之链": {
       "steam_appid": 689070,
       "engine": "RPG Maker"
     },
@@ -13018,10 +13014,6 @@
       "steam_appid": 521280
     },
     "Atlantis: The Lost Empire - The Lost Games": {},
-    "Atlantis: The Lost Empire ÔÇô Trial by Fire": {
-      "config_path": "<path-to-game>\\autoexec.cfg",
-      "engine": "LithTech"
-    },
     "Atlantis: The Lost Empire – Trial by Fire": {
       "config_path": "<path-to-game>\\autoexec.cfg",
       "engine": "LithTech"
@@ -13314,7 +13306,7 @@
       "engine": "Ogre"
     },
     "Attack of the Saucerman!": {},
-    "Attack on I-Ching Þ┐øÕç╗þÜäµÿôþ╗Å": {
+    "Attack on I-Ching 进击的易经": {
       "steam_appid": 931810
     },
     "Attack on Pearl Harbor": {
@@ -13705,7 +13697,7 @@
     },
     "Autumn": {
       "steam_appid": 473520,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Autumn Dream": {
       "steam_appid": 521980,
@@ -14078,7 +14070,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Inversion Software\\Away",
       "engine": "Unity"
     },
-    "Away from beauty Þë▓Õì│µÿ»þ®║": {
+    "Away from beauty 色即是空": {
       "steam_appid": 806540
     },
     "Away From Earth: Moon": {
@@ -15147,7 +15139,7 @@
       "steam_appid": 2379780,
       "opengl": true,
       "config_path": "%APPDATA%\\Balatro\\settings.jkr",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Balconing Simulator 2020": {
       "steam_appid": 1383010,
@@ -15674,7 +15666,7 @@
     "Banshee: Demon Girl": {
       "steam_appid": 2989840
     },
-    "Banter Schooldays!!õ©ëÒÇçõ©ÇÕ«ñµùáõ©Çõ║║": {
+    "Banter Schooldays!!三〇一室无一人": {
       "steam_appid": 1110690
     },
     "Banyu Lintar Angin - Little Storm -": {
@@ -15935,7 +15927,7 @@
       "dx9": true,
       "config_path": "<path-to-game>\\Setting.INI"
     },
-    "Barrage Musical ~ Basic Danmaku Tutorial ~ / Õ╝╣Õ╣òÚƒ│õ╣Éþ╗ÿ ~ Õƒ║þíÇµòÖÕ¡ªþ»ç ~": {
+    "Barrage Musical ~ Basic Danmaku Tutorial ~ / 弹幕音乐绘 ~ 基础教学篇 ~": {
       "steam_appid": 1173940,
       "dx11": true,
       "config_path": "<path-to-game>\\Settings.dat",
@@ -16700,7 +16692,7 @@
       "dx11": true,
       "engine": "Unity"
     },
-    "Battle Test: A Nissan Rogue 360┬░ VR Experience": {
+    "Battle Test: A Nissan Rogue 360° VR Experience": {
       "steam_appid": 605810,
       "engine": "Unity"
     },
@@ -17139,7 +17131,7 @@
       "dx11": true,
       "config_path": "%USERPROFILE%\\Documents\\My Games\\Battlezone Combat Commander\\launch.ini, %USERPROFILE%\\Documents\\My Games\\Battlezone Combat Commander\\UserPrefs"
     },
-    "BATTLLOON - ÒâÉÒâêÒâ½Òâ╝Òâ│": {
+    "BATTLLOON - バトルーン": {
       "steam_appid": 985800
     },
     "BAX": {
@@ -18207,24 +18199,6 @@
     "Benjamin Blümchen: Das Zoospiel": {
       "engine": "Director"
     },
-    "Benjamin Bl├╝mchen: Das Bauernhofspiel": {
-      "engine": "Macromedia Director"
-    },
-    "Benjamin Bl├╝mchen: Das Berufespiel": {
-      "engine": "Macromedia Director"
-    },
-    "Benjamin Bl├╝mchen: Das Detektivspiel": {
-      "engine": "Macromedia Director"
-    },
-    "Benjamin Bl├╝mchen: Das Gespensterspiel": {
-      "engine": "Macromedia Director"
-    },
-    "Benjamin Bl├╝mchen: Das Reporterspiel": {
-      "engine": "Macromedia Director"
-    },
-    "Benjamin Bl├╝mchen: Das Zoospiel": {
-      "engine": "Macromedia Director"
-    },
     "Benjamin Johnson": {
       "steam_appid": 672960
     },
@@ -18665,7 +18639,7 @@
     "Beyond the City VR": {
       "steam_appid": 585310
     },
-    "Beyond the Dawn µÖ¿µøªõ©ïÒü«þ╗êþé╣": {
+    "Beyond the Dawn 晨曦下の终点": {
       "steam_appid": 1063170
     },
     "Beyond the Destiny": {
@@ -18815,10 +18789,10 @@
       "steam_appid": 507030,
       "engine": "Unity"
     },
-    "Bient├┤t l'├®t├®": {
+    "Bientôt l'été": {
       "steam_appid": 229600,
       "dx9": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Tale of Tales\\Biento├îÔÇÜt l'e├î\u0081te├î\u0081\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Tale of Tales\\BientoÌ‚t l'eÌ\u0081teÌ\u0081\\",
       "engine": "Unity"
     },
     "Bierzerkers": {
@@ -19025,9 +18999,6 @@
       "engine": "Unity"
     },
     "Biing! 2: Sonne, Strand und Heiße Nächte": {
-      "config_path": "<path-to-game>\\DULOG.CFG"
-    },
-    "Biing! 2: Sonne, Strand und Hei├ƒe N├ñchte": {
       "config_path": "<path-to-game>\\DULOG.CFG"
     },
     "Biing!: Sex, Intrigue and Scalpels": {},
@@ -19687,7 +19658,7 @@
     "Bizarre Tale": {
       "steam_appid": 759180
     },
-    "Bj├Ârk Vulnicura Virtual Reality Album": {
+    "Björk Vulnicura Virtual Reality Album": {
       "steam_appid": 1095710,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Analog\\BjorkVulnicura\\"
     },
@@ -20889,7 +20860,7 @@
     "Bliss": {
       "steam_appid": 315450
     },
-    "Bliss Maze(µ×üõ╣ÉÞ┐ÀÕ«½)": {
+    "Bliss Maze(极乐迷宫)": {
       "steam_appid": 951140
     },
     "Blitz Breaker": {
@@ -21714,7 +21685,7 @@
     "Blossom Tales: The Sleeping King": {
       "steam_appid": 446810
     },
-    "Blossoming Yandere µ║ÇÚûï ÒâñÒâ│ÒâçÒâ¼": {
+    "Blossoming Yandere 満開 ヤンデレ": {
       "steam_appid": 660800
     },
     "Blossoms Bloom Brightest": {
@@ -21860,7 +21831,7 @@
     "Blue Revolver": {
       "steam_appid": 439490,
       "config_path": "%APPDATA%\\blue-revolver-double-action\\brda_config.json",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Blue Rider": {
       "steam_appid": 402340,
@@ -21988,7 +21959,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\SadPandaStudios\\BlushBlush\\",
       "engine": "Unity"
     },
-    "Bl├Ñfjell": {},
+    "Blåfjell": {},
     "BMW M3 Challenge": {
       "dx9": true,
       "config_path": "<path-to-game>\\config.ini",
@@ -23059,7 +23030,7 @@
       "steam_appid": 502320,
       "dx9": true,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Tapstar Interactive\\Boulder Dash┬«\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Tapstar Interactive\\Boulder Dash®\\",
       "engine": "Unity"
     },
     "Boulder Dash Deluxe": {
@@ -23374,7 +23345,7 @@
     "Boy Teen Dream": {
       "steam_appid": 993640
     },
-    "Boy VS Genius Þ┤½þ®ÀÕ░æÕ╣┤õ©ÄµáíÕø¡ÕÉìõ║║þÜäþöƒµ¡╗Õ»╣Õå│": {
+    "Boy VS Genius 贫穷少年与校园名人的生死对决": {
       "steam_appid": 1090560,
       "engine": "RPG Maker"
     },
@@ -23420,7 +23391,7 @@
       "steam_appid": 578310,
       "config_path": "%USERPROFILE%\\.prefs"
     },
-    "Brain 43┬░C": {
+    "Brain 43°C": {
       "steam_appid": 863870
     },
     "Brain Booster": {
@@ -24280,7 +24251,7 @@
     "Brix VR": {
       "steam_appid": 1021060
     },
-    "BRK├ûUT": {
+    "BRKÖUT": {
       "steam_appid": 616690
     },
     "Brno Transit": {
@@ -24672,17 +24643,10 @@
     "Brute": {
       "steam_appid": 451630
     },
-    "Bryce's Movement Engine┬╣": {
+    "Bryce's Movement Engine¹": {
       "steam_appid": 1117420
     },
     "Brütal Legend": {
-      "steam_appid": 225260,
-      "dx9": true,
-      "opengl": true,
-      "config_path": "%APPDATA%\\Doublefine\\BrutalLegend\\screen.dat",
-      "engine": "Buddha"
-    },
-    "Br├╝tal Legend": {
       "steam_appid": 225260,
       "dx9": true,
       "opengl": true,
@@ -25780,7 +25744,7 @@
     "Bygg Bilar med Mulle Meck": {
       "engine": "Director"
     },
-    "Bygg B├Ñtar med Mulle Meck": {},
+    "Bygg Båtar med Mulle Meck": {},
     "Bygone Dreams": {
       "steam_appid": 951620
     },
@@ -25823,7 +25787,7 @@
     },
     "Bytepath": {
       "steam_appid": 760330,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Byzantine: The Betrayal": {},
     "Bzzzt": {
@@ -25832,10 +25796,10 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Kodll\\Bzzzt\\",
       "engine": "Unity"
     },
-    "Bþö╗Õ░æÞ»┤": {
+    "B画少说": {
       "steam_appid": 1007870
     },
-    "B┼ì: Path of the Teal Lotus": {
+    "Bō: Path of the Teal Lotus": {
       "steam_appid": 1614440,
       "config_path": "HKEY_CURRENT_USER\\Software\\Squid Shock Studios\\Bo",
       "engine": "Unity"
@@ -26094,11 +26058,11 @@
       "steam_appid": 890700,
       "engine": "Ren'Py"
     },
-    "Caf├® International": {
+    "Café International": {
       "steam_appid": 965210,
       "engine": "Unity"
     },
-    "Caf├® Stella and the Reapers' Butterflies": {
+    "Café Stella and the Reapers' Butterflies": {
       "steam_appid": 1829980,
       "dx9": true,
       "engine": "KiriKiri"
@@ -26180,7 +26144,7 @@
       "steam_appid": 449200,
       "engine": "RPG Maker"
     },
-    "Calcul8┬▓": {
+    "Calcul8²": {
       "steam_appid": 993200
     },
     "Calendula": {
@@ -26685,10 +26649,10 @@
       "steam_appid": 1204480,
       "engine": "RPG Maker"
     },
-    "Candice DeB├®b├®'s Incredibly Trick Lifestyle": {
+    "Candice DeBébé's Incredibly Trick Lifestyle": {
       "steam_appid": 453790
     },
-    "Candice DeB├®b├®'s Scandalous Secrets": {
+    "Candice DeBébé's Scandalous Secrets": {
       "steam_appid": 941540
     },
     "Candle": {
@@ -27429,7 +27393,7 @@
     "CarJacker: Hotwired and Gone!": {
       "config_path": "<path-to-game>\\config.ini"
     },
-    "Carlos III y la difusi├│n de la antig├╝edad": {
+    "Carlos III y la difusión de la antigüedad": {
       "steam_appid": 590440
     },
     "Carly and the Reaperman - Escape from the Underworld": {
@@ -28306,7 +28270,7 @@
     "Cat's Lover": {
       "steam_appid": 691990
     },
-    "Cat's Puzzle /ßÉá´¢íÛ×ê´¢íßÉƒ\\": {
+    "Cat's Puzzle /ᐠ｡ꞈ｡ᐟ\\": {
       "steam_appid": 956190
     },
     "Cat's Yarn": {
@@ -29730,7 +29694,7 @@
     },
     "Cherry Kisses": {
       "steam_appid": 1259530,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Cherry Tree High Comedy Club": {
       "steam_appid": 214610,
@@ -29758,7 +29722,7 @@
       "dx9": true,
       "engine": "Unity"
     },
-    "Chess Arena-Þ▒íµúïþ½×µèÇÕ£║": {
+    "Chess Arena-象棋竞技场": {
       "steam_appid": 712880
     },
     "Chess Club Valley": {
@@ -30183,7 +30147,7 @@
     "Chinese Brush Simulator": {
       "steam_appid": 1222160
     },
-    "Chinese Chess/ Elephant Game: Þ▒íµúï": {
+    "Chinese Chess/ Elephant Game: 象棋": {
       "steam_appid": 722670
     },
     "Chinese Ink Painting Puzzle & Creator": {
@@ -30657,7 +30621,7 @@
     "Christmas Time 2019": {
       "steam_appid": 1005900
     },
-    "Christmas Tina ÔÇÉµ│íµ▓½Õå¼µÖ»ÔÇÉ": {
+    "Christmas Tina ‐泡沫冬景‐": {
       "steam_appid": 1049100,
       "engine": "Unity"
     },
@@ -31338,7 +31302,7 @@
       "dx11": true,
       "engine": "Unity"
     },
-    "Citro├½n C4 Robot": {
+    "Citroën C4 Robot": {
       "dx9": true
     },
     "City Balls VR": {
@@ -31897,7 +31861,7 @@
     "Clergyman": {
       "steam_appid": 796810
     },
-    "Clich├® - Critical Change": {
+    "Cliché - Critical Change": {
       "steam_appid": 945590
     },
     "Click & Click": {
@@ -33124,7 +33088,7 @@
     },
     "Collisions": {
       "steam_appid": 390910,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Colloc": {
       "steam_appid": 1114210
@@ -36096,7 +36060,7 @@
     "Crazy Maze": {
       "steam_appid": 820170
     },
-    "Crazy maze ~þû»þïéÞ┐ÀÕ«½ ~ þïéÒüúÒüƒÞ┐ÀÞÀ» ~ Laberinto loco ~ Labyrinthe fou ~ Verr├╝cktes Labyrinth": {
+    "Crazy maze ~疯狂迷宫 ~ 狂った迷路 ~ Laberinto loco ~ Labyrinthe fou ~ Verrücktes Labyrinth": {
       "steam_appid": 908500
     },
     "Crazy Mob": {
@@ -36236,7 +36200,7 @@
     "Creatio Ex Nihilo: Aition": {
       "steam_appid": 738080
     },
-    "Creation and Conquest´╝ÜThe Future War": {
+    "Creation and Conquest：The Future War": {
       "steam_appid": 1023760
     },
     "Creative Destruction": {
@@ -37059,7 +37023,7 @@
     "Crowman & Wolfboy": {
       "steam_appid": 339590,
       "dx9": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Wither Studios\\C ├»┬╝ÔÇá W\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Wither Studios\\C ï¼† W\\",
       "engine": "Unity"
     },
     "Crown and Council": {
@@ -38428,7 +38392,7 @@
     "Cute Girls": {
       "steam_appid": 934990
     },
-    "Cute Girls ÕÅ»þê▒þÜäÕÑ│Õ¡®": {
+    "Cute Girls 可爱的女孩": {
       "steam_appid": 958300
     },
     "Cute Hedgehog": {
@@ -38913,7 +38877,7 @@
     "D.H.Trouble Guy": {
       "steam_appid": 1060030
     },
-    "D.H.WitÐüh": {
+    "D.H.Witсh": {
       "steam_appid": 1055830
     },
     "D.H.Zombie Zone": {
@@ -39142,7 +39106,7 @@
     "Dairy Princess": {
       "steam_appid": 1168430
     },
-    "DAISENRYAKU PERFECT 4.0/ÕñºµêªþòÑÒâæÒâ╝ÒâòÒéºÒé»Òâê4.0": {
+    "DAISENRYAKU PERFECT 4.0/大戦略パーフェクト4.0": {
       "steam_appid": 868410
     },
     "Daisy's Garden": {},
@@ -39588,7 +39552,7 @@
     "Dark Angels: Masquerade of Shadows": {
       "steam_appid": 560720
     },
-    "Dark Ang├ªl": {},
+    "Dark Angæl": {},
     "Dark Apes: The Fate of Devolution": {
       "opengl": true,
       "engine": "Vision"
@@ -42451,7 +42415,7 @@
       "steam_appid": 314180,
       "dx9": true
     },
-    "Deathsmiles IÒâ╗II": {
+    "Deathsmiles I・II": {
       "steam_appid": 1884300,
       "dx11": true,
       "config_path": "<path-to-game>\\DeathsmilesI-II.ini"
@@ -43823,7 +43787,7 @@
       "steam_appid": 1091390,
       "opengl": true,
       "config_path": "%APPDATA%\\Demonizer",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Demonlisher": {
       "steam_appid": 321610
@@ -43854,7 +43818,7 @@
     "Den of Wolves": {
       "steam_appid": 1818140
     },
-    "Den v├ñnstra handens stig": {
+    "Den vänstra handens stig": {
       "steam_appid": 491370
     },
     "Denari": {
@@ -43865,7 +43829,7 @@
       "steam_appid": 688170
     },
     "Densha de Go! Final": {
-      "config_path": "%APPDATA%\\TAITO\\perfect\\BISLPM-65590fin\\, HKEY_CURRENT_USER\\Software\\TAITO\\Úø╗Þ╗èÒüºGO! FINAL"
+      "config_path": "%APPDATA%\\TAITO\\perfect\\BISLPM-65590fin\\, HKEY_CURRENT_USER\\Software\\TAITO\\電車でGO! FINAL"
     },
     "Denshattack!": {
       "steam_appid": 2524850,
@@ -44021,10 +43985,10 @@
     "Der Atom Nazi": {
       "steam_appid": 855750
     },
-    "Der einzig wahre Auserw├ñhlte": {
+    "Der einzig wahre Auserwählte": {
       "steam_appid": 654080
     },
-    "Der Geisterj├ñger / The Ghost Hunter": {
+    "Der Geisterjäger / The Ghost Hunter": {
       "steam_appid": 1581240,
       "engine": "Unity"
     },
@@ -44251,7 +44215,7 @@
     "Desire Den": {
       "steam_appid": 1010450
     },
-    "Desire Gambling House/µ¼▓µ£øÞÁîÚªå": {
+    "Desire Gambling House/欲望赌馆": {
       "steam_appid": 1123550
     },
     "Desire: Remaster Version": {},
@@ -44889,7 +44853,7 @@
       "dx9": true,
       "engine": "Unity"
     },
-    "Devil's Deck µüÂÚ¡öþºÿÕóâ": {
+    "Devil's Deck 恶魔秘境": {
       "steam_appid": 1093320
     },
     "Devil's Hunt": {
@@ -45221,7 +45185,7 @@
     "Die Drei ??? - Geheimnis der Schattenhelden": {
       "steam_appid": 735620
     },
-    "Die drei ??? - R├ñtsel aus der Geisterwelt": {
+    "Die drei ??? - Rätsel aus der Geisterwelt": {
       "steam_appid": 793320
     },
     "Die drei ??? und der Riesenkrake": {
@@ -45392,7 +45356,7 @@
     },
     "Digimon Survive": {
       "steam_appid": 871980,
-      "config_path": "%LOCALAPPDATA%\\┬®BANDAI NAMCO Entertainment Inc_\\DIGIMON SURVIVE\\Savedata\\<user-id>\\",
+      "config_path": "%LOCALAPPDATA%\\©BANDAI NAMCO Entertainment Inc_\\DIGIMON SURVIVE\\Savedata\\<user-id>\\",
       "engine": "Unity"
     },
     "Digimon Typing": {},
@@ -46456,7 +46420,7 @@
     "Distant Kingdoms": {
       "steam_appid": 1090760
     },
-    "Distant Memora─Áo": {
+    "Distant Memoraĵo": {
       "steam_appid": 1591490,
       "opengl": true,
       "engine": "Ren'Py"
@@ -47025,7 +46989,7 @@
       "steam_appid": 697260
     },
     "DogDay": {
-      "config_path": "ÔÇ¬C:\\Windows\\DOGDAY.INI"
+      "config_path": "‪C:\\Windows\\DOGDAY.INI"
     },
     "Dogfight 1942": {
       "steam_appid": 217790,
@@ -47498,7 +47462,7 @@
     "Don't Save the Princess": {
       "steam_appid": 951840
     },
-    "Don't Shoot Rabbit / õ©ìÞªüÕ░äõ©¡ÕàöÕ¡É": {
+    "Don't Shoot Rabbit / 不要射中兔子": {
       "steam_appid": 981990
     },
     "Don't Shoot Yourself!": {
@@ -48022,7 +47986,7 @@
     "DotLine": {
       "steam_appid": 843580
     },
-    "DOTOKOI / ÕâÅþ┤áþöÀÕÅï": {
+    "DOTOKOI / 像素男友": {
       "steam_appid": 1198320
     },
     "Dotori": {
@@ -49674,7 +49638,7 @@
     "Dreii": {
       "steam_appid": 298420
     },
-    "Drekir├Âkr - Dusk of the Dragon": {
+    "Drekirökr - Dusk of the Dragon": {
       "steam_appid": 1280700
     },
     "Dresden Files Cooperative Card Game": {
@@ -50286,7 +50250,7 @@
     "Drymir Cave under Richmordnom": {
       "steam_appid": 913570
     },
-    "Dr├íscula: The Vampire Strikes Back": {
+    "Dráscula: The Vampire Strikes Back": {
       "steam_appid": 1038430
     },
     "DSquad War": {
@@ -50811,7 +50775,7 @@
     "Dungeon Journey": {
       "steam_appid": 485490
     },
-    "Dungeon Jump - Õ£░þëóÞÀ│ÞÀâ": {
+    "Dungeon Jump - 地牢跳跃": {
       "steam_appid": 820780
     },
     "Dungeon Keeper": {
@@ -51283,7 +51247,7 @@
     "Duralumin Wind": {
       "steam_appid": 724760
     },
-    "Duru ÔÇô About Mole Rats and Depression": {
+    "Duru – About Mole Rats and Depression": {
       "steam_appid": 1387900,
       "engine": "Unity"
     },
@@ -51731,28 +51695,25 @@
     "Dōkyūsei: Bangin' Summer": {
       "steam_appid": 1689910
     },
-    "D├®j├á Vu": {
+    "Déjà Vu": {
       "steam_appid": 843710
     },
-    "D├®j├á Vu II: Lost in Las Vegas": {
+    "Déjà Vu II: Lost in Las Vegas": {
       "steam_appid": 343830,
       "config_path": "%APPDATA%\\zojoi",
       "engine": "MacVenture"
     },
-    "D├®j├á Vu: A Nightmare Comes True": {
+    "Déjà Vu: A Nightmare Comes True": {
       "steam_appid": 343820,
       "config_path": "%APPDATA%\\zojoi",
       "engine": "MacVenture"
     },
-    "D├®sir├®": {
+    "Désiré": {
       "steam_appid": 805760,
       "engine": "Unity"
     },
-    "D├ñmmerlicht": {
+    "Dämmerlicht": {
       "steam_appid": 589410
-    },
-    "D┼ìky┼½sei: Bangin' Summer": {
-      "steam_appid": 1689910
     },
     "E-Ball": {
       "steam_appid": 766910
@@ -52041,7 +52002,7 @@
       "config_path": "%USERPROFILE%\\Documents\\EarthX\\settings.json, HKEY_CURRENT_USER\\Software\\Mesote Games (Denis Szwarc)\\EarthX\\",
       "engine": "Unity"
     },
-    "EarthÔÇÖs Dawn": {
+    "Earth’s Dawn": {
       "steam_appid": 494600
     },
     "East 73": {
@@ -52876,7 +52837,7 @@
     "Egyptian Settlement Gold": {
       "steam_appid": 367220
     },
-    "EG╩ÿ": {
+    "EGʘ": {
       "steam_appid": 887790
     },
     "Ehandcipation": {
@@ -52963,7 +52924,7 @@
     "El Culto": {
       "steam_appid": 1129480
     },
-    "El Culto: edici├│n completa": {
+    "El Culto: edición completa": {
       "steam_appid": 1191700
     },
     "El Hijo - A Wild West Tale": {
@@ -53586,7 +53547,7 @@
     "Elona": {
       "config_path": "<path-to-game>/config.txt"
     },
-    "Elpida: Cr├┤nicas de uma guerreira": {
+    "Elpida: Crônicas de uma guerreira": {
       "steam_appid": 1069290
     },
     "Elroy and the Aliens": {
@@ -54059,7 +54020,7 @@
     },
     "Empires:The Rise": {
       "steam_appid": 973390,
-      "config_path": "HKEY_CURRENT_USER\\Software\\µïçµîçµùÂõ╗ú\\Õ©ØÕø¢:Õ┤øÞÁÀ\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\拇指时代\\帝国:崛起\\",
       "engine": "Unity"
     },
     "Employee Recycling Center": {
@@ -54168,7 +54129,7 @@
       "steam_appid": 2444350,
       "engine": "Unreal Engine 4"
     },
-    "EnchantedGirl - þ║»µâàµê┐õ©£õ┐Åµê┐Õ«ó": {
+    "EnchantedGirl - 纯情房东俏房客": {
       "steam_appid": 858010
     },
     "Enclave": {
@@ -54849,11 +54810,11 @@
       "steam_appid": 1098640
     },
     "EoSD for Busy Person": {
-      "config_path": "%USERPROFILE%\\Documents\\Òé½Òé╣Òé¼Òé¢ÒâòÒâê\\Õ┐ÖÒüùÒüäõ║║Òü«ÒüƒÒéüÒü«ÒüôÒüåÒü¥ÒüìÒéçÒüå\\",
+      "config_path": "%USERPROFILE%\\Documents\\カスガソフト\\忙しい人のためのこうまきょう\\",
       "engine": "KiriKiri"
     },
     "EoSD for Busy Person Extra": {
-      "config_path": "%USERPROFILE%\\Documents\\Òé½Òé╣Òé¼Òé¢ÒâòÒâê\\Õ┐ÖÒüùÒüäõ║║Òü«ÒüƒÒéüÒü«ÒüôÒüåÒü¥ÒüìÒéçÒüåEXTRA\\",
+      "config_path": "%USERPROFILE%\\Documents\\カスガソフト\\忙しい人のためのこうまきょうEXTRA\\",
       "engine": "KiriKiri"
     },
     "Epanalepsis": {
@@ -55788,7 +55749,7 @@
       "steam_appid": 2057760,
       "engine": "Unity"
     },
-    "Espa├▒a 1936": {},
+    "España 1936": {},
     "ESPER": {
       "steam_appid": 792340,
       "engine": "Unity"
@@ -56266,7 +56227,7 @@
       "steam_appid": 299250
     },
     "European Super League": {},
-    "Eutergel├ñuter": {
+    "Eutergeläuter": {
       "steam_appid": 1170250
     },
     "EV3 - Drag Racing": {
@@ -57580,7 +57541,7 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\ScreenSelectorPrefs.txt",
       "engine": "Unity"
     },
-    "ExÐüive A-1000": {
+    "Exсive A-1000": {
       "steam_appid": 1008870
     },
     "Eye in the Sky": {
@@ -58087,7 +58048,7 @@
     "Fading Visage": {
       "steam_appid": 861180
     },
-    "Fad├│: Chapter One": {
+    "Fadó: Chapter One": {
       "steam_appid": 1148200
     },
     "Fae Tactics": {
@@ -58239,7 +58200,7 @@
       "dx9": true,
       "engine": "Ren'Py"
     },
-    "Fairy Picturebook of Hero and Sorceress / ÕïçÞÇàÒü¿Ú¡öµ│òõ¢┐ÒüäÒü¿ÒüèÒü¿ÒüÄÒü«þÁÁµ£¼": {
+    "Fairy Picturebook of Hero and Sorceress / 勇者と魔法使いとおとぎの絵本": {
       "steam_appid": 1008280
     },
     "Fairy Rescue": {
@@ -58442,7 +58403,7 @@
     "Fall of the Titanic": {
       "steam_appid": 414130
     },
-    "FALL ÕØáÞÉ¢õ╣ïÕÉÄ": {
+    "FALL 坠落之后": {
       "steam_appid": 903150
     },
     "Fall... in Love": {
@@ -58812,7 +58773,7 @@
       "steam_appid": 386690,
       "dx11": true
     },
-    "Fantastic Creatures - ÕøøÚØêµûçµÿÄ": {
+    "Fantastic Creatures - 四靈文明": {
       "steam_appid": 1002440
     },
     "Fantastic Dizzy": {},
@@ -58975,7 +58936,7 @@
     "Fantasy Secret": {
       "steam_appid": 1174340
     },
-    "Fantasy Sino-Japanese War Õ╣╗µâ│þö▓Õìê": {
+    "Fantasy Sino-Japanese War 幻想甲午": {
       "steam_appid": 999930
     },
     "Fantasy Smith VR": {
@@ -59011,7 +58972,7 @@
     "Fantasya Final Definitiva Remake": {
       "steam_appid": 656120
     },
-    "FantasyDynasty: Le ch├óteau DERETIC": {
+    "FantasyDynasty: Le château DERETIC": {
       "steam_appid": 842070
     },
     "Fantasyland": {
@@ -59035,9 +58996,6 @@
     "Fantôme Rapport -Intermezzo-": {
       "steam_appid": 3622860
     },
-    "Fant├┤me Rapport -Intermezzo-": {
-      "steam_appid": 3622860
-    },
     "Fap Queen": {
       "steam_appid": 942140
     },
@@ -59051,7 +59009,7 @@
     },
     "Far Away": {
       "steam_appid": 1250760,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\HongChaGame\\µÁÀµ▓ÖÚúÄõ║æ\\GameSaves\\",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\HongChaGame\\海沙风云\\GameSaves\\",
       "engine": "Unity"
     },
     "Far Beyond: A Space Odyssey": {
@@ -59537,7 +59495,7 @@
     "Fast & Furious: Showdown": {
       "steam_appid": 224340,
       "dx9": true,
-      "config_path": "%APPDATA%\\Activision\\Fast & FuriousÔäó - Showdown\\",
+      "config_path": "%APPDATA%\\Activision\\Fast & Furious™ - Showdown\\",
       "engine": "Octane (Firebrand Games)"
     },
     "Fast & Furious: Spy Racers Rise of SH1FT3R": {
@@ -59852,7 +59810,7 @@
     "Fateless": {
       "steam_appid": 1186670
     },
-    "Fateline(Õæ¢Þ┐Éþ║┐)": {
+    "Fateline(命运线)": {
       "steam_appid": 1123460
     },
     "Fates 8 Stories (F8S)": {
@@ -59947,7 +59905,7 @@
     "Fazbear Nightmare": {
       "steam_appid": 366580
     },
-    "Fa├ºade": {},
+    "Façade": {},
     "FBC: Firebreak": {
       "steam_appid": 2272540,
       "dx12": true,
@@ -60110,7 +60068,7 @@
     "Feast Your Eyes: Little Marshmallow": {
       "steam_appid": 712260
     },
-    "FEAST: Book One ┬½Family Ties┬╗": {
+    "FEAST: Book One «Family Ties»": {
       "steam_appid": 820790,
       "config_path": "%APPDATA%\\renpy\\FEAST-1487488210\\persistent",
       "engine": "Ren'Py"
@@ -60127,7 +60085,7 @@
     "Featherpunk Prime": {
       "steam_appid": 492660
     },
-    "Feathery Ears þ¥¢ÞÇ│": {
+    "Feathery Ears 羽耳": {
       "steam_appid": 992200
     },
     "FEB - Brazilian Elite Force": {
@@ -62742,7 +62700,7 @@
       "steam_appid": 1652030,
       "engine": "Ren'Py"
     },
-    "Flowerless Gardenia þÖ¢Þè▒µ£¬ÕÆ▓": {
+    "Flowerless Gardenia 白花未咲": {
       "steam_appid": 1063180
     },
     "Flowers in Dark": {
@@ -62759,7 +62717,7 @@
       "steam_appid": 452440,
       "config_path": "<path-to-game>\\save\\config.dat"
     },
-    "Flowers: Le Volume sur ├ët├®": {
+    "Flowers: Le Volume sur Été": {
       "steam_appid": 858940,
       "dx9": true,
       "config_path": "<path-to-game>\\save\\config.dat"
@@ -62807,7 +62765,7 @@
       "config_path": "<path-to-game>\\FluffyStore_Data\\StreamingAssets\\userinfo.db",
       "engine": "Unity"
     },
-    "Fluid Lander - ÒâòÒâ¬ÒâÑÒâ╝ÒâëÒâ®Òâ│ÒâÇÒâ╝": {
+    "Fluid Lander - フリュードランダー": {
       "steam_appid": 1064950
     },
     "Fluid Simulation": {
@@ -62815,7 +62773,7 @@
     },
     "Flunkerne: Kaos og Kalypso": {},
     "Flunkerne: Pirater": {},
-    "Flunkerne: P├Ñ M├Ñnen": {},
+    "Flunkerne: På Månen": {},
     "Flunkerne: Robotter": {},
     "Flunkerne: Superskurke": {},
     "Flurius": {
@@ -63058,7 +63016,7 @@
     "Follow the meaning": {
       "steam_appid": 2720280
     },
-    "Follow the White Rabbit VR (ÝÖöýØ┤Ýè©Ù×ÿÙ╣ù)": {
+    "Follow the White Rabbit VR (화이트래빗)": {
       "steam_appid": 1134500
     },
     "Follower:Sacrifice": {
@@ -64905,7 +64863,7 @@
       "config_path": "%LOCALAPPDATA%\\SummerCamp\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
-    "Friday µÿƒµ£ƒõ║öÚâ¿Úù¿": {
+    "Friday 星期五部门": {
       "steam_appid": 1167900
     },
     "Friends For The Apocalypse": {
@@ -64956,7 +64914,7 @@
     "FrightShow Fighter": {
       "steam_appid": 455830
     },
-    "Frigus ─░nferos": {
+    "Frigus İnferos": {
       "steam_appid": 1013630
     },
     "Fringe Planet": {
@@ -65158,7 +65116,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Brilliant Skies\\From the Depths",
       "engine": "Unity"
     },
-    "From The Earth (ÝöäÙí¼ Ùìö ýû┤ýèñ)": {
+    "From The Earth (프롬 더 어스)": {
       "steam_appid": 1120600
     },
     "From the Sky": {
@@ -65840,7 +65798,7 @@
       "steam_appid": 1909320,
       "engine": "Unity"
     },
-    "Furry Futanari: 3 in 1 ÔÜº\uD83C\uDFF3´©ÅÔÇì\uD83C\uDF08": {
+    "Furry Futanari: 3 in 1 ⚧\uD83C\uDFF3️‍\uD83C\uDF08": {
       "steam_appid": 1871000
     },
     "Furry Girl": {
@@ -65954,7 +65912,7 @@
       "config_path": "<path-to-game>\\options.sav",
       "engine": "GameMaker"
     },
-    "Futanari girlfriends ÔÜº\uD83D\uDC67\uD83C\uDF46": {
+    "Futanari girlfriends ⚧\uD83D\uDC67\uD83C\uDF46": {
       "steam_appid": 2579470
     },
     "Futanari Jigsaw Puzzle": {
@@ -66103,10 +66061,10 @@
     "FYD": {
       "steam_appid": 760700
     },
-    "F├╝rst Marigor und die Tobis": {
+    "Fürst Marigor und die Tobis": {
       "config_path": "%WINDIR%\\Tobis2.ini"
     },
-    "F├╝rst Marigors Rache an den Tobis": {},
+    "Fürst Marigors Rache an den Tobis": {},
     "G Prime": {
       "steam_appid": 497430
     },
@@ -66141,7 +66099,7 @@
       "dx9": true,
       "engine": "EngineX"
     },
-    "G-MODEÒéóÒâ╝Òé½ÒéñÒâûÒé╣ Õ╝¥Õ╣òµñ£Õ«Üµ¡╗Ú¿ô-ÕñºÕ¥ÇþöƒþÀ¿-": {
+    "G-MODEアーカイブス 弾幕検定死験-大往生編-": {
       "steam_appid": 1815030
     },
     "G-Nome": {
@@ -66245,7 +66203,7 @@
     },
     "Gadget & The Gadgetinis": {},
     "Gadget Tycoon": {},
-    "Gadget ÔÇô Invention, Travel, & Adventure": {},
+    "Gadget – Invention, Travel, & Adventure": {},
     "Gadgeteer": {
       "steam_appid": 746560
     },
@@ -66830,7 +66788,7 @@
       "config_path": "<path-to-game>\\Config.ini",
       "engine": "isiMotor2"
     },
-    "Game Studio Simulator´╝êµêæÞªüÕüÜµ©©µêÅ´╝ë": {
+    "Game Studio Simulator（我要做游戏）": {
       "steam_appid": 1021690
     },
     "Game Tengoku CruisinMix Special": {
@@ -67054,7 +67012,7 @@
     "Garbage Classification Simulator": {
       "steam_appid": 1165350
     },
-    "Garbage Classification Simulator Õ×âÕ£¥Õêåþ▒╗µ¿íµïƒÕÖ¿": {
+    "Garbage Classification Simulator 垃圾分类模拟器": {
       "steam_appid": 1165350
     },
     "Garbage Day": {
@@ -67460,7 +67418,7 @@
     "Gear Path": {
       "steam_appid": 764470
     },
-    "Gear Puzzle: the inheritance of grandpa(Ú¢┐Þ¢«Þ┐ÀÕ▒Ç)": {
+    "Gear Puzzle: the inheritance of grandpa(齿轮迷局)": {
       "steam_appid": 1114230
     },
     "Gear Up": {
@@ -67822,7 +67780,7 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Aeternum Game Studios\\Eden Survivors\\global",
       "engine": "Unity"
     },
-    "GenesisÕêøõ©ûõ║ëÚ£©": {
+    "Genesis创世争霸": {
       "steam_appid": 755080
     },
     "Genesys": {
@@ -67906,7 +67864,7 @@
       "engine": "Unity"
     },
     "Genso Suikoden": {},
-    "Gensokyo Defenders / Õ╣╗µâ│ÚâÀÒâçÒéúÒâòÒéºÒâ│ÒâÇÒâ╝Òé║ / Õ╣╗µâ│ÚäëÕ«êÞ¡ÀÞÇà": {
+    "Gensokyo Defenders / 幻想郷ディフェンダーズ / 幻想鄉守護者": {
       "steam_appid": 1019920
     },
     "Gensokyo Night Festival": {
@@ -68695,7 +68653,7 @@
       "dx9": true,
       "config_path": "%APPDATA%\\Qute\\GingaForce\\display_setting.ini, %APPDATA%\\Qute\\GingaForce\\j4w_sav.bin"
     },
-    "Ginga Kagekidan - µö¥Þ¬▓Õ¥îÒüÅÒéïÒâ╝ÒüÜÒüú´╝ü": {
+    "Ginga Kagekidan - 放課後くるーずっ！": {
       "steam_appid": 1128200,
       "engine": "Unity"
     },
@@ -69306,10 +69264,10 @@
     "Glyphs Apprentice": {
       "steam_appid": 592120
     },
-    "Gl├Â Phlox": {
+    "Glö Phlox": {
       "steam_appid": 950310
     },
-    "Gl├╝ck Auf": {
+    "Glück Auf": {
       "steam_appid": 392700
     },
     "GM Forge - Virtual Tabletop": {
@@ -69633,7 +69591,7 @@
     "Goblin Storm": {
       "steam_appid": 713840
     },
-    "Goblin Times / ÕôÑÕ©âµ×ùµùÂõ╗ú": {
+    "Goblin Times / 哥布林时代": {
       "steam_appid": 1191870
     },
     "Goblin Vyke: The Thief Tycoon": {
@@ -69738,10 +69696,10 @@
       "steam_appid": 1593500,
       "config_path": "<path-to-game>\\settings.ini"
     },
-    "God of War Ragnar├Âk": {
+    "God of War Ragnarök": {
       "steam_appid": 2322010,
       "dx12": true,
-      "config_path": "<path-to-game>\\settings.ini, %USERPROFILE%\\Saved Games\\God of War Ragnar├Âk\\<user-id>\\"
+      "config_path": "<path-to-game>\\settings.ini, %USERPROFILE%\\Saved Games\\God of War Ragnarök\\<user-id>\\"
     },
     "God of Word": {
       "steam_appid": 467320
@@ -69786,7 +69744,7 @@
       "steam_appid": 2687400,
       "engine": "Unreal Engine 5"
     },
-    "Goddess of Math µò░Õ¡ªÕÑ│þÑ×": {
+    "Goddess of Math 数学女神": {
       "steam_appid": 1044770
     },
     "Goddess of Victory: Nikke": {
@@ -70578,7 +70536,7 @@
       "steam_appid": 335090,
       "engine": "Unity"
     },
-    "Got reincarnated into a world of RPG full of NPCsÔÇª": {
+    "Got reincarnated into a world of RPG full of NPCs…": {
       "steam_appid": 1809250,
       "engine": "RPGMaker"
     },
@@ -70883,12 +70841,6 @@
       "config_path": "%USERPROFILE%\\Documents\\GTA3 User Files\\gta3.set",
       "engine": "RenderWare"
     },
-    "Grand Theft Auto III ÔÇô The Definitive Edition": {
-      "steam_appid": 1546970,
-      "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\Rockstar Games\\GTA III Definitive Edition\\Config\\WindowsNoEditor\\",
-      "engine": "Unreal Engine 4"
-    },
     "Grand Theft Auto III – The Definitive Edition": {
       "steam_appid": 1546970,
       "dx11": true,
@@ -70940,22 +70892,10 @@
       "dx11": true,
       "engine": "RenderWare"
     },
-    "Grand Theft Auto: San Andreas ÔÇô The Definitive Edition": {
-      "steam_appid": 1547000,
-      "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\Rockstar Games\\GTA San Andreas Definitive Edition\\Config\\WindowsNoEditor\\",
-      "engine": "Unreal Engine 4"
-    },
     "Grand Theft Auto: San Andreas – The Definitive Edition": {
       "steam_appid": 1547000,
       "dx11": true,
       "config_path": "%USERPROFILE%\\Documents\\Rockstar Games\\GTA San Andreas Definitive Edition\\Config\\WindowsNoEditor\\",
-      "engine": "Unreal Engine 4"
-    },
-    "Grand Theft Auto: The Trilogy ÔÇô The Definitive Edition": {
-      "steam_appid": 817628,
-      "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\Rockstar Games\\GTA III Definitive Edition\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "Grand Theft Auto: The Trilogy – The Definitive Edition": {
@@ -70973,12 +70913,6 @@
       "dx9": true,
       "config_path": "%USERPROFILE%\\Documents\\GTA Vice City Stories User Files\\*.set",
       "engine": "RenderWare"
-    },
-    "Grand Theft Auto: Vice City ÔÇô The Definitive Edition": {
-      "steam_appid": 1546990,
-      "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\Rockstar Games\\GTA Vice City Definitive Edition\\Config\\WindowsNoEditor\\",
-      "engine": "Unreal Engine 4"
     },
     "Grand Theft Auto: Vice City – The Definitive Edition": {
       "steam_appid": 1546990,
@@ -71629,7 +71563,7 @@
       "steam_appid": 1217580,
       "engine": "Unity"
     },
-    "Green Field Silver Tree / þ╗┐ÚçÄþÖ¢ÚôÂµáæ": {
+    "Green Field Silver Tree / 绿野白银树": {
       "steam_appid": 1069520
     },
     "Green Game: TimeSwapper": {
@@ -73311,7 +73245,7 @@
     "Gythol Granditti: The Crypt of Darkness": {
       "steam_appid": 1108630
     },
-    "G├®ants disparus VR": {
+    "Géants disparus VR": {
       "steam_appid": 956880
     },
     "H Chan: Girl": {
@@ -73912,7 +73846,7 @@
       "config_path": "%APPDATA%\\HallsOfTorment\\settings.json",
       "engine": "Godot"
     },
-    "Hallucination - Õ╣╗Þºë": {
+    "Hallucination - 幻觉": {
       "steam_appid": 1167700
     },
     "Hallway Simulator 2020": {
@@ -74717,14 +74651,14 @@
       "config_path": "%USERPROFILE%\\Documents\\Harry Potter II\\",
       "engine": "Unreal Engine 1"
     },
-    "Harry Potter and the Deathly Hallows ÔÇô Part 1": {
+    "Harry Potter and the Deathly Hallows – Part 1": {
       "dx9": true,
-      "config_path": "%LOCALAPPDATA%\\Electronic Arts\\Harry Potter and the Deathly Hallows (TM) ÔÇô Part 1\\config.txt, HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Electronic Arts\\Harry Potter and the Deathly Hallows Part 1",
+      "config_path": "%LOCALAPPDATA%\\Electronic Arts\\Harry Potter and the Deathly Hallows (TM) – Part 1\\config.txt, HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Electronic Arts\\Harry Potter and the Deathly Hallows Part 1",
       "engine": "Bright Light Halogen"
     },
-    "Harry Potter and the Deathly Hallows ÔÇô Part 2": {
+    "Harry Potter and the Deathly Hallows – Part 2": {
       "dx9": true,
-      "config_path": "%LOCALAPPDATA%\\Electronic Arts\\Harry Potter and the Deathly Hallows (TM) ÔÇô Part 2\\config.txt",
+      "config_path": "%LOCALAPPDATA%\\Electronic Arts\\Harry Potter and the Deathly Hallows (TM) – Part 2\\config.txt",
       "engine": "Bright Light Halogen"
     },
     "Harry Potter and the Goblet of Fire": {
@@ -75830,7 +75764,7 @@
     "Heidentum": {
       "steam_appid": 1052010
     },
-    "Heik┼ì": {},
+    "Heikō": {},
     "Heileen 2: The Hands of Fate": {
       "steam_appid": 305480,
       "config_path": "<path-to-game>\\game\\saves\\persistent, %APPDATA%\\RenPy\\Heileen-2.0\\persistent",
@@ -76048,7 +75982,7 @@
       "steam_appid": 628710,
       "engine": "Unity"
     },
-    "Hell Wedding Õñ£Õ½ü": {
+    "Hell Wedding 夜嫁": {
       "steam_appid": 934580
     },
     "Hell Yeah! Wrath of the Dead Rabbit": {
@@ -76492,7 +76426,7 @@
     "Hentai balls v3": {
       "steam_appid": 1016650
     },
-    "Hentai Battlegrounds ( ═í┬░ ═£╩û ═í┬░)": {
+    "Hentai Battlegrounds ( ͡° ͜ʖ ͡°)": {
       "steam_appid": 921440
     },
     "Hentai beautiful girls": {
@@ -76940,7 +76874,7 @@
     "Her War": {
       "steam_appid": 1222150
     },
-    "Her ÕÑ╣": {
+    "Her 她": {
       "steam_appid": 899760
     },
     "Hera: The Sword of Rhin": {},
@@ -78931,7 +78865,7 @@
     "HoloBall": {
       "steam_appid": 457320
     },
-    "Holobunnies: Pause Caf├®": {
+    "Holobunnies: Pause Café": {
       "steam_appid": 497710
     },
     "Holobunnies: The Bittersweet Adventure": {
@@ -79390,7 +79324,7 @@
       "steam_appid": 1204930,
       "engine": "Unity"
     },
-    "Hop Step Sing! KimamaniÔÿåSummer Vacation": {
+    "Hop Step Sing! Kimamani☆Summer Vacation": {
       "steam_appid": 689710,
       "engine": "Unity"
     },
@@ -79398,7 +79332,7 @@
       "steam_appid": 538000,
       "engine": "Unity"
     },
-    "Hop Step Sing! kiss├ùkiss├ùkiss": {
+    "Hop Step Sing! kiss×kiss×kiss": {
       "steam_appid": 646530
     },
     "Hop Step Sing! Nozokanaide Naked Heart": {
@@ -80375,7 +80309,7 @@
       "steam_appid": 4566700,
       "engine": "Godot"
     },
-    "How to Make a Floating City / µÁ«µ©©Úâ¢Õ©éþÜäÕ╗║µêÉµû╣µ│ò": {
+    "How to Make a Floating City / 浮游都市的建成方法": {
       "steam_appid": 1032740
     },
     "How To Make Your Grandpa Happy": {
@@ -80386,7 +80320,7 @@
     },
     "How to Raise a Wolf Girl": {
       "steam_appid": 1106940,
-      "config_path": "%APPDATA%\\´╝│´╝À´╝Ñ´╝Ñ´╝┤´╝å´╝┤´╝Ñ´╝í\\kemomusu, <Steam-folder>\\userdata\\<user-id>\\1106940\\remote",
+      "config_path": "%APPDATA%\\ＳＷＥＥＴ＆ＴＥＡ\\kemomusu, <Steam-folder>\\userdata\\<user-id>\\1106940\\remote",
       "engine": "KiriKiri"
     },
     "How to Say Goodbye": {
@@ -80432,7 +80366,7 @@
       "dx9": true,
       "dx11": true,
       "opengl": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\N-Tri Studio\\Howlville´╝Ü The Dark Past\\",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\N-Tri Studio\\Howlville： The Dark Past\\",
       "engine": "Unity"
     },
     "Hoyeonjigi": {
@@ -80575,7 +80509,7 @@
     "Hulk": {
       "engine": "Pure3D"
     },
-    "Hul├¼ The Mage": {
+    "Hulì The Mage": {
       "steam_appid": 970260
     },
     "Hum Drum Experiences": {
@@ -81000,7 +80934,7 @@
     "Hurricane": {
       "steam_appid": 503240
     },
-    "Hurricane chase(ÚúôÚúÄÞ┐¢Õç╗)": {
+    "Hurricane chase(飓风追击)": {
       "steam_appid": 909500
     },
     "Hurricane Ship Ghost": {
@@ -81067,7 +81001,7 @@
     "HYBRIS - Pulse of Ruin": {
       "steam_appid": 778800
     },
-    "Hydlide 1ÔÇó2ÔÇó3": {},
+    "Hydlide 1•2•3": {},
     "Hydorah": {
       "config_path": "<path-to-game>\\Hydorah\\key_config.ini",
       "engine": "GameMaker"
@@ -81465,8 +81399,7 @@
       "config_path": "<path-to-game>\\UserData\\Settings.json"
     },
     "Höllenjob": {},
-    "H├Âllenjob": {},
-    "H├ñr kommer Pippi L├Ñngstrump": {},
+    "Här kommer Pippi Långstrump": {},
     "I (Don't) Hate Hentai Puzzles": {
       "steam_appid": 1158660
     },
@@ -81838,7 +81771,7 @@
       "steam_appid": 2549940,
       "engine": "Unity"
     },
-    "I ÔÖÑ You!": {
+    "I ♥ You!": {
       "steam_appid": 920810
     },
     "I'm an adventurer": {
@@ -82305,7 +82238,7 @@
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\dreamfeel\\iffound",
       "engine": "Unity"
     },
-    "If I am AIÕüçÕªéµêæµÿ»õ║║ÕÀÑµÖ║Þâ¢": {
+    "If I am AI假如我是人工智能": {
       "steam_appid": 933940
     },
     "If My Heart Had Wings": {
@@ -83080,7 +83013,7 @@
       "steam_appid": 885620
     },
     "In the Hunt": {
-      "config_path": "HKEY_LOCAL_MACHINE\\Software\\Gamebank\\µÁÀÕ║òÕñºµêªõ║ë\\"
+      "config_path": "HKEY_LOCAL_MACHINE\\Software\\Gamebank\\海底大戦争\\"
     },
     "In the Line of Duty: Firefighter": {
       "config_path": "<path-to-game>\\ILDFirefighter.cfg",
@@ -83096,7 +83029,7 @@
       "steam_appid": 1048570,
       "engine": "Unity"
     },
-    "In the Raven Shadow - Ve st├¡nu havrana": {
+    "In the Raven Shadow - Ve stínu havrana": {
       "steam_appid": 656570,
       "dx11": true
     },
@@ -83731,7 +83664,7 @@
     "Infinite Children": {
       "steam_appid": 976410
     },
-    "Infinite Chili Sauce µùáÕ░¢þÜäÞ¥úÚà▒": {
+    "Infinite Chili Sauce 无尽的辣酱": {
       "steam_appid": 983170
     },
     "Infinite Desolation": {
@@ -84018,7 +83951,7 @@
     "Initial 2 : New Stage": {
       "steam_appid": 904310
     },
-    "Initial D Second Stage: Taipingu Kant┼ì Saisoku Purojekuto": {},
+    "Initial D Second Stage: Taipingu Kantō Saisoku Purojekuto": {},
     "Initial D: Mountain Vengeance": {
       "config_path": "<path-to-game>\\cfg\\",
       "engine": "SurRender 3D"
@@ -84030,7 +83963,7 @@
     "Initiative: Red Dawn": {
       "steam_appid": 668000
     },
-    "Injection ¤Ç23 'No Name, No Number'": {
+    "Injection π23 'No Name, No Number'": {
       "steam_appid": 1131790
     },
     "Injured by Space": {
@@ -84395,7 +84328,7 @@
     "INSPACE 2980": {
       "steam_appid": 760580
     },
-    "Inspector - þöƒÕîûµêÿÞ¡ª": {
+    "Inspector - 生化战警": {
       "steam_appid": 1153710
     },
     "Inspector Gadget: Mad Time Party": {
@@ -84403,7 +84336,7 @@
       "dx11": true,
       "engine": "Unity"
     },
-    "Inspector Gadget: Mission 1 ÔÇô Global Terror!": {},
+    "Inspector Gadget: Mission 1 – Global Terror!": {},
     "Inspector Waffles": {
       "steam_appid": 1055850
     },
@@ -84821,19 +84754,19 @@
     "Intravenous": {
       "steam_appid": 1486630,
       "config_path": "%APPDATA%\\intravenous\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Intravenous 2": {
       "steam_appid": 2608270,
       "opengl": true,
       "config_path": "%APPDATA%\\intravenous2\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Intravenous 2: Mercenarism": {
       "steam_appid": 2651330,
       "dx9": true,
       "config_path": "%APPDATA%\\intravenous2_mercenarism\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Intravenous 3": {
       "steam_appid": 4383190,
@@ -85497,7 +85430,7 @@
     "Ishar 2: Messengers of Doom": {},
     "Ishar 3: The Seven Gates of Infinity": {},
     "Ishar: Legend of the Fortress": {},
-    "Ishid┼ì: The Way of Stones": {},
+    "Ishidō: The Way of Stones": {},
     "Ishin no Arashi": {
       "steam_appid": 545010
     },
@@ -85954,7 +85887,7 @@
     "I`m Turkey": {
       "steam_appid": 995740
     },
-    "IÒâ╗SÒâ╗U": {
+    "I・S・U": {
       "steam_appid": 789580
     },
     "J Connect": {
@@ -86353,9 +86286,6 @@
     "Janosch: Tiger und Bär im Straßenverkehr": {
       "engine": "Director"
     },
-    "Janosch: Tiger und B├ñr im Stra├ƒenverkehr": {
-      "engine": "Macromedia Director"
-    },
     "Janosik": {
       "steam_appid": 1412170,
       "config_path": "%LOCALAPPDATA%\\Janosik1ver1.6\\User Data\\Default",
@@ -86376,7 +86306,7 @@
     "Japan Stigmatized Property": {
       "steam_appid": 3809110,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Loxarc\\õ║ïµòàþë®õ╗ÂþøúÞªûÕìöõ╝Ü",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Loxarc\\事故物件監視協会",
       "engine": "Unity"
     },
     "Japan Stigmatized Property 2": {
@@ -86410,7 +86340,7 @@
       "steam_appid": 617610,
       "config_path": "HKEY_CURRENT_USER\\Software\\jp.co.bottlecube\\Japanese Women - Animated Jigsaws\\, %USERPROFILE%\\AppData\\LocalLow\\jp_co_bottlecube\\Japanese Women - Animated Jigsaws\\Settings.json"
     },
-    "Japocaliptyca/ ð»ð┐ð¥ð║ð░ð╗ð©ð┐Ðéð©ð║ð░": {
+    "Japocaliptyca/ Япокалиптика": {
       "steam_appid": 1112950
     },
     "Jaques Roque": {
@@ -86944,7 +86874,7 @@
     "Joan Jade and the Gates of Xibalba": {
       "steam_appid": 1038640
     },
-    "Joan of Arc´╝ÜThe Beginning": {
+    "Joan of Arc：The Beginning": {
       "steam_appid": 1212580
     },
     "Joana's Life": {
@@ -87263,7 +87193,7 @@
     "Journey to the Center of Hawkthorne": {
       "opengl": true,
       "config_path": "%APPDATA%\\hawkthorne_release\\options-2.json, %APPDATA%\\hawkthorne_release\\controls-1.json",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Journey to the Center of the Earth": {
       "steam_appid": 474240
@@ -87298,7 +87228,7 @@
       "config_path": "%appdata%\\..\\LocalLow\\Fat Pug Games\\My Pocket Pony",
       "engine": "Unity"
     },
-    "JOY You-I-He Þÿ¡Þè▒Õ£Æ": {
+    "JOY You-I-He 蘭花園": {
       "steam_appid": 1087630
     },
     "JOYDOOR": {
@@ -88240,7 +88170,7 @@
       "dx11": true,
       "opengl": true
     },
-    "KAJA´╝ÜÞ┐¢ÕàëÞÇàõ©ÄþºÿÕóâÕêÂÚÇá": {
+    "KAJA：追光者与秘境制造": {
       "steam_appid": 1179530
     },
     "Kajko i Kokosz": {},
@@ -88248,16 +88178,16 @@
       "config_path": "<path-to-game>\\ar.cfg",
       "engine": "Argon"
     },
-    "Kajko i Kokosz: Szko┼éa Latania": {
+    "Kajko i Kokosz: Szkoła Latania": {
       "config_path": "<path-to-game>\\ar.cfg",
       "engine": "Argon"
     },
-    "Kajko i Kokosz: Twierdza Czarnoksi─Ö┼╝nika": {},
-    "Kajko i Kokosz: W Krainie Borostwor├│w": {},
+    "Kajko i Kokosz: Twierdza Czarnoksiężnika": {},
+    "Kajko i Kokosz: W Krainie Borostworów": {},
     "Kakatte Koi Yo!": {
       "steam_appid": 1145380
     },
-    "Kaku Ancient Seal / ÕìíÕ║ôÞ┐£ÕÅñÕ░üÕì░": {
+    "Kaku Ancient Seal / 卡库远古封印": {
       "steam_appid": 1179580,
       "engine": "Unreal Engine 4"
     },
@@ -88322,7 +88252,7 @@
     "Kamasutra Connect : Sexy Hentai Girls": {
       "steam_appid": 929310
     },
-    "KAMASUTRA \\ þê▒þ╗Å": {
+    "KAMASUTRA \\ 爱经": {
       "steam_appid": 965160
     },
     "Kamboja": {
@@ -88730,7 +88660,7 @@
     "Katto": {
       "steam_appid": 869010
     },
-    "Katy & Bob: Cake Caf├®": {
+    "Katy & Bob: Cake Café": {
       "steam_appid": 869620
     },
     "Katy and Bob Way Back Home": {
@@ -88795,7 +88725,7 @@
     "Kaze no Noriko: Sanae-san no Yokai Taiji": {
       "steam_appid": 1854270,
       "dx11": true,
-      "config_path": "<path-to-game>\\keyconf.dat, HKEY_CURRENT_USER\\Software\\JavelinStudio\\Úó¿Òü«þÑØÕ¡É\\",
+      "config_path": "<path-to-game>\\keyconf.dat, HKEY_CURRENT_USER\\Software\\JavelinStudio\\風の祝子\\",
       "engine": "Unity"
     },
     "KByte": {
@@ -88933,7 +88863,7 @@
     "KEL Reaper of Entropy": {
       "steam_appid": 317950
     },
-    "Kelipot / Õ¢óÚ¬©Ú¬æÕú½": {
+    "Kelipot / 形骸骑士": {
       "steam_appid": 1090440
     },
     "Kelly Slater's Pro Surfer": {
@@ -88989,7 +88919,7 @@
       "config_path": "<path-to-game>\\",
       "engine": "Ogre"
     },
-    "Kensh┼ì": {
+    "Kenshō": {
       "steam_appid": 766000
     },
     "Kentucky Dash": {
@@ -90995,7 +90925,7 @@
     "Koloro": {
       "steam_appid": 574590,
       "dx11": true,
-      "config_path": "<path-to-game>\\Saves\\<user-id>\\Options.dat, HKEY_CURRENT_USER\\Software\\Sk├Âll Studio\\Koloro\\",
+      "config_path": "<path-to-game>\\Saves\\<user-id>\\Options.dat, HKEY_CURRENT_USER\\Software\\Sköll Studio\\Koloro\\",
       "engine": "Unity"
     },
     "Kolumno": {
@@ -91136,7 +91066,7 @@
       "steam_appid": 997060,
       "engine": "Unity"
     },
-    "Koumajou Remilia Ôàí: Stranger's Requiem": {
+    "Koumajou Remilia Ⅱ: Stranger's Requiem": {
       "steam_appid": 1229890,
       "dx11": true
     },
@@ -91342,7 +91272,7 @@
     "Kubz VR": {
       "steam_appid": 519940
     },
-    "Kuchisake Onna - ÕÅúÞúéÒüæÕÑ│": {
+    "Kuchisake Onna - 口裂け女": {
       "steam_appid": 780840
     },
     "Kud Wafter": {},
@@ -91536,7 +91466,7 @@
     "KWAAN": {
       "steam_appid": 336790
     },
-    "Kwaidan ´¢×Azuma manor story´¢×": {
+    "Kwaidan ～Azuma manor story～": {
       "steam_appid": 1066430
     },
     "Kwik Snax": {},
@@ -91581,14 +91511,14 @@
     "Kyurinaga's Revenge": {
       "steam_appid": 529580
     },
-    "K─üdomon: Hyper Auto Battlers": {
+    "Kādomon: Hyper Auto Battlers": {
       "steam_appid": 2125540,
       "engine": "Unity"
     },
-    "K├│terGame": {
+    "KóterGame": {
       "steam_appid": 975700
     },
-    "K┼ìmori Fruit Rush": {
+    "Kōmori Fruit Rush": {
       "steam_appid": 1179340
     },
     "L U N E": {
@@ -91655,7 +91585,7 @@
     "La Historia De": {
       "steam_appid": 1222250
     },
-    "La Introducci├│n": {
+    "La Introducción": {
       "steam_appid": 1124690
     },
     "LA Law: The Computer Game": {},
@@ -91853,7 +91783,7 @@
     "Ladies Orders": {
       "steam_appid": 1141380
     },
-    "Ladies, DonÔÇÖt Tempt My Immortality": {
+    "Ladies, Don’t Tempt My Immortality": {
       "steam_appid": 4190070,
       "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Fata Morgana\\LDTMI\\Archive\\<user-id>\\"
@@ -92196,7 +92126,7 @@
       "steam_appid": 1454540,
       "dx11": true
     },
-    "Laplace´╝ÜµïëµÖ«µïëµû»þÜäþÑ×Õ¡É": {
+    "Laplace：拉普拉斯的神子": {
       "steam_appid": 819790
     },
     "Lapland Solitaire": {
@@ -92818,7 +92748,7 @@
     "Lay a Beauty to Rest: The Darkness Peach Blossom Spring": {
       "steam_appid": 1506980,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\ÚØÆÞíîþü»\\Þæ¼Þè▒",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\青行灯\\葬花",
       "engine": "Unity"
     },
     "Lay of the Land": {
@@ -92913,7 +92843,7 @@
       "dx11": true,
       "engine": "IsiMotor2.5"
     },
-    "Le Ma├«tre des ├émes": {},
+    "Le Maître des Âmes": {},
     "Lead and Gold: Gangs of the Wild West": {
       "steam_appid": 42120,
       "dx9": true,
@@ -93243,7 +93173,7 @@
       "steam_appid": 1106340,
       "engine": "GameMaker"
     },
-    "Legend Creatures(õ╝áÕÑçþöƒþë®)": {
+    "Legend Creatures(传奇生物)": {
       "steam_appid": 1191840,
       "engine": "Godot"
     },
@@ -93388,7 +93318,7 @@
       "steam_appid": 12630,
       "config_path": "%USERPROFILE%\\Documents\\Legend - Hand of God\\"
     },
-    "Legenda: Poselstv├¡ tr┼»nu 2": {},
+    "Legenda: Poselství trůnu 2": {},
     "Legendary": {
       "steam_appid": 16730,
       "dx9": true,
@@ -93753,7 +93683,7 @@
     "Lego Party": {
       "steam_appid": 1969370,
       "dx11": true,
-      "config_path": "%APPDATA%\\LocalLow\\SMG\\Steam\\LEGO┬« Party!\\<user-id>\\",
+      "config_path": "%APPDATA%\\LocalLow\\SMG\\Steam\\LEGO® Party!\\<user-id>\\",
       "engine": "Unity"
     },
     "Lego Pirates of the Caribbean: The Video Game": {
@@ -94029,7 +93959,7 @@
     "Leona's Tricky Adventures": {
       "steam_appid": 305880
     },
-    "Leons Identit├ñt": {
+    "Leons Identität": {
       "steam_appid": 1401610,
       "dx11": true,
       "engine": "Unreal Engine 4"
@@ -94056,7 +93986,7 @@
     "Les 4 Alice: Lorange Journey": {
       "steam_appid": 904940
     },
-    "Les Dict├®es de Rayman": {},
+    "Les Dictées de Rayman": {},
     "Les Fleursword": {
       "steam_appid": 689650,
       "engine": "RPG Maker"
@@ -94067,10 +93997,10 @@
     "Les Manley in: Search for the King": {
       "steam_appid": 1299720
     },
-    "Les Mis├®rables: Cosette's Fate": {
+    "Les Misérables: Cosette's Fate": {
       "steam_appid": 827120
     },
-    "Les Mis├®rables: Jean Valjean": {
+    "Les Misérables: Jean Valjean": {
       "steam_appid": 827130
     },
     "Les Quatre Alices": {
@@ -94457,10 +94387,6 @@
       "steam_appid": 649660
     },
     "Liberté": {
-      "steam_appid": 1590160,
-      "engine": "Unity"
-    },
-    "Libert├®": {
       "steam_appid": 1590160,
       "engine": "Unity"
     },
@@ -94923,7 +94849,7 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Tunnel Vision Games\\Lightmatter\\Lightmatter_Data",
       "engine": "Unity"
     },
-    "Lightning Angel Litona Liliche ýä¼Û┤æý▓£ýé¼ Ùª¼ÝåáÙéÿ Ùª¼Ùª¼ýà░": {
+    "Lightning Angel Litona Liliche 섬광천사 리토나 리리셰": {
       "steam_appid": 923900
     },
     "Lightning Returns: Final Fantasy XIII": {
@@ -95115,7 +95041,7 @@
       "steam_appid": 628460,
       "engine": "Ren'Py"
     },
-    "Lily þÖ¢ÒüìþÖ¥ÕÉêÒü«õ╣ÖÕÑ│ÒüƒÒüí Lisblanc": {
+    "Lily 白き百合の乙女たち Lisblanc": {
       "steam_appid": 771960
     },
     "Lily's Day Off": {
@@ -95133,7 +95059,7 @@
       "steam_appid": 978870,
       "config_path": "<path-to-game>\\save\\syssave.dat"
     },
-    "Lily┬┤s Epic Quest": {
+    "Lily´s Epic Quest": {
       "steam_appid": 507270
     },
     "Limberjack": {
@@ -95389,7 +95315,7 @@
       "steam_appid": 1342050,
       "engine": "RPG Maker"
     },
-    "Lisa's Memory - õ©¢ÞÄÄþÜäÞ«░Õ┐å": {
+    "Lisa's Memory - 丽莎的记忆": {
       "steam_appid": 679490
     },
     "Lisa: Definitive Edition": {
@@ -95453,7 +95379,7 @@
     "Little Big Adventure 2": {
       "steam_appid": 398000
     },
-    "Little Big Adventure ÔÇô TwinsenÔÇÖs Quest": {
+    "Little Big Adventure – Twinsen’s Quest": {
       "steam_appid": 2318070,
       "engine": "Unity"
     },
@@ -95514,10 +95440,10 @@
       "config_path": "<path-to-game>\\config.dat, <path-to-game>\\script\\varo\\data\\Language.dat, <path-to-game>\\script\\varo\\data\\Volume.dat",
       "engine": "Danmakufu"
     },
-    "Little Dragons Caf├®": {
+    "Little Dragons Café": {
       "steam_appid": 915710,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Aksys Games\\Little Dragons Caf├®\\<user-id>\\",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Aksys Games\\Little Dragons Café\\<user-id>\\",
       "engine": "Unity"
     },
     "Little Dungeon Stories": {
@@ -95710,7 +95636,7 @@
       "steam_appid": 4008910,
       "engine": "Carbon Engine"
     },
-    "Little Savior / Òâ¬ÒâêÒâ½Òé╗ÒéñÒâÉÒâ╝": {
+    "Little Savior / リトルセイバー": {
       "steam_appid": 1074150
     },
     "Little Shop of Junk": {
@@ -96456,10 +96382,6 @@
       "config_path": "%APPDATA%\\TV4\\Loophole\\Save\\Settings.ini",
       "engine": "FXEngine"
     },
-    "Loophole: Skrattmagi och gl├ñdjetjuvar": {
-      "config_path": "%APPDATA%\\TV4\\Loophole\\Save\\Settings.ini",
-      "engine": "FXEngine"
-    },
     "Looping Bravery": {
       "steam_appid": 1909260,
       "engine": "Unity"
@@ -96572,7 +96494,7 @@
       "steam_appid": 437440,
       "engine": "Unreal Engine 4"
     },
-    "Lord of Sins - ÕÄƒþ¢¬õ╣ïõ©╗": {
+    "Lord of Sins - 原罪之主": {
       "steam_appid": 1188650
     },
     "Lord of the click": {
@@ -97424,7 +97346,7 @@
     "Love Live! Nijigasaki High School Idol Club Tokimeki Roadmap to Future": {
       "steam_appid": 3213690
     },
-    "Love love demon ji-µüïµüïÕªûÕº¼": {
+    "Love love demon ji-恋恋妖姬": {
       "steam_appid": 1193110
     },
     "Love love love": {
@@ -97647,7 +97569,7 @@
       "steam_appid": 888640,
       "engine": "Unity"
     },
-    "LOVE┬│ -Love Cube-": {
+    "LOVE³ -Love Cube-": {
       "steam_appid": 939600,
       "engine": "KiriKiri Z"
     },
@@ -98434,7 +98356,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Sand Door Studio\\Lysfanga The Time Shift Warrior",
       "engine": "Unity"
     },
-    "L├í Camila: A VR Experience": {
+    "Lá Camila: A VR Experience": {
       "steam_appid": 770090
     },
     "M Mania": {
@@ -99446,7 +99368,7 @@
       "steam_appid": 1271740,
       "engine": "Unity"
     },
-    "MAGICAL├ùSPIRAL": {
+    "MAGICAL×SPIRAL": {
       "steam_appid": 521510
     },
     "MagiCat": {
@@ -99782,7 +99704,7 @@
     "Mahsung Deluxe": {
       "steam_appid": 542690
     },
-    "Mah┼ìkenshi": {
+    "Mahōkenshi": {
       "steam_appid": 1717640,
       "engine": "Unity"
     },
@@ -100529,11 +100451,6 @@
       "config_path": "<path-to-game>\\engine\\*.cfg",
       "engine": "Slayer"
     },
-    "Marc Eck┼ì's Getting Up: Contents Under Pressure": {
-      "steam_appid": 260190,
-      "config_path": "<path-to-game>\\engine\\*.cfg",
-      "engine": "Slayer"
-    },
     "March Forward": {
       "steam_appid": 1159340
     },
@@ -100611,7 +100528,7 @@
     "Mari0": {
       "opengl": true,
       "config_path": "%APPDATA%\\LOVE\\mari0\\options.txt",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Maria the Witch": {
       "steam_appid": 447860,
@@ -100969,7 +100886,7 @@
     "Marvel Trading Card Game": {
       "engine": "Vicious Engine"
     },
-    "Marvel T┼ìkon: Fighting Souls": {
+    "Marvel Tōkon: Fighting Souls": {
       "steam_appid": 3787240,
       "dx12": true,
       "engine": "Unreal Engine 5"
@@ -102851,7 +102768,7 @@
       "steam_appid": 544300,
       "engine": "Unity"
     },
-    "Memory of Torenia µÇØÕ┐ÁþÜäÕñÅÕáçÞè▒": {
+    "Memory of Torenia 思念的夏堇花": {
       "steam_appid": 1063200
     },
     "Memory Puzzle - Futanari Doctor": {
@@ -103328,12 +103245,6 @@
       "config_path": "%LOCALAPPDATA%\\MGSDelta\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
-    "Metal Gear Solid ╬ö: Snake Eater": {
-      "steam_appid": 2417610,
-      "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\MGSDelta\\Saved\\Config\\Windows\\",
-      "engine": "Unreal Engine 5"
-    },
     "Metal Gear Solid: Integral": {
       "config_path": "<path-to-game>\\*.cfg, <path-to-game>\\dxcfg.ini"
     },
@@ -103520,7 +103431,7 @@
     },
     "Metanet Hunter CD": {
       "steam_appid": 586570,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Metanoia": {
       "steam_appid": 856750
@@ -103751,7 +103662,7 @@
     "Metu Caligine": {
       "steam_appid": 1453200
     },
-    "Met├ñlB├Ârn": {
+    "MetälBörn": {
       "steam_appid": 1986780,
       "dx11": true,
       "engine": "Unreal Engine 4"
@@ -104467,7 +104378,7 @@
       "steam_appid": 912000
     },
     "Mike Read's Computer Pop Quiz": {},
-    "Mike Was ðíursed": {
+    "Mike Was Сursed": {
       "steam_appid": 332700
     },
     "Mike's Monstrous Adventure": {},
@@ -104562,7 +104473,7 @@
     "Milky Way Map": {
       "steam_appid": 806020
     },
-    "Milky Way Prince ÔÇô The Vampire Star": {
+    "Milky Way Prince – The Vampire Star": {
       "steam_appid": 1302050,
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Santa Ragione\\MILKY WAY PRINCE\\",
@@ -105377,7 +105288,7 @@
     "Miracle Calamity Homeostasis": {
       "steam_appid": 1182820
     },
-    "Miracle Circus ÕÑçÞ┐╣Ú®¼µêÅÕøó": {
+    "Miracle Circus 奇迹马戏团": {
       "steam_appid": 950160
     },
     "Miracle Fly": {
@@ -105386,7 +105297,7 @@
     "Miracle Mia": {
       "steam_appid": 608670
     },
-    "Miracle snack shop Û©░ýáüýØÿ ÙÂäýïØýºæ": {
+    "Miracle snack shop 기적의 분식집": {
       "steam_appid": 995460
     },
     "Miraclr - Divine Dating Sim": {
@@ -105556,7 +105467,7 @@
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\ Red Six Publishing\\Miss Furry\\",
       "engine": "Unity"
     },
-    "Miss Kobayashi's Dragon Maid Burst Forth!! Choro-gonÔÿåBreath DIRECTOR'S CUT": {
+    "Miss Kobayashi's Dragon Maid Burst Forth!! Choro-gon☆Breath DIRECTOR'S CUT": {
       "steam_appid": 2086380,
       "dx11": true
     },
@@ -105830,7 +105741,7 @@
       "config_path": "%LOCALAPPDATA%\\mizi_no\\",
       "engine": "GameMaker"
     },
-    "Mizuchi þÖ¢ÞøçÕ┐âÕé│": {
+    "Mizuchi 白蛇心傳": {
       "steam_appid": 1121300
     },
     "MLB Front Office Manager": {
@@ -106051,7 +105962,7 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Ares inc_\\JigsawPuzzle",
       "engine": "Unity"
     },
-    "Moe Kanojo / ÞÉîÒüêÒéïÒé½ÒâÄÒé©Òâº": {
+    "Moe Kanojo / 萌えるカノジョ": {
       "steam_appid": 1104160
     },
     "Moe Mekuri SP": {
@@ -106333,7 +106244,7 @@
     "Monet: The Mystery of the Orangery": {
       "engine": "X3D"
     },
-    "Money Bath VR / µ£¡µØƒÚó¿ÕæéVR": {
+    "Money Bath VR / 札束風呂VR": {
       "steam_appid": 1041670
     },
     "MONEY LOVES SILENCE": {
@@ -106893,7 +106804,7 @@
       "steam_appid": 614910,
       "engine": "Unity"
     },
-    "MonsterCastle - µÇ¬þë®ÕƒÄÕáí": {
+    "MonsterCastle - 怪物城堡": {
       "steam_appid": 1105210
     },
     "Monsteria": {
@@ -107000,7 +106911,7 @@
       "steam_appid": 1093170,
       "engine": "Unity"
     },
-    "Monstr├╝ous": {
+    "Monstrüous": {
       "steam_appid": 1169420
     },
     "Montague's Mount": {
@@ -107248,7 +107159,7 @@
     "Moonring": {
       "steam_appid": 2373630,
       "config_path": "%APPDATA%\\moonring\\moonring_options.sav",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Moonripple Lake": {
       "steam_appid": 2857910
@@ -107517,17 +107428,17 @@
     "Morsels": {
       "steam_appid": 1719040
     },
-    "Mortadelo y Filem├│n: El Sulfato At├│mico": {
+    "Mortadelo y Filemón: El Sulfato Atómico": {
       "steam_appid": 1038440
     },
-    "Mortadelo y Filem├│n: La Banda de Corvino": {
+    "Mortadelo y Filemón: La Banda de Corvino": {
       "steam_appid": 1017490
     },
-    "Mortadelo y Filem├│n: Operaci├│n Mosc├║": {
+    "Mortadelo y Filemón: Operación Moscú": {
       "steam_appid": 1114340,
       "config_path": "<path-to-game>\\*Language*\\MYF****.sv1"
     },
-    "Mortadelo y Filem├│n: Una Aventura de Cine - Edici├│n Especial": {
+    "Mortadelo y Filemón: Una Aventura de Cine - Edición Especial": {
       "steam_appid": 1019580
     },
     "Mortal Blitz": {
@@ -108128,7 +108039,7 @@
     "Move or Die": {
       "steam_appid": 323850,
       "config_path": "<path-to-game>\\startup.ini",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Mover": {
       "steam_appid": 733250
@@ -108193,7 +108104,7 @@
     "Mozart: The Conspirators of Prague": {
       "dx9": true
     },
-    "Mo├®kuri: Adorable + Tactical SRPG": {
+    "Moékuri: Adorable + Tactical SRPG": {
       "steam_appid": 529160
     },
     "MPaliens": {
@@ -108470,7 +108381,7 @@
     },
     "Mudborne": {
       "steam_appid": 2355150,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Muddledash": {
       "steam_appid": 769840,
@@ -108533,7 +108444,7 @@
     "Mulletman and the Molemen": {
       "steam_appid": 717170
     },
-    "Multi-dimension Conflict Õå▓þ¬üµ¼íÕàâ": {
+    "Multi-dimension Conflict 冲突次元": {
       "steam_appid": 1157190
     },
     "Multi-Quest": {
@@ -108564,7 +108475,7 @@
     "MultiplayerFPS": {
       "steam_appid": 1010420
     },
-    "Multiple Views Objects ÕñÜÞºåõ¢ô": {
+    "Multiple Views Objects 多视体": {
       "steam_appid": 808870
     },
     "Multirotor Sim 2": {
@@ -109064,7 +108975,7 @@
       "steam_appid": 889700,
       "engine": "AGES"
     },
-    "Muv-Luv photonmelodiesÔÖ«": {
+    "Muv-Luv photonmelodies♮": {
       "steam_appid": 889710,
       "engine": "AGES"
     },
@@ -109791,10 +109702,10 @@
       "steam_appid": 2172600,
       "engine": "Unity"
     },
-    "My University Story/µêæþÜäÕñºÕ¡ªþë®Þ»¡": {
+    "My University Story/我的大学物语": {
       "steam_appid": 1058040
     },
-    "My University µêæþÜäÕñºÕ¡ª": {
+    "My University 我的大学": {
       "steam_appid": 1070950
     },
     "My Valentine is a Femboy": {
@@ -110239,7 +110150,7 @@
     "Mystika 3: Awakening of the Dragons": {
       "steam_appid": 652570
     },
-    "MyTD µêæþÜäÕíöÚÿ▓": {
+    "MyTD 我的塔防": {
       "steam_appid": 749870
     },
     "MYTH": {
@@ -110342,21 +110253,21 @@
     "MyWorld": {
       "steam_appid": 492150
     },
-    "M├àRD": {
+    "MÅRD": {
       "steam_appid": 928070,
       "engine": "Unity"
     },
-    "M├Âbius Front '83": {
+    "Möbius Front '83": {
       "steam_appid": 971160,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\M├Âbius Front '83\\<user-id>\\config.cfg"
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\Möbius Front '83\\<user-id>\\config.cfg"
     },
-    "M├ñrchen Forest: Mylne and the Forest Gift": {
+    "Märchen Forest: Mylne and the Forest Gift": {
       "steam_appid": 842810,
       "config_path": "HKEY_CURRENT_USER\\Software\\PrimaryOrbit\\merufore_steam",
       "engine": "Unity"
     },
-    "M├▓ The Frog": {
+    "Mò The Frog": {
       "steam_appid": 967290
     },
     "N": {
@@ -110661,7 +110572,7 @@
     "Nancy Drew: Warnings at Waverly Academy": {
       "steam_appid": 43600
     },
-    "Nandeyanen!? - The 1st S├╗tra": {
+    "Nandeyanen!? - The 1st Sûtra": {
       "steam_appid": 386090
     },
     "Nangoku Sodachi": {
@@ -110738,7 +110649,7 @@
     "Nanuleu": {
       "steam_appid": 511500
     },
-    "NaomiÔÇÖs End": {
+    "Naomi’s End": {
       "steam_appid": 4863030,
       "dx11": true,
       "engine": "Unreal Engine 5"
@@ -112318,7 +112229,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Little Flag Software, LLC\\Neon White\\",
       "engine": "Unity"
     },
-    "Neon ðíoliseum": {
+    "Neon Сoliseum": {
       "steam_appid": 686300
     },
     "Neon8": {
@@ -113189,7 +113100,7 @@
     "NiBiRu Age of Secrets": {
       "engine": "AGDS"
     },
-    "Nib├╗": {
+    "Nibû": {
       "steam_appid": 938320
     },
     "Nice Day for Fishing": {
@@ -113605,7 +113516,7 @@
       "steam_appid": 3212260,
       "engine": "Unity"
     },
-    "Nightmare Game (ÕÖ®µóªµ©©µêÅ)": {
+    "Nightmare Game (噩梦游戏)": {
       "steam_appid": 1114110
     },
     "Nightmare Grotto": {
@@ -113948,17 +113859,10 @@
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\946B6A6E.NINJAGAIDENSIGMA2_dkffhzhmh6pmy\\SystemAppData\\wgs",
       "engine": "Hybrid Engine"
     },
-    "Ninja Gaiden ╬ú": {
+    "Ninja Gaiden Σ": {
       "steam_appid": 1580780,
       "dx11": true,
       "config_path": "%USERPROFILE%\\Documents\\KoeiTecmo\\NINJAGAIDENSIGMA\\<user-id>\\SYSTEM\\*_SAVE.DAT, %USERPROFILE%\\Documents\\KoeiTecmo\\NINJAGAIDENSIGMA\\<user-id>\\USER_SETTING\\WINSTATE.DAT"
-    },
-    "Ninja Gaiden ╬ú2": {
-      "steam_appid": 1580790,
-      "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\KoeiTecmo\\NINJAGAIDENSIGMA2\\<user-id>\\SYSTEMSAVE\\SYSTEMSAVE.DAT, %USERPROFILE%\\Documents\\KoeiTecmo\\NINJAGAIDENSIGMA2\\<user-id>\\USER_SETTING\\WINSTATE.DAT",
-      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\946B6A6E.NINJAGAIDENSIGMA2_dkffhzhmh6pmy\\SystemAppData\\wgs",
-      "engine": "Hybrid Engine"
     },
     "Ninja Gaiden: Ragebound": {
       "steam_appid": 2542120,
@@ -114777,14 +114681,14 @@
       "steam_appid": 3024640,
       "engine": "Unity"
     },
-    "Nong├╝nz": {
+    "Nongünz": {
       "steam_appid": 633130,
       "config_path": "%LOCALAPPDATA%\\nongunz\\"
     },
-    "Nong├╝nz: Doppelganger Edition": {
+    "Nongünz: Doppelganger Edition": {
       "steam_appid": 1304780,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Brainwash Gang\\Nong├╝nz\\",
+      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Brainwash Gang\\Nongünz\\",
       "engine": "Unity"
     },
     "Nono's Magic General Shop": {
@@ -115434,10 +115338,10 @@
       "steam_appid": 756880
     },
     "NY Warriors": {},
-    "Nya Nya Nya Girls (╩╗╩╗╩╗) (=^´¢Ñ¤ë´¢Ñ^=) (╩╗╩╗╩╗)": {
+    "Nya Nya Nya Girls (ʻʻʻ) (=^･ω･^=) (ʻʻʻ)": {
       "steam_appid": 963330
     },
-    "Nya Nya Nya Girls 2 (╩╗╩╗╩╗) (=^´¢Ñ¤ë´¢Ñ^=) (╩╗╩╗╩╗)": {
+    "Nya Nya Nya Girls 2 (ʻʻʻ) (=^･ω･^=) (ʻʻʻ)": {
       "steam_appid": 1003320
     },
     "Nyan Cat: Lost In Space": {
@@ -115888,7 +115792,7 @@
       "dx9": true,
       "config_path": "%APPDATA%\\Octogeddon\\settings.txt"
     },
-    "Octonaut - µÿƒÒü«Òé┐Òé│": {
+    "Octonaut - 星のタコ": {
       "steam_appid": 1035470,
       "engine": "GameMaker"
     },
@@ -116642,7 +116546,7 @@
     "Olympia Rising": {
       "steam_appid": 295910
     },
-    "Olympic Games Tokyo 2020 ÔÇô The Official Video Game": {
+    "Olympic Games Tokyo 2020 – The Official Video Game": {
       "steam_appid": 981890,
       "dx11": true,
       "engine": "Hedgehog Engine 2"
@@ -117186,7 +117090,7 @@
     "One Must Fall: Battlegrounds": {
       "dx9": true,
       "config_path": "<path-to-game>\\Data\\PhoenixRegistry.DEObjects",
-      "engine": "Phoenix (Micro Fort├®)"
+      "engine": "Phoenix (Micro Forté)"
     },
     "One Night": {
       "steam_appid": 339900,
@@ -117562,7 +117466,7 @@
     "OnlyCans: Thirst Date": {
       "steam_appid": 417360,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\ShizeÔäó LLC\\OnlyCans: Thirst Date\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Shize™ LLC\\OnlyCans: Thirst Date\\",
       "engine": "Unity"
     },
     "Onmyoji": {
@@ -118537,7 +118441,7 @@
       "opengl": true,
       "config_path": "%USERPROFILE%\\Documents\\Osmos\\Config.cfg"
     },
-    "Osozaki ÚüàÕÆ▓Òüì Late Blooming - First": {
+    "Osozaki 遅咲き Late Blooming - First": {
       "steam_appid": 471260
     },
     "Ossuary": {
@@ -118653,7 +118557,7 @@
       "steam_appid": 1079870
     },
     "Otogiriso": {},
-    "Otokomizu´¢×µ╝óµ░┤´¢×": {
+    "Otokomizu～漢水～": {
       "steam_appid": 973440
     },
     "Otome Romance Jigsaws - Midnight Cinderella & Destined to Love": {
@@ -118910,7 +118814,7 @@
       "steam_appid": 1145290,
       "engine": "Unity"
     },
-    "Out There: ╬® Edition": {
+    "Out There: Ω Edition": {
       "steam_appid": 334420,
       "dx11": true,
       "engine": "Unity"
@@ -119857,7 +119761,7 @@
     "Pagans Must Die": {
       "steam_appid": 1024720
     },
-    "PAGUIµëôÚ¼╝": {
+    "PAGUI打鬼": {
       "steam_appid": 986680
     },
     "Pahelika: Revelations HD": {
@@ -120115,7 +120019,7 @@
     "Palworld: Palfarm": {
       "steam_appid": 4031890
     },
-    "PalÔÖíworld! More Than Just Pals": {
+    "Pal♡world! More Than Just Pals": {
       "steam_appid": 3620480
     },
     "Pamali: Indonesian Folklore Horror": {
@@ -120928,7 +120832,7 @@
     "Parlor Games with Laura Bow": {
       "engine": "SCI"
     },
-    "Paroniria µóªþ╝Ü": {
+    "Paroniria 梦缚": {
       "steam_appid": 962650
     },
     "Parquet": {
@@ -121262,7 +121166,7 @@
       "dx11": true,
       "engine": "Unity"
     },
-    "Pathogen-þùàÕÄƒõ¢ô": {
+    "Pathogen-病原体": {
       "steam_appid": 794780
     },
     "Pathogenesis: Overcome": {
@@ -121582,10 +121486,10 @@
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Epic Games Publishing\\PCBS2",
       "engine": "Unity"
     },
-    "PC F├║tbol 2005": {
+    "PC Fútbol 2005": {
       "dx9": true
     },
-    "PC F├║tbol Stars": {
+    "PC Fútbol Stars": {
       "steam_appid": 1036930
     },
     "PC Gamer Digital": {
@@ -121595,11 +121499,11 @@
     },
     "PC-Man": {},
     "PCB for Busy Person": {
-      "config_path": "%USERPROFILE%\\Documents\\Òé½Òé╣Òé¼Òé¢ÒâòÒâê\\Õ┐ÖÒüùÒüäõ║║Òü«ÒüƒÒéüÒü«ÒéêÒüåÒéêÒüåÒéÇ\\",
+      "config_path": "%USERPROFILE%\\Documents\\カスガソフト\\忙しい人のためのようようむ\\",
       "engine": "KiriKiri"
     },
     "PCB for Busy Person Extra": {
-      "config_path": "%USERPROFILE%\\Documents\\Òé½Òé╣Òé¼Òé¢ÒâòÒâê\\Õ┐ÖÒüùÒüäõ║║Òü«ÒüƒÒéüÒü«ÒéêÒüåÒéêÒüåÒéÇEXTRA\\",
+      "config_path": "%USERPROFILE%\\Documents\\カスガソフト\\忙しい人のためのようようむEXTRA\\",
       "engine": "KiriKiri"
     },
     "PDC World Championship Darts": {},
@@ -122288,7 +122192,7 @@
     "Perverts Society": {
       "steam_appid": 944860
     },
-    "Pesadelo - Regress├úo": {
+    "Pesadelo - Regressão": {
       "steam_appid": 378930
     },
     "Pest Apocalypse": {
@@ -122377,11 +122281,11 @@
     "Pets Sniper Shooting": {
       "steam_appid": 1219320
     },
-    "Pettson & Findus: Sp├Âkskr├ñmmarmaskinen": {},
+    "Pettson & Findus: Spökskrämmarmaskinen": {},
     "Pettson o Findus i snickarbon": {},
-    "Pettson o Findus i tr├ñdg├Ñrden": {},
+    "Pettson o Findus i trädgården": {},
     "Pettson o Findus julkalender": {},
-    "Pettson o Findus och mucklornas v├ñrld": {},
+    "Pettson o Findus och mucklornas värld": {},
     "Petz Catz 2": {
       "steam_appid": 15150,
       "dx9": true,
@@ -122984,7 +122888,7 @@
       "config_path": "%LOCALAPPDATA%\\PiczleCrossAdvntr_p\\Saved\\SaveGames\\",
       "engine": "Unreal Engine 4"
     },
-    "Piczle Lines DX+╬▒": {
+    "Piczle Lines DX+α": {
       "steam_appid": 998790,
       "config_path": "%LOCALAPPDATA%\\PiczleLinesDX\\Saved\\Config\\WindowsNoEditor"
     },
@@ -123205,7 +123109,7 @@
     "Piloteer": {
       "steam_appid": 355910
     },
-    "PilotXross´╝êÒâæÒéñÒâ¡ÒââÒâêÒé»Òâ¡Òé╣´╝ë": {
+    "PilotXross（パイロットクロス）": {
       "steam_appid": 1139230
     },
     "Pimiko Plus": {
@@ -123283,7 +123187,7 @@
     },
     "Pinball World": {},
     "Pinchcliffe Grand Prix": {
-      "config_path": "HKEY_LOCAL_MACHINE\\SOFTWARE\\CapricornuS AS\\Fl├Ñklypa Grand Prix"
+      "config_path": "HKEY_LOCAL_MACHINE\\SOFTWARE\\CapricornuS AS\\Flåklypa Grand Prix"
     },
     "Pine": {
       "steam_appid": 1042780,
@@ -123458,7 +123362,7 @@
     "Pippi": {
       "engine": "Director"
     },
-    "Pippi L├Ñngstrump": {},
+    "Pippi Långstrump": {},
     "Piranha": {},
     "Piratado 1": {
       "steam_appid": 542750
@@ -123754,7 +123658,7 @@
     "Pixel Fodder": {
       "steam_appid": 386600
     },
-    "Pixel Force ÕâÅþ┤áþë╣ÕÀÑÚÿƒ": {
+    "Pixel Force 像素特工队": {
       "steam_appid": 1104790
     },
     "Pixel Galaxy": {
@@ -123764,7 +123668,7 @@
     "Pixel Gear": {
       "steam_appid": 618650
     },
-    "Pixel Girl ÕâÅþ┤áÕÑ│Õ¡®": {
+    "Pixel Girl 像素女孩": {
       "steam_appid": 937140
     },
     "Pixel Gladiator": {
@@ -124009,7 +123913,7 @@
     "Pixel-Warfare: Pro": {
       "steam_appid": 530240
     },
-    "Pixel: ru┬▓": {
+    "Pixel: ru²": {
       "steam_appid": 351170,
       "config_path": "%APPDATA%\\C63 Industries\\Pixel\\Settings.xml"
     },
@@ -124040,7 +123944,7 @@
     "Pixeline og Huset i Eventyrskoven": {
       "engine": "Flash"
     },
-    "Pixeline p├Ñ Bedstemors loft": {
+    "Pixeline på Bedstemors loft": {
       "engine": "Flash"
     },
     "Pixeline: Drager over Pixieland": {
@@ -124062,7 +123966,7 @@
     "Pixeline: Magi i Pixieland": {
       "engine": "Flash"
     },
-    "Pixeline: Stjernest├©v": {
+    "Pixeline: Stjernestøv": {
       "engine": "Flash"
     },
     "PixelJunk Eden": {
@@ -124203,10 +124107,10 @@
     "Pizzarian": {
       "steam_appid": 340380
     },
-    "Pi├▒ata": {
+    "Piñata": {
       "steam_appid": 477800
     },
-    "Pi├▒ata Attack": {
+    "Piñata Attack": {
       "steam_appid": 1199740
     },
     "PJ Masks: Heroes of the Night": {
@@ -124896,7 +124800,7 @@
       "dx12": true,
       "vulkan": true,
       "opengl": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Studio ├ëlan\\Please Be Happy\\NaninovelData\\Saves\\Settings.json",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Studio Élan\\Please Be Happy\\NaninovelData\\Saves\\Settings.json",
       "engine": "Unity"
     },
     "Please Close the Doors": {
@@ -125139,7 +125043,7 @@
     },
     "Pocket Rumble": {
       "steam_appid": 389050,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Pocket Tanks": {},
     "Pocket Universe: Create Your Community": {
@@ -125319,18 +125223,15 @@
     "PokéROM": {
       "engine": "Director"
     },
-    "Pok├®mon Masters Arena": {},
-    "Pok├®mon Play It!": {},
-    "Pok├®mon Play It! Version 2": {},
-    "Pok├®mon Team Turbo": {},
-    "Pok├®mon Trading Card Game Live": {
+    "Pokémon Masters Arena": {},
+    "Pokémon Play It!": {},
+    "Pokémon Play It! Version 2": {},
+    "Pokémon Team Turbo": {},
+    "Pokémon Trading Card Game Live": {
       "engine": "Unity"
     },
-    "Pok├®mon Trading Card Game Online": {
+    "Pokémon Trading Card Game Online": {
       "engine": "Unity"
-    },
-    "Pok├®ROM": {
-      "engine": "Macromedia Director"
     },
     "Polandball: Can into Space!": {
       "steam_appid": 441050
@@ -125590,7 +125491,7 @@
     "Polyfuru feat. Asano Ruri": {
       "steam_appid": 1148040
     },
-    "Polyfuru feat. MaRiNaSu (╬▓)": {
+    "Polyfuru feat. MaRiNaSu (β)": {
       "steam_appid": 1202750
     },
     "Polyfuru feat. Miya Kimino": {
@@ -126023,7 +125924,7 @@
     "Poseidon - Project Dark Sky": {
       "steam_appid": 672770
     },
-    "Posel Boh┼»": {},
+    "Posel Bohů": {},
     "Posibility": {
       "steam_appid": 1189120
     },
@@ -126429,7 +126330,7 @@
     "Pozzo Jello Crusade": {
       "steam_appid": 511380
     },
-    "Po├Âf": {
+    "Poöf": {
       "steam_appid": 243280,
       "config_path": "%USERPROFILE%\\Documents\\SavedGames\\POOF\\<user-id>\\Config.ini",
       "engine": "XNA"
@@ -126902,7 +126803,7 @@
       "steam_appid": 821020
     },
     "Prince Interactive": {},
-    "Prince Makerþ¥ÄÕ░æÕ╣┤µóªÕÀÑÕÄé3´╝ÜÚçìþöƒ": {
+    "Prince Maker美少年梦工厂3：重生": {
       "steam_appid": 1055760,
       "config_path": "<path-to-game>\\savedata\\",
       "engine": "KiriKiri"
@@ -127317,7 +127218,7 @@
       "steam_appid": 936140
     },
     "Pro Cycling Manager Season 2011": {},
-    "Pro Darts 2022┬¡┬¡┬¡": {},
+    "Pro Darts 2022­­­": {},
     "Pro Drift Reloaded": {
       "steam_appid": 710640
     },
@@ -127454,7 +127355,7 @@
     "Pro Skater 2D": {
       "steam_appid": 551930
     },
-    "Pro Snooker & Pool 2022┬¡": {},
+    "Pro Snooker & Pool 2022­": {},
     "Pro Strategy Football 2016": {
       "steam_appid": 499070
     },
@@ -127970,7 +127871,7 @@
       "steam_appid": 601340,
       "engine": "GameGuro"
     },
-    "Project ONe ÒâùÒâ¡Òé©ÒéºÒé»ÒâêÒâ╗Òâ»Òâ│ ´¢×ÒâÅÒâ¡Òâ½ÒâëÒü»ÒüñÒéëÒüäÒéê´¢×": {
+    "Project ONe プロジェクト・ワン ～ハロルドはつらいよ～": {
       "steam_appid": 1080090
     },
     "Project Orion": {
@@ -129333,7 +129234,7 @@
     "PUZZLE & DRAGONS STORY": {
       "opengl": true
     },
-    "Puzzle 101: Edge of Galaxy Õ«çÕ«ÖÞ¥╣ÚÖà": {
+    "Puzzle 101: Edge of Galaxy 宇宙边际": {
       "steam_appid": 1025000
     },
     "Puzzle 3D": {
@@ -129720,11 +129621,11 @@
     "Pythagoria": {
       "steam_appid": 434620
     },
-    "Py┼é": {
+    "Pył": {
       "config_path": "<path-to-game>\\pyl.ini",
       "engine": "Chlast"
     },
-    "P├Ñ ekspedition i Bibelen": {},
+    "På ekspedition i Bibelen": {},
     "Q": {
       "steam_appid": 1071280,
       "engine": "Unity"
@@ -129816,7 +129717,7 @@
     "Qi Qiang": {
       "steam_appid": 1192950
     },
-    "Qian-Shan Village / µ«¡Õ▒ìÕ▒▒ÞÄè": {
+    "Qian-Shan Village / 殭屍山莊": {
       "steam_appid": 939740
     },
     "Qinoto": {
@@ -130207,7 +130108,7 @@
     "Queendoom": {
       "steam_appid": 540410
     },
-    "Queensr├┐che's Promised Land": {},
+    "Queensrÿche's Promised Land": {},
     "Queeny Army": {
       "steam_appid": 1175050
     },
@@ -130537,7 +130438,7 @@
       "steam_appid": 870160,
       "engine": "Unreal Engine 4"
     },
-    "R.U.B.Y.Õ»╗Õ©©õ║ñþ╗çþÜäµùÑÕ©©": {
+    "R.U.B.Y.寻常交织的日常": {
       "steam_appid": 1169230
     },
     "R.U.M.A": {
@@ -131066,7 +130967,7 @@
     },
     "Raging Loop": {
       "steam_appid": 648100,
-      "config_path": "HKEY_CURRENT_USER\\Software\\kemco\\Òâ¼ÒéñÒé©Òâ│Òé░Òâ½Òâ╝Òâù\\"
+      "config_path": "HKEY_CURRENT_USER\\Software\\kemco\\レイジングループ\\"
     },
     "Raging Titan": {
       "steam_appid": 538170,
@@ -131314,7 +131215,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Videocult\\Rain World\\, %USERPROFILE%\\AppData\\LocalLow\\Videocult\\Rain World\\options, %USERPROFILE%\\AppData\\LocalLow\\Videocult\\Rain World\\localoptions.txt",
       "engine": "Unity"
     },
-    "Rain's love memory-Úø¿þÜäµüïÞ«░": {
+    "Rain's love memory-雨的恋记": {
       "steam_appid": 1058000
     },
     "Rainbow Billy: The Curse of the Leviathan": {
@@ -131695,7 +131596,7 @@
       "steam_appid": 686600,
       "engine": "Unity"
     },
-    "Rascal Fight / µìúÞøïÕñºõ¢£µêÿ": {
+    "Rascal Fight / 捣蛋大作战": {
       "steam_appid": 1037830,
       "engine": "Unity"
     },
@@ -132058,7 +131959,7 @@
     "Razortron 2084": {
       "steam_appid": 1052650
     },
-    "Ra┬▓": {
+    "Ra²": {
       "steam_appid": 562460
     },
     "RB: Axolotl": {
@@ -132671,7 +132572,7 @@
     "Reborn": {
       "steam_appid": 789820
     },
-    "Reborn In Wild City Þ┐ÀÕƒÄÚçìþöƒ": {
+    "Reborn In Wild City 迷城重生": {
       "steam_appid": 949970
     },
     "REBORN: Survival": {
@@ -133245,7 +133146,7 @@
     "RED: Lucid Nightmare": {
       "steam_appid": 913100
     },
-    "ReD:ÞÁÀÕºïþÜäµùïÞ¢¼õ╣ïÚƒ│(The beginning of the Melody)": {
+    "ReD:起始的旋转之音(The beginning of the Melody)": {
       "steam_appid": 1101850
     },
     "Redacted": {
@@ -133984,7 +133885,7 @@
       "config_path": "%LOCALAPPDATA%\\Otherlands\\Saved\\Config\\WindowsClient\\",
       "engine": "Unreal Engine 4"
     },
-    "Rendering Ranger: R┬▓ Rewind": {
+    "Rendering Ranger: R² Rewind": {
       "steam_appid": 2167260,
       "opengl": true,
       "config_path": "%USERPROFILE%\\Saved Games\\Ziggurat Interactive Inc\\Rendering Ranger\\carbon.cfg, %USERPROFILE%\\Saved Games\\Ziggurat Interactive Inc\\Rendering Ranger\\system.cfg",
@@ -134155,7 +134056,7 @@
     "Republique Remastered": {
       "steam_appid": 317100,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Camouflaj\\R├â┬®publique",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Camouflaj\\RÃ©publique",
       "engine": "Unity"
     },
     "Republique VR": {
@@ -135059,7 +134960,7 @@
       "config_path": "<path-to-game>\\cfg",
       "engine": "Source"
     },
-    "RevelationTrestan-Õ░©Õ┐åÕ▓ø": {
+    "RevelationTrestan-尸忆岛": {
       "steam_appid": 931540
     },
     "ReVeN: XBridge": {
@@ -136047,7 +135948,7 @@
     "Ripple Effect": {
       "steam_appid": 574440
     },
-    "RippleIsland Kyle and CalÔÇÖs Restaurant": {
+    "RippleIsland Kyle and Cal’s Restaurant": {
       "steam_appid": 3844150,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\SUNSOFT\\Ripple Island\\savedata\\shared",
       "engine": "Unity"
@@ -138057,7 +137958,7 @@
       "steam_appid": 1120790,
       "engine": "Unity"
     },
-    "Roman Sacrifice in C├│rdoba": {
+    "Roman Sacrifice in Córdoba": {
       "steam_appid": 716420
     },
     "Roman Sands": {
@@ -139129,7 +139030,7 @@
     "Run!": {
       "steam_appid": 895230
     },
-    "Run! Bunny~þ╗┐þ╗┐Õ░ÅÕàêþöƒ": {
+    "Run! Bunny~绿绿小先生": {
       "steam_appid": 1123340
     },
     "Run!ZombieFoods!": {
@@ -139716,16 +139617,16 @@
     "Ryzom": {
       "steam_appid": 373720
     },
-    "R├®ussir : Code de la Route": {
+    "Réussir : Code de la Route": {
       "steam_appid": 1109840,
       "engine": "Unity"
     },
-    "R├Âki": {
+    "Röki": {
       "steam_appid": 1067540,
-      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Polygon Treehouse\\R├Âki",
+      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Polygon Treehouse\\Röki",
       "engine": "Unity"
     },
-    "R┼îA": {
+    "RŌA": {
       "steam_appid": 851880
     },
     "S-COPTER: Trials of Quick Fingers and Logic": {
@@ -140336,11 +140237,11 @@
       "steam_appid": 1064130,
       "engine": "Ren'Py"
     },
-    "Sakura no Mori ÔÇá Dreamers": {
+    "Sakura no Mori † Dreamers": {
       "steam_appid": 749520,
       "engine": "ExHibit"
     },
-    "Sakura no Mori ÔÇá Dreamers 2": {
+    "Sakura no Mori † Dreamers 2": {
       "steam_appid": 983150,
       "engine": "ExHibit"
     },
@@ -140420,9 +140321,6 @@
       "engine": "Unity"
     },
     "Salammbô: Battle for Carthage": {
-      "steam_appid": 301670
-    },
-    "Salammb├┤: Battle for Carthage": {
       "steam_appid": 301670
     },
     "Salary Man Escape": {
@@ -140900,7 +140798,7 @@
     },
     "Sands of Salzaar": {
       "steam_appid": 1094520,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\µ▒ëÕ«ÂµØ¥Ú╝á\\DesertLegend\\Save\\global.dat"
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\汉家松鼠\\DesertLegend\\Save\\global.dat"
     },
     "Sandstorm": {
       "steam_appid": 548710
@@ -141814,11 +141712,11 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\IvyJuiceGames\\Schrott",
       "engine": "Unity"
     },
-    "Schr├Âdinger's Cat and the Raiders of the Lost Quark": {
+    "Schrödinger's Cat and the Raiders of the Lost Quark": {
       "steam_appid": 295490,
       "dx9": true,
       "opengl": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Italic Pig\\Schr├Âdinger's Cat and the Raiders of the Lost Quark\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Italic Pig\\Schrödinger's Cat and the Raiders of the Lost Quark\\",
       "engine": "Unity"
     },
     "Sci-fi Chess": {
@@ -142372,7 +142270,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\TKoU\\Scythe\\",
       "engine": "Unity"
     },
-    "Sc├®al": {
+    "Scéal": {
       "steam_appid": 507060
     },
     "SD Gundam Battle Alliance": {
@@ -142832,7 +142730,7 @@
     "Secrets of Me": {
       "steam_appid": 505070
     },
-    "Secrets of R├ªtikon": {
+    "Secrets of Rætikon": {
       "steam_appid": 246680,
       "config_path": "<path-to-game>\\save\\"
     },
@@ -143165,7 +143063,7 @@
     "Self-knowledge VR": {
       "steam_appid": 958680
     },
-    "Self-Reliance Þç¬µêæµÇºÞÁû": {
+    "Self-Reliance 自我性赖": {
       "steam_appid": 1016110
     },
     "Selfie Games: A Multiplayer Couch Party Game": {
@@ -143269,7 +143167,7 @@
     "Senpai Teaches Me Japanese: Part 1": {
       "steam_appid": 1037330
     },
-    "Senran Kagura Bon App├®tit! - Full Course": {
+    "Senran Kagura Bon Appétit! - Full Course": {
       "steam_appid": 514310,
       "dx11": true
     },
@@ -143740,7 +143638,7 @@
     "Setup Developer Tool 2018": {
       "steam_appid": 840690
     },
-    "Seul (Alone): The entr├®e": {
+    "Seul (Alone): The entrée": {
       "steam_appid": 856310
     },
     "Seum: Speedrunners from Hell": {
@@ -143935,7 +143833,7 @@
       "dx9": true,
       "engine": "Unity"
     },
-    "SexyHub ÔØñ´©Å": {
+    "SexyHub ❤️": {
       "steam_appid": 1063800
     },
     "Seymour Goes to Hollywood": {},
@@ -145235,7 +145133,7 @@
     "Shin-chan: Me and the Professor on Summer Vacation - The Endless Seven-Day Journey": {
       "steam_appid": 2061250,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\´¥ê´¢Á´¢¢µá¬Õ╝Åõ╝Üþñ¥\\Shin chan Summer",
+      "config_path": "HKEY_CURRENT_USER\\Software\\ﾈｵｽ株式会社\\Shin chan Summer",
       "engine": "Unity"
     },
     "Shine's Adventures 2 (Zombie Attack)": {
@@ -145341,7 +145239,7 @@
       "steam_appid": 34277,
       "config_path": "%USERPROFILE%\\Documents\\SEGA Mega Drive Classics\\setup.dat, %USERPROFILE%\\Documents\\SEGA Genesis Classics\\setup.dat"
     },
-    "Shinobi Spirits S Legend of Heroes/Õ┐ìÒé╣ÒâöÒâ¬ÒââÒâäS þ£ƒþö░þìúÕïçÕú½õ╝Ø": {
+    "Shinobi Spirits S Legend of Heroes/忍スピリッツS 真田獣勇士伝": {
       "steam_appid": 1110220
     },
     "Shinobi: Art of Vengeance": {
@@ -145961,7 +145859,7 @@
       "steam_appid": 1103930
     },
     "Shrine: Circus Tycoon": {},
-    "Shrines Of Sacred EssenÐüe": {
+    "Shrines Of Sacred Essenсe": {
       "steam_appid": 949830
     },
     "Shrinking Pains": {
@@ -146077,7 +145975,7 @@
       "steam_appid": 1140350
     },
     "Shuusou Gyoku": {
-      "config_path": "<path-to-game>\\þºïÚ££CFG.DAT"
+      "config_path": "<path-to-game>\\秋霜CFG.DAT"
     },
     "Shuyan Saga": {
       "steam_appid": 594680
@@ -146640,7 +146538,7 @@
       "steam_appid": 4470,
       "dx9": true
     },
-    "SilverFrame(þ║»þÖ¢µÿƒÕÄƒ)": {
+    "SilverFrame(纯白星原)": {
       "steam_appid": 864430
     },
     "Silverload": {},
@@ -147949,7 +147847,7 @@
     "Skywriter": {
       "steam_appid": 919040
     },
-    "Sk├íbma: Snowfall": {
+    "Skábma: Snowfall": {
       "steam_appid": 1665280,
       "dx11": true,
       "engine": "Unity"
@@ -148869,7 +148767,7 @@
     "Smogland": {
       "steam_appid": 644150
     },
-    "Smogpunk µ╣«Ú£¥õ╣ïÕ£░": {
+    "Smogpunk 湮霾之地": {
       "steam_appid": 918160
     },
     "Smoke and Sacrifice": {
@@ -149266,7 +149164,7 @@
       "config_path": "<path-to-game>\\autoexec.cfg",
       "engine": "Lithtech Jupiter"
     },
-    "Snipiyo / Òé╣ÒâèÒéñÒâöÒâ¿": {
+    "Snipiyo / スナイピヨ": {
       "steam_appid": 1049680
     },
     "SnipZ": {
@@ -150162,7 +150060,7 @@
       "steam_appid": 1299290,
       "engine": "Unreal Engine 5"
     },
-    "Sombras de Guerra: La Guerra Civil Espa├▒ola": {},
+    "Sombras de Guerra: La Guerra Civil Española": {},
     "Sombrero: Spaghetti Western Mayhem": {
       "steam_appid": 472690
     },
@@ -150170,7 +150068,7 @@
       "steam_appid": 824850,
       "engine": "Unity"
     },
-    "Some some convenience store ýì©ýì© ÝÄ©ýØÿýáÉ": {
+    "Some some convenience store 썸썸 편의점": {
       "steam_appid": 1217390,
       "engine": "Unity"
     },
@@ -150207,7 +150105,7 @@
     "Something is wrong": {
       "steam_appid": 3895130
     },
-    "Something is wrong/µ£ëµ»øþùà": {
+    "Something is wrong/有毛病": {
       "steam_appid": 1020830
     },
     "Something To Do With Love": {
@@ -151228,7 +151126,7 @@
     "Soyuz Constructors": {
       "steam_appid": 1120220
     },
-    "So┼étys": {
+    "Sołtys": {
       "config_path": "<path-to-game>\\soltys.ini"
     },
     "Sp!ng": {},
@@ -152602,7 +152500,7 @@
     "Spattle Cats": {
       "steam_appid": 1026900
     },
-    "Spa├ƒ Taxi": {
+    "Spaß Taxi": {
       "steam_appid": 1206770
     },
     "Speak Lies": {
@@ -154897,7 +154795,6 @@
       "config_path": "<path-to-game>\\System\\khg.ini",
       "engine": "Unreal Engine 1"
     },
-    "Star Trek: The Next Generation ÔÇô A Final Unity": {},
     "Star Trek: The Next Generation – A Final Unity": {},
     "Star Trek: Voyager - Across the Unknown": {
       "steam_appid": 2643390,
@@ -155098,7 +154995,7 @@
       "config_path": "<path-to-game>\\swkotor2.ini",
       "engine": "Odyssey"
     },
-    "Star Wars: Knights of the Old Republic ÔÇô Remake": {},
+    "Star Wars: Knights of the Old Republic – Remake": {},
     "Star Wars: Millennium Falcon": {},
     "Star Wars: Monopoly": {},
     "Star Wars: Pit Droids": {
@@ -155808,7 +155705,7 @@
     "Starward": {
       "steam_appid": 2764370,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\xygame\\µÿƒõ╣ïþ┐╝",
+      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\xygame\\星之翼",
       "engine": "Unity"
     },
     "Starward Rogue": {
@@ -155991,7 +155888,7 @@
       "steam_appid": 1081330,
       "config_path": "%LOCALAPPDATA%\\TheLight\\Saved"
     },
-    "Stay or Leave / þòÖþª╗": {
+    "Stay or Leave / 留离": {
       "steam_appid": 910390
     },
     "Stay Out": {
@@ -156249,7 +156146,7 @@
       "config_path": "%USERPROFILE%\\Saved Games\\EugenSystems\\SteelDivision\\Option.ini",
       "engine": "IRISZOOM"
     },
-    "Steel Dungeon ÚÆóÚôüÕ£░þëó": {
+    "Steel Dungeon 钢铁地牢": {
       "steam_appid": 945500
     },
     "Steel Eagle": {
@@ -156326,7 +156223,7 @@
       "steam_appid": 1341830
     },
     "Steel Tide": {},
-    "Steel Vampire / Úï╝ÚëäÒü«Òâ┤ÒéíÒâ│ÒâæÒéñÒéó": {
+    "Steel Vampire / 鋼鉄のヴァンパイア": {
       "steam_appid": 908990
     },
     "SteelLIFE": {
@@ -156421,7 +156318,7 @@
       "steam_appid": 207150,
       "engine": "Unity"
     },
-    "STELLAR INC ÔÇô Internship": {
+    "STELLAR INC – Internship": {
       "steam_appid": 3655720,
       "engine": "Ren'Py"
     },
@@ -156975,7 +156872,7 @@
       "config_path": "%USERPROFILE%\\Documents\\Storm Saves\\general.cfg"
     },
     "Storm (1986)": {},
-    "STORM AREA 51 ÔØñ´©Å CUTE ALIEN GIRL EDITION": {
+    "STORM AREA 51 ❤️ CUTE ALIEN GIRL EDITION": {
       "steam_appid": 1125490
     },
     "Storm Area 51: AYY LMAO Edition": {
@@ -157745,7 +157642,7 @@
     "Strike Solitaire": {
       "steam_appid": 1034410
     },
-    "Strike Squadron: Caracar├í": {
+    "Strike Squadron: Caracará": {
       "steam_appid": 507340
     },
     "Strike Suit Infinity": {
@@ -158042,7 +157939,7 @@
     "Stupid Raft Battle Simulator": {
       "steam_appid": 598240
     },
-    "SturmFront - The Mutant War: ├£bel Edition": {
+    "SturmFront - The Mutant War: Übel Edition": {
       "steam_appid": 501530
     },
     "STURMWIND EX": {
@@ -158782,7 +158679,7 @@
     "Sundown Refusal": {
       "steam_appid": 886720
     },
-    "Sune och hans V├ñrld - Pussjakten": {},
+    "Sune och hans Värld - Pussjakten": {},
     "Sunflower": {
       "steam_appid": 1118910
     },
@@ -159162,7 +159059,7 @@
     "Super Chains": {
       "steam_appid": 968300,
       "config_path": "%APPDATA%\\Roaming\\superchains\\",
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Super Chibi Knight": {
       "steam_appid": 283080,
@@ -159171,7 +159068,7 @@
     "Super Chicken Catchers": {
       "steam_appid": 869750
     },
-    "Super Chipflake ├£: Quest for the Uncooked Schnitzel": {
+    "Super Chipflake Ü: Quest for the Uncooked Schnitzel": {
       "steam_appid": 3064060
     },
     "Super Chopper": {
@@ -159773,7 +159670,7 @@
     "Super Neptunia RPG": {
       "steam_appid": 1016960,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Artisan Studios\\Super NeptuniaÔäó RPG\\",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Artisan Studios\\Super Neptunia™ RPG\\",
       "engine": "Unity"
     },
     "Super Night Riders": {
@@ -159903,7 +159800,7 @@
     "Super Retro Maker": {
       "steam_appid": 667460
     },
-    "Super Rhythm Duel ~ ÞèéÕÑÅµ×üÚüô": {
+    "Super Rhythm Duel ~ 节奏极道": {
       "steam_appid": 1180210,
       "engine": "Unity"
     },
@@ -161051,11 +160948,11 @@
       "config_path": "<path-to-game>\\svencoop\\*.cfg",
       "engine": "GoldSrc"
     },
-    "Sven-G├Âran Eriksson's World Challenge": {
+    "Sven-Göran Eriksson's World Challenge": {
       "config_path": "<path-to-game>\\options.dat",
       "engine": "Gamebryo"
     },
-    "Sven-G├Âran Eriksson's World Manager": {},
+    "Sven-Göran Eriksson's World Manager": {},
     "Sven: Completely Screwed": {
       "steam_appid": 2213500,
       "engine": "Unity"
@@ -161470,7 +161367,7 @@
       "dx11": true,
       "engine": "Unity"
     },
-    "Sword of Moonlight: KingÔÇÖs Field Making Tool": {
+    "Sword of Moonlight: King’s Field Making Tool": {
       "config_path": "<path-to-game>\\GAME.INI"
     },
     "Sword of Rapier": {
@@ -161987,20 +161884,17 @@
       "steam_appid": 612720
     },
     "Söldner: Secret Wars": {},
-    "S├®bastien Loeb Rally EVO": {
+    "Sébastien Loeb Rally EVO": {
       "steam_appid": 355060,
       "dx11": true,
       "config_path": "%APPDATA%\\Milestone\\SLREVO\\Saves",
       "engine": "Graphic Engine Milestone"
     },
-    "S├Âldner-X: Himmelsst├╝rmer": {
+    "Söldner-X: Himmelsstürmer": {
       "config_path": "HKEY_CURRENT_USER\\Software\\SideQuest Studios\\SoldnerX\\"
     },
-    "S├Âldner: Secret Wars Remastered": {
+    "Söldner: Secret Wars Remastered": {
       "steam_appid": 847720
-    },
-    "S├åLIG": {
-      "steam_appid": 612720
     },
     "T Simulator": {
       "steam_appid": 1080290
@@ -162501,7 +162395,7 @@
     "Tale of Immortal": {
       "steam_appid": 1468810
     },
-    "Tale of Legends -õ╝ØÕëÁÞ¿ÿ-": {
+    "Tale of Legends -伝創記-": {
       "steam_appid": 936870
     },
     "Tale of Legends IV ~if~": {
@@ -162522,7 +162416,7 @@
     "Tale of Swords: Mystery Scroll": {
       "steam_appid": 783810
     },
-    "Tale of the Fragmented Star: Single Fragment Version / µÿƒÒü«µ¼áþëçÒü«þë®Þ¬×ÒÇüÒü▓Òü¿ÒüïÒüæÒéëþëê": {
+    "Tale of the Fragmented Star: Single Fragment Version / 星の欠片の物語、ひとかけら版": {
       "steam_appid": 930850,
       "engine": "Unity"
     },
@@ -162795,7 +162689,7 @@
       "config_path": "%AppData%\\..\\LocalLow\\BouncyRock Entertainment\\TaleSpire",
       "engine": "Unity"
     },
-    "Talesshop puzzle ÝàîýØ╝ýªêýâÁ Ýì╝ýªÉ": {
+    "Talesshop puzzle 테일즈샵 퍼즐": {
       "steam_appid": 1161160
     },
     "TalesWeaver": {},
@@ -163322,7 +163216,6 @@
     "Task Force 1942: Surface Naval Action in the South Pacific": {
       "steam_appid": 329680
     },
-    "Task Force Delta ÔÇæ Afghanistan": {},
     "Task Force Delta ‑ Afghanistan": {
       "steam_appid": 1700370
     },
@@ -164020,7 +163913,7 @@
       "steam_appid": 2510960,
       "engine": "Unity"
     },
-    "Tem├╝jin": {
+    "Temüjin": {
       "engine": "Video Reality"
     },
     "Ten Dates": {
@@ -164961,7 +164854,7 @@
       "engine": "Unity"
     },
     "The 3D Adventures of Sailor Moon": {},
-    "The 3rd Building õ©ëµòÖ": {
+    "The 3rd Building 三教": {
       "steam_appid": 942010
     },
     "The 50 States Quiz": {
@@ -166101,7 +165994,7 @@
       "steam_appid": 3554930,
       "engine": "Unreal Engine 5"
     },
-    "The Brink Õ░ÿõ©ÄÕ£ƒ": {
+    "The Brink 尘与土": {
       "steam_appid": 1066200
     },
     "The British Trivia Challenge": {},
@@ -166184,7 +166077,7 @@
     "The Cable Center - Virtual Archive": {
       "steam_appid": 612440
     },
-    "The Cage þ¼╝": {
+    "The Cage 笼": {
       "steam_appid": 894930
     },
     "The cake is surrounded by shackles": {
@@ -166748,7 +166641,7 @@
     },
     "The Crack of Doom": {},
     "The Crackpet Show": {},
-    "The Cradle of Ruin/µ»üþü¡þÜäµæçþ»«/Òü╗ÒéìÒü│Òü«ÒéåÒéèÒüïÒüö": {
+    "The Cradle of Ruin/毁灭的摇篮/ほろびのゆりかご": {
       "steam_appid": 1024280
     },
     "The Crane Trials: Red Edition": {
@@ -167239,7 +167132,7 @@
       "steam_appid": 1413980,
       "engine": "Unity"
     },
-    "The Den of Chaos - µÀÀµ▓îÒü«Ú¡öþ¬ƒµ«┐´¢×ÒéóÒâÆÒéóÒâÅÒâ│´╝æ´╝Öõ©ûÒü«µîçõ╗ñþÀ¿´¢×": {
+    "The Den of Chaos - 混沌の魔窟殿～アヒアハン１９世の指令編～": {
       "steam_appid": 1007280
     },
     "The Departure": {
@@ -167301,7 +167194,7 @@
     },
     "The Devil on G-String": {
       "steam_appid": 377670,
-      "config_path": "%APPDATA%\\AkabeiSoft2\\G_Senjou_no_Maou\\, %USERPROFILE%\\Documents\\g-senjou no maou english savedata\\, %USERPROFILE%\\Documents\\ÒüéÒüïÒü╣ÒüçÒüØÒüÁÒü¿ÒüñÒüàÒé╗Òâ╝ÒâûÒâçÒâ╝Òé┐\\´╝ºþÀÜõ©èÒü«Ú¡öþÄïÒé╗Òâ╝ÒâûÒâçÒâ╝Òé┐\\",
+      "config_path": "%APPDATA%\\AkabeiSoft2\\G_Senjou_no_Maou\\, %USERPROFILE%\\Documents\\g-senjou no maou english savedata\\, %USERPROFILE%\\Documents\\あかべぇそふとつぅセーブデータ\\Ｇ線上の魔王セーブデータ\\",
       "engine": "KiriKiri"
     },
     "The Devil's Calculator": {
@@ -167658,7 +167551,7 @@
       "steam_appid": 498700
     },
     "The Embodiment of Scarlet Devil": {
-      "config_path": "<path-to-game>\\µØ▒µû╣þ┤àÚ¡öÚâÀ.cfg"
+      "config_path": "<path-to-game>\\東方紅魔郷.cfg"
     },
     "The Emerald Maiden: Symphony of Dreams": {
       "steam_appid": 429610,
@@ -169605,13 +169498,13 @@
     "The Interactive Adventures of Blake and Mortimer: The Time Trap": {
       "engine": "Director"
     },
-    "The Interactive Adventures of Dog Mendon├ºa and Pizzaboy": {
+    "The Interactive Adventures of Dog Mendonça and Pizzaboy": {
       "steam_appid": 330420,
       "opengl": true,
-      "config_path": "%APPDATA%\\Godot\\app_userdata\\The Interactive Adventures of Dog Mendon├ºa & Pizzaboy\\",
+      "config_path": "%APPDATA%\\Godot\\app_userdata\\The Interactive Adventures of Dog Mendonça & Pizzaboy\\",
       "engine": "Godot"
     },
-    "The Intern - O Est├ígio": {
+    "The Intern - O Estágio": {
       "steam_appid": 771500
     },
     "The Internship": {
@@ -169673,7 +169566,7 @@
       "steam_appid": 1209650,
       "engine": "Unity"
     },
-    "The Island: In To The Mist ÛÀ© ýä¼": {
+    "The Island: In To The Mist 그 섬": {
       "steam_appid": 941650
     },
     "The Islander": {
@@ -169777,9 +169670,6 @@
       "steam_appid": 566580
     },
     "The Jimmy´s Souls": {
-      "steam_appid": 879080
-    },
-    "The Jimmy┬┤s Souls": {
       "steam_appid": 879080
     },
     "The Jolly Gang's Misadventures in Africa": {
@@ -170139,7 +170029,7 @@
       "config_path": "<path-to-game>\\config.dat, <path-to-game>\\script\\TheLastComer\\Mss_Option.dat",
       "engine": "Danmakufu"
     },
-    "The Last Companion-µêæõ©ÄµêæÞíîÕ░åþª╗ÕÄ╗þÜäÕ░ÅÕÅïÒÇé": {
+    "The Last Companion-我与我行将离去的小友。": {
       "steam_appid": 1110720
     },
     "The Last Conflict": {
@@ -170309,7 +170199,7 @@
     "The Last Night: The First Invation": {
       "steam_appid": 662600
     },
-    "The Last NightMary - A Lenda do Cabe├ºa de Cuia": {
+    "The Last NightMary - A Lenda do Cabeça de Cuia": {
       "steam_appid": 407300
     },
     "The Last Ninja": {},
@@ -170764,7 +170654,7 @@
     "The Legendary Player - Make Your Reputation": {
       "steam_appid": 699570
     },
-    "The Legends of Class one Õù¿ÕôÑõ©ÇþÅ¡ÕñºÕåÆÚÖ®": {
+    "The Legends of Class one 嗨哥一班大冒险": {
       "steam_appid": 1063160
     },
     "The Legends of Owlia": {
@@ -170796,7 +170686,7 @@
     },
     "The Leisure of Grisaia": {
       "steam_appid": 460160,
-      "config_path": "%APPDATA%\\Frontwing\\The Fruit of Grisaia -The Leisure of Grisaia-\\*.dat, %APPDATA%\\ÒâòÒâ¡Òâ│ÒâêÒéªÒéñÒâ│Òé░\\Òé░Òâ¬ÒéÂÒéñÒéóÒü«µ×£Õ«ƒ ´¢×Òé░Òâ¬ÒéÂÒéñÒéóÒü«µ£ëÚûæ´¢×\\*.dat",
+      "config_path": "%APPDATA%\\Frontwing\\The Fruit of Grisaia -The Leisure of Grisaia-\\*.dat, %APPDATA%\\フロントウイング\\グリザイアの果実 ～グリザイアの有閑～\\*.dat",
       "engine": "CatSystem2"
     },
     "The Lemmings Chronicles": {},
@@ -172987,7 +172877,7 @@
     "The Revolt: Awakening": {
       "steam_appid": 736240
     },
-    "The Rewinder / Õ▒▒µÁÀµùàõ║║": {
+    "The Rewinder / 山海旅人": {
       "steam_appid": 1161170,
       "engine": "Unity"
     },
@@ -173508,9 +173398,6 @@
       "steam_appid": 984170,
       "config_path": "<path-to-game>\\userData\\*.cfg"
     },
-    "The Seven Colors: Legend of PSYÒâ╗S City": {
-      "engine": "Macromedia Director"
-    },
     "The Seven Colors: Legend of PSY・S City": {
       "engine": "Director"
     },
@@ -173673,11 +173560,11 @@
       "steam_appid": 653060,
       "engine": "Unreal Engine 4"
     },
-    "The Signal from T├Âlva": {
+    "The Signal from Tölva": {
       "steam_appid": 457760,
       "dx11": true,
       "opengl": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Big Robot Ltd\\The Signal From T├Âlva\\Settings",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Big Robot Ltd\\The Signal From Tölva\\Settings",
       "engine": "Unity"
     },
     "The Signal State": {
@@ -174324,10 +174211,6 @@
       "steam_appid": 1395520,
       "engine": "Unity"
     },
-    "The S├®ance of Blake Manor": {
-      "steam_appid": 1395520,
-      "engine": "Unity"
-    },
     "The Table at War": {
       "steam_appid": 555230
     },
@@ -174813,7 +174696,7 @@
     "The Underground Man": {
       "steam_appid": 513230
     },
-    "The Underground Watcher/Õ£░õ©ïþøæÕ»ƒÕæÿ": {
+    "The Underground Watcher/地下监察员": {
       "steam_appid": 1059090
     },
     "The Undying Plague": {
@@ -175116,7 +174999,7 @@
     "The Wanderer": {
       "steam_appid": 530860
     },
-    "The Wanderer: FrankensteinÔÇÖs Creature": {
+    "The Wanderer: Frankenstein’s Creature": {
       "steam_appid": 966670,
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Arte\\Frankenstein\\",
@@ -175418,7 +175301,7 @@
     "The Witch's Yarn": {
       "steam_appid": 287740
     },
-    "The Witchcraft of Skysword - Õñ®þ┐öÒü¿ÕëúÒü«ÒéªÒéúÒââÒâüÒé»Òâ®ÒâòÒâê": {
+    "The Witchcraft of Skysword - 天翔と剣のウィッチクラフト": {
       "steam_appid": 1031850
     },
     "The Witcher": {
@@ -176829,31 +176712,31 @@
     "Tiger Tank 59 A-Gun": {
       "steam_appid": 962240
     },
-    "Tiger Tank 59 Ôàá": {
+    "Tiger Tank 59 Ⅰ": {
       "steam_appid": 875100
     },
-    "Tiger Tank 59 Ôàá Air Strike": {
+    "Tiger Tank 59 Ⅰ Air Strike": {
       "steam_appid": 1090540
     },
-    "Tiger Tank 59 Ôàá Battleship": {
+    "Tiger Tank 59 Ⅰ Battleship": {
       "steam_appid": 1094460
     },
-    "Tiger Tank 59 Ôàá Black Hill Fortress": {
+    "Tiger Tank 59 Ⅰ Black Hill Fortress": {
       "steam_appid": 1052250
     },
-    "Tiger Tank 59 Ôàá Break The Fog": {
+    "Tiger Tank 59 Ⅰ Break The Fog": {
       "steam_appid": 1033630
     },
-    "Tiger Tank 59 Ôàá Rainstorm": {
+    "Tiger Tank 59 Ⅰ Rainstorm": {
       "steam_appid": 1058760
     },
-    "Tiger Tank 59 Ôàá Super Tank": {
+    "Tiger Tank 59 Ⅰ Super Tank": {
       "steam_appid": 1095300
     },
-    "Tiger Tank 59 Ôàá Volcano": {
+    "Tiger Tank 59 Ⅰ Volcano": {
       "steam_appid": 1085080
     },
-    "Tiger Tank 59 Ôàá Winter Assault": {
+    "Tiger Tank 59 Ⅰ Winter Assault": {
       "steam_appid": 1073400
     },
     "Tiger Woods 99 PGA Tour Golf": {},
@@ -177326,7 +177209,7 @@
     "Timez Attack": {
       "engine": "Unity"
     },
-    "TimeZoneArena - µùÂÚù┤ÞºÆµûùÕ£║": {
+    "TimeZoneArena - 时间角斗场": {
       "steam_appid": 987930
     },
     "Timmy's Adventures : VerbMon": {
@@ -177775,7 +177658,7 @@
     "Titeuf: Mega Party": {
       "steam_appid": 1165610
     },
-    "Titeuf: M├®ga compet'": {},
+    "Titeuf: Méga compet'": {},
     "Title Pending": {
       "steam_appid": 1288900,
       "config_path": "%LOCALAPPDATA%\\Title_Pending\\Saved\\Config\\",
@@ -178481,20 +178364,10 @@
       "steam_appid": 225320,
       "config_path": "<path-to-game>\\config.txt"
     },
-    "Tomb Raider IVÔÇôVI Remastered": {
-      "steam_appid": 2525380,
-      "opengl": true,
-      "config_path": "%APPDATA%\\TRX2\\<user-id>\\savegame.dat"
-    },
     "Tomb Raider IV–VI Remastered": {
       "steam_appid": 2525380,
       "opengl": true,
       "config_path": "%APPDATA%\\TRX2\\<user-id>\\savegame.dat"
-    },
-    "Tomb Raider IÔÇôIII Remastered": {
-      "steam_appid": 2478970,
-      "opengl": true,
-      "config_path": "%APPDATA%\\TRX\\<user-id>\\savegame.dat"
     },
     "Tomb Raider I–III Remastered": {
       "steam_appid": 2478970,
@@ -179367,7 +179240,7 @@
       "steam_appid": 909470
     },
     "Touchdown Heroes: New Season": {},
-    "Touch├®: The Adventures of the Fifth Musketeer": {},
+    "Touché: The Adventures of the Fifth Musketeer": {},
     "Tough Guy": {},
     "Tough Story: Big Hell": {
       "steam_appid": 685800
@@ -179430,7 +179303,7 @@
       "steam_appid": 938940,
       "engine": "Unity"
     },
-    "Touhou Fantasia / õ©£µû╣µóªµâ│µø▓": {
+    "Touhou Fantasia / 东方梦想曲": {
       "steam_appid": 1010890,
       "dx11": true,
       "config_path": "<path-to-game>\\Settings.dat, HKEY_CURRENT_USER\\Software\\SlimeSmile\\TouhouFantasia\\",
@@ -179486,7 +179359,7 @@
     "Touhou Hero of Ice Fairy: Prologue": {
       "steam_appid": 1715460,
       "dx11": true,
-      "config_path": "<path-to-game>\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy Prologue_Data\\StreamingAssets\\, %USERPROFILE%\\AppData\\LocalLow\\GAMEPULSE µ©©µêÅÞäëÕå▓\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy_ Prologue\\, HKEY_CURRENT_USER\\Software\\GAMEPULSE µ©©µêÅÞäëÕå▓\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy: Prologue\\",
+      "config_path": "<path-to-game>\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy Prologue_Data\\StreamingAssets\\, %USERPROFILE%\\AppData\\LocalLow\\GAMEPULSE 游戏脉冲\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy_ Prologue\\, HKEY_CURRENT_USER\\Software\\GAMEPULSE 游戏脉冲\\Touhou\u00A0Hero\u00A0of\u00A0Ice\u00A0Fairy: Prologue\\",
       "engine": "Unity"
     },
     "Touhou Hisoutensoku": {
@@ -179496,7 +179369,7 @@
     "Touhou Ibunseki - Ayaria Dawn: ReCreation": {
       "steam_appid": 1138100
     },
-    "Touhou Jitsuzaisou ´¢× Dream Logical World": {
+    "Touhou Jitsuzaisou ～ Dream Logical World": {
       "steam_appid": 1664410,
       "dx9": true,
       "config_path": "<path-to-game>\\config.dat, <path-to-game>\\data\\Options.DAT",
@@ -179531,25 +179404,25 @@
       "config_path": "%LOCALAPPDATA%\\touhou_luna_nights\\config.ini",
       "engine": "Mogura Engine 2"
     },
-    "Touhou Makuka Sai ´¢× Fantastic Danmaku Festival": {
+    "Touhou Makuka Sai ～ Fantastic Danmaku Festival": {
       "steam_appid": 882710,
       "dx9": true,
       "config_path": "<path-to-game>\\custom.ini",
       "engine": "XNA"
     },
-    "Touhou Makuka Sai ´¢× Fantastic Danmaku Festival Part II": {
+    "Touhou Makuka Sai ～ Fantastic Danmaku Festival Part II": {
       "steam_appid": 1031480,
       "dx9": true,
       "config_path": "<path-to-game>\\custom.ini",
       "engine": "XNA"
     },
-    "Touhou Makuka Sai ´¢× Fantastic Danmaku Festival Part III": {
+    "Touhou Makuka Sai ～ Fantastic Danmaku Festival Part III": {
       "steam_appid": 2877170,
       "dx11": true,
       "config_path": "<path-to-game>\\custom.ini",
       "engine": "XNA"
     },
-    "Touhou Monster TD ~ Õ╣╗µâ│õ╣íÕªûµÇ¬ÕíöÚÿ▓": {
+    "Touhou Monster TD ~ 幻想乡妖怪塔防": {
       "steam_appid": 1671350,
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\MyACG Studio\\THMTD\\",
@@ -179588,7 +179461,7 @@
     "Touhou Rock Maiden FC 2: History's Greatest Sermon!!": {
       "config_path": "<path-to-game>\\key.txt"
     },
-    "Touhou Saikotan ´¢× Servants of Harvest Wish": {
+    "Touhou Saikotan ～ Servants of Harvest Wish": {
       "steam_appid": 1351170,
       "dx9": true,
       "config_path": "<path-to-game>\\config.dat, <path-to-game>\\script\\SoHW\\data\\th_sohw_common_Settings.dat, <path-to-game>\\script\\SoHW\\data\\th_sohw_proton_common_Settings.dat",
@@ -180113,7 +179986,7 @@
     "Trackday Manager": {
       "steam_appid": 348030
     },
-    "TRACKERÒÇèÞ┐¢Þ©¬ÞÇàÒÇï": {
+    "TRACKER《追踪者》": {
       "steam_appid": 1016750
     },
     "Trackless": {
@@ -180211,7 +180084,7 @@
     "Tracon!2012:SE": {
       "steam_appid": 646350
     },
-    "Tractage aux Portes 2: Mob ├á la Caf├®t├®ria": {
+    "Tractage aux Portes 2: Mob à la Cafétéria": {
       "steam_appid": 1110780
     },
     "Tractor Cargo Driving Simulator": {
@@ -180978,7 +180851,7 @@
       "config_path": "<path-to-game>\\config.dat, <path-to-game>\\data\\data_option.dat",
       "engine": "Danmakufu"
     },
-    "Treasure chest Corps-þÁÉþòîÒéÆþÂ¡µîüÒüÖÒéïÒüƒÒéüÒÇüÚ¡öþë®ÒéÆÚÇÇµ▓╗ÒüùÒüƒ": {
+    "Treasure chest Corps-結界を維持するため、魔物を退治した": {
       "steam_appid": 1033450
     },
     "Treasure Fleet": {
@@ -181640,9 +181513,6 @@
     "Tristan et le mystère du dragon": {
       "engine": "Director"
     },
-    "Tristan et le myst├¿re du dragon": {
-      "engine": "Macromedia Director"
-    },
     "Tristoy": {
       "steam_appid": 303260,
       "engine": "Unity"
@@ -182141,7 +182011,7 @@
     "Trump Vs Rocketman": {
       "steam_appid": 1119380
     },
-    "TrumPi├▒ata": {
+    "TrumPiñata": {
       "steam_appid": 495300
     },
     "Trumpy Wall": {
@@ -182170,7 +182040,7 @@
     "Truth: Disorder II": {
       "steam_appid": 847580
     },
-    "Truth: Disorder III - Gemini / þ£ƒÕ«ƒ´╝ÜÚÜ£Õ«│III - ÕÅîÕ¡ÉÕ║º": {
+    "Truth: Disorder III - Gemini / 真実：障害III - 双子座": {
       "steam_appid": 982450,
       "engine": "Ren'Py"
     },
@@ -182226,10 +182096,10 @@
       "steam_appid": 208460,
       "engine": "Unigine"
     },
-    "Tr├ífico": {
+    "Tráfico": {
       "steam_appid": 769220
     },
-    "Tr├╝berbrook": {
+    "Trüberbrook": {
       "steam_appid": 757300,
       "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\BTF\\Truberbrook\\",
@@ -182244,7 +182114,7 @@
       "opengl": true,
       "engine": "Adobe AIR"
     },
-    "TSM3:Gemini Strategy/ÕÅîÕ¡Éµêÿþ║¬": {
+    "TSM3:Gemini Strategy/双子战纪": {
       "steam_appid": 1155440
     },
     "Tsugunohi": {
@@ -182276,7 +182146,7 @@
     "Tsukumohime": {
       "steam_appid": 765650
     },
-    "Tsukumono / ÒüñÒüÅÒééÒü«": {
+    "Tsukumono / つくもの": {
       "steam_appid": 993850
     },
     "Tsumi": {
@@ -182442,7 +182312,7 @@
     "Tunshi Kongming Legends": {
       "steam_appid": 929200
     },
-    "Tup├ú": {
+    "Tupã": {
       "steam_appid": 664630
     },
     "Turba": {
@@ -182858,7 +182728,7 @@
     "TwinForce": {
       "steam_appid": 520230
     },
-    "Twinkle Star - µ£¬µØÑÒü»ÒüÖÒüÉÒüØÒüôÒüºÕ¥àÒüúÒüªÒüäÒéï": {
+    "Twinkle Star - 未来はすぐそこで待っている": {
       "steam_appid": 1058150
     },
     "Twinkle Star Sprites": {
@@ -182867,7 +182737,7 @@
       "config_path": "%LOCALAPPDATA%\\twinspri\\UserDefault.xml",
       "engine": "Cocos2d"
     },
-    "TwinkleÔÇÖs Galactic Tour": {
+    "Twinkle’s Galactic Tour": {
       "steam_appid": 3938440,
       "engine": "Unity"
     },
@@ -183785,13 +183655,13 @@
       "steam_appid": 331580,
       "engine": "CryEngine (4th generation)"
     },
-    "Ultre├»a": {
+    "Ultreïa": {
       "steam_appid": 1284870,
       "dx11": true,
-      "config_path": "HKEY_CURRENT_USER\\Software\\Greewook\\Ultre├»a",
+      "config_path": "HKEY_CURRENT_USER\\Software\\Greewook\\Ultreïa",
       "engine": "Unity"
     },
-    "Ultre├»a - Night of the Eclipse": {
+    "Ultreïa - Night of the Eclipse": {
       "steam_appid": 3047600
     },
     "Ulxrd": {
@@ -185423,7 +185293,7 @@
     "Uriel's Chasm": {
       "steam_appid": 292630
     },
-    "Uriel's Chasm 2: ÎÉÎ¬": {
+    "Uriel's Chasm 2: את": {
       "steam_appid": 414580
     },
     "Uriel's Chasm 3: Gelshock": {
@@ -186997,7 +186867,7 @@
     "Vietnam War Puzzles": {
       "steam_appid": 845150
     },
-    "Vietnam ÔÇÿ65": {
+    "Vietnam ‘65": {
       "steam_appid": 336080,
       "engine": "Unity"
     },
@@ -187762,7 +187632,7 @@
       "engine": "Ogre"
     },
     "Viva Football": {},
-    "Viva Pi├▒ata": {
+    "Viva Piñata": {
       "dx9": true,
       "config_path": "%LOCALAPPDATA%\\Saved Games\\Microsoft Games\\Viva Pinata\\pinata.cfg"
     },
@@ -188201,9 +188071,6 @@
     "Volvox": {
       "steam_appid": 392600
     },
-    "VolvyÔÇÖs Adventure: Reslimed": {
-      "steam_appid": 4523120
-    },
     "Volvy’s Adventure: Reslimed": {
       "steam_appid": 4523120
     },
@@ -188242,7 +188109,7 @@
     "Voodoo Whisperer Curse of a Legend": {
       "steam_appid": 288830
     },
-    "Voron: RavenÔÇÖs Story": {
+    "Voron: Raven’s Story": {
       "steam_appid": 2245180
     },
     "Voronium - Locust Sols": {
@@ -188680,7 +188547,7 @@
     "VR Theme Park Rides": {
       "steam_appid": 642070
     },
-    "VR TOON Help Me (ýé┤Ùáñýú╝ýä©ýÜö)": {
+    "VR TOON Help Me (살려주세요)": {
       "steam_appid": 823690
     },
     "VR Triber": {
@@ -188838,19 +188705,19 @@
     "VRZ Torment": {
       "steam_appid": 484350
     },
-    "VRÒüºÒâ¼ÒâáÒü¿þò░õ©ûþòîþöƒµ┤╗-ÞåØµ×ò&µÀ╗Õ»ØþÀ¿": {
+    "VRでレムと異世界生活-膝枕&添寝編": {
       "steam_appid": 804780
     },
-    "VRÒüºÒé¿ÒâƒÒâ¬ÒéóÒü¿þò░õ©ûþòîþöƒµ┤╗-ÞåØµ×ò&µÀ╗Õ»ØþÀ¿": {
+    "VRでエミリアと異世界生活-膝枕&添寝編": {
       "steam_appid": 806560
     },
-    "VRÕ×âÕ£¥Õêåþ▒╗ Refuse classification": {
+    "VR垃圾分类 Refuse classification": {
       "steam_appid": 1139920
     },
-    "VRÕ×âÕ£¥Õêåþ▒╗þøèµÖ║": {
+    "VR垃圾分类益智": {
       "steam_appid": 1209020
     },
-    "VRþôªÕë▓Òéè / VR roof tile": {
+    "VR瓦割り / VR roof tile": {
       "steam_appid": 1135320,
       "engine": "Unity"
     },
@@ -189214,7 +189081,7 @@
     },
     "Wanderer": {
       "opengl": true,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Wanderer of Teandria": {
       "steam_appid": 477910
@@ -190186,7 +190053,7 @@
     },
     "Warlock's Tower": {
       "steam_appid": 530370,
-      "engine": "L├ûVE"
+      "engine": "LÖVE"
     },
     "Warlock: Dungeons & Dragons": {
       "steam_appid": 3714800
@@ -190423,7 +190290,7 @@
     "Warriors of Legend": {
       "engine": "World Builder (Synergistic Software)"
     },
-    "Warriors of Ragnar├Âk": {
+    "Warriors of Ragnarök": {
       "steam_appid": 973350,
       "engine": "Unreal Engine 4"
     },
@@ -190831,7 +190698,7 @@
       "steam_appid": 992210,
       "dx11": true
     },
-    "Waves┬▓": {
+    "Waves²": {
       "steam_appid": 217120
     },
     "Wavetale": {
@@ -191361,7 +191228,7 @@
     "Welcome to Bummertown": {
       "steam_appid": 925520
     },
-    "Welcome To Cathouse´╝êµ¼óÞ┐ÄµØÑÕê░þî½ÕÆ¬Þè▒Õø¡´╝ë": {
+    "Welcome To Cathouse（欢迎来到猫咪花园）": {
       "steam_appid": 1079330
     },
     "Welcome to Doll Town": {
@@ -191493,10 +191360,10 @@
     "Wequer": {
       "steam_appid": 781990
     },
-    "Wer wei├ƒ denn sowas? - Das 2. Spiel": {
+    "Wer weiß denn sowas? - Das 2. Spiel": {
       "steam_appid": 1112380
     },
-    "Wer wei├ƒ denn sowas? - Das Spiel": {
+    "Wer weiß denn sowas? - Das Spiel": {
       "steam_appid": 782130,
       "engine": "Unity"
     },
@@ -191805,7 +191672,7 @@
     "What's under Your Blanket 2 !?": {
       "steam_appid": 605500
     },
-    "What? Hentai? Again ? ( ═í┬░ ═£╩û ═í┬░)": {
+    "What? Hentai? Again ? ( ͡° ͜ʖ ͡°)": {
       "steam_appid": 922140
     },
     "Whateverland": {
@@ -192198,7 +192065,7 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\SONNORI\\White Day:a labyrinth named school\\, %USERPROFILE%\\AppData\\LocalLow\\SONNORI\\White Day_a labyrinth named school\\config.dat",
       "engine": "Unity"
     },
-    "White Dove þÖ¢ÚøÇ": {
+    "White Dove 白雀": {
       "steam_appid": 953570
     },
     "White Haven Mysteries": {
@@ -192255,13 +192122,13 @@
       "steam_appid": 1185680,
       "engine": "KiriKiri"
     },
-    "WhiteBird þÖ¢Ú©ƒ": {
+    "WhiteBird 白鸟": {
       "steam_appid": 1095810
     },
-    "WhiteLily 1´╝Üõ©¢õ©¢Õà¼õ©╗": {
+    "WhiteLily 1：丽丽公主": {
       "steam_appid": 876850
     },
-    "WhiteLily 2´╝ÜµóªÚåÆÕ░æÕÑ│": {
+    "WhiteLily 2：梦醒少女": {
       "steam_appid": 1286330
     },
     "Whiteout": {
@@ -192912,7 +192779,7 @@
     "Windlands 2": {
       "steam_appid": 458580
     },
-    "Windmill Kings / ÚúÄÞ¢ªÕø¢þÄï": {
+    "Windmill Kings / 风车国王": {
       "steam_appid": 1180420
     },
     "Windosill": {
@@ -193057,7 +192924,7 @@
     },
     "Wings of Destiny": {},
     "Wings of Fury": {},
-    "Wings of Glass þÄ╗þÆâÒü«þ¥¢": {
+    "Wings of Glass 玻璃の羽": {
       "steam_appid": 1010780
     },
     "Wings of Glory": {
@@ -193277,7 +193144,7 @@
       "steam_appid": 392370,
       "engine": "Unity"
     },
-    "Wish Giver Õü┐µä┐õ║║": {
+    "Wish Giver 偿愿人": {
       "steam_appid": 934060
     },
     "Wish Project": {
@@ -194112,7 +193979,7 @@
       "config_path": "%USERPROFILE%\\Documents\\My Games\\WoolfeTRHD\\WoolfeGame\\Config",
       "engine": "Unreal Engine 3"
     },
-    "WoozyHero õ╣îÞ┤╝Þï▒Úøä": {
+    "WoozyHero 乌贼英雄": {
       "steam_appid": 1052150
     },
     "Worbital": {
@@ -194188,7 +194055,7 @@
     "Words in Progress": {
       "opengl": true
     },
-    "Work girlµëôÕÀÑÕª╣µùÑÞ«░": {
+    "Work girl打工妹日记": {
       "steam_appid": 1159990
     },
     "Workers & Resources: Soviet Republic": {
@@ -194476,7 +194343,7 @@
     "World of Virtual Reality": {
       "steam_appid": 850550
     },
-    "World of Voidia´╝êÞÖÜõ║Üõ©ûþòî´╝ë": {
+    "World of Voidia（虚亚世界）": {
       "steam_appid": 1211390
     },
     "World of Walking Cities": {
@@ -195236,10 +195103,10 @@
     "WWII: Battle Over the Pacific": {
       "dx9": true
     },
-    "WWIIÞï▒ÚøäÕêùõ╝Ø µ£ÇÕ╝ÀÒü«ÞÖÄ Òé»Òâ½ÒâêÒâ╗Òé»ÒâïÒé╣ÒâÜÒâ½": {
+    "WWII英雄列伝 最強の虎 クルト・クニスペル": {
       "steam_appid": 753950
     },
-    "WWIIÞï▒ÚøäÕêùõ╝Ø µ│ÑÒü«õ©¡Òü«ÞÖÄ Òé¬ÒââÒâêÒâ╝Òâ╗Òé½Òâ¬ÒéªÒé╣": {
+    "WWII英雄列伝 泥の中の虎 オットー・カリウス": {
       "steam_appid": 792470
     },
     "WWR: World of Warfare Robots": {
@@ -195281,21 +195148,21 @@
     "WyVRn": {
       "steam_appid": 500090
     },
-    "W┼éatcy m├│ch: Battle Arena": {
+    "Włatcy móch: Battle Arena": {
       "dx9": true,
       "config_path": "<path-to-game>/config.ini"
     },
-    "W┼éatcy m├│ch: Magiczni wojownicy 2": {
+    "Włatcy móch: Magiczni wojownicy 2": {
       "dx9": true
     },
-    "W┼éatcy m├│ch: Olimpiada Podw├│rkowa": {
+    "Włatcy móch: Olimpiada Podwórkowa": {
       "dx9": true,
       "config_path": "<path-to-game>\\config.ini"
     },
-    "W┼éatcy m├│ch: Wrz├│d na d├│pie": {
+    "Włatcy móch: Wrzód na dópie": {
       "dx9": true
     },
-    "W┼éatcy m├│ch: ┼Ünie┼╝na Rozwa┼éka": {
+    "Włatcy móch: Śnieżna Rozwałka": {
       "dx9": true
     },
     "X Archetype": {
@@ -195851,7 +195718,7 @@
     "XZ: XL": {
       "steam_appid": 771190
     },
-    "XÕ░æÕÑ│ÚÇâÞä▒ x girl escape": {
+    "X少女逃脱 x girl escape": {
       "steam_appid": 1140340
     },
     "Y2K: The Game": {},
@@ -196169,7 +196036,7 @@
       "steam_appid": 1210490,
       "engine": "Unity"
     },
-    "Yet Another Hero Legend Þï▒Úøäõ╝áÞ»┤ÕÅêõ©ÇÕêÖ": {
+    "Yet Another Hero Legend 英雄传说又一则": {
       "steam_appid": 1083750,
       "engine": "RPG Maker"
     },
@@ -196938,7 +196805,7 @@
     "Yuzi Lims: Hentai": {
       "steam_appid": 960360
     },
-    "Y┼ìdanji": {
+    "Yōdanji": {
       "steam_appid": 736710
     },
     "Z": {},
@@ -197144,7 +197011,7 @@
     "Zazmo Arcade Pack": {
       "steam_appid": 770320
     },
-    "ZDF History 360┬░ - Tempelhof": {
+    "ZDF History 360° - Tempelhof": {
       "steam_appid": 982010
     },
     "Ze VR": {
@@ -197193,7 +197060,7 @@
       "steam_appid": 437520
     },
     "Zeitgeist": {},
-    "Zeit┬▓": {
+    "Zeit²": {
       "steam_appid": 33390
     },
     "Zeke's Peak": {
@@ -197413,7 +197280,7 @@
     "Zero Killed": {
       "steam_appid": 645930
     },
-    "Zero One / µØÇµê«õ©ûþòî": {
+    "Zero One / 杀戮世界": {
       "steam_appid": 1040610
     },
     "Zero Parades: For Dead Spies": {
@@ -198574,875 +198441,875 @@
     "~necromancy~Emily's Escape": {
       "steam_appid": 975120
     },
-    "´╝£/reality´╝×": {
+    "＜/reality＞": {
       "steam_appid": 562280,
       "engine": "Ren'Py"
     },
-    "ð£ð½ðøð× ðúðáð×ðØðÿðø": {
+    "МЫЛО УРОНИЛ": {
       "steam_appid": 937210
     },
-    "ð®ðÁð¢ð¥ð║": {
+    "Щенок": {
       "dx9": true
     },
-    "ð¿ðÑðö: ðùðÿð£ðÉ / IT'S WINTER": {
+    "ШХД: ЗИМА / IT'S WINTER": {
       "steam_appid": 1003360
     },
-    "ð¿ðƒ": {
+    "ШП": {
       "steam_appid": 727640
     },
-    "ðáð¥ÐüÐüð©ÐÅ 2019": {
+    "Россия 2019": {
       "steam_appid": 1045010
     },
-    "ðáð¥ð╝ð░ð¢ ðóÐÇð░ÐàÐéðÁð¢ð▒ðÁÐÇð│: ðÆ ð┐ð¥ð©Ðüð║ð░Ðà ð©ð┤ðÁð░ð╗Ðîð¢ð¥ð│ð¥ ð░ð¢ðÁð║ð┤ð¥Ðéð░": {
+    "Роман Трахтенберг: В поисках идеального анекдота": {
       "engine": "VZEngine"
     },
-    "ðÆ ÐéÐïð╗Ðâ ð▓ÐÇð░ð│ð░: ðöð©ð▓ðÁÐÇÐüð░ð¢ÐéÐï 2": {
+    "В тылу врага: Диверсанты 2": {
       "config_path": "<path-to-game>\\profiles\\<user-id>\\settings",
       "engine": "GEM"
     },
-    "ðÆ ÐéÐïð╗Ðâ ð▓ÐÇð░ð│ð░: ðöð©ð▓ðÁÐÇÐüð░ð¢ÐéÐï 3": {
+    "В тылу врага: Диверсанты 3": {
       "config_path": "<path-to-game>\\profiles\\<user-id>\\settings",
       "engine": "GEM"
     },
-    "ðÆ ð┐ð¥ð©Ðüð║ð░Ðà ðÉÐéð╗ð░ð¢Ðéð©ð┤Ðï": {
+    "В поисках Атлантиды": {
       "steam_appid": 925640
     },
-    "ðÆð¥ð©ð¢ ðÑð©ð¢ð¥ÐÇð░": {
+    "Воин Хинора": {
       "steam_appid": 1031770
     },
-    "ðæÐâÐàð¥ð╣ ðæð░ÐéÐÅ / Drunk Dad": {
+    "Бухой Батя / Drunk Dad": {
       "steam_appid": 964260
     },
-    "ðÆðùðøð×ð£ ðûð×ðƒð½": {
+    "ВЗЛОМ ЖОПЫ": {
       "steam_appid": 1206700
     },
-    "ðíð©ð╝Ðâð╗ÐÅÐéð¥ÐÇ ðíð©ð┤ðÁð¢ð©ÐÅ Ðâ ðƒð¥ð┤ÐèðÁðÀð┤ð░": {
+    "Симулятор Сидения у Подъезда": {
       "steam_appid": 1031920
     },
-    "ðíðøðÉðÆðÉ ðúðÜðáðÉðçðØðå": {
+    "СЛАВА УКРАЇНІ": {
       "steam_appid": 1099720
     },
-    "ðíð║ÐâÐä ð¢ð░ ÐÇÐïð▒ð░ð╗ð║ðÁ": {
+    "Скуф на рыбалке": {
       "steam_appid": 3149840
     },
-    "ðíð╝ðÁÐêð░ÐÇð©ð║ð©: ðƒð░ÐÇð░ð╗ð╗ðÁð╗Ðîð¢ÐïðÁ ð╝ð©ÐÇÐï": {
+    "Смешарики: Параллельные миры": {
       "dx9": true,
       "config_path": "<path-to-game>\\config.info",
       "engine": "Tanita2"
     },
-    "ðíð░ð╝ð¥ðÀð▓ð░ð¢ðÁÐå": {
+    "Самозванец": {
       "steam_appid": 1123510
     },
-    "ðòðíðóð¼ ðöðÆðÉ ðíðóðúðøðÉ": {
+    "ЕСТЬ ДВА СТУЛА": {
       "steam_appid": 873190
     },
-    "ðóÐÇð©ð┤ðÁð▓ÐÅÐéÐïðÁ ðÀðÁð╝ð╗ð©(ðíð▓ðÁÐé ð©ð╗ð© ÐéÐîð╝ð░)": {
+    "Тридевятые земли(Свет или тьма)": {
       "steam_appid": 847100
     },
-    "ðöð×ðÜðÉ 2! - ðÜðáð×ðÆð¼, ðÜðÿð¿ðÜðÿ, ðôð×ðøð½ðò ðíðÿðíð¼ðÜðÿ": {
+    "ДОКА 2! - КРОВЬ, КИШКИ, ГОЛЫЕ СИСЬКИ": {
       "steam_appid": 980060
     },
-    "ðØðÁ ð┐ð░ð┤ð░ð╣!": {
+    "Не падай!": {
       "steam_appid": 1056010
     },
-    "ðÜðÉðØðöðÿðöðÉðó": {
+    "КАНДИДАТ": {
       "steam_appid": 1031810
     },
-    "ÒâåÒâ╝Òâ×ÒâæÒâ╝Òé»Òü«ÞÖ½": {
+    "テーマパークの虫": {
       "steam_appid": 1036270
     },
-    "ÒâæÒâêÒâ½Òü«Þ╗ìõ║ïÕìÜþë®Úñ¿´╝ô ÞÂàþÁÂþäíµòÁþ®ÂµÑÁÕàÁÕÖ¿": {
+    "パトルの軍事博物館３ 超絶無敵究極兵器": {
       "steam_appid": 1212840
     },
-    "ÒâÉÒéñÒâ│ÒâëÒéÆÞºúÚÖñÒüÖÒéï(unbind)": {
+    "バインドを解除する(unbind)": {
       "steam_appid": 977590
     },
-    "ÒâÉÒé░ÒâÇÒé╣ - ÒâçÒâÉÒââÒé¼Òâ╝µñ£Õ«Ü -": {
+    "バグダス - デバッガー検定 -": {
       "steam_appid": 1002360
     },
-    "ÒâØÒé¿Òâïµêªõ║ë Õ£░õ©¡µÁÀÒü«þ¿▓Õª╗": {
+    "ポエニ戦争 地中海の稲妻": {
       "steam_appid": 1136900
     },
-    "ÒÇèÚ¼╝þò£µêÿÞ«░´╝ÜÚçæÕØÀÕ×âõ╝áÞ»┤ÒÇï": {
+    "《鬼畜战记：金坷垃传说》": {
       "steam_appid": 1087960
     },
-    "ÒÇÉSCPÒÇæÕÖ¿ÚûóÒâÄÕ¢ÀÕ¥¿ -The will of a single Tale- þ¼¼´╝æÚâ¿": {
+    "【SCP】器関ノ彷徨 -The will of a single Tale- 第１部": {
       "steam_appid": 1018930
     },
-    "ÒéÀÒâïÒéÁÒé«": {
+    "シニサギ": {
       "steam_appid": 1113580
     },
-    "Òü¥Òü£ÒüúÒüôÒé┐Òâ»Òâ╝": {
+    "まぜっこタワー": {
       "steam_appid": 745280
     },
-    "ÒüèÒéÅÒüïÒéîÒü«Òü╗Òüù": {
+    "おわかれのほし": {
       "steam_appid": 1052580
     },
-    "ÒüìÒéèÒüƒÒéôvsÒé½ÒâïÒüƒÒéô -ÒüÜÒéôÒüáÒééÒüíÒéÆÚÿ▓ÞíøÒüøÒéê´╝ü-": {
+    "きりたんvsカニたん -ずんだもちを防衛せよ！-": {
       "steam_appid": 947430
     },
-    "Òü░ÒéïÒü░ÒéìÒüúÒüò! ´¢×ÒüÖÒüÖÒéü? ÞÁñÞ╗ìÕ░æÕÑ│µùàÕøú": {
+    "ばるばろっさ! ～すすめ? 赤軍少女旅団": {
       "steam_appid": 793080
     },
-    "Ô£î Johnny Rocket": {
+    "✌ Johnny Rocket": {
       "steam_appid": 942300
     },
-    "Ôé¼100": {
+    "€100": {
       "steam_appid": 1036910
     },
-    "ÔêÇkashicforce": {
+    "∀kashicforce": {
       "steam_appid": 857460
     },
-    "ÔÖ× The Tactics of War ÔÖ×": {
+    "♞ The Tactics of War ♞": {
       "steam_appid": 937780
     },
-    "ÔÿàFallalypse Ôÿà Disconnect ÔØä": {
+    "★Fallalypse ★ Disconnect ❄": {
       "steam_appid": 978610
     },
-    "Õ¢ÀÕ¥¿õ╣ïÞíù The Street of Adrift": {
+    "彷徨之街 The Street of Adrift": {
       "steam_appid": 1672670,
       "engine": "Unity"
     },
-    "õ¢úÕàÁÕ£░õ©ïÕƒÄ/Hell Warriors": {
+    "佣兵地下城/Hell Warriors": {
       "steam_appid": 1195080
     },
-    "õ¢úÕàÁµêÿµ¡î": {
+    "佣兵战歌": {
       "steam_appid": 1196620
     },
-    "Õ£¿þ║┐µòÖÞé▓Õ╝ÇÕÅæÕ«×õ╣áþöƒ Elearning Development Intern": {
+    "在线教育开发实习生 Elearning Development Intern": {
       "steam_appid": 1012180
     },
-    "Õ£¿µ£½µùÑÕëìÕñòþ¡ëÕ¥àµö¥µÖ┤": {
+    "在末日前夕等待放晴": {
       "steam_appid": 1020930
     },
-    "Õ£êÕ£êÕÀÑÕØè OO.Inc": {
+    "圈圈工坊 OO.Inc": {
       "steam_appid": 993860
     },
-    "Õ£úÕ▒▒ShenShan": {
+    "圣山ShenShan": {
       "steam_appid": 1044900
     },
-    "Õ£░ÕƒÄÞöÀÞûç": {
+    "地城蔷薇": {
       "steam_appid": 1073600
     },
-    "Õ£░Úôü´╝ÜµüÉµÇûµ£½þÅ¡Þ¢ª": {
+    "地铁：恐怖末班车": {
       "steam_appid": 1062240
     },
-    "õ¥ìÚüôÕñûõ╝Ø KATANAKAMI": {
+    "侍道外伝 KATANAKAMI": {
       "steam_appid": 1062340
     },
-    "Õ¥íÕëæ Yu Jian": {
+    "御剑 Yu Jian": {
       "steam_appid": 1144860
     },
-    "Õ¥íÚ¥ÖÕ£¿Õñ®-Õ╣│ÞííÕø¢µêÿþëê": {
+    "御龙在天-平衡国战版": {
       "steam_appid": 1052500
     },
-    "Õ¥îÞùñõ©ÇÕ«ÂÒü«Õ¡ñÕ│Âµ«║õ║║õ║ïõ╗Â": {
+    "後藤一家の孤島殺人事件": {
       "steam_appid": 1074530
     },
-    "õ©¡ÕìÄõ©ëÕø¢Õ┐ù": {
+    "中华三国志": {
       "steam_appid": 1029500
     },
-    "õ©£Õæ¿µïƒµêÿ": {
+    "东周拟战": {
       "steam_appid": 1162080
     },
-    "õ©£µû╣þÖ¥Úù«-TouHouAsked": {
+    "东方百问-TouHouAsked": {
       "steam_appid": 930840
     },
-    "õ©£µû╣Þ┐£þ®║þòî ~ Ultimate Vitality of Imagination": {
+    "东方远空界 ~ Ultimate Vitality of Imagination": {
       "steam_appid": 1700220,
       "dx9": true,
       "dx11": true,
       "config_path": "<path-to-game>\\userdata\\*.json",
       "engine": "LuaSTG"
     },
-    "õ©£µû╣µóªÚøÂÚ¡é -TouHou Nil Soul-": {
+    "东方梦零魂 -TouHou Nil Soul-": {
       "steam_appid": 941300
     },
-    "õ©£µû╣µóªµ£êÞ░ê~Lunatic Dreaming": {
+    "东方梦月谈~Lunatic Dreaming": {
       "steam_appid": 1134550
     },
-    "õ©âÕñ£µÇ¬Þ░ê - Úâ¢Õ©éµáíÕø¡þªüÚöóõ╝áÞ»┤": {
+    "七夜怪谈 - 都市校园禁锢传说": {
       "steam_appid": 932070
     },
-    "õ©ÇÕ¡ùõ©ìÞÉ¢": {
+    "一字不落": {
       "steam_appid": 1139800
     },
-    "õ©Çµû╣þüÁþö░": {
+    "一方灵田": {
       "steam_appid": 1201230
     },
-    "õ©ëÕÆîÕñºþÑ×": {
+    "三和大神": {
       "steam_appid": 974450
     },
-    "õ©ëÕø¢õ¢úÕàÁõ╝áÕÑç": {
+    "三国佣兵传奇": {
       "steam_appid": 1011970
     },
-    "õ©ëÕø¢õ╣▒õ╝áThree Kingdoms Fantasy": {
+    "三国乱传Three Kingdoms Fantasy": {
       "steam_appid": 1217410
     },
-    "õ©ëÕø¢µ©©õ¥áÕ┐ù": {
+    "三国游侠志": {
       "steam_appid": 781590
     },
-    "õ©ëÕø¢µùÂõ╗ú2": {
+    "三国时代2": {
       "steam_appid": 1154470
     },
-    "õ©ìÕÅ»µÇØÞ««õ¢úÕàÁÕøó": {
+    "不可思议佣兵团": {
       "steam_appid": 1135380
     },
-    "õ©ìÞÉ¢ÕƒÄ-Unconquered Castle": {
+    "不落城-Unconquered Castle": {
       "steam_appid": 873490
     },
-    "Õ©îµ£øõ╣ïµÿƒ": {
+    "希望之星": {
       "steam_appid": 932050
     },
-    "õ©ïõ©ÇÕ▒éþÜäÕ░üÚ¡öÕíö Forever War": {
+    "下一层的封魔塔 Forever War": {
       "steam_appid": 1089810
     },
-    "Õ©ØÕø¢õ©ÄµûçµÿÄ": {
+    "帝国与文明": {
       "steam_appid": 1041710
     },
-    "õ©ûþòîÕ░¢Õñ┤þÜäÞöÀÞûçÞè▒Õø¡": {
+    "世界尽头的蔷薇花园": {
       "steam_appid": 1098680
     },
-    "õ©░ÚÑÂõ╣ïÞºÆ õ©ìÕÅ»µÇØÞ««õ╣ïþë®Õ▒àõ¢ÅþÜäÕ░ÅÚòç": {
+    "丰饶之角 不可思议之物居住的小镇": {
       "steam_appid": 816600
     },
-    "Õªéµ×£õ©ÇþöƒÕÅ¬µ£ëõ©ëÕìüÕ▓üBefore Thirty": {
+    "如果一生只有三十岁Before Thirty": {
       "steam_appid": 1128360
     },
-    "Õªéµ×£µêÉõ©║ÕïçÞÇàÕÉÄÕÅ¬Õë®õ©ïõ©ÇÕ░ÅµùÂþöƒÕæ¢Þ»ÑÕªéõ¢òµëôÕÇÆÚ¡öþÄïµ┤╗õ©ïÕÄ╗´╝ƒ": {
+    "如果成为勇者后只剩下一小时生命该如何打倒魔王活下去？": {
       "steam_appid": 1160510
     },
-    "ÕªêÕªê´╝îÕê½ÞÁ░": {
+    "妈妈，别走": {
       "steam_appid": 1175180
     },
-    "ÕªûÞ»ù-Yaokai's Poetry-": {
+    "妖诗-Yaokai's Poetry-": {
       "steam_appid": 1082880
     },
-    "ÕªûµÇ¬õ┐▒õ╣ÉÚâ¿ Demon Club": {
+    "妖怪俱乐部 Demon Club": {
       "steam_appid": 992620
     },
-    "Õ«ÂÕø¡VR": {
+    "家园VR": {
       "steam_appid": 1160770
     },
-    "Õ«êµèñõ╝áÞ»┤ Guardian Legend": {
+    "守护传说 Guardian Legend": {
       "steam_appid": 1145550
     },
-    "Õ«ëÕà¿µòÖÞé▓": {
+    "安全教育": {
       "steam_appid": 865150
     },
-    "Õ«úÕñ£": {
+    "宣夜": {
       "steam_appid": 958280
     },
-    "Õ«╣Þ║½õ╣ïÕ£░Úôü": {
+    "容身之地铁": {
       "steam_appid": 1067270,
       "engine": "Unity"
     },
-    "Õ»äþöí Symbitic Love": {
+    "寄甡 Symbitic Love": {
       "steam_appid": 948830
     },
-    "Õ»äþ╗ÖµÿÄµùÑþÜäÕ©îµ£ø": {
+    "寄给明日的希望": {
       "steam_appid": 1033650
     },
-    "Õ»╗Þ┐╣ -A story of a song-": {
+    "寻迹 -A story of a song-": {
       "steam_appid": 962940
     },
-    "Õ»╣Õå│õ╣ïÕóâ": {
+    "对决之境": {
       "steam_appid": 1179040
     },
-    "ÕÀ¡Õ¡¼Õ½æµ»û": {
+    "巭孬嫑毖": {
       "steam_appid": 905670
     },
-    "Õà¡ÚÿÂÞ░£Úóÿ six-step mystery": {
+    "六阶谜题 six-step mystery": {
       "steam_appid": 1164000
     },
-    "Õà¡þòîÚú×õ╗Ö": {
+    "六界飞仙": {
       "steam_appid": 1176450
     },
-    "Õà¢ÞÇ│µö╗þòÑ - TFK Faculty": {
+    "兽耳攻略 - TFK Faculty": {
       "steam_appid": 1096330
     },
-    "ÕÀ½Õ©êÞÂàÕçíÞÇà Legend of the wizard": {
+    "巫师超凡者 Legend of the wizard": {
       "steam_appid": 1106690
     },
-    "ÕÀ¿Ú¥ÖÕÅ¼Õöñ": {
+    "巨龙召唤": {
       "steam_appid": 1101420
     },
-    "Õà¿µëÿµòÖÕ©ê": {
+    "全托教师": {
       "steam_appid": 1785750,
       "engine": "Unity"
     },
-    "Õà¿µ░æþÄïÞÇà": {
+    "全民王者": {
       "steam_appid": 742360
     },
-    "ÕÀàÕ│░Ú¬æÕú½Õøó": {
+    "巅峰骑士团": {
       "steam_appid": 1132730
     },
-    "Õàâþ┤áµêÿõ║ë Elemental war": {
+    "元素战争 Elemental war": {
       "steam_appid": 1063970
     },
-    "ÕàëÞêçµÜùõ╣ïµêÇµø▓": {
+    "光與暗之戀曲": {
       "steam_appid": 1128450
     },
-    "ÕàëµÿÄÕå│ DUEX": {
+    "光明决 DUEX": {
       "steam_appid": 1045750
     },
-    "ÕàïÞïÅÚ▓üÕ╝éÚù╗Õ¢ò": {
+    "克苏鲁异闻录": {
       "steam_appid": 977500,
       "engine": "Unity"
     },
-    "ÕàöÞÇ│ÕåÆÚÜ¬Þ¡Ü": {
+    "兔耳冒險譚": {
       "steam_appid": 1024440
     },
-    "Õà▒õ║ºõ©╗õ╣ëÕÑ│Õ¡® ~ Ôÿ¡ Communism´╝ê´┐úÒâ╝´┐ú´╝ë": {
+    "共产主义女孩 ~ ☭ Communism（￣ー￣）": {
       "steam_appid": 962770
     },
-    "Õá┤Õñûõ║║þöƒ": {
+    "場外人生": {
       "steam_appid": 1120370
     },
-    "ÕÄƒõ¢ô": {
+    "原体": {
       "steam_appid": 1095540
     },
-    "ÕÄƒÕºïÚâ¿ÞÉ¢": {
+    "原始部落": {
       "steam_appid": 812510
     },
-    "ÕÅ½µêæÚô©ÚÇáÕ©ê": {
+    "叫我铸造师": {
       "steam_appid": 1131280
     },
-    "ÕåÀµ£êµ©àÞ¥ëþàºÕñ®µÂ»(KUNG FU LEGEND)": {
+    "冷月清辉照天涯(KUNG FU LEGEND)": {
       "steam_appid": 957150,
       "engine": "RPG Maker"
     },
-    "ÕÅìþÄ░Õ«×þùçÕÇÖþ¥ñ╬│ - Counterrealstic Syndrome ╬│": {
+    "反现实症候群γ - Counterrealstic Syndrome γ": {
       "steam_appid": 1186860
     },
-    "ÕÅÖõ║ïµø▓2´╝Üµÿƒþ®║õ©ïþÜäÞ»║Þ¿Ç / Ballade2: the Celestial Promise": {
+    "叙事曲2：星空下的诺言 / Ballade2: the Celestial Promise": {
       "steam_appid": 1080990
     },
-    "ÕÅÖõ║ïµø▓´╝ÜÚÜ¥Õ┐ÿþÜäÕø×Õ┐å / Ballade: with Memories": {
+    "叙事曲：难忘的回忆 / Ballade: with Memories": {
       "steam_appid": 1091720
     },
-    "ÕåøÕøóµêÿµúï Legion War": {
+    "军团战棋 Legion War": {
       "steam_appid": 975270
     },
-    "ÕÅÿÚçÅ": {
+    "变量": {
       "steam_appid": 1054800
     },
-    "Õæ¢Þ┐Éµêÿµ¡î": {
+    "命运战歌": {
       "steam_appid": 2015770
     },
-    "Õæèµ¡╗Õñ®õ¢┐õ╣ïÞ¿Ç - Death angel": {
+    "告死天使之言 - Death angel": {
       "steam_appid": 1124090
     },
-    "ÕÆöÕÅ¢µÄóÚÖ®Úÿƒ Kaki Raid": {
+    "咔叽探险队 Kaki Raid": {
       "steam_appid": 1137180
     },
-    "Õç»µùïÕ▓ø": {
+    "凯旋岛": {
       "steam_appid": 1038680
     },
-    "Õçíõ║║Úú×õ╗Ö": {
+    "凡人飞仙": {
       "steam_appid": 1143670
     },
-    "Õç║Úù¿": {
+    "出门": {
       "steam_appid": 1175240
     },
-    "ÕÉ¥Õàëþ¼öÞ«░Holimas Z Notebook": {
+    "吾光笔记Holimas Z Notebook": {
       "steam_appid": 1150130,
       "engine": "Unity"
     },
-    "ÕÉÄÚüùþùç´╝ÅSequela": {
+    "后遗症／Sequela": {
       "steam_appid": 1071900
     },
-    "ÕÉìÕ¬øÕÑ│ÕÅï-Girlfriend invites": {
+    "名媛女友-Girlfriend invites": {
       "steam_appid": 1178330
     },
-    "ÕÉîÕ▒àµîçÕìù": {
+    "同居指南": {
       "steam_appid": 985740
     },
-    "ÕÉ×ÚúƒÕñ®Õ£░ 2019": {
+    "吞食天地 2019": {
       "steam_appid": 1205670
     },
-    "Õé▓þÜçÕ┐åÕëæÞ»Ç": {
+    "傲皇忆剑诀": {
       "steam_appid": 997270
     },
-    "Õê½õ╗Ñõ©║õ¢áµÿ»Õ╝ÇÕÅæÞÇàµêæÕ░▒õ©ìµòóµëôõ¢á": {
+    "别以为你是开发者我就不敢打你": {
       "steam_appid": 1110650
     },
-    "ÕêÇÕëæÕñ®õ©ï": {
+    "刀剑天下": {
       "steam_appid": 1155150
     },
-    "ÕêÇÚöïþ¬üÞó¡": {
+    "刀锋突袭": {
       "steam_appid": 1184110
     },
-    "Õêøõ©û-õ┐«þ£ƒÕ¢ò": {
+    "创世-修真录": {
       "steam_appid": 723420
     },
-    "ÕêØÕ╝ÇÕ£¿Õ╣│Õ«ëÕñ£õ╣ïÞè▒ -The Flower on Christmas Eve-": {
+    "初开在平安夜之花 -The Flower on Christmas Eve-": {
       "steam_appid": 1127140
     },
-    "ÕêøÚÇáõ©Äµîæµêÿ": {
+    "创造与挑战": {
       "steam_appid": 913550
     },
-    "Õë¬ÕêÇþƒ│Õñ┤Õ©â": {
+    "剪刀石头布": {
       "steam_appid": 977140
     },
-    "Õë»õ¢£þö¿õ╣ïþ×│ (Tlicolity Eyes)": {
+    "副作用之瞳 (Tlicolity Eyes)": {
       "steam_appid": 1195830
     },
-    "ÕëæÚ¡ä": {
+    "剑魄": {
       "steam_appid": 1091460
     },
-    "ÕìáµÿƒÕ©êAstrologer": {
+    "占星师Astrologer": {
       "steam_appid": 1194800
     },
-    "ÕìâÚØó Melancholy Love": {
+    "千面 Melancholy Love": {
       "steam_appid": 1168470
     },
-    "ÕìêÚñÉ13": {
+    "午餐13": {
       "steam_appid": 702790
     },
-    "ÕìíÕôçõ╝èÕÑ│Õ¡® ~ Kawaii Girls (ÒüÑ´¢íÔùòÔÇ┐ÔÇ┐Ôùò´¢í)ÒüÑ": {
+    "卡哇伊女孩 ~ Kawaii Girls (づ｡◕‿‿◕｡)づ": {
       "steam_appid": 966230
     },
-    "ÕìíþëçÕ£░õ©ïÕƒÄCard Monsters: Dungeon": {
+    "卡片地下城Card Monsters: Dungeon": {
       "steam_appid": 1077440
     },
-    "ÕìòÞ║½þïùþÜäµ£ÇÕÉÄµ£║õ╝Ü": {
+    "单身狗的最后机会": {
       "steam_appid": 1194560
     },
-    "ÕìüÕñ®þÜäµ║½Õ║ª": {
+    "十天的溫度": {
       "steam_appid": 1203970,
       "config_path": "<path-to-game>\\savedata\\krenvprf.kep"
     },
-    "ÕìüµùÑ": {
+    "十日": {
       "steam_appid": 1055660
     },
-    "ÕíöÕíöÕ©ØÕø¢": {
+    "塔塔帝国": {
       "steam_appid": 1875590
     },
-    "Õî┐ÕÉìõ┐í´╝ÜÕñ▒Õ┐âÞÇà": {
+    "匿名信：失心者": {
       "steam_appid": 1025980
     },
-    "ÕïçÕú½HERO": {
+    "勇士HERO": {
       "steam_appid": 1169400
     },
-    "ÕïçÞÇàµ£ëþé╣Õñ¬ÕÜúÕ╝áÒÇéG(No Hero Allowed: No Puzzle Either!)": {
+    "勇者有点太嚣张。G(No Hero Allowed: No Puzzle Either!)": {
       "steam_appid": 1046600
     },
-    "Õï┐Õ┐ÿµ¡ñÚô¡": {
+    "勿忘此铭": {
       "steam_appid": 943100
     },
-    "Õñ£Õ¡ñÕƒÄ ┬À õ¢òõ©║õ¥áõ╣ë": {
+    "夜孤城 · 何为侠义": {
       "steam_appid": 1158680
     },
-    "Õñ£õ╣ïÕ¢ÆÚÇö Night Homing": {
+    "夜之归途 Night Homing": {
       "steam_appid": 964240
     },
-    "Õñ£Úø¬Õå░Õ¿ç": {
+    "夜雪冰娇": {
       "steam_appid": 801600
     },
-    "Õñ®õ©ïÕ¥Çõ║ï Journey of the world": {
+    "天下往事 Journey of the world": {
       "steam_appid": 1094020,
       "engine": "RPG Maker"
     },
-    "Õñ®õ╗Öµ£ê-GMþòàþÄ®þëê": {
+    "天仙月-GM畅玩版": {
       "steam_appid": 1983940
     },
-    "Õñ®þ¢íµÿƒÕ«┐µÁÀ The sea of TianGang XinSu": {
+    "天罡星宿海 The sea of TianGang XinSu": {
       "steam_appid": 962290
     },
-    "Õñ®þ®║Õé│Þ¬¼": {
+    "天空傳説": {
       "steam_appid": 1017380
     },
-    "Õñ®þü½(TianHuo)": {
+    "天火(TianHuo)": {
       "steam_appid": 996710
     },
-    "ÕñºÕ£úÕ¢ÆµØÑ": {
+    "大圣归来": {
       "steam_appid": 946980
     },
-    "ÕñºÞÇüþêÀ": {
+    "大老爷": {
       "steam_appid": 1005950
     },
-    "ÕñºµùÂõ╗ú´╝Üõ©ëÕø¢þ½ïÕ┐ù": {
+    "大时代：三国立志": {
       "steam_appid": 1062200,
       "engine": "Unity"
     },
-    "ÕñÅõ╣ïµëë´╝Üµ£ÇÕÉÄþÜäÕ£úÚ¬æÕú½": {
+    "夏之扉：最后的圣骑士": {
       "steam_appid": 813110
     },
-    "ÕÑçÞ┐╣õ©ÇÕê╗ Surmount": {
+    "奇迹一刻 Surmount": {
       "steam_appid": 1089630
     },
-    "ÕñóÚÖÉÒâÄÕñ£": {
+    "夢限ノ夜": {
       "steam_appid": 1141660
     },
-    "Õñóþë®Þ¬×ORIGIN": {
+    "夢物語ORIGIN": {
       "steam_appid": 908940
     },
-    "ÕÑ│ÕÅïõ©ÄµêæþÜäµüïþê▒µùÑÕ©©": {
+    "女友与我的恋爱日常": {
       "steam_appid": 989800
     },
-    "ÕÑ│þÑ×Ú®¥Õê░(Happy together)": {
+    "女神驾到(Happy together)": {
       "steam_appid": 905940
     },
-    "ÕÑ│ÞúàÕª╣Õª╣õ╗Äµ▓íÕ░æÞ┐çÚ║╗þâª": {
+    "女装妹妹从没少过麻烦": {
       "steam_appid": 820770
     },
-    "Õñ▒ÞÉ¢þÜäÕ£░õ©ïÕƒÄ Lost Dungeon": {
+    "失落的地下城 Lost Dungeon": {
       "steam_appid": 1069120
     },
-    "Õñ▒ÞÉ¢þÜäþÄïÕ║ºTCG": {
+    "失落的王座TCG": {
       "steam_appid": 1188420
     },
-    "Õó¿Þë▓õ©ëÕø¢Õ┐ù": {
+    "墨色三国志": {
       "steam_appid": 1099980
     },
-    "Õóâþòî Dice&Fighter": {
+    "境界 Dice&Fighter": {
       "steam_appid": 1191680
     },
-    "ÕÖ¼Õàâõ╣ïõ©╗": {
+    "噬元之主": {
       "steam_appid": 868320
     },
-    "ÕØªÕàïÕñºµêÿ´╝ÜÕà▒ÕÆîÕø¢õ╣ïÞ¥ë": {
+    "坦克大战：共和国之辉": {
       "steam_appid": 1002930
     },
-    "ÕØªþÄçþÜäÕ░Åþ║óÕ©¢ÕÆîþê▒Þ»┤Þ░ÄþÜäþï╝": {
+    "坦率的小红帽和爱说谎的狼": {
       "steam_appid": 1216080
     },
-    "Õø×Úù¿ Way Back Home": {
+    "回门 Way Back Home": {
       "steam_appid": 1218170
     },
-    "ÕøøÕ¡ú The Four Seasons": {
+    "四季 The Four Seasons": {
       "steam_appid": 1152760
     },
-    "ÕøøÕ£úõ╝áÞ»┤1": {
+    "四圣传说1": {
       "steam_appid": 1063910
     },
-    "Õøøõ╣ïþƒ│": {
+    "四之石": {
       "steam_appid": 1058400
     },
-    "ÕøÜÒéÅÒéîÒü«Úñ¿": {
+    "囚われの館": {
       "steam_appid": 986860
     },
-    "ÕûÁÕÅ»ÞÄëþÜäÕàöþÄ®ÕüÂ": {
+    "喵可莉的兔玩偶": {
       "steam_appid": 1162070
     },
-    "ÕƒÄÕáíõ╝áÞ»┤´╝ÜÚ¡öþÄïÞºëÚåÆ": {
+    "城堡传说：魔王觉醒": {
       "steam_appid": 1042560
     },
-    "Õ┐½õ╣ÉÕ░ÅÚ©í": {
+    "快乐小鸡": {
       "steam_appid": 1223240
     },
-    "Õ┐âÒü«ÚùçÒü«ÕàêÒü½ Trial VersionÔàí": {
+    "心の闇の先に Trial VersionⅡ": {
       "steam_appid": 661700
     },
-    "Õ┐âõ╣ïµ¬╗": {
+    "心之檻": {
       "steam_appid": 951130
     },
-    "Õ┐åµüï-Reverse Momories-": {
+    "忆恋-Reverse Momories-": {
       "steam_appid": 1036690
     },
-    "õ║öµùÑÕñºÚÇâõ║í": {
+    "五日大逃亡": {
       "steam_appid": 994290
     },
-    "õ║║ÕÀÑþü¡þ╗Ø": {
+    "人工灭绝": {
       "steam_appid": 1197930
     },
-    "õ║║Ú¡öÕóâÕà▒þöƒÞ¡Ü": {
+    "人魔境共生譚": {
       "steam_appid": 1179910
     },
-    "õ║║Úù┤ The Lost We Lost": {
+    "人间 The Lost We Lost": {
       "steam_appid": 1057680
     },
-    "õ║║Úù┤õ╣ïÕ▒æ-Þë║µ£»õ╣ïÕÉì´╝êI am the dirt-for art´╝ë": {
+    "人间之屑-艺术之名（I am the dirt-for art）": {
       "steam_appid": 1116910
     },
-    "õ║║µ░öÕè¿µ╝½Õñºõ╣▒µûù": {
+    "人气动漫大乱斗": {
       "steam_appid": 1000310
     },
-    "õ╗ÄÕëìµ£ëõ©¬õ╗ÖÕä┐ Taoist immortal": {
+    "从前有个仙儿 Taoist immortal": {
       "steam_appid": 1011220
     },
-    "õ╗ÖÞ░ò": {
+    "仙谕": {
       "steam_appid": 973400
     },
-    "Õ╗║þ¡æÕñºÕåÆÚÖ®": {
+    "建筑大冒险": {
       "steam_appid": 907920
     },
-    "õ╝áÕÑçõ©ûþòî": {
+    "传奇世界": {
       "steam_appid": 1222860
     },
-    "õ╝ÅÚ¥Ö Õñ®Õàâþ½×µôé": {
+    "伏龙 天元竞擂": {
       "steam_appid": 1165390
     },
-    "õ╝èÕïóÕ┐ùµæ®ÒâƒÒé╣ÒâåÒâ¬Òâ╝µíêÕåà Õü¢ÒéèÒü«Ú╗Æþ£ƒþÅá": {
+    "伊勢志摩ミステリー案内 偽りの黒真珠": {
       "steam_appid": 1100030
     },
-    "Õ╝éõ©ûµ▒ƒµ╣ûÕ¢ò(JiangHu Record Of Another World)": {
+    "异世江湖录(JiangHu Record Of Another World)": {
       "steam_appid": 1103510
     },
-    "Õ╝éÕîûõ╣ïµüÂÒÇçAbnormal Treatment": {
+    "异化之恶〇Abnormal Treatment": {
       "steam_appid": 1122750,
       "engine": "RPG Maker"
     },
-    "Õ╝éþºìµêÿõ║ëÕ░æÕÑ│": {
+    "异种战争少女": {
       "steam_appid": 964300
     },
-    "Õ╝║Õåø": {
+    "强军": {
       "steam_appid": 825380
     },
-    "Õ╝╣Õ╣òÚéúõ©¬µüÂõ║║": {
+    "弹幕那个恶人": {
       "steam_appid": 1043470
     },
-    "Õ╝╣þé©õ║║2222": {
+    "弹炸人2222": {
       "steam_appid": 767400
     },
-    "Õ╣©Õ¡ÿÞÇà / The Survivor": {
+    "幸存者 / The Survivor": {
       "steam_appid": 1139000
     },
-    "õ╣ªõ╣ïµùàõ║║ Story Walker": {
+    "书之旅人 Story Walker": {
       "steam_appid": 2101220,
       "engine": "Unreal Engine 4"
     },
-    "õ╣îÚ©ª": {
+    "乌鸦": {
       "steam_appid": 870100,
       "engine": "Unity"
     },
-    "õ╣ØÕÀ×õ╗ÖþÄë Kyushu jade": {
+    "九州仙玉 Kyushu jade": {
       "steam_appid": 1203900
     },
-    "õ╣ØÕè½µø▓:Þ»àÕÆÆõ╣ïÕ£░ NineTrials Test Server": {
+    "九劫曲:诅咒之地 NineTrials Test Server": {
       "steam_appid": 1012730
     },
-    "õ╣ØÕè½µø▓´╝ÜÞ»àÕÆÆõ╣ïÕ£░": {
+    "九劫曲：诅咒之地": {
       "steam_appid": 976800
     },
-    "õ╣ØÚ£äþ╝│þÑ×Þ«░ Jiu Xiao": {
+    "九霄缳神记 Jiu Xiao": {
       "steam_appid": 1096300
     },
-    "Õ╣╗õ©ûµâàþ╝ÿ": {
+    "幻世情缘": {
       "steam_appid": 869660,
       "engine": "RPG Maker"
     },
-    "Õ╣╗µâ│õ©ëÕ£ïÞ¬î5": {
+    "幻想三國誌5": {
       "steam_appid": 859150
     },
-    "Õ╣╗µâ│ÕøøÕÇìÕëú^2 µéöµéƒµúÆÒü«Þ¼Ä": {
+    "幻想四倍剣^2 悔悟棒の謎": {
       "steam_appid": 806720
     },
-    "Õ╣╗µâ│Õ╝éõ╣íµø▓ Butterfly~Rin": {
+    "幻想异乡曲 Butterfly~Rin": {
       "steam_appid": 1094290
     },
-    "Õ╣╗µâ│Þï▒Úøäõ╝á ÕìíþëçÕ»╣Õå│": {
+    "幻想英雄传 卡片对决": {
       "steam_appid": 815300
     },
-    "Õ╣▓µö»Òé╗ÒâêÒâ® ÚÖ¢ÒâÄÕìÀ´¢£Õ╣▓µö»etc. ÚÖ¢õ╣ïÕìÀ": {
+    "干支セトラ 陽ノ卷｜干支etc. 陽之卷": {
       "steam_appid": 1000100
     },
-    "Õ╣▓µö»Òé╗ÒâêÒâ® ÚÖ░ÒâÄÕìÀ´¢£Õ╣▓µö»etc. ÚÖ░õ╣ïÕìÀ": {
+    "干支セトラ 陰ノ卷｜干支etc. 陰之卷": {
       "steam_appid": 995330
     },
-    "Õ░©Õªéµ¢«µ░┤": {
+    "尸如潮水": {
       "steam_appid": 953740
     },
-    "Õ░äÕ░▒Õ«îõ║ïÕä┐õ║åµÂêþü¡Þö¼ÞÅ£": {
+    "射就完事儿了消灭蔬菜": {
       "steam_appid": 1177180
     },
-    "Õ░ÅþÖ¢þÜäµû░Þíú / Snower's New Clothes": {
+    "小白的新衣 / Snower's New Clothes": {
       "steam_appid": 1058850,
       "engine": "RPG Maker"
     },
-    "Õ░Åµ×ùµ¡úÚø¬Õñìõ╗çõ╣ïÕ»åÕ«ñÚçìÕêÂþëê": {
+    "小林正雪复仇之密室重制版": {
       "steam_appid": 899160
     },
-    "Õ░æÕ╣┤Õ░üþÑ×": {
+    "少年封神": {
       "steam_appid": 1154500
     },
-    "Õ░üþÑ×þ¡û": {
+    "封神策": {
       "steam_appid": 1213470
     },
-    "Õ░üþÑ×þ║¬": {
+    "封神纪": {
       "steam_appid": 1210680
     },
-    "Õ░ÿõ©ÄÕ£ƒþÜäÞ¥╣þ╝ÿ": {
+    "尘与土的边缘": {
       "steam_appid": 873820
     },
-    "Õ░║Õ¡ÉÕÆîµ®íþÜ«": {
+    "尺子和橡皮": {
       "steam_appid": 809640
     },
-    "Õ▒ÇÕñûõ║║ L'Etranger": {
+    "局外人 L'Etranger": {
       "steam_appid": 1078970
     },
-    "Õ▒×µÇºõ©Äþöƒµ┤╗": {
+    "属性与生活": {
       "steam_appid": 822470
     },
-    "Ù¼┤ýù░": {
+    "무연": {
       "steam_appid": 1077560
     },
-    "ÙêäÛ░Ç ÛÀ©ÙàÇÙÑ╝ ýú¢ýÿÇÙéÿ": {
+    "누가 그녀를 죽였나": {
       "steam_appid": 1054520
     },
-    "Ú¡öÕíö2018": {
+    "魔塔2018": {
       "steam_appid": 948770
     },
-    "Ú¡öþë®Õ¿ÿþë®Þ»¡": {
+    "魔物娘物语": {
       "steam_appid": 835530
     },
-    "Ú¡öþë®Þ«¿õ╝ÉÕøó": {
+    "魔物讨伐团": {
       "steam_appid": 905690,
       "engine": "GameMaker"
     },
-    "Ú¡öÞúàÞíôÕ©½ÒéóÒé½Òâì": {
+    "魔装術師アカネ": {
       "steam_appid": 880320
     },
-    "Ú£ÄµùÂµÖ┤Þì½": {
+    "霎时晴荫": {
       "steam_appid": 883870
     },
-    "Ú©┐Úù¿õ©ÇÕ«┤(Malicious Dinner) õ©¡Þï▒": {
+    "鸿门一宴(Malicious Dinner) 中英": {
       "steam_appid": 1091520
     },
-    "ÚªÖÕ▒▒31ÕÅÀ": {
+    "香山31号": {
       "steam_appid": 1110230
     },
-    "ÚªÖµ▒ƒõ╣ïÚ¥Ö´╝îDragon of Hongkong": {
+    "香江之龙，Dragon of Hongkong": {
       "steam_appid": 1126430
     },
-    "Ú¬æÕú½õ©ÄÚ¡öµ│òµêÿõ║ë": {
+    "骑士与魔法战争": {
       "steam_appid": 965180
     },
-    "Ú¬░Õ¡ÉÕïçÕú½ Dice Warrior": {
+    "骰子勇士 Dice Warrior": {
       "steam_appid": 924710
     },
-    "Ú¼╝Õ▒▒": {
+    "鬼山": {
       "steam_appid": 682490,
       "engine": "Unity"
     },
-    "Ú¼╝þò£ÕñºÕåÆÚÖ® Gui Chu Da Mao Xian": {
+    "鬼畜大冒险 Gui Chu Da Mao Xian": {
       "steam_appid": 668680
     },
-    "Ú½ÿÞâ¢Õ░ÅÚÿƒ Superpower Squad": {
+    "高能小队 Superpower Squad": {
       "steam_appid": 1179730
     },
-    "Ú½ÿÞÇâÕÀÑÕÄéµ¿íµïƒ(Crazy School Simulator)": {
+    "高考工厂模拟(Crazy School Simulator)": {
       "steam_appid": 1011230
     },
-    "ÚàÆÕ║ù": {
+    "酒店": {
       "steam_appid": 934810
     },
-    "ÚàÆÕ║ùõ║î The Hotel 2": {
+    "酒店二 The Hotel 2": {
       "steam_appid": 1077540
     },
-    "ÚàöÒüäÒü®ÒéîÒé»ÒéñÒé║show µ¿ÖÚìø": {
+    "酔いどれクイズshow 標鍛": {
       "steam_appid": 1037270
     },
-    "Úâ¢Õ©éµüÉµÇûµòàõ║ï": {
+    "都市恐怖故事": {
       "steam_appid": 1048320
     },
-    "Úâ¿ÞÉ¢õ©ÄÕ╝»ÕêÇ": {
+    "部落与弯刀": {
       "steam_appid": 1094520
     },
-    "ÚÇâÚøóÕ£░þìäÚéèþÀú - Escape from the cursed convent": {
+    "逃離地獄邊緣 - Escape from the cursed convent": {
       "steam_appid": 1142740
     },
-    "ÚÇÇÕ╗âµÇØÞÇâ": {
+    "退廃思考": {
       "steam_appid": 1205160
     },
-    "ÚÇÇõ╝æµ¿íµïƒÕÖ¿": {
+    "退休模拟器": {
       "steam_appid": 1220840
     },
-    "ÚÇìÚüÑõ┐«þ£ƒ": {
+    "逍遥修真": {
       "steam_appid": 1983840
     },
-    "ÚÇìÚüÑµ©©": {
+    "逍遥游": {
       "steam_appid": 2004780
     },
-    "ÚçìþöƒÞ¢«Õø×/Reborn Not Again": {
+    "重生轮回/Reborn Not Again": {
       "steam_appid": 1068190
     },
-    "ÚÇØÕÄ╗þÜäÕø×Õ┐å3´╝ÜÕøøÕÅÂÞìëõ╣ïµóª": {
+    "逝去的回忆3：四叶草之梦": {
       "steam_appid": 1109130
     },
-    "Úéúþ¥ÄÕàïµÿƒõ║║": {
+    "那美克星人": {
       "steam_appid": 1214210
     },
-    "Úé╗Õ▒àÕñºÕÅö/UncleNeighbor:uncle Dating Simulator": {
+    "邻居大叔/UncleNeighbor:uncle Dating Simulator": {
       "steam_appid": 1177420
     },
-    "ÚíÂÚà▒": {
+    "顶酱": {
       "steam_appid": 1117210
     },
-    "Úò┐Õñ® Long Sky": {
+    "长天 Long Sky": {
       "steam_appid": 1043030
     },
-    "Úò┐µ¡îÞíî": {
+    "长歌行": {
       "steam_appid": 1223850
     },
-    "ÚÖåÕñºÞ┐╣þÑ×Ôàí": {
+    "陆大迹神Ⅱ": {
       "steam_appid": 1220880
     },
-    "Úø¬Ú╣░Úóåõ©╗": {
+    "雪鹰领主": {
       "steam_appid": 1114050
     },
-    "Úø¬þ¡ûÞ¥╣Õóâ": {
+    "雪策边境": {
       "steam_appid": 979500
     },
-    "Úø¬┬Àþûæ": {
+    "雪·疑": {
       "steam_appid": 1001010
     },
-    "ÚøÂõ©ïÞ«░Õ┐å": {
+    "零下记忆": {
       "steam_appid": 1166050
     },
-    "ÚøÂþòîµêÿþ║┐": {
+    "零界战线": {
       "steam_appid": 1195870
     },
-    "ÚøÂµÇ¿ The curse of the deab": {
+    "零怨 The curse of the deab": {
       "steam_appid": 1221420
     },
-    "ÚØÆÕ▓ÜÞíÇµ×½": {
+    "青岚血枫": {
       "steam_appid": 1103620
     },
-    "ÚØÆÞøÖÞÀ│µ¿íµïƒÕÖ¿": {
+    "青蛙跳模拟器": {
       "steam_appid": 1013890
     },
-    "ÚøÇÕº¼": {
+    "雀姬": {
       "steam_appid": 1084520
     },
-    "ÚØ×õ©ÇÞê¼ÞüîÕ£║": {
+    "非一般职场": {
       "steam_appid": 1163140
     },
-    "ÚúÄµÁüÕêÇÕ«ó": {
+    "风流刀客": {
       "steam_appid": 1209000
     },
-    "ÚúÄµÜ┤Õ▓ø": {
+    "风暴岛": {
       "steam_appid": 769720
     },
-    "ÚûâÚø╗Õ░ìµ▒║Lightning Wings II": {
+    "閃電對決Lightning Wings II": {
       "steam_appid": 1124850
     },
-    "ÚüáÕÅñÕñºÚÖ©ÕñûÕé│-ÕÅñÚüôþÜäþøíÚá¡": {
+    "遠古大陸外傳-古道的盡頭": {
       "steam_appid": 1169460
     },
-    "ÚÜÉ-Stealth": {
+    "隐-Stealth": {
       "steam_appid": 800170
     },
-    "ÚÜÉþºÿþÜäÞºÆÞÉ¢": {
+    "隐秘的角落": {
       "steam_appid": 2071200
     },
-    "Úÿ┐Þ¥¥õ©ëÕø¢Õ┐ù2018": {
+    "阿达三国志2018": {
       "steam_appid": 910320
     },
-    "Úÿ┐µ»öµû»þÜäÕ«ØÞùÅTreasure of abyss": {
+    "阿比斯的宝藏Treasure of abyss": {
       "steam_appid": 932570
     },
-    "Úÿ┐µ┤Ñ": {
+    "阿津": {
       "steam_appid": 1036960
     },
-    "Ú║╗þÑ×µÂêµÂêõ╣É": {
+    "麻神消消乐": {
       "steam_appid": 1063330
     },
-    "Ú╗ÄµÿÄÚ£×Õàë": {
+    "黎明霞光": {
       "steam_appid": 1130900
     },
-    "Ú╗æµÜùµûÖþÉå?!": {
+    "黑暗料理?!": {
       "steam_appid": 970530
     },
     "ÜberSoldier": {
@@ -199456,731 +199323,720 @@
       "config_path": "%USERPROFILE%\\Documents\\US2\\",
       "engine": "X-tend"
     },
-    "ýòöýáä:Blackout": {
+    "암전:Blackout": {
       "steam_appid": 871810
     },
-    "þ¡öÚóÿÞï▒Úøä--þ╗åÞâ×þöƒþë®Õ¡ª": {
+    "答题英雄--细胞生物学": {
       "steam_appid": 1011860
     },
-    "þ¢¬þÜäþ¼¼õ©âþ½á": {
+    "罪的第七章": {
       "steam_appid": 1200200
     },
-    "Þ¢╗µóªÞ░¡ - þô«õ╣ïþ»ç -": {
+    "轻梦谭 - 瓮之篇 -": {
       "steam_appid": 1214720
     },
-    "þ£ïõ©ìÞºüþÜäþê▒": {
+    "看不见的爱": {
       "steam_appid": 1121980
     },
-    "þ£ƒÚ¥Öõ©╗Õ«░": {
+    "真龙主宰": {
       "steam_appid": 1201920
     },
-    "þ¥Äõ©¢µû░õ©ûþòîi Brave New World i": {
+    "美丽新世界i Brave New World i": {
       "steam_appid": 895920
     },
-    "þ¥ÄÕ░æÕÑ│ÕñÅµùÑµ¼óõ╣É!": {
+    "美少女夏日欢乐!": {
       "steam_appid": 835040
     },
-    "þ¥ÄÕ░æÕÑ│Ú║╗Õ░åµÄÑÚ¥Ö": {
+    "美少女麻将接龙": {
       "steam_appid": 908350
     },
-    "Þ¥úµØíµØéÞ┤ºÕ║ù:Õø×Õê░1997´╝îµêæÕ¢ôÕ░ÅÕòåÞ┤®": {
+    "辣条杂货店:回到1997，我当小商贩": {
       "steam_appid": 687650,
       "engine": "Unity"
     },
-    "Þªçþ£îÒéÆµÅíÒéî ´¢×47Úâ¢ÚüôÕ║£þ£îÕñºµêª´¢×": {
+    "覇県を握れ ～47都道府県大戦～": {
       "steam_appid": 928690
     },
-    "Þ«░Õ┐åÚçìþÄ░/Rememory": {
+    "记忆重现/Rememory": {
       "steam_appid": 1158840
     },
-    "Þ«░Õ┐åÚçìµ×ä/Memories": {
+    "记忆重构/Memories": {
       "steam_appid": 1015020
     },
-    "ÞºàÚò┐þöƒ": {
+    "觅长生": {
       "steam_appid": 1189490
     },
-    "þ»«þÉâÞ«íÕêÆ Project Dunk": {
+    "篮球计划 Project Dunk": {
       "steam_appid": 1110830
     },
-    "Þ»Àþ╗Öµêæõ¢áþÜäÞâûµ¼í´╝îÞ«®µêæµï»µòæõ©ûþòî": {
+    "请给我你的胖次，让我拯救世界": {
       "steam_appid": 1049620
     },
-    "Þ»øþÑ×õ╣¥ÕØñ": {
+    "诛神乾坤": {
       "steam_appid": 1146040
     },
-    "þ¼ªµûçÕÑ│Õ¡®/Rune Girl": {
+    "符文女孩/Rune Girl": {
       "steam_appid": 1083210,
       "engine": "Unity"
     },
-    "þ¼¼Õøøþ®║Úù┤Fourth Space": {
+    "第四空间Fourth Space": {
       "steam_appid": 1065250
     },
-    "Þà¥ÞÁÀõ╣ïÞøç": {
+    "腾起之蛇": {
       "steam_appid": 1155730
     },
-    "ÞÀ│ÞÀ│ÕñºÕÆû": {
+    "跳跳大咖": {
       "steam_appid": 1000110,
       "engine": "Unity"
     },
-    "ÞÁ½þéÄþÜäÕì░ÕèáÞ»║Õàï Fullvoice ReBORN": {
+    "赫炎的印加诺克 Fullvoice ReBORN": {
       "steam_appid": 982400
     },
-    "þá┤þóÄµ│òµ£»": {
+    "破碎法术": {
       "steam_appid": 1124740
     },
-    "þâ¡ÞíÇµ▓ÖÕƒÄ": {
+    "热血沙城": {
       "steam_appid": 1147420
     },
-    "þâ¢þü½Õñºþºª": {
+    "烽火大秦": {
       "steam_appid": 1157330
     },
-    "Þâ£Õê®Õì│µ¡úõ╣ë! / Victory is justice´╝ü": {
+    "胜利即正义! / Victory is justice！": {
       "steam_appid": 1058910,
       "engine": "Unity"
     },
-    "ÞÂàÚƒ│þÑ×µ¿éÒÇèõ©âÚƒ│Õ£ûÚ¿░þ»çÒÇï- UltraKagura -": {
+    "超音神樂《七音圖騰篇》- UltraKagura -": {
       "steam_appid": 925120
     },
-    "ÞÂàþ║ºµ£║þö▓µêÿõ║ëOL": {
+    "超级机甲战争OL": {
       "steam_appid": 1138620
     },
-    "þâêþä░µêÿþ║¬": {
+    "烈焰战纪": {
       "steam_appid": 835500
     },
-    "ÞÄ½µ»öõ╣îµû»õ╣ïþÄ»-õ©ìÕ▒×õ║Äõ╗╗õ¢òõ║║þÜäõ║ñÕôìµé▓µ¡î-MOBIUS & ELEGY BELONGS TO NOBODY": {
+    "莫比乌斯之环-不属于任何人的交响悲歌-MOBIUS & ELEGY BELONGS TO NOBODY": {
       "steam_appid": 1094320
     },
-    "þÄäÕ░ÿõ╗ÖÚÇö": {
+    "玄尘仙途": {
       "steam_appid": 1169790
     },
-    "þÄïÕø¢Õç║Õç╗": {
+    "王国出击": {
       "steam_appid": 698920
     },
-    "þÄïÕø¢Õ╣╗Õóâ fantastic kingdom": {
+    "王国幻境 fantastic kingdom": {
       "steam_appid": 1097550
     },
-    "þÄïÞÇàÞï▒Úøä The Great Hero": {
+    "王者英雄 The Great Hero": {
       "steam_appid": 930330
     },
-    "þÄïÞÇàµêÿÞ¢ª": {
+    "王者战车": {
       "steam_appid": 987980
     },
-    "þÄïþëîÞê░Úò┐": {
+    "王牌舰长": {
       "steam_appid": 681010
     },
-    "ÞÇüÞÖÄµ©©µêÅ": {
+    "老虎游戏": {
       "steam_appid": 887740
     },
-    "ÞÇüµØ┐µö╗þòÑ": {
+    "老板攻略": {
       "steam_appid": 1115020
     },
-    "ÞÉ¢ÕìÄÕ▒à": {
+    "落华居": {
       "steam_appid": 1133610
     },
-    "ÞÉ¢Õ░ÿõ╣ïÕƒƒ": {
+    "落尘之域": {
       "steam_appid": 985820
     },
-    "þéÄÚ╗äµêÿþ║¬õ╣ïõ©ëÕø¢þâ¢þâƒ": {
+    "炎黄战纪之三国烽烟": {
       "steam_appid": 590910
     },
-    "ÞÉîÕ¿ÿµêÿÞ«░": {
+    "萌娘战记": {
       "steam_appid": 1052430
     },
-    "ÞéÑÕò¥ÕñºÕåÆÚÖ®": {
+    "肥啾大冒险": {
       "steam_appid": 1175940
     },
-    "ÞéÑÞéÑÕñºõ¢£µêÿ fat battle": {
+    "肥肥大作战 fat battle": {
       "steam_appid": 994250
     },
-    "þé╝ÕªûÞ«░": {
+    "炼妖记": {
       "steam_appid": 1147900
     },
-    "Þë¥µü®µ┤øõ║Ü´╝Üþé╝ÚçæÞÁÀµ║Éõ╣ïþ½á": {
+    "艾恩洛亚：炼金起源之章": {
       "steam_appid": 1220670
     },
-    "ÞìÆÕ▓øµ▒éþöƒ": {
+    "荒岛求生": {
       "steam_appid": 1152250
     },
-    "ÞìÆÚçÄÕ»╗Þ©¬": {
+    "荒野寻踪": {
       "steam_appid": 855670
     },
-    "ÞìÆÚçÄÕñºÞø«þÑ×": {
+    "荒野大蛮神": {
       "steam_appid": 998150
     },
-    "ÞìÆµ╝áµ▒éþöƒ": {
+    "荒漠求生": {
       "steam_appid": 880620
     },
-    "ÞíÇÞàÑõ╣ïµùÑ228-Vampire Martina-Bloody Day 2.28": {
+    "血腥之日228-Vampire Martina-Bloody Day 2.28": {
       "steam_appid": 1060360
     },
-    "Þíîþòî´╝ÜÚüù WENT:OneAlive": {
+    "行界：遗 WENT:OneAlive": {
       "steam_appid": 1005560
     },
-    "ÞíùÕñ┤Þï▒Úøä": {
+    "街头英雄": {
       "steam_appid": 924500
     },
-    "Þíùµ£║õ╣ïõ©ëÕø¢µê░Þ¿ÿ": {
+    "街机之三国戰記": {
       "steam_appid": 2086830
     },
-    "þîÄÚ¡öÞÇàµêÿþ║¬": {
+    "猎魔者战纪": {
       "steam_appid": 1066290
     },
-    "ÞîëÞÄëõ╣ïÕñÅ Jasmine Summer": {
+    "茉莉之夏 Jasmine Summer": {
       "steam_appid": 913160
     },
-    "þîÑþÉÉÕÉº´╝üÕÉÄÕ«½õ¢úÕàÁÕøó": {
+    "猥琐吧！后宫佣兵团": {
       "steam_appid": 657320
     },
-    "þïÉÒü«µùàÞÀ»": {
+    "狐の旅路": {
       "steam_appid": 1178050
     },
-    "ÞïìÕñ£": {
+    "苍夜": {
       "steam_appid": 923400
     },
-    "þï╝õ║║µØÇÕìòµ£║þëê": {
+    "狼人杀单机版": {
       "steam_appid": 1065960
     },
-    "Þï▒Úøäþ¥ñõ¥áõ╝á": {
+    "英雄群侠传": {
       "steam_appid": 1102980
     },
-    "Þï▒Úøäþ¥ñõ¥áõ╝áII": {
+    "英雄群侠传II": {
       "steam_appid": 1115640
     },
-    "Þï▒Þ»¡µØÇ": {
+    "英语杀": {
       "steam_appid": 934710
     },
-    "þÑ¡ÕúçÒü«Þè▒/Saidan no Hana": {
+    "祭壇の花/Saidan no Hana": {
       "steam_appid": 1128150
     },
-    "þñ¥þ¿Àþ╗êõ║ÄÕ╣╗µâ│ ~ A Finality with Sheji": {
+    "社稷终于幻想 ~ A Finality with Sheji": {
       "steam_appid": 992750
     },
-    "þñÄÒü«µÑ» -AEGIS-": {
+    "礎の楯 -AEGIS-": {
       "steam_appid": 1039550
     },
-    "þÑêÚó¿ Inorikaze": {
+    "祈風 Inorikaze": {
       "steam_appid": 992740
     },
-    "þÑ×Õø¢´╝ÜÕêøÚÇá": {
+    "神国：创造": {
       "steam_appid": 1185600
     },
-    "þÑ×õ╗ÖÕÉìÕìò": {
+    "神仙名单": {
       "steam_appid": 1180390
     },
-    "þÑ×Ú®¼µ▒ƒµ╣û": {
+    "神马江湖": {
       "steam_appid": 1012130
     },
-    "þÑ×Þ░ï": {
+    "神谋": {
       "steam_appid": 1093900
     },
-    "þÑ×µêÆ": {
+    "神戒": {
       "steam_appid": 1219930
     },
-    "þÑ×µ×¬Õ░æÕÑ│": {
+    "神枪少女": {
       "steam_appid": 1181450
     },
-    "þÑ×µÿÄÕ£¿õ©è": {
+    "神明在上": {
       "steam_appid": 1000080
     },
-    "þÑøÚ¡à┬ÀÕàÑþü¡´╝êþÑøÚ¡à2´╝ë - Disenchantment Nirvana": {
+    "祛魅·入灭（祛魅2） - Disenchantment Nirvana": {
       "steam_appid": 972200
     },
-    "þÑøÚ¡à┬ÀµòÖÕîû´╝êþÑøÚ¡à1´╝ë": {
+    "祛魅·教化（祛魅1）": {
       "steam_appid": 850820
     },
-    "þóºÞÉ¢õ╝áÞ»┤": {
+    "碧落传说": {
       "steam_appid": 973560
     },
-    "Þó½ÞÖ½Õ¿ÿÕà╗Þé▓þØÇþ╣üµ«ûÕÉÄõ╗ú": {
+    "被虫娘养育着繁殖后代": {
       "steam_appid": 1020060
     },
-    "ÞôØÕ«Øþƒ│Þê¼þÜäÞó½Õ«│Õªäµâ│Õ░æÕÑ│": {
+    "蓝宝石般的被害妄想少女": {
       "steam_appid": 970510
     },
-    "þÖ¢þƒ│µ┤▓Õ¥Çõ║ï": {
+    "白石洲往事": {
       "steam_appid": 1101980
     },
-    "þÖ¥Þè▒õ©ëÕø¢Õ┐ù(Banner of the THREE KINGDOMS)": {
+    "百花三国志(Banner of the THREE KINGDOMS)": {
       "steam_appid": 1137160
     },
-    "þöÁþ¡Æõ¥á": {
+    "电筒侠": {
       "steam_appid": 1126230
     },
-    "ÞöÜÞôØµ£êõ©ï": {
+    "蔚蓝月下": {
       "steam_appid": 964970
     },
-    "þöƒþë®ÕñºÕåÆÚÖ®": {
+    "生物大冒险": {
       "steam_appid": 1211270
     },
-    "þöƒþë®þƒÑÞ»åµá╝µûùÕñºÞÁø": {
+    "生物知识格斗大赛": {
       "steam_appid": 1193350
     },
-    "þö╗µ▒ƒµ╣ûõ╣ïµØ»ÞÄ½Õü£": {
+    "画江湖之杯莫停": {
       "steam_appid": 1345730
     },
-    "þ×│´╝ÜþÑêµä┐ VR / Pupil: Wandering VR": {
+    "瞳：祈愿 VR / Pupil: Wandering VR": {
       "steam_appid": 773460,
       "engine": "Unreal Engine 4"
     },
-    "þøøõ©ûõ╝áÕÑç": {
+    "盛世传奇": {
       "steam_appid": 1180460
     },
-    "þùàµ»ÆµüÂÕîû": {
+    "病毒恶化": {
       "steam_appid": 1036120
     },
-    "Þúüµ▒║ÞÇà -The White Butcher-": {
+    "裁決者 -The White Butcher-": {
       "steam_appid": 758270
     },
-    "þû»þïéþÜäÕØªÕàï": {
+    "疯狂的坦克": {
       "steam_appid": 1143560
     },
-    "þûæþè»Õ»╗Þ©¬ In Pursuit": {
+    "疑犯寻踪 In Pursuit": {
       "steam_appid": 1036190
     },
-    "þü¡þÑ×": {
+    "灭神": {
       "steam_appid": 1153340
     },
-    "þü½µƒ┤õ║║Þüöþøƒ2": {
+    "火柴人联盟2": {
       "steam_appid": 1094010
     },
-    "þüÁÕ╣╗Õàêþöƒ : Þç┤µò¼õ©Çõ╗úÕâÁÕ░©ÚüôÚò┐´╝ü": {
+    "灵幻先生 : 致敬一代僵尸道长！": {
       "steam_appid": 1063340
     },
-    "þüÁþòî Sprites´╝êµÁïÞ»òþëê´╝ë": {
+    "灵界 Sprites（测试版）": {
       "steam_appid": 1043140
     },
-    "þüÁµûçÞÑ┐µ©©": {
+    "灵文西游": {
       "steam_appid": 832520
     },
-    "þÜôµ£êþ®║ÕìÄ": {
+    "皓月空华": {
       "steam_appid": 974200
     },
-    "ÞüûÕëúÒâ¼ÒéñÒâ┤Òâ®Òâ│ÒéÀÒâ½þë®Þ¬×": {
+    "聖剣レイヴランシル物語": {
       "steam_appid": 729610,
       "engine": "RPG Maker"
     },
-    "þ│ûµ×£Õ║ùþë®Þ»¡": {
+    "糖果店物语": {
       "steam_appid": 780970
     },
-    "Þ┐ÀÕ«½µêÿõ║ë(Maze Wars)": {
+    "迷宫战争(Maze Wars)": {
       "steam_appid": 1037950
     },
-    "Þ┐ÀÚø¥ The Mist": {
+    "迷雾 The Mist": {
       "steam_appid": 1048470
     },
-    "þ┐öþÜäÕáòÞÉ¢õ║║þöƒ": {
+    "翔的堕落人生": {
       "steam_appid": 1030280
     },
-    "Þ┤ÑÕ«Âõ╗ö Last Wish": {
+    "败家仔 Last Wish": {
       "steam_appid": 952850
     },
-    "Þ┤ñÞÇàµî¢µ¡îõ╣ïÚ®¼þòÑÕìíÕìÅÕÑÅµø▓": {
+    "贤者挽歌之马略卡协奏曲": {
       "steam_appid": 745820
     },
-    "þ║©õ║║´╝Üþ¼¼õ©Çþ½á Paper Dolls Original": {
+    "纸人：第一章 Paper Dolls Original": {
       "steam_appid": 1051310
     },
-    "þ║©þëçõ║║3D": {
+    "纸片人3D": {
       "steam_appid": 831600
     },
-    "þ║ªõ╝Üõ©ûþòî~The dating world": {
+    "约会世界~The dating world": {
       "steam_appid": 989000
     },
-    "þ║ªµïìÕÑ│þÑ× Private Model": {
+    "约拍女神 Private Model": {
       "steam_appid": 1064860
     },
-    "þ║óÚ¡öõ║ïõ╗Âþ░┐ The Note of Red Evil": {
+    "红魔事件簿 The Note of Red Evil": {
       "steam_appid": 1211350,
       "engine": "RPG Maker"
     },
-    "þ╗«þ¢ùÕøøµùÂÞ░¡": {
+    "绮罗四时谭": {
       "steam_appid": 1172980
     },
-    "þ╗åÞâ×µêÿõ║ë": {
+    "细胞战争": {
       "steam_appid": 1000040,
       "engine": "Unity"
     },
-    "þ╗Øµ£øþøæþëó / þÁÂµ£øÒâùÒâ¬Òé║Òâ│": {
+    "绝望监牢 / 絶望プリズン": {
       "steam_appid": 1167790
     },
-    "µ¡ªÕäÆþ╗ÿÕìÀ - ÕÉ»þñ║Õ¢ò": {
+    "武儒绘卷 - 启示录": {
       "steam_appid": 1204490,
       "engine": "Unity"
     },
-    "µ¡ªÕäÆþ╗ÿÕìÀ - õ╣Øõ║öÞç│Õ░è": {
+    "武儒绘卷 - 九五至尊": {
       "steam_appid": 983060
     },
-    "µ¡ªÚüôÕ░åÚ¡é": {
+    "武道将魂": {
       "steam_appid": 2068950
     },
-    "µ¡ªÚüôµê░Õº¼ - ÕÑ│Õâò(µ¡ªÚüôµêªÕº½ - ÒâíÒéñÒâë / Budo Girl War - Maid)": {
+    "武道戰姬 - 女僕(武道戦姫 - メイド / Budo Girl War - Maid)": {
       "steam_appid": 1117040
     },
-    "µ£½µ│òõ╗ÖÞÀ»": {
+    "末法仙路": {
       "steam_appid": 1062260
     },
-    "µ£êþÉâÕØáÞÉ¢µùÂ Moon Fall": {
+    "月球坠落时 Moon Fall": {
       "steam_appid": 1092400
     },
-    "µ£êþëÖµÑ╝ÚúÄõ║æ": {
+    "月牙楼风云": {
       "steam_appid": 1177480
     },
-    "µ£║ÚÇÇµÇ¬Õà¢": {
+    "机退怪兽": {
       "steam_appid": 1021670,
       "engine": "Unity"
     },
-    "µ£║Þâ¢ÕÑ│Õ¡®-Energy Girl": {
+    "机能女孩-Energy Girl": {
       "steam_appid": 962490
     },
-    "µ£║þö▓ÚøäÕ┐â´╝ÜÕÀíÕñ®ÞÇà": {
+    "机甲雄心：巡天者": {
       "steam_appid": 1142860
     },
-    "µ£║µó░µÿƒµ▓│": {
+    "机械星河": {
       "steam_appid": 1036080
     },
-    "µ©©þª╗ÕñºÚÖå - Uniland": {
+    "游离大陆 - Uniland": {
       "steam_appid": 935970
     },
-    "µ©©þë®Þ»¡ Travel story": {
+    "游物语 Travel story": {
       "steam_appid": 1081900
     },
-    "µ®ÖÕñ®Òü«ÚèÇþ┐╝ ´¢×Òé╣Òé½ÒéñÒâ®Òâ│ÒâëÒü«Ú¡öÕÑ│Òü¿ÕÀ½ÕÑ│´¢×": {
+    "橙天の銀翼 ～スカイランドの魔女と巫女～": {
       "steam_appid": 793410
     },
-    "µ¼óõ╣ÉÚÇùþùàµ»ÆTD": {
+    "欢乐逗病毒TD": {
       "steam_appid": 1219310
     },
-    "µ¿¬µë½Õñ®õ©ïõ╣ïõ©çÕ╣┤Õ╝║ÞÇà": {
+    "横扫天下之万年强者": {
       "steam_appid": 1219920
     },
-    "µ¿íµïƒÕ«ÂÞúàõ┐«": {
+    "模拟家装修": {
       "steam_appid": 1065030
     },
-    "µÀÀõ╣▒õ¢┐ÞÇà(Chaos Maker)": {
+    "混乱使者(Chaos Maker)": {
       "steam_appid": 981140
     },
-    "µÀ▒µÁÀ DEEPSEA": {
+    "深海 DEEPSEA": {
       "steam_appid": 1061010
     },
-    "µÁ«õ©ûõ©çÕìâõ╣ïÕëìõ©ûõ╗èþöƒ": {
+    "浮世万千之前世今生": {
       "steam_appid": 1217190
     },
-    "µÁÀÕ║òÕ»╗Õ«Ø": {
+    "海底寻宝": {
       "steam_appid": 936060
     },
-    "µÁüµ░ôÞ»╗ÕñºÕ¡ª liumang dudaxue": {
+    "流氓读大学 liumang dudaxue": {
       "steam_appid": 992630
     },
-    "µÁ┤ÞíÇµêÿÚ¡é": {
+    "浴血战魂": {
       "steam_appid": 1211280
     },
-    "µá╝µûùõ╣ïÕƒÄ": {
+    "格斗之城": {
       "steam_appid": 1993230,
       "engine": "Unity"
     },
-    "µÂàµºâõ╣ïÞÀ»": {
+    "涅槃之路": {
       "steam_appid": 1043760
     },
-    "µâèÚÖ®µ×üÚÇƒ": {
+    "惊险极速": {
       "steam_appid": 1777280,
       "engine": "Unity"
     },
-    "µÂêþü¡Ú¡öþÄïÕåø Destroy the demon army": {
+    "消灭魔王军 Destroy the demon army": {
       "steam_appid": 1006170
     },
-    "µÄîµÄºÞÇà": {
+    "掌控者": {
       "steam_appid": 832380
     },
-    "µÄÑÕñ┤ / Contact Point": {
+    "接头 / Contact Point": {
       "steam_appid": 1109070,
       "engine": "Unity"
     },
-    "µÄóÚÖ®õ©ÄÚ¡öµ│ò": {
+    "探险与魔法": {
       "steam_appid": 1184330
     },
-    "µÄóþüÁþ¼öÞ«░-1v5(Notes of Ghost)": {
+    "探灵笔记-1v5(Notes of Ghost)": {
       "steam_appid": 991780
     },
-    "µäøþÑ×ÚñÉÚñ¿2": {
+    "愛神餐館2": {
       "steam_appid": 769680
     },
-    "µäÜÞÇàÕ£░þëó-UPõ©╗þÜäµÂêÕñ▒": {
+    "愚者地牢-UP主的消失": {
       "steam_appid": 1099110
     },
-    "µÆ×Õç╗Õà¼õ©╗ ! / Princess Hit !": {
+    "撞击公主 ! / Princess Hit !": {
       "steam_appid": 1062380,
       "engine": "Unity"
     },
-    "µÇ¬ÕÑçÕ╣╗µâ│Õñóþë®Þ¬× µÇ¬þìúþÂ║Þ¡Ü Þ¬ÿÕ«ÁÕ£░þìä": {
+    "怪奇幻想夢物語 怪獣綺譚 誘宵地獄": {
       "steam_appid": 1179350
     },
-    "µÇ¬ÕÑçÕ╣╗µâ│Õñóþë®Þ¬× µÇ¬þìúþÂ║Þ¡Ü µ£ºÕìüÕñ£": {
+    "怪奇幻想夢物語 怪獣綺譚 朧十夜": {
       "steam_appid": 931870
     },
-    "µÇ¬ÕÑçÕ╣╗µâ│Õñóþë®Þ¬× µÇ¬þìúþÂ║Þ¡Ü µí£Þøçõ╝Ø": {
+    "怪奇幻想夢物語 怪獣綺譚 桜蛇伝": {
       "steam_appid": 936150
     },
-    "µÇ¬þìúþÂ║Þ¡Ü µ£ºÕìüÕñ£ þ®║þïÉõ©çÞÅ»ÚÅí": {
+    "怪獣綺譚 朧十夜 空狐万華鏡": {
       "steam_appid": 1018380
     },
-    "µçÆõ║║õ┐«õ╗Öõ╝á": {
+    "懒人修仙传": {
       "steam_appid": 892420
     },
-    "µé¬µóªer-mo": {
+    "悪梦er-mo": {
       "steam_appid": 909900
     },
-    "µêæõ╗¼þÜäÕñºÕ¡ª": {
+    "我们的大学": {
       "steam_appid": 1104400
     },
-    "µêæõ╗¼þÜäÕø¢": {
+    "我们的国": {
       "steam_appid": 1156970
     },
-    "µêæõ╗¼þÜäµê┐Õ▒ï OUR HOUSE": {
+    "我们的房屋 OUR HOUSE": {
       "steam_appid": 1098810
     },
-    "µêæþÜäÕà¢ÞÇ│ÕÉÄÕ«½": {
+    "我的兽耳后宫": {
       "steam_appid": 1158000
     },
-    "µêæþÜäþ║©þëçõ║║ÕÑ│ÕÅï/Make butter together!": {
+    "我的纸片人女友/Make butter together!": {
       "steam_appid": 1070020
     },
-    "µêæµÿ»Úö«þøÿõ¥á": {
+    "我是键盘侠": {
       "steam_appid": 1159000
     },
-    "µêæµÿ»ÚÖóÚò┐ - µ¿íµïƒþ╗ÅÞÉÑÕî╗ÚÖóµ©©µêÅ": {
+    "我是院长 - 模拟经营医院游戏": {
       "steam_appid": 1163100
     },
-    "µêæµÿ»µ©úþöÀ-Dishonest": {
+    "我是渣男-Dishonest": {
       "steam_appid": 965890
     },
-    "µêÿµ£»þïéµâ│3-µ×¬µêÿÞÂ│þÉâ(Chimera of Tactics 3-Gun and Soccer)": {
+    "战术狂想3-枪战足球(Chimera of Tactics 3-Gun and Soccer)": {
       "steam_appid": 944030
     },
-    "µëºÞíîõ║║ Executor": {
+    "执行人 Executor": {
       "steam_appid": 962950
     },
-    "µëÇÞ░ôõ¥áÕ«ó So-called Hero": {
+    "所谓侠客 So-called Hero": {
       "steam_appid": 1116080
     },
-    "µëôÕÀÑÕÉº´╝üÕñ®õ¢┐Úà▒ ~Õñ®õ¢┐Õ£¿Ú¡öþòîþÜäÕè│µö╣þöƒµ┤╗~": {
+    "打工吧！天使酱 ~天使在魔界的劳改生活~": {
       "steam_appid": 1984350,
       "engine": "RPG Maker"
     },
-    "µëôÕç╗ÞÇàµëôÕ¡ùµ©©µêÅÚøå´╝êStriker A Type Game Pack´╝ë": {
+    "打击者打字游戏集（Striker A Type Game Pack）": {
       "steam_appid": 1059860
     },
-    "µìòÚ▒╝ÕïçÞÇàÞüöþøƒ": {
+    "捕鱼勇者联盟": {
       "steam_appid": 1179670
     },
-    "µï»µòæÕñºÚ¡öþÄï2:ÚÇåµÁü Falsemen2:Upstream": {
+    "拯救大魔王2:逆流 Falsemen2:Upstream": {
       "steam_appid": 1038820
     },
-    "µïûµïëµ£║": {
+    "拖拉机": {
       "steam_appid": 975860
     },
-    "µï╝Þ»ìµ©©µêÅ 2017": {
+    "拼词游戏 2017": {
       "steam_appid": 745840
     },
-    "µòàÚâÀÒéÆÒüòÒüîÒüÖõ©ëÕºëÕª╣": {
+    "故郷をさがす三姉妹": {
       "steam_appid": 1094190
     },
-    "µòæÞÁÄµèëµï®Resurrection": {
+    "救赎抉择Resurrection": {
       "steam_appid": 1144270
     },
-    "µòúµ¡®ÒüÖÒéïÒé¡Òâ╝Òâ£Òâ╝Òâëõ¢┐Òüä": {
+    "散歩するキーボード使い": {
       "steam_appid": 1183740
     },
-    "µóªõ©ëÞï▒Úøäõ╝á": {
+    "梦三英雄传": {
       "steam_appid": 907320
     },
-    "µóªÕ╣╗þ│ûµ×£": {
+    "梦幻糖果": {
       "steam_appid": 1182080
     },
-    "µóªµ£¼µùáÕ┐º": {
+    "梦本无忧": {
       "steam_appid": 909020
     },
-    "µóªµÂ»": {
+    "梦涯": {
       "steam_appid": 1075120
     },
-    "µóªµ║¬þö╗ÕØè / DreamGallery": {
+    "梦溪画坊 / DreamGallery": {
       "steam_appid": 1041310
     },
-    "µóàÕíöþë╣ÚÜå Metatron": {
+    "梅塔特隆 Metatron": {
       "steam_appid": 993980
     },
-    "µ×òÞ¥╣Õ░æÕÑ│ MOE Hypnotist - share dreams with you": {
+    "枕边少女 MOE Hypnotist - share dreams with you": {
       "steam_appid": 942930
     },
-    "µ×Øµ▒ƒþ¼¼õ©ÇÞê×µûùõ╝Ü": {
+    "枝江第一舞斗会": {
       "steam_appid": 1864590,
       "engine": "Unity"
     },
-    "µØÄµòÖµÄêþÜäþƒÑÞ»åÚù«þ¡ö": {
+    "李教授的知识问答": {
       "steam_appid": 865100
     },
-    "µØÑõ║║ LIGHTWORKERS": {
+    "来人 LIGHTWORKERS": {
       "steam_appid": 1997230,
       "engine": "Unity"
     },
-    "µØ▒µû╣þ┐áþÑ×Õ╗╗Õ╗è ÒÇ£ Faith in the Goddess of Suwa.": {
+    "東方翠神廻廊 〜 Faith in the Goddess of Suwa.": {
       "steam_appid": 1010850
     },
-    "µø▓Úÿ┐Õ░ÅÕ░å Minor Leader": {
+    "曲阿小将 Minor Leader": {
       "steam_appid": 1118100
     },
-    "µùáõ©╗õ╣ïÕ£░:ÚôÂµ▓│ 4X-Galaxy": {
+    "无主之地:银河 4X-Galaxy": {
       "steam_appid": 922450
     },
-    "µùáÕÑçÕêÇ Wookie's Blade": {
+    "无奇刀 Wookie's Blade": {
       "steam_appid": 1058750,
       "engine": "Unity"
     },
-    "µùáÕ░¢Õ«êÕì½": {
+    "无尽守卫": {
       "steam_appid": 1940910
     },
-    "µùáÕ░¢µÀ▒µ©è": {
+    "无尽深渊": {
       "steam_appid": 1006620
     },
-    "µùáÚÖÉõ╣ïÕ┐â": {
+    "无限之心": {
       "steam_appid": 1158870
     },
-    "µùÂõ╣ïþ╗êKlock": {
+    "时之终Klock": {
       "steam_appid": 1186200
     },
-    "µùÂõ╣ïµëë": {
+    "时之扉": {
       "steam_appid": 1081810
     },
-    "µû®ÕªûRaksasi": {
+    "斩妖Raksasi": {
       "steam_appid": 1016600
     },
-    "µûçÕ¡ùþìä": {
+    "文字獄": {
       "steam_appid": 1035750
     },
-    "µûùÕ£░õ©╗VR": {
+    "斗地主VR": {
       "steam_appid": 800160
     },
-    "µûùõ©ëÕø¢": {
+    "斗三国": {
       "steam_appid": 1976720
     },
-    "µû╣ÕØùÞüöþøƒ": {
+    "方块联盟": {
       "steam_appid": 998300
     },
-    "µû╣ÞºúÕñóþò░Þü× ´¢× Avant-Garde Discerning Paralleler (µØ▒µû╣õ║îµ¼íÕëÁõ¢£STG)": {
+    "方解夢異聞 ～ Avant-Garde Discerning Paralleler (東方二次創作STG)": {
       "steam_appid": 1095590
     },
-    "µû░õ©ûÕïçÞÇàõ╝á": {
+    "新世勇者传": {
       "steam_appid": 957140
     },
-    "µû░ÕÀ¿Õòå": {
+    "新巨商": {
       "steam_appid": 1042590
     },
-    "µû░ÕÇ¥Õø¢õ╣ïµÇÆ": {
+    "新倾国之怒": {
       "steam_appid": 1685470
     },
-    "µüÉÚ¥ÖÕñºÕåÆÚÖ®": {
+    "恐龙大冒险": {
       "steam_appid": 1019180
     },
-    "µüï õ©Çõ║øÕ░Åµ©àµû░þÜäþîÄÕÑçµòàõ║ï": {
+    "恋 一些小清新的猎奇故事": {
       "steam_appid": 1203980
     },
-    "µüïþê▒Õà¼Õ»ô´╝êMy Girl´╝ÜLove Story´╝ë": {
+    "恋爱公寓（My Girl：Love Story）": {
       "steam_appid": 1044930
     },
-    "µüïþê▒µÇ╗Õè¿Õæÿ/Love Date": {
+    "恋爱总动员/Love Date": {
       "steam_appid": 1095790,
       "engine": "RPG Maker"
     },
-    "µÜùÚ╗æþá┤ÕØÅÕ▓ø/Diablo IslanD": {
+    "暗黑破坏岛/Diablo IslanD": {
       "steam_appid": 1138060
     },
-    "µÜ┤ÞÁ░þåèÕ¡®": {
+    "暴走熊孩": {
       "steam_appid": 683680
     },
-    "µÿÄµùÑÒÇüÕêØÒéüÒüªÕ¢╝ÕÑ│Òü¿ÔØñ": {
+    "明日、初めて彼女と❤": {
       "steam_appid": 2077040,
       "dx9": true,
       "dx11": true
     },
-    "µÿÄµùÑµÄóÚÖ®Õ«Â": {
+    "明日探险家": {
       "steam_appid": 1131460
     },
-    "µƒÉ1þºìÚØÆµÿÑ": {
+    "某1种青春": {
       "steam_appid": 1002290,
       "dx9": true
     },
-    "µ┤╗õ©ïÕÄ╗": {
+    "活下去": {
       "steam_appid": 1151610
     },
-    "µ║¬ÚúÄÞ░Àõ╣ïµêÿ(roguelike moba game)": {
+    "溪风谷之战(roguelike moba game)": {
       "steam_appid": 1513250,
       "engine": "Unity"
     },
-    "µ╝½µ¡ÑÞÇà The Walker": {
+    "漫步者 The Walker": {
       "steam_appid": 1189600
     },
-    "µ▒ëµ£½µ▒éþöƒ": {
+    "汉末求生": {
       "steam_appid": 1006800
     },
-    "µ▒ƒµ╣ûõ¢Öþöƒ": {
+    "江湖余生": {
       "steam_appid": 1177400
     },
-    "µ▒ƒµ╣ûõ¥áÕ«óõ╗ñ": {
+    "江湖侠客令": {
       "steam_appid": 1147430
     },
-    "µ▒ƒµ╣ûõ¥áÕ«óÞíî": {
+    "江湖侠客行": {
       "steam_appid": 842190
     },
-    "µ▒ƒµ╣ûµ▒éþöƒ Ganghood Survival": {
+    "江湖求生 Ganghood Survival": {
       "steam_appid": 965080
     },
-    "µ▓ëþØíþÜäµ│òÕêÖ": {
+    "沉睡的法则": {
       "steam_appid": 965820
     },
-    "µ▓ëµÁ«´╝êSea of Craft´╝ë": {
+    "沉浮（Sea of Craft）": {
       "steam_appid": 990920,
       "engine": "Unity"
     },
-    "µ▓íþî½þùàÕêÂõ¢£õ║║ / Psychosoft Ltd.": {
+    "没猫病制作人 / Psychosoft Ltd.": {
       "steam_appid": 1009070
     },
-    "µ▓ÖÕÀ┤Õàïõ╝áÕÑç": {
+    "沙巴克传奇": {
       "steam_appid": 1153870
     },
-    "µ▓ÖÚøòõ╣ïÞÀ»": {
+    "沙雕之路": {
       "steam_appid": 1092590
     },
-    "─îernaja Metka": {
+    "Černaja Metka": {
       "dx9": true
     },
-    "├£berSoldier": {
-      "steam_appid": 2905090,
-      "dx9": true,
-      "config_path": "<path-to-game>\\config.ini",
-      "engine": "X-tend"
-    },
-    "├£berSoldier II": {
-      "steam_appid": 281410,
-      "config_path": "%USERPROFILE%\\Documents\\US2\\",
-      "engine": "X-tend"
-    },
-    "├ëlan Vital": {
+    "Élan Vital": {
       "steam_appid": 1017690
     },
-    "├ët├®": {
+    "Été": {
       "steam_appid": 1065070
     },
-    "├öpe": {
+    "Ôpe": {
       "steam_appid": 1170200
     },
-    "├ûoo": {
+    "Öoo": {
       "steam_appid": 2721890,
       "config_path": "%LOCALAPPDATA%\\Ooo\\option.bin",
       "engine": "GameMaker"
     },
-    "┬íZombies! : Faulty Towers": {
+    "¡Zombies! : Faulty Towers": {
       "steam_appid": 451590
     },
-    "╬öV: Rings of Saturn": {
+    "ΔV: Rings of Saturn": {
       "steam_appid": 846030,
       "opengl": true,
       "config_path": "%APPDATA%\\dV\\settings.cfg",
