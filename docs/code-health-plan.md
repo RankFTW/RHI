@@ -200,7 +200,7 @@ These make future features cheaper to build. Do them in this order; each is safe
 
 ## Remove Game Overrides in 2.9.6.3 (user decision, 22 Nov 2026; moved up from 2.9.8 on 25 Nov 2026)
 
-Done 26 Nov 2026 (commit pending). Checked in Classic+, Tabs and Spotlight with the dev screenshot hook.
+Done 26 Nov 2026 (`fef8f826`). Checked in Classic+, Tabs and Spotlight with the dev screenshot hook.
 - [x] Reset Overrides' logic is now `DetailPanelBuilder.ResetGameSettings(card)` (`DetailPanelBuilder.Overrides.GameShared.cs`), which the game settings ⚙'s Reset calls directly. It no longer builds a panel first.
 - [x] Section removed: key `GameOverrides` out of `SettingsViewModel.DefaultSectionOrder` (saved orders drop it on load, saved collapse states too; a saved `DetailSelectedTab` of it falls back to Overview), `OverridesContainer` / `OverridesPanel` / `OverridesHeaderRow` out of `MainWindow.xaml`, `DetailLayoutHost.GetContainer` / `GetTitle`, the Tabs `FixedTabOrder` tab, Spotlight's Tune tile, `ArrangeOverrides`, its header summary (`BuildGameOverridesSummary`, `RefreshGameOverridesSummary`, the `SummariesStale` event).
 - [x] `BuildOverridesPanel` keeps its name (about 25 callers) but only builds the sections below Components. Deleted: `DetailPanelBuilder.Overrides.RsChannel.cs`, `DetailPanelBuilder.Overrides.ShadersAddons.cs`, `UpdateInclusionHelper.cs`, `OverridesPanelCtx`, `MakeOverridesMovingNote`, `ApplyResetButtonStyle`. Kept: the shared files (`RsShared`, `DllShared`, `ApiShared`, `GameShared`) and the DLSS / Driver Settings / Management builders.
