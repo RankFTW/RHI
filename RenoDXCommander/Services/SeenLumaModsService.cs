@@ -70,7 +70,7 @@ public class SeenLumaModsService
             var dir = Path.GetDirectoryName(FilePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(_seenMods.ToList(), new JsonSerializerOptions { WriteIndented = true }));
+            FileHelper.WriteAllTextAtomic(FilePath, JsonSerializer.Serialize(_seenMods.ToList(), new JsonSerializerOptions { WriteIndented = true }), "SeenLumaModsService.Save");
         }
         catch (Exception ex) { CrashReporter.Log($"[SeenLumaModsService.Save] Failed to save seen Luma mods — {ex.Message}"); }
     }

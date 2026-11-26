@@ -41,7 +41,7 @@ public class Rtx40MfgBinkRtxHairTests : IDisposable
         File.WriteAllBytes(Path.Combine(_dxc, "dxcompiler.dll"), new byte[] { 1, 1, 1 });
         File.WriteAllBytes(Path.Combine(_dxc, "dxil.dll"), new byte[] { 2, 2 });
         File.WriteAllText(Path.Combine(_dxc, "version.txt"), "v1.0");
-        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), new GitHubETagCache(), _staging);
+        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache(), _staging);
     }
 
     public void Dispose()

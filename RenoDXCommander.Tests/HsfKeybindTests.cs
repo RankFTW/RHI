@@ -14,7 +14,7 @@ public class HsfKeybindTests : IDisposable
     }
 
     private readonly string _game = Path.Combine(Path.GetTempPath(), "rhi-hsfkeys-" + Guid.NewGuid().ToString("N"));
-    private readonly HsfService _svc = new(new HttpClient(), new NullReporter(), new GitHubETagCache());
+    private readonly HsfService _svc = new(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
 
     public HsfKeybindTests() => Directory.CreateDirectory(_game);
 

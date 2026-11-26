@@ -30,7 +30,7 @@ public class EncoreIntelReplaceTests : IDisposable
         Directory.CreateDirectory(_game);
         File.WriteAllBytes(Path.Combine(_staging, Rtx40MfgService.StagedDllName), new byte[] { 5, 5, 5 });
         File.WriteAllText(Path.Combine(_staging, "staging_format.txt"), "2");
-        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), new GitHubETagCache(), _staging);
+        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache(), _staging);
     }
 
     public void Dispose()

@@ -40,8 +40,8 @@ public partial class MainViewModel
             meta["InstalledVersion"] = cleanVersion;
 
             Directory.CreateDirectory(Path.GetDirectoryName(UlMetaPath)!);
-            File.WriteAllText(UlMetaPath, System.Text.Json.JsonSerializer.Serialize(meta,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            FileHelper.WriteAllTextAtomic(UlMetaPath, System.Text.Json.JsonSerializer.Serialize(meta,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }), "MainViewModel.SaveUlMeta");
         }
         catch (Exception ex)
         {
@@ -96,8 +96,8 @@ public partial class MainViewModel
             meta["InstalledVersion"] = cleanVersion;
 
             Directory.CreateDirectory(Path.GetDirectoryName(DcMetaPath)!);
-            File.WriteAllText(DcMetaPath, System.Text.Json.JsonSerializer.Serialize(meta,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            FileHelper.WriteAllTextAtomic(DcMetaPath, System.Text.Json.JsonSerializer.Serialize(meta,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }), "MainViewModel.SaveDcMeta");
         }
         catch (Exception ex)
         {

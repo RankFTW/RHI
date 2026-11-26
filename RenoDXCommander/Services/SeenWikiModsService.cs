@@ -100,7 +100,7 @@ public class SeenWikiModsService
                 Directory.CreateDirectory(dir);
 
             var json = JsonSerializer.Serialize(_seenMods.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            FileHelper.WriteAllTextAtomic(FilePath, json, "SeenWikiModsService.Save");
         }
         catch
         {

@@ -209,7 +209,7 @@ public class CustomReShadeHashService
             var dir = Path.GetDirectoryName(HashFilePath);
             if (dir != null) Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(hashes, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(HashFilePath, json);
+            FileHelper.WriteAllTextAtomic(HashFilePath, json, "CustomReShadeHashService.SaveHashes");
         }
         catch (Exception ex) { CrashReporter.Log($"[CustomReShadeHashService.SaveHashes] Failed to save hash file — {ex.Message}"); }
     }

@@ -10,7 +10,7 @@ namespace RenoDXCommander.Tests;
 public class ShaderFolderSafetyTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "rhi-shsafety-" + Guid.NewGuid().ToString("N"));
-    private readonly ShaderPackService _svc = new(new HttpClient(), new GitHubETagCache());
+    private readonly ShaderPackService _svc = new(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
     private static readonly string[] UnknownPack = { "__rhi_test_no_such_pack__" };
 
     private string RsDir => Path.Combine(_dir, ShaderPackService.GameReShadeShaders);

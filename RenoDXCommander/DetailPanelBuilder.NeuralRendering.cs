@@ -203,12 +203,12 @@ public partial class DetailPanelBuilder
             foreach (var packId in new[] { "DLSS5Feeder", "LumeniteFX" })
             {
                 foreach (var f in _shaderPackService.GetPackShaderFiles(new[] { packId }))
-                    try { if (File.Exists(Path.Combine(shadersDir, f))) File.Delete(Path.Combine(shadersDir, f)); } catch (Exception) { /* per-file best-effort cleanup; locked or missing shader files are skipped */ }
+                    try { if (File.Exists(Path.Combine(shadersDir, f))) File.Delete(Path.Combine(shadersDir, f)); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { CrashReporter.Log($"[DetailPanelBuilder.RemoveFeederShaders] Shader '{f}' not removed — {ex.Message}"); }
             }
             // Lumenite textures
             if (Directory.Exists(texturesDir))
                 foreach (var f in Directory.GetFiles(texturesDir, "lumenite_*"))
-                    try { File.Delete(f); } catch (Exception) { /* per-file best-effort cleanup; locked or missing textures are skipped */ }
+                    try { File.Delete(f); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { CrashReporter.Log($"[DetailPanelBuilder.RemoveFeederShaders] Texture '{Path.GetFileName(f)}' not removed — {ex.Message}"); }
             // Subfolders + loose files we deployed
             try { if (Directory.Exists(Path.Combine(shadersDir, "DLSS5Feeder")))  Directory.Delete(Path.Combine(shadersDir, "DLSS5Feeder"),  true); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.RemoveFeederShaders] Failed to delete DLSS5Feeder folder — {ex.Message}"); }
             try { if (Directory.Exists(Path.Combine(shadersDir, "LumeniteFX")))   Directory.Delete(Path.Combine(shadersDir, "LumeniteFX"),   true); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder.RemoveFeederShaders] Failed to delete LumeniteFX folder — {ex.Message}"); }

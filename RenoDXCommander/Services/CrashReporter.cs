@@ -19,9 +19,14 @@ public static class CrashReporter
     /// <summary>"2.9.5", "2.9.5.1" or "2.9.5 beta 1" (see AppVersionInfo).</summary>
     public static string AppVersion => AppVersionInfo.Display;
 
-    private static readonly string LogDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "logs");
+    // RHI_LOG_DIR is set only by the test project, so test runs don't add session logs to the real folder
+    // (each one pushed a real log out of the 10 kept). The app never sets it.
+    private static readonly string LogDir =
+        Environment.GetEnvironmentVariable("RHI_LOG_DIR") is { Length: > 0 } overrideDir
+            ? overrideDir
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RHI", "logs");
 
     /// <summary>Maximum number of crash/error log files kept on disk.</summary>
     private const int MaxLogFiles = 10;

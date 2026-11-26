@@ -2,15 +2,17 @@
 set OUT=C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI
 set SRC=RenoDXCommander
 
-:: Force close RHI and helpers if running so the publish can replace the EXE
-powershell -NoProfile -Command "Get-Process RHI,'RHI-Stats','RHI.DropHelper' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"
-timeout /t 2 /nobreak >nul
+:: Close RHI and helpers so the publish can replace the EXE. RHI is asked to close itself first (the
+:: shutdown signal file, which also works when it runs as admin and lets it save its settings); anything
+:: still running after 10 s is force-stopped, and only then is there a 2 s wait for the file locks to go.
+powershell -NoProfile -Command "$sig = Join-Path $env:LOCALAPPDATA 'RHI\rhi_shutdown_requested'; if (Get-Process RHI -ErrorAction SilentlyContinue) { New-Item -ItemType File -Force $sig | Out-Null; $i = 0; while ((Get-Process RHI -ErrorAction SilentlyContinue) -and $i -lt 20) { Start-Sleep -Milliseconds 500; $i++ } }; $left = Get-Process RHI,'RHI-Stats','RHI.DropHelper' -ErrorAction SilentlyContinue; if ($left) { $left | Stop-Process -Force -ErrorAction SilentlyContinue; Remove-Item $sig -Force -ErrorAction SilentlyContinue; Start-Sleep 2 }"
 
 dotnet publish %SRC%\RenoDXCommander.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o "%OUT%"
-if %errorlevel% neq 0 (
-    echo dotnet publish failed, trying MSBuild...
-    "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" %SRC%\RenoDXCommander.csproj /t:Publish /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=false /p:PublishDir="%OUT%"
-)
+if not errorlevel 1 goto published
+echo dotnet publish failed, trying MSBuild...
+"C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" %SRC%\RenoDXCommander.csproj /t:Publish /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=false /p:PublishDir="%OUT%"
+if errorlevel 1 ( echo Publish failed & exit /b 1 )
+:published
 
 :: Build and copy the drop helper (non-elevated overlay for admin mode drag-drop)
 dotnet build RHI.DropHelper\RHI.DropHelper.csproj -c Release -v quiet

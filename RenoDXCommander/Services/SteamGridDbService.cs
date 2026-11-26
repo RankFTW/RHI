@@ -487,7 +487,7 @@ internal static class SteamGridDbService
             try
             {
                 Directory.CreateDirectory(Root);
-                File.WriteAllText(ChosenPath, JsonSerializer.Serialize(map));
+                FileHelper.WriteAllTextAtomic(ChosenPath, JsonSerializer.Serialize(map), "SteamGridDbService.RememberChoice");
             }
             catch (IOException ex) { CrashReporter.Log($"[SteamGridDbService.RememberChoice] {ex.Message}"); }
             catch (UnauthorizedAccessException ex) { CrashReporter.Log($"[SteamGridDbService.RememberChoice] {ex.Message}"); }

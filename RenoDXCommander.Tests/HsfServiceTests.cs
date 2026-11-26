@@ -93,7 +93,7 @@ public class HsfServiceTests
             Directory.CreateDirectory(game);
             var ini = Path.Combine(game, HsfService.IniName);
             File.WriteAllText(ini, "; HSF settings\r\n[HSF]\r\n");
-            var svc = new HsfService(new HttpClient(), new NullReporter(), new GitHubETagCache());
+            var svc = new HsfService(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
 
             Assert.True(svc.PresetRoute(game, HsfService.Route.BringIn));
             Assert.Equal("2", Dlssg20_30Service.ReadIniValue(ini, "HSF", "SlBringIn"));
@@ -177,7 +177,7 @@ public class HsfServiceTests
             Directory.CreateDirectory(Path.Combine(game, HsfService.StreamlineFolder));
             var ini = Path.Combine(game, HsfService.IniName);
             File.WriteAllText(ini, "[HSF]\r\nInGameDlssg=0\r\nExtra=1\r\n");
-            var svc = new HsfService(new HttpClient(), new NullReporter(), new GitHubETagCache());
+            var svc = new HsfService(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
 
             Assert.True(svc.SetRoute(game, HsfService.Route.BringIn));
             Assert.Equal("2", Dlssg20_30Service.ReadIniValue(ini, "HSF", "SlBringIn"));

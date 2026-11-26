@@ -38,7 +38,7 @@ public class RtxEncoreNoDlssTests : IDisposable
         File.WriteAllText(path, RtxEncoreNvidiaMarker.Format(entries));
     }
 
-    private static RtxEncoreService NewEncore() => new(new HttpClient(), new NullReporter(), new GitHubETagCache());
+    private static RtxEncoreService NewEncore() => new(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
 
     // ── Record ───────────────────────────────────────────────────────────────
 
@@ -146,7 +146,7 @@ public class RtxEncoreNoDlssTests : IDisposable
         var up = Put("nvngx_dlss.dll", new byte[] { 6 });
         WriteMarker(dlssg, common, up);
 
-        var dlss = new DlssStreamlineService(new HttpClient(), new GitHubETagCache());
+        var dlss = new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
         var r = dlss.Detect(_dir);
         Assert.Null(r.DlssPath);
         Assert.Null(r.DlssgPath);
@@ -163,7 +163,7 @@ public class RtxEncoreNoDlssTests : IDisposable
     public void Detect_WithoutRecord_CountsFiles()
     {
         Put("nvngx_dlss.dll", new byte[] { 6 });
-        var r = new DlssStreamlineService(new HttpClient(), new GitHubETagCache()).Detect(_dir);
+        var r = new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache()).Detect(_dir);
         Assert.NotNull(r.DlssPath);
     }
 
@@ -208,7 +208,7 @@ public class RtxEncoreNoDlssTests : IDisposable
         File.WriteAllBytes(Path.Combine(bin, "nvngx_dlss.dll"), new byte[] { 1 });
         File.WriteAllBytes(Path.Combine(bin, "sl.interposer.dll"), new byte[] { 2 });
 
-        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, false, false, new DlssStreamlineService(new HttpClient(), new GitHubETagCache()));
+        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, false, false, new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache()));
 
         Assert.False(r.Upscaling.Installed);
         Assert.Equal(RtxEncoreService.ReasonGameHasDlss, r.Upscaling.Reason);
@@ -221,7 +221,7 @@ public class RtxEncoreNoDlssTests : IDisposable
     [Fact]
     public async Task Deploy_32Bit_WritesNothing()
     {
-        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, true, false, new DlssStreamlineService(new HttpClient(), new GitHubETagCache()));
+        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, true, false, new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache()));
         Assert.Equal(RtxEncoreService.Reason32Bit, r.Upscaling.Reason);
         Assert.Equal(RtxEncoreService.Reason32Bit, r.FrameGeneration.Reason);
         Assert.Empty(Directory.EnumerateFileSystemEntries(_dir));
@@ -234,7 +234,7 @@ public class RtxEncoreNoDlssTests : IDisposable
         var fg = RtxEncoreService.FrameGenFileNames.Select(n => new RtxEncoreNvidiaMarker.Entry(n, 1, H)).ToArray();
         WriteMarker(fg.Prepend(up).ToArray()); // all listed, none on disk
 
-        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, false, false, new DlssStreamlineService(new HttpClient(), new GitHubETagCache()));
+        var r = await NewEncore().DeployNoDlssRuntimesAsync(_dir, false, false, new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache()));
 
         Assert.Equal(RtxEncoreService.ReasonUserRemoved, r.Upscaling.Reason);
         Assert.Equal(RtxEncoreService.ReasonUserRemoved, r.FrameGeneration.Reason);

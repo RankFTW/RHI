@@ -16,9 +16,12 @@ public class GitHubETagCache
 {
     private readonly ConcurrentDictionary<string, (string etag, string body)> _cache = new();
 
-    private static readonly string CachePath = Path.Combine(
+    private static readonly string DefaultCachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "github_etag_cache.json");
+
+    /// <summary>The file this instance loads from and saves to (the app always uses the default).</summary>
+    private readonly string _cachePath;
 
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(30);
     private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(30);
@@ -34,11 +37,15 @@ public class GitHubETagCache
     // Last-saved time per URL, so old entries can be dropped.
     private readonly ConcurrentDictionary<string, DateTime> _savedUtc = new();
 
-    public GitHubETagCache()
+    public GitHubETagCache() : this(DefaultCachePath) { }
+
+    /// <summary>For tests: a cache file of their own, so test runs never read or write the real one.</summary>
+    internal GitHubETagCache(string cachePath)
     {
+        _cachePath = cachePath;
         // A token saved or removed changes the limit (60 vs 5,000 an hour): check GitHub again
         GitHubTokenHandler.TokenChanged += () => ClearRateLimit("token changed");
-        var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(CachePath, out _);
+        var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(_cachePath, out _);
         if (saved == null) return;
         var cutoff = DateTime.UtcNow - MaxAge;
         foreach (var (url, e) in saved)
@@ -73,7 +80,7 @@ public class GitHubETagCache
                 Body = kv.Value.body,
                 SavedUtc = _savedUtc.TryGetValue(kv.Key, out var t) ? t : DateTime.UtcNow,
             });
-        SafeJsonFile.Write(CachePath, snapshot, "GitHubETagCache.Persist");
+        SafeJsonFile.Write(_cachePath, snapshot, "GitHubETagCache.Persist");
     }
 
     /// <summary>Set when GitHub returns 403 with X-RateLimit-Remaining=0; cleared at the reset time.</summary>

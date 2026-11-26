@@ -356,27 +356,15 @@ public partial class UltrawideFixService : IUltrawideFixService
         // Fetch from network
         try
         {
-            // Use a manual request so we can strip the global Authorization header for
-            // non-GitHub hosts (e.g. Codeberg). The shared HttpClient carries a
-            // "Bearer ghp_..." default header that Codeberg rejects with 401.
-            // HttpClient.DefaultRequestHeaders cannot be suppressed per-request — use a
-            // separate short-lived client for non-GitHub hosts.
+            // Every host goes through the shared client. The GitHub token is attached by
+            // GitHubTokenHandler to api.github.com only, so Codeberg never sees it (it used to
+            // reject the old default "Bearer ghp_..." header with 401, hence a separate client here).
             string content;
-            var uri = new Uri(url);
-            bool isGitHub = uri.Host.EndsWith("github.com", StringComparison.OrdinalIgnoreCase) ||
-                            uri.Host.EndsWith("githubusercontent.com", StringComparison.OrdinalIgnoreCase);
-            if (isGitHub)
+            using (var req = new HttpRequestMessage(HttpMethod.Get, url))
+            using (var resp = await _http.SendAsync(req).ConfigureAwait(false))
             {
-                using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 resp.EnsureSuccessStatusCode();
                 content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-            }
-            else
-            {
-                using var anonClient = new HttpClient();
-                anonClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "RHI");
-                content = await anonClient.GetStringAsync(url).ConfigureAwait(false);
             }
             CrashReporter.Log($"[UltrawideFixService] {label} fetched from network");
 

@@ -679,7 +679,8 @@ public partial class MainViewModel
                 foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.log")) File.Delete(f);
                 foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.csv")) File.Delete(f);
             }
-            catch { /* best effort */ }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { _crashReporter.Log($"[MainViewModel.UninstallUl] ReLimiter log/csv files not removed for '{card.GameName}' — {ex.Message}"); }
 
             // Restore driver FPS limiter inheritance (delete per-game override set on install)
             try { _dlssPresetService.ClearPerGameFpsLimit(card.GameName, card.InstallPath); }

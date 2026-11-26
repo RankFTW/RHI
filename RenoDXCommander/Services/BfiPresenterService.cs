@@ -283,7 +283,9 @@ public partial class BfiPresenterService
             var other = Path.Combine(deployDir, is32Bit ? Addon64 : Addon32);
             if (AddonPackService.IsAddonTrackedInDeployments(deployDir, Path.GetFileName(other)))
             {
-                try { File.Delete(other); } catch (IOException) { }
+                try { File.Delete(other); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { _crashReporter.Log($"[BfiPresenterService.InstallDx] Other-bitness add-on '{Path.GetFileName(other)}' not removed — {ex.Message}"); }
                 AddonPackService.UntrackAddonDeployment(deployDir, Path.GetFileName(other));
             }
             var rel = Path.GetRelativePath(installPath, dest);

@@ -100,7 +100,7 @@ public class SeenUltraPlusModsService
                 Directory.CreateDirectory(dir);
 
             var json = JsonSerializer.Serialize(_seenMods.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            FileHelper.WriteAllTextAtomic(FilePath, json, "SeenUltraPlusModsService.Save");
         }
         catch
         {

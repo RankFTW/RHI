@@ -32,7 +32,7 @@ public class Rtx40MfgPluginTests : IDisposable
         File.WriteAllText(Path.Combine(_staging, "staging_format.txt"), "2");
         File.WriteAllBytes(Path.Combine(_staging, "xess", "libxess_fg.dll"), new byte[] { 7 });
         File.WriteAllBytes(Path.Combine(_staging, "xess", "libxell.dll"), new byte[] { 8 });
-        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), new GitHubETagCache(), _staging);
+        _svc = new Rtx40MfgService(new HttpClient(), new NullReporter(), RenoDXCommander.Tests.TestEnvironment.NewETagCache(), _staging);
     }
 
     public void Dispose()

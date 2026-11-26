@@ -562,7 +562,7 @@ public class WindowStateManager
             }
             data["Maximized"] = isMaximized;
             var json = System.Text.Json.JsonSerializer.Serialize(data);
-            System.IO.File.WriteAllText(_windowSettingsPath, json);
+            RenoDXCommander.Services.FileHelper.WriteAllTextAtomic(_windowSettingsPath, json, "WindowStateManager.SaveWindowBounds");
         }
         catch (Exception) { /* Safe to ignore: runs from the window procedure (WM_EXITSIZEMOVE) and during shutdown; bounds are saved again on the next move/resize. */ }
     }

@@ -27,7 +27,7 @@ public class DlssEnablerSafetyTests : IDisposable
     }
 
     private static DlssEnablerService NewService()
-        => new(new HttpClient(), new NullReporter(), null!, null!, new GitHubETagCache());
+        => new(new HttpClient(), new NullReporter(), null!, null!, RenoDXCommander.Tests.TestEnvironment.NewETagCache());
 
     [Fact]
     public void IsDlssEnablerDll_OtherFiles_False()

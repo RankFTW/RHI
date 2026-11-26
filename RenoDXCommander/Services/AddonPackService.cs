@@ -1503,7 +1503,7 @@ public class AddonPackService : IAddonPackService
         {
             Directory.CreateDirectory(StagingDir);
             var json = JsonSerializer.Serialize(versions, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(VersionsJsonPath, json);
+            FileHelper.WriteAllTextAtomic(VersionsJsonPath, json, "AddonPackService.SaveVersions");
         }
         catch (Exception ex)
         {

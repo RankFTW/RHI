@@ -80,7 +80,7 @@ public class NexusUpdateService : INexusUpdateService
             var dir = Path.GetDirectoryName(BaselinesPath);
             if (dir != null) Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(_baselines, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(BaselinesPath, json);
+            FileHelper.WriteAllTextAtomic(BaselinesPath, json, "NexusUpdateService.SaveBaselines");
         }
         catch (Exception ex)
         {

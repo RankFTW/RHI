@@ -98,7 +98,7 @@ public class NrCostScalerSafetyTests : IDisposable
         var real = Put("nvngx_dlssnr_real.dll", NewNr);
         Put("nvngx_dlssnr.dll.original", Game);
 
-        var svc = new DlssStreamlineService(new HttpClient(), new GitHubETagCache());
+        var svc = new DlssStreamlineService(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
         Assert.True(svc.Restore(nr, _dir));
         Assert.Equal(Proxy, File.ReadAllBytes(nr));
         Assert.Equal(Game, File.ReadAllBytes(real));

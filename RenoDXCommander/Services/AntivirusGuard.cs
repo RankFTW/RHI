@@ -129,7 +129,7 @@ internal static class AntivirusGuard
         try
         {
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(StateFile)!);
-            File.WriteAllText(StateFile, JsonSerializer.Serialize(state));
+            FileHelper.WriteAllTextAtomic(StateFile, JsonSerializer.Serialize(state), "AntivirusGuard.Save");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

@@ -473,7 +473,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
                 string json;
                 lock (_scanSkipCacheLock)
                     json = JsonSerializer.Serialize(_scanSkipCache, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(ScanSkipCachePath, json);
+                FileHelper.WriteAllTextAtomic(ScanSkipCachePath, json, "DlssStreamlineService.SaveScanCache");
             }
             catch (Exception ex)
             {
