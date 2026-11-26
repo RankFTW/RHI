@@ -1,8 +1,8 @@
-// DetailPanelBuilder.Overrides.GameShared.cs — game-wide per-game settings shared by Game Overrides and their new homes
-// (v2.9.6: Game Overrides is removed in 2.9.8; until then both places call these methods, so a change in one shows in
-// the other). Game name, bitness, Graphics API (ApiShared) and Reset → the game settings ⚙
-// (DetailLayoutHost.GameSettings.cs); wiki mod name and wiki lookup → the RenoDX ⚙.
+// DetailPanelBuilder.Overrides.GameShared.cs — game-wide per-game settings (they were in Game Overrides until 2.9.6.3).
+// Game name, bitness, Graphics API (ApiShared) and Reset → the game settings ⚙ (DetailLayoutHost.GameSettings.cs);
+// wiki mod name and wiki lookup → the RenoDX ⚙.
 
+using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
@@ -119,58 +119,148 @@ public partial class DetailPanelBuilder
             _window.ViewModel.ToggleWikiExclusion(gameName);
     }
 
-    // ── The note at the top of Game Overrides until it goes (2.9.8) ─────────────
-
-    internal const string OverridesMovingNoteTag = "OverridesMovingNote";
-
-    private Microsoft.UI.Xaml.FrameworkElement MakeOverridesMovingNote()
-    {
-        var text = new Microsoft.UI.Xaml.Controls.TextBlock
-        {
-            Text = "Game Overrides is going away in RHI 2.9.6.3. Everything here is already in its new place, and a change in "
-                 + "either place shows in both:\n"
-                 + "• Game name, Bitness, Graphics API, Launch executable and arguments, Reset: this game's settings ⚙ (next to its name)\n"
-                 + "• Wiki mod name and wiki lookup: the RenoDX ⚙\n"
-                 + "• ReShade channel, Graphics API, Shaders, Addons, Select ReShade Preset, ReShade DLL name: the ReShade ⚙\n"
-                 + "• Display Commander and OptiScaler DLL names: their own ⚙\n"
-                 + "• Update inclusion: the Update All row in each component's ⚙",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            FontSize = 12,
-            LineHeight = 18,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        };
-        return new Microsoft.UI.Xaml.Controls.Border
-        {
-            Tag = OverridesMovingNoteTag,
-            Child = text,
-            Padding = new Microsoft.UI.Xaml.Thickness(12, 10, 12, 10),
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 0, 0, 12),
-            CornerRadius = new Microsoft.UI.Xaml.CornerRadius(8),
-            BorderThickness = new Microsoft.UI.Xaml.Thickness(1),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
-        };
-    }
-
     // ── Reset ───────────────────────────────────────────────────────────────────
 
-    private GameCardViewModel? _resetActionCard;
-    private Action? _resetAction;
-
-    /// <summary>Game Overrides registers its reset for the game it was built for (BuildShadersAddonsSection).</summary>
-    private void RegisterResetAction(GameCardViewModel card, Action reset)
-    {
-        _resetActionCard = card;
-        _resetAction = reset;
-    }
-
     /// <summary>
-    /// Resets this game's per-game settings (the same as Reset Overrides). Until 2.9.8 the reset lives in the Game
-    /// Overrides builder, so its panel is built for the game first when it shows another one.
+    /// Resets this game's per-game settings to their defaults (the game settings ⚙'s Reset; it was Game Overrides'
+    /// Reset Overrides until 2.9.6.3): name, wiki name and lookup, shaders, addons, DLL names, update inclusion,
+    /// No Addons ReShade, DXVK, bitness, Graphics API, ReShade channel, launch options, DLSS presets, display
+    /// modes and the RHI overlay.
     /// </summary>
     internal void ResetGameSettings(GameCardViewModel card)
     {
-        if (!ReferenceEquals(_resetActionCard, card) || _resetAction == null) BuildOverridesPanel(card);
-        if (ReferenceEquals(_resetActionCard, card)) _resetAction?.Invoke();
-        else CrashReporter.Log($"[DetailPanelBuilder.ResetGameSettings] No reset available for '{card.GameName}'");
+        var vm = _window.ViewModel;
+        var name = card.GameName;
+        var store = card.Source;
+
+        // Bitness and Graphics API go through the shared methods first when they are overridden: a change of
+        // bitness uninstalls the components, and a switch between DirectX and Vulkan removes the other ReShade.
+        if (GetBitnessDisplay(card) != "Auto") ApplyBitnessOverride(card, name, "Auto", rebuildNow: true);
+        if (GetApiDisplay(card) != "Auto") ApplyApiOverride(card, name, "Auto", rebuildNow: true);
+
+        // Name back to the detected one (all per-game settings follow the rename)
+        var resetName = GetOriginalGameName(name);
+        bool nameChanged = !resetName.Equals(name, StringComparison.OrdinalIgnoreCase);
+        if (nameChanged && !string.IsNullOrWhiteSpace(resetName))
+        {
+            vm.RenameGame(name, resetName);
+            name = resetName;
+        }
+
+        // Wiki mod name and lookup
+        if (vm.GetNameMapping(name) != null) vm.RemoveNameMapping(name);
+        if (vm.IsWikiExcluded(name)) vm.ToggleWikiExclusion(name);
+
+        // Shader mode → Global
+        if (vm.GetPerGameShaderMode(name, store) != "Global")
+        {
+            vm.SetPerGameShaderMode(name, "Global", store);
+            card.ShaderModeOverride = null; // update card in-memory so DeployShadersForCard uses global
+            _gameNameService.PerGameShaderSelection.Remove(GameKey.FromCard(name, store).ToKey());
+            _gameNameService.PerGameShaderSelection.Remove(name); // legacy fallback
+            vm.DeployShadersForCard(name);
+        }
+
+        // Addon mode → Global
+        if (vm.GetPerGameAddonMode(name, store) != "Global")
+        {
+            vm.SetPerGameAddonMode(name, "Global", store);
+            vm.DeployAddonsForCard(name);
+        }
+
+        // DLL names back to the defaults
+        _dllOverrideService.SetOsDllOverride(name, "");
+        vm.DisableDllOverride(card);
+        card.NotifyAll();
+
+        // Include everything in Update All
+        if (vm.IsUpdateAllExcludedReShade(name, store)) vm.ToggleUpdateAllExclusionReShade(name, store);
+        if (vm.IsUpdateAllExcludedRenoDx(name, store)) vm.ToggleUpdateAllExclusionRenoDx(name, store);
+        if (vm.IsUpdateAllExcludedUl(name, store)) vm.ToggleUpdateAllExclusionUl(name, store);
+        if (vm.IsUpdateAllExcludedDc(name, store)) vm.ToggleUpdateAllExclusionDc(name, store);
+        if (vm.IsUpdateAllExcludedOs(name, store)) vm.ToggleUpdateAllExclusionOs(name, store);
+        if (vm.IsUpdateAllExcludedDxvk(name, store)) vm.ToggleUpdateAllExclusionDxvk(name, store);
+
+        // ReShade without add-ons → with add-ons
+        if (card.UseNormalReShade) vm.SetUseNormalReShade(card, false);
+
+        // DXVK: uninstall if active. The variant and Lilium preset describe the installed DXVK: clear them only
+        // once it's gone, or Update would deploy another variant's DLLs over a kept (game running) install.
+        {
+            bool dxvkInstalled = card.DxvkEnabled || card.DxvkStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
+            var dxvkResetName = name;
+            _ = ResetDxvkOverridesAsync();
+            async Task ResetDxvkOverridesAsync()
+            {
+                try
+                {
+                    if (dxvkInstalled)
+                    {
+                        await vm.HandleDxvkToggleAsync(card, false, _window.Content.XamlRoot);
+                        if (card.DxvkStatus is GameStatus.Installed or GameStatus.UpdateAvailable)
+                        {
+                            CrashReporter.Log($"[DetailPanelBuilder.ResetGameSettings] '{dxvkResetName}': DXVK not uninstalled — variant and Lilium preset kept");
+                            return;
+                        }
+                    }
+                    vm.SetDxvkVariantOverride(dxvkResetName, null, store);
+                    vm.SetLiliumPreset(dxvkResetName, 0, store);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DetailPanelBuilder.ResetGameSettings] '{dxvkResetName}': DXVK reset failed — {ex.Message}");
+                }
+            }
+        }
+
+        // Bitness and Graphics API overrides (cleared above when they were set; this covers every stored form)
+        vm.SetBitnessOverride(name, null, store);
+        vm.SetApiOverride(name, null, store);
+
+        // ReShade channel → Stable; an install on another channel is reinstalled
+        var previousChannel = vm.GetReShadeChannelOverride(name, store);
+        vm.SetReShadeChannelOverride(name, null, store);
+        if (card.RsRecord != null && !string.IsNullOrEmpty(previousChannel))
+            _ = vm.InstallReShadeAsync(card);
+
+        // Custom ReShade DLL selection (composite key + legacy fallback)
+        _gameNameService.CustomReShadeSelection.Remove(GameKey.FromCard(name, store).ToKey());
+        _gameNameService.CustomReShadeSelection.Remove(name);
+
+        // Launch executable and arguments
+        _gameNameService.LaunchExeOverrides.Remove(name);
+        _gameNameService.LaunchArgsOverrides.Remove(name);
+        vm.SaveSettingsPublic();
+
+        // Card back to the auto-detected bitness and APIs (the overrides are cleared now)
+        card.Is32Bit = vm.ResolveIs32Bit(name, _peHeaderService.DetectGameArchitecture(card.InstallPath), card.Source ?? "");
+        card.DetectedApis = vm._DetectAllApisForCard(card.InstallPath, name, card.Source);
+        card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
+        card.GraphicsApi = vm.DetectGraphicsApi(card.InstallPath, EngineType.Unknown, name, card.Source);
+        card.NotifyAll();
+
+        // DLSS presets → Default
+        if (_dlssPresetService.IsSupported)
+        {
+            _dlssPresetService.SetSrPreset(name, card.InstallPath, 0);
+            _dlssPresetService.SetRrPreset(name, card.InstallPath, 0);
+            _dlssPresetService.SetFgPreset(name, card.InstallPath, 0);
+        }
+
+        // Forget the game's display mode state (what it swaps and its values per mode; files are left alone)
+        vm.ResetDisplayModeState(card);
+        _window.RefreshDisplayModeUi(card);
+
+        // Turn the RHI overlay back on
+        if (vm.IsOverlayDisabled(name, store))
+        {
+            vm.SetOverlayDisabled(name, false, store);
+            _window.RefreshOverlayPassthrough();
+        }
+
+        CrashReporter.Log($"[DetailPanelBuilder.ResetGameSettings] Settings reset for: {name}");
+
+        if (nameChanged) _window.RequestReselect(name);
+        else QueueOverridesRebuild(name); // the sections and the override notes show the defaults again
     }
 }

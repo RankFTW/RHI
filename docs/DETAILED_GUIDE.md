@@ -40,7 +40,7 @@ This guide covers every feature in RHI (ReShade HDR Installer) as of version 2.9
 **[Part 10: The Settings page](#part-10-the-settings-page)**
 
 **[Part 11: Updates, backups and maintenance](#part-11-updates-backups-and-maintenance)**
-- [Update All](#update-all) · [Automatic checks](#automatic-and-background-checks) · [App and beta updates](#app-updates) · [Backup and restore](#backup-and-restore) · [Game Overrides and Management](#game-overrides-going-away-in-2963)
+- [Update All](#update-all) · [Automatic checks](#automatic-and-background-checks) · [App and beta updates](#app-updates) · [Backup and restore](#backup-and-restore) · [Where Game Overrides went, and Management](#where-game-overrides-went)
 
 **[Part 12: More ways to install](#part-12-more-ways-to-install)**
 - [Drag and drop](#drag-and-drop) · [Addon watch folder](#addon-watch-folder) · [Vulkan games](#vulkan-games) · [Ryubing](#ryubing-nintendo-switch-emulator) · [Game links](#links-nexus-pcgamingwiki-uw-fix-ultra)
@@ -187,7 +187,6 @@ In Classic+ the page has eight sections:
 | Section | What's in it | Covered in |
 |---|---|---|
 | **Components** | ReShade, HDR mods, DOF Fix and frame limiters | [Part 4](#part-4-reshade-and-hdr-mods) |
-| **Game Overrides** | Older home of the per-game settings; going away in 2.9.6.3 | [Part 11](#game-overrides-going-away-in-2963) |
 | **Neural Rendering** | DLSS 5 tools | [Part 6](#neural-rendering-dlss-5) |
 | **DLSS / Streamline** | DLSS versions, presets and render scale | [Part 6](#dlss--streamline) |
 | **Driver Settings** | Per-game NVIDIA driver settings | [Part 6](#driver-settings) |
@@ -199,7 +198,7 @@ In Classic+ the page has eight sections:
 - Drag the **≡** handle to reorder sections.
 - A collapsed section shows a one-line summary, such as installed versions.
 
-**Tabs** shows the same content as tabs, always in this order: **Overview**, Game Overrides, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Experimental, Management. The Overview has a card for each component and an **At a glance** tile for every other tab. RHI remembers the tab you were on.
+**Tabs** shows the same content as tabs, always in this order: **Overview**, Extras, DLSS / Streamline, Driver Settings, Neural Rendering, Experimental, Management. The Overview has a card for each component and an **At a glance** tile for every other tab. RHI remembers the tab you were on.
 
 **Extras** has a **Detailed | Compact** switch in Tabs and Spotlight. Compact shows just each item's name, status and buttons; hover a name for its details.
 
@@ -1504,11 +1503,11 @@ Reformatting or moving to a new PC? RHI can bring everything with it.
 
 Settings replaced by a restore are kept in `%LOCALAPPDATA%\RHI\Backups\`.
 
-## Game Overrides (going away in 2.9.6.3)
+## Where Game Overrides went
 
-The **Game Overrides** section is still in 2.9.6.2, with a note at the top saying it goes away in RHI 2.9.6.3. Every setting in it already has a new home, and a change in either place shows in both. Use the new homes:
+The **Game Overrides** section was removed in RHI 2.9.6.3. Every setting it had is in one of these places:
 
-| Setting | New home |
+| Setting | Where it is |
 |---|---|
 | Game name, Bitness, Graphics API, Launch executable and arguments, Reset | [Game settings ⚙](#game-settings-) |
 | Wiki mod name, Wiki lookup | RenoDX ⚙ → **Mod matching** |

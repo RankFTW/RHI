@@ -1,5 +1,5 @@
 // DetailPanelBuilder.NeuralRendering.cs — Self-contained Neural Rendering section.
-// Shown between Game Overrides and NVIDIA Profile Overrides.
+// Shown above the DLSS / Streamline section by default.
 // Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, ShortFuse DLSS Tool, DLSS5 Feeder and GITC Uplift.
 // All files are deployed automatically — no addon picker required.
 

@@ -120,13 +120,6 @@ internal sealed partial class DetailLayoutHost
         RefreshGlance();
     }
 
-    /// <summary>
-    /// Raised before section summaries are shown again after the user may have changed settings
-    /// (Tabs: back to Overview; Spotlight: the side panel closes). The builder rebuilds summaries
-    /// that aren't kept up to date as settings change (Game Overrides).
-    /// </summary>
-    internal event Action? SummariesStale;
-
     /// <summary>A section's collapsed-header summary changed (some are filled in later, in the background).</summary>
     internal void SummaryChanged()
     {
@@ -138,7 +131,6 @@ internal sealed partial class DetailLayoutHost
 
     private static string GlanceFallback(string key) => key switch
     {
-        "GameOverrides"       => "Moving to each component's ⚙ and the game's settings ⚙ in 2.9.6.3",
         "NeuralRendering"     => "Not set up",
         "NvidiaProfileDlss"   => "No DLSS or Streamline files found",
         "NvidiaProfileDriver" => "NVIDIA driver settings for this game",
@@ -303,7 +295,7 @@ internal sealed partial class DetailLayoutHost
             default:       return OverrideNotes(rowKey); // ReLimiter / Display Commander: only their overrides
         }
 
-        // The card line, then the component's overrides (Game Overrides' old summary items), " · " between
+        // The card line, then the component's overrides (DLL name, channel, Update All and so on), " · " between
         string WithNotes(string line, string key) =>
             ComponentOverrideNotes.Line(vm, card, key, rsModes: false) is { } notes ? $"{line} · {notes}" : line;
     }

@@ -444,7 +444,7 @@ public sealed class DisplayModeStore
         return null;
     }
 
-    /// <summary>Forgets everything about one game (Reset Overrides).</summary>
+    /// <summary>Forgets everything about one game (Reset in the game's ⚙).</summary>
     public bool RemoveGame(string gameKey)
     {
         lock (_lock) return _games.Remove(gameKey);

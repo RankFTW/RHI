@@ -1,6 +1,6 @@
-// DetailLayoutHost.GameSettings.Identity.cs — game settings ⚙ rows moved from Game Overrides (v2.9.6; Game Overrides goes away
-// in 2.9.8): Game name, Bitness and Graphics API at the top, Reset at the bottom. Shared with Game Overrides
-// (DetailPanelBuilder.Overrides.GameShared.cs / ApiShared.cs), so a change in one shows in the other.
+// DetailLayoutHost.GameSettings.Identity.cs — game settings ⚙ rows that came from Game Overrides (v2.9.6; the section
+// was removed in 2.9.6.3): Game name, Bitness and Graphics API at the top, Reset at the bottom. The logic is in
+// DetailPanelBuilder.Overrides.GameShared.cs / ApiShared.cs.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -99,7 +99,7 @@ internal sealed partial class DetailLayoutHost
         rows.Children.Add(status);
     }
 
-    /// <summary>Reset (the same as Game Overrides' Reset Overrides). Two clicks: the first asks.</summary>
+    /// <summary>Reset (DetailPanelBuilder.ResetGameSettings). Two clicks: the first asks.</summary>
     private void AddResetRow(StackPanel rows, GameCardViewModel card)
     {
         var dp = _window.DetailPanelBuilderInstance;

@@ -81,7 +81,7 @@ public sealed partial class MainWindow
             if (card.IsRunning)
                 cog.AddWarning("The game is running. Display Commander may overwrite changes made now; close the game first.");
 
-            // ── Game overrides: DLL name (same setting as in Game Overrides; a pick that has to ask first
+            // ── DLL name (a pick that has to ask first
             //    closes this dialog, runs, then reopens it, because dialogs can't open over each other) ──
             Func<Task>? runAfterClose = null;
             if (_detailPanelBuilder is { } dp)
@@ -89,7 +89,7 @@ public sealed partial class MainWindow
                 var capturedName = card.GameName;
                 cog.AddSection("Setup");
                 AddSharedOverrideCombo(cog, "DLL name",
-                    "Renames Display Commander's DLL in this game's folder. -------- uses the default name. Names used by ReShade or OptiScaler aren't listed. Same setting as in Game Overrides.",
+                    "Renames Display Commander's DLL in this game's folder. -------- uses the default name. Names used by ReShade or OptiScaler aren't listed.",
                     () => { var (items, sel) = dp.GetDcDllNameChoices(card); return (items, sel); },
                     sel => DetailPanelBuilder.DcNamePickNeedsDialog(card, sel),
                     async sel =>

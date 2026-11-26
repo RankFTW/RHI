@@ -1,6 +1,6 @@
-// MainWindow.Events.Components.Rdx.ModMatching.cs — RenoDX ⚙ › Mod matching (v2.9.6, from Game Overrides, which goes away in
-// 2.9.8): the wiki mod name the game is looked up by and whether it's looked up on the RenoDX / Luma wikis at all.
-// Shared with Game Overrides (DetailPanelBuilder.Overrides.GameShared.cs).
+// MainWindow.Events.Components.Rdx.ModMatching.cs — RenoDX ⚙ › Mod matching (v2.9.6, from Game Overrides, removed in
+// 2.9.6.3): the wiki mod name the game is looked up by and whether it's looked up on the RenoDX / Luma wikis at all.
+// The logic is in DetailPanelBuilder.Overrides.GameShared.cs.
 
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.ViewModels;

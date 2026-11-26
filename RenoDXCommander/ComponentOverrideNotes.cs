@@ -1,5 +1,5 @@
 // ComponentOverrideNotes.cs — a component's per-game overrides as short notes ("d3d12.dll", "not in Update All"),
-// shown where the component is (Game Overrides goes away in 2.9.8; user decision Nov 2026): Tabs / Spotlight Overview
+// shown where the component is (Game Overrides was removed in 2.9.6.3; user decision Nov 2026): Tabs / Spotlight Overview
 // cards (appended to the card line), Spotlight's What's installed tiles (after the version), the Classic+ Components
 // header summary (in brackets after the version), and OptiScaler's Extras row and summary. One source, so every view
 // says the same. The game-wide ones (Graphics API override, launch arguments) are header tags (UpdateGraphicsApiBadges).

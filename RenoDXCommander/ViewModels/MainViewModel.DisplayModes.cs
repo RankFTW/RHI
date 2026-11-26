@@ -195,7 +195,7 @@ public partial class MainViewModel
         return await Task.Run(() => svc.ValueFor(ctx, DisplayModeStore.CustomId, item) is { } v ? svc.ApplyNow(ctx, item, v) : null);
     }
 
-    /// <summary>Reset Overrides: forget the game's display mode state (files are left as they are).</summary>
+    /// <summary>Reset (the game's ⚙): forget the game's display mode state (files are left as they are).</summary>
     public void ResetDisplayModeState(GameCardViewModel card)
     {
         if (DisplayModeStore.RemoveGame(DisplayModeKey(card)))

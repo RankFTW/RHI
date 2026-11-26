@@ -96,7 +96,7 @@ public partial class MainViewModel
         }
         if (card.RequiresVulkanInstall)
         {
-            card.ActionMessage = "This game is set to Vulkan in RHI. Set its graphics API to DirectX 9 in Game Overrides, then install again.";
+            card.ActionMessage = "This game is set to Vulkan in RHI. Set its Graphics API to DirectX 9 in the game's ⚙ (beside its name), then install again.";
             return false;
         }
 

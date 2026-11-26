@@ -481,12 +481,12 @@ public static class ControlUePostInstallService
             // [DLSSG]
             OptiScalerService.SetOptiScalerIniValue(installPath, "DLSSG", "UseGamesReflexMarkers", "false");
 
-            // ── Persist DLL override on the card so it shows in Game Overrides ──
+            // ── Persist DLL override on the card so the OptiScaler ⚙ shows it ──
             card.DllOverrideEnabled = true;
             card.ExcludeFromUpdateAllReShade = true;
             card.NotifyAll();
 
-            // Rebuild the detail panel so Extras and Game Overrides reflect the new state
+            // Rebuild the detail panel so Extras reflects the new state
             var mwField = typeof(App).GetField("_window",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (mwField?.GetValue(Microsoft.UI.Xaml.Application.Current) is MainWindow mw)

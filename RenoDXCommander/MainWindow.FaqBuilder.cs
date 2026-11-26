@@ -31,14 +31,14 @@ public sealed partial class MainWindow
         // Step 1: Select a Game
         panel.Children.Add(BuildFaqStep(1,
             "Select a Game",
-            "Your games are listed on the left. Click a game to open its detail panel. Use the search box and the filter chips (All Games, Installed, Favourites, Unreal, Unity, RenoDX, Luma…) to find games.\n\nThe detail panel is split into sections: Components, Game Overrides, Neural Rendering, DLSS / Streamline, Driver Settings, Management and Extras. Click a section heading to collapse it, or drag its ≡ handle to reorder.",
+            "Your games are listed on the left. Click a game to open its detail panel. Use the search box and the filter chips (All Games, Installed, Favourites, Unreal, Unity, RenoDX, Luma…) to find games.\n\nThe detail panel is split into sections: Components, Neural Rendering, DLSS / Streamline, Driver Settings, Experimental, Management and Extras. Per-game settings are in each component's ⚙ and in the game's own ⚙ beside its name. Click a section heading to collapse it, or drag its ≡ handle to reorder.",
             "Double-click a game to launch it. Right-click a game to open its folder, favourite or hide it, or create a desktop shortcut.\nThe HDR and RES buttons next to Launch turn Windows HDR on and switch resolution while the game is running.\nType a search, then click the + that appears to save it as a filter chip."));
 
         // Step 2: Install ReShade
         panel.Children.Add(BuildFaqStep(2,
             "Install ReShade",
             "ReShade is needed for RenoDX, Luma, frame limiters and DOF Fix. Click 'Install ReShade' in the Components section. RHI picks the right file name for the game's graphics API and installs the version with addon support.",
-            "Change the ReShade version per game in Game Overrides → ReShade Channel: Stable, Nightly, Custom (your own DLL), No Addons or Legacy.\nThe ReShade ⚙ deploys reshade.ini or ReShadePreset.ini, sets per-game hotkeys, and can stop RHI changing this game's reshade.ini.\nDrag a ReShade preset (.ini) onto RHI to install it, along with the shaders it needs."));
+            "Change the ReShade version per game in the ReShade ⚙ → ReShade channel: Stable, Nightly, Custom (your own DLL), No Addons or Legacy.\nThe ReShade ⚙ deploys reshade.ini or ReShadePreset.ini, sets per-game hotkeys, and can stop RHI changing this game's reshade.ini.\nDrag a ReShade preset (.ini) onto RHI to install it, along with the shaders it needs."));
 
         // Step 3a: RenoDX
         panel.Children.Add(BuildFaqSection(
@@ -56,7 +56,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqStep(4,
             "Choose Shaders (Optional)",
             "Click 'Shaders/Addons' in the toolbar, then 'Global Shaders'. Lilium's HDR shaders are selected by default. Your selection is deployed to every game with ReShade.\n\nExpand a pack to pick individual shaders, or search for one. Use the Profiles panel to save named selections, and Export to copy one as a zip you can paste into Discord.",
-            "Per-game shaders: Game Overrides → Shaders → Select.\nYour own shaders: click Open Custom Folder in the picker's Profiles panel and put them there. They appear under Custom Shaders.\nGlobal Addons, in the same toolbar menu, manages ReShade addons for all games."));
+            "Per-game shaders: ReShade ⚙ → Shaders → Select.\nYour own shaders: click Open Custom Folder in the picker's Profiles panel and put them there. They appear under Custom Shaders.\nGlobal Addons, in the same toolbar menu, manages ReShade addons for all games."));
 
         // Step 5: DOF Fix
         panel.Children.Add(BuildFaqStep(5,
@@ -86,7 +86,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("⚙", "AccentAmberBrush",
             "OptiScaler (Optional)",
             "OptiScaler lets a game's DLSS, FSR or XeSS inputs drive a different upscaler (FSR, XeSS, DLSS), and can add or replace frame generation on any GPU. It's in the Extras section.\n\nBefore installing, set your GPU type (and DLSS inputs for AMD/Intel) in Settings → Components → OptiScaler. Then choose a variant in the OptiScaler ⚙:\n• Stable: official release.\n• Nightly: latest build, or pin a specific build.\n• DLSS NR and F5 DLSSNR: forks with DLSS Neural Rendering.\n\nThe ⚙ also sets the upscaler, frame generation, Reflex, DLSS presets, render scale, Engine.ini fixes and Neural Rendering options, and saves presets you can apply to other games.",
-            "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in Game Overrides → DLL naming overrides.\n'Replace with a fresh copy...' in the ⚙ resets the game's OptiScaler.ini from your template."));
+            "OptiScaler and ReShade can run together. If a game crashes with both, give ReShade a different name in the ReShade ⚙ → ReShade DLL name.\n'Replace with a fresh copy...' in the ⚙ resets the game's OptiScaler.ini from your template."));
 
         // Extras
         panel.Children.Add(BuildFaqSpecialSection("X", "AccentAmberBrush",
@@ -126,7 +126,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("V", "AccentPurpleBrush",
             "Vulkan Games",
             "Vulkan games (shown with a VLK badge) use a global ReShade layer installed to C:\\ProgramData\\ReShade. This needs administrator rights, so RHI asks for permission the first time.",
-            "All Vulkan games share the same ReShade, so changing the ReShade channel on one changes it for all.\nRenoDX addons and shaders are still installed to each game's own folder.\nGames that support both DirectX and Vulkan: choose one in Game Overrides → Graphics API."));
+            "All Vulkan games share the same ReShade, so changing the ReShade channel on one changes it for all.\nRenoDX addons and shaders are still installed to each game's own folder.\nGames that support both DirectX and Vulkan: choose one in the game's ⚙ (beside its name) → Graphics API."));
 
         // Adding Games Manually
         panel.Children.Add(BuildFaqSpecialSection("+", "AccentAmberBrush",
@@ -138,7 +138,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("↑", "AccentGreenBrush",
             "Updating Everything",
             "Click 'Update All' in the toolbar to update ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, DXVK, Luma and DOF Fix across all your games.",
-            "Games with updates show a green dot in the sidebar.\nChoose what Update All includes in Settings → General → Components to check, or per game in Game Overrides → Update Inclusion.\nTurn on Automatic updates in Settings → General to install updates in the background.\nThe Updates button at the bottom right shows everything that has been updated."));
+            "Games with updates show a green dot in the sidebar.\nChoose what Update All includes in Settings → General → Components to check, or per game with the Update All row in each component's ⚙.\nTurn on Automatic updates in Settings → General to install updates in the background.\nThe Updates button at the bottom right shows everything that has been updated."));
 
         // Troubleshooting
         panel.Children.Add(BuildFaqSpecialSection("↻", "AccentBlueBrush",

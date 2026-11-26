@@ -1,4 +1,4 @@
-// DetailPanelBuilder.Overrides.ApiShared.cs — the Graphics API override, shared by Game Overrides and the ReShade ⚙
+// DetailPanelBuilder.Overrides.ApiShared.cs — the Graphics API override, shared by the game settings ⚙ and the ReShade ⚙
 // (two-places rule, like DetailPanelBuilder.Overrides.RsShared.cs): both read the saved value with GetApiDisplay and
 // change it with ApplyApiOverride, so a change in one shows in the other.
 
@@ -26,7 +26,7 @@ public partial class DetailPanelBuilder
     /// <summary>
     /// Saves the override ("Auto" clears it), updates the card's APIs and, when the game moves between DirectX and
     /// Vulkan, removes the ReShade install of the other kind. <paramref name="rebuildNow"/>: rebuild the detail panel
-    /// straight away (Game Overrides); the ReShade ⚙ passes false and refreshes its rows instead, so the open ⚙ stays.
+    /// straight away (Reset); the cogs pass false and refreshes its rows instead, so the open ⚙ stays.
     /// Returns true when ReShade was removed because of the switch.
     /// </summary>
     internal bool ApplyApiOverride(GameCardViewModel card, string capturedName, string selected, bool rebuildNow)

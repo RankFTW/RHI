@@ -1,4 +1,4 @@
-// DetailPanelBuilder.Overrides.RsShared.cs — ReShade per-game settings shared by Game Overrides and the ReShade ⚙:
+// DetailPanelBuilder.Overrides.RsShared.cs — ReShade per-game settings, used by the ReShade ⚙ (they were also in Game Overrides until 2.9.6.3):
 // ReShade Channel, Shaders, Addons, Select ReShade Preset and the ReShade DLL name.
 // Both places read the same saved values and call these methods, so a change in one shows in the other.
 
@@ -16,7 +16,10 @@ public partial class DetailPanelBuilder
     internal static readonly string[] ShaderModeItems = { "Global", "Custom", "Select", "Off" };
     internal static readonly string[] AddonModeItems = { "Global", "Select", "Off" };
 
-    /// <summary>Rebuilds Game Overrides at low priority so it shows the saved values (after a change made elsewhere).</summary>
+    /// <summary>
+    /// After a per-game setting changed in a ⚙: rebuilds the sections below Components at low priority (several depend
+    /// on the API, channel or DLL names) and refreshes the override notes. The name dates from Game Overrides.
+    /// </summary>
     internal void QueueOverridesRebuild(string gameName)
     {
         var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -112,7 +115,7 @@ public partial class DetailPanelBuilder
 
     /// <summary>
     /// Applies a ReShade Channel pick ("Stable", "Nightly", "Custom", "No Addons", "Legacy..." or an active legacy version):
-    /// shows any picker / confirmation, saves it, reinstalls ReShade where needed and rebuilds Game Overrides.
+    /// shows any picker / confirmation, saves it, reinstalls ReShade where needed and queues a rebuild of the sections.
     /// Returns false when the user cancelled or nothing could be applied, so the caller puts its dropdown back.
     /// </summary>
     internal async Task<bool> ApplyRsChannelAsync(GameCardViewModel card, string capturedName, string selected)
@@ -189,7 +192,7 @@ public partial class DetailPanelBuilder
             }
 
             _window.ViewModel.NotifyUpdateButtonChanged();
-            QueueOverridesRebuild(capturedName); // lists the new legacy version in the dropdown
+            QueueOverridesRebuild(capturedName); // sections and notes follow the new channel
             return true;
         }
 
@@ -526,7 +529,7 @@ public partial class DetailPanelBuilder
 
         var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
         await _window.ViewModel.ApplyPresetShadersAsync(capturedName, presetPaths, card.Source ?? "");
-        QueueOverridesRebuild(capturedName); // the Shaders dropdown shows the new "Select" mode
+        QueueOverridesRebuild(capturedName); // notes show the new "Select" mode
         return true;
     }
 

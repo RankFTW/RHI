@@ -38,7 +38,7 @@ internal sealed partial class DetailLayoutHost
     private StackPanel? _spotBody;
     private AutoFitGrid? _statusGrid;
     private AutoFitGrid? _tuneGrid;
-    /// <summary>Second row of Tune tiles: four (Driver Settings, Neural Rendering, Experimental, Management).</summary>
+    /// <summary>Second row of Tune tiles: Neural Rendering, Experimental, Management.</summary>
     private AutoFitGrid? _tuneGrid2;
 
     /// <summary>Tiles in the first Tune row; the rest go in the second.</summary>
@@ -197,9 +197,10 @@ internal sealed partial class DetailLayoutHost
             _statusGrid.Children.Add(tile.Root);
         }
 
-        // Seven tiles: three in the first row, four in the second (fewer per row when narrow), so each summary has room
+        // Six tiles, three per row (fewer per row when narrow): Extras, DLSS / Streamline, Driver Settings,
+        // then Neural Rendering, Experimental, Management (the order of FixedTabOrder)
         _tuneGrid = new AutoFitGrid { MinColumnWidth = 260, MaxColumns = TuneFirstRow, ColumnSpacing = 10, RowSpacing = 10 };
-        _tuneGrid2 = new AutoFitGrid { MinColumnWidth = 200, MaxColumns = 4, ColumnSpacing = 10, RowSpacing = 10 };
+        _tuneGrid2 = new AutoFitGrid { MinColumnWidth = 260, MaxColumns = TuneFirstRow, ColumnSpacing = 10, RowSpacing = 10 };
 
         _spotBody = new StackPanel { Spacing = 18 };
         var status = new StackPanel { Spacing = 10 };
@@ -542,7 +543,6 @@ internal sealed partial class DetailLayoutHost
             SectionsPanel.Children.Add(container); // ApplySectionOrder puts it back in order
         }
         // Settings changed in the panel: bring the Tune tiles up to date
-        SummariesStale?.Invoke();
         RefreshTuneTiles();
     }
 
@@ -638,7 +638,7 @@ internal sealed partial class DetailLayoutHost
             bool notInstalled = status.Length == 0 || status == "—"
                 || string.Equals(status, "Ready", StringComparison.OrdinalIgnoreCase);
             // Values in the Tune tiles' green (the version, then the component's overrides: channel, DLL name,
-            // Update All, as Game Overrides' summary showed them), " · " between them in the normal text colour
+            // Update All), " · " between them in the normal text colour
             _status.Inlines.Clear();
             var parts = new List<(string Text, bool Value)>();
             if (notInstalled) parts.Add(("Not installed", false));

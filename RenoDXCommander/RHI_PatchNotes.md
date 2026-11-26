@@ -6,6 +6,14 @@
 ## v2.9.6.3 Beta
 
 ### Changes
+- **Game Overrides is gone.** Its settings have been in their new places since 2.9.6, and those are now the only places:
+  - Game name, Bitness, Graphics API, Launch executable and arguments, and Reset: the game's ⚙ beside its name.
+  - Wiki mod name and wiki lookup: the RenoDX ⚙ (Mod matching).
+  - ReShade channel, ReShade DLL name, Shaders, Addons and Select ReShade Preset: the ReShade ⚙.
+  - Display Commander and OptiScaler DLL names: their own ⚙.
+  - Update inclusion: the Update All row in each component's ⚙.
+- Spotlight: Tune this game now has six tiles, three per row: Extras, DLSS / Streamline and Driver Settings, then Neural Rendering, Experimental and Management.
+- The Launch button's menu (Executable, Launch arguments) now opens the game's settings, where those two are set.
 - **Smaller download.** RHI is about a quarter smaller (128 MB instead of 175 MB), so the installer and every update download faster. Windows machine-learning files that RHI never used are no longer included.
 - **Faster start.** RHI's game list is up to date about two seconds sooner after launch: add-on update checks now run together and alongside the game scan instead of holding it up, the ReShade and Luma pages are each downloaded once instead of twice, and install records are read once instead of once per game.
 - RHI no longer hitches for about half a second when the scan at launch finishes: DLSS files are now read in the background instead of while the window is being updated.

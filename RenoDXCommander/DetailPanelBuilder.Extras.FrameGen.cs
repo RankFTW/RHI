@@ -667,7 +667,7 @@ public partial class DetailPanelBuilder
                 }
                 if (string.Equals(card.RsInstalledFile, "dxgi.dll", StringComparison.OrdinalIgnoreCase))
                     cog.AddWarning("ReShade is installed as dxgi.dll in this game. With XeMFG at 5x and 6x, some generated frames may not reach the screen. "
-                        + "If that happens, give ReShade a different DLL name in Game Overrides › DLL naming overrides.");
+                        + "If that happens, give ReShade a different DLL name in the ReShade ⚙ › ReShade DLL name.");
 
                 AddUmfgRtxHairSection(cog, card, mfgSvc, isInstalled, isHsfMods);
                 AddUmfgDlss5Section(cog, card, mfgSvc, isInstalled, isHsfMods);

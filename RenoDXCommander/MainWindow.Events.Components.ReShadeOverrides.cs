@@ -1,5 +1,5 @@
 // MainWindow.Events.Components.ReShadeOverrides.cs — the ReShade ⚙'s Setup and Shaders and addons sections (and Updates).
-// The same per-game settings as Game Overrides (Graphics API, ReShade Channel, Shaders, Addons, ReShade DLL name, Select
+// ReShade's per-game settings (Graphics API, ReShade Channel, Shaders, Addons, ReShade DLL name, Select
 // ReShade Preset), kept in both places so people find them either way. Both call the shared methods in
 // DetailPanelBuilder.Overrides.RsShared.cs (Graphics API: DetailPanelBuilder.Overrides.ApiShared.cs).
 
@@ -17,7 +17,7 @@ public sealed partial class MainWindow
     /// the action runs, and the cog opens again. In Tabs / Spotlight the cog isn't a dialog and they run in place.
     /// Returns the ReShade DLL name dropdown (null when not shown) so "Load ReShade as ASI" can grey it out.
     /// </summary>
-    private ComboBox? AddRsGameOverridesSection(CogDialog cog, GameCardViewModel card, Action<Func<Task>> closeThenRun,
+    private ComboBox? AddRsPerGameSections(CogDialog cog, GameCardViewModel card, Action<Func<Task>> closeThenRun,
         Action<ComboBox?> addLoadingRows)
     {
         var dp = _detailPanelBuilder;
@@ -26,13 +26,12 @@ public sealed partial class MainWindow
 
         // ── Setup: which ReShade, for which API, under which name ──
         cog.AddSection("Setup");
-        cog.AddNote("The same settings as in this game's Game Overrides section. A change in one place shows in the other.");
 
         ComboBox? addonCombo = null;
 
         AddSharedOverrideCombo(cog, "Graphics API",
             "The graphics API RHI treats this game as using. Auto uses the detected one. Switching between DirectX and Vulkan "
-            + "removes the ReShade install of the other kind (install ReShade again afterwards). Reset Overrides goes back to Auto.",
+            + "removes the ReShade install of the other kind (install ReShade again afterwards). Reset in the game's ⚙ goes back to Auto.",
             () => (DetailPanelBuilder.ApiItems, dp.GetApiDisplay(card)),
             _ => false,
             sel =>
@@ -124,7 +123,7 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// The ReShade ⚙'s Updates section: whether Update All updates ReShade in this game (the same choice as the ReShade
-    /// tick in Game Overrides' Update inclusion; Vulkan games share it), and whether RHI keeps its reshade.ini updated.
+    /// Update All choice every component ⚙ has; Vulkan games share it), and whether RHI keeps its reshade.ini updated.
     /// </summary>
     private void AddRsUpdatesSection(CogDialog cog, GameCardViewModel card)
     {
@@ -148,7 +147,7 @@ public sealed partial class MainWindow
     /// <summary>
     /// A cog dropdown whose change runs <paramref name="apply"/> (may open dialogs, may be cancelled). Afterwards the
     /// dropdown re-reads the saved value, so a cancelled pick goes back by itself. Picking <paramref name="reopenItem"/>
-    /// while it's already the saved value runs it again (reopens its picker), like the Game Overrides dropdowns.
+    /// while it's already the saved value runs it again (reopens its picker).
     /// </summary>
     private static ComboBox AddSharedOverrideCombo(CogDialog cog, string label, string help,
         Func<(IList<string> Items, string Selected)> read,

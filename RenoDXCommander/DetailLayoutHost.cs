@@ -62,7 +62,6 @@ internal sealed partial class DetailLayoutHost
     internal Border? GetContainer(string key) => key switch
     {
         "Components"          => _window.DetailComponentSection,
-        "GameOverrides"       => _window.OverridesContainer,
         "NeuralRendering"     => _window.NeuralRenderingContainer,
         "NvidiaProfileDlss"   => _window.NvidiaProfileDlssContainer,
         "NvidiaProfileDriver" => _window.NvidiaProfileDriverContainer,
@@ -85,7 +84,6 @@ internal sealed partial class DetailLayoutHost
     internal static string GetTitle(string key) => key switch
     {
         "Components"          => "Components",
-        "GameOverrides"       => "Game Overrides",
         "NeuralRendering"     => "Neural Rendering",
         "NvidiaProfileDlss"   => "DLSS / Streamline",
         "NvidiaProfileDriver" => "Driver Settings",
@@ -147,7 +145,7 @@ internal sealed partial class DetailLayoutHost
     /// <summary>Tabs in order: Overview, then every section except Components (shown by Overview).</summary>
     // Tabs has its own fixed order; Classic's drag order (DetailSectionOrder) doesn't apply
     private static readonly string[] FixedTabOrder =
-        { OverviewKey, "GameOverrides", "Extras", "NvidiaProfileDlss", "NvidiaProfileDriver", "NeuralRendering", "Experimental", "Management" };
+        { OverviewKey, "Extras", "NvidiaProfileDlss", "NvidiaProfileDriver", "NeuralRendering", "Experimental", "Management" };
 
     private IEnumerable<string> TabKeys =>
         FixedTabOrder.Where(k => k == OverviewKey || GetContainer(k) != null);
@@ -297,7 +295,7 @@ internal sealed partial class DetailLayoutHost
         if (_overview != null)
         {
             _overview.Visibility = selected == OverviewKey ? Visibility.Visible : Visibility.Collapsed;
-            if (selected == OverviewKey) { SummariesStale?.Invoke(); RefreshOverview(); }
+            if (selected == OverviewKey) RefreshOverview();
         }
     }
 

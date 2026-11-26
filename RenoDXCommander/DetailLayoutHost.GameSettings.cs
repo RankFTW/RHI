@@ -50,7 +50,7 @@ internal sealed partial class DetailLayoutHost
         StackPanel Group() => new() { Spacing = 16 };
 
         var game = Group();
-        AddIdentityRows(game, card);          // name, bitness, Graphics API (from Game Overrides)
+        AddIdentityRows(game, card);          // name, bitness, Graphics API
 
         var launching = Group();
         AddLaunchRows(launching, card);
@@ -61,7 +61,7 @@ internal sealed partial class DetailLayoutHost
         AddDisplayModeRow(overlay, card, openDisplayModes);
 
         var reset = Group();
-        AddResetRow(reset, card);             // from Game Overrides
+        AddResetRow(reset, card);
 
         return new()
         {
@@ -116,8 +116,8 @@ internal sealed partial class DetailLayoutHost
     }
 
     /// <summary>
-    /// Launch executable and launch arguments: the same settings as in Game Overrides (MainViewModel.LaunchOptions.cs).
-    /// Text boxes save on Enter and when focus leaves; Game Overrides is rebuilt so it shows the new values.
+    /// Launch executable and launch arguments (MainViewModel.LaunchOptions.cs).
+    /// Text boxes save on Enter and when focus leaves.
     /// </summary>
     private void AddLaunchRows(StackPanel rows, GameCardViewModel card)
     {

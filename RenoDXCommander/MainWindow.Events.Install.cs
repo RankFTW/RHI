@@ -672,7 +672,7 @@ public sealed partial class MainWindow
             TrackRecentLaunch(gameName);
             var launchArgs = _gameNameService.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
-            // Display mode: its launch arguments replace the Game Overrides ones ("" = none in this mode)
+            // Display mode: its launch arguments replace the game's own ("" = none in this mode)
             if (ViewModel.DisplayModeLaunchValue(card, DisplayModeItemKeys.LaunchArgs) is { } modeArgs)
             {
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launch arguments from display mode '{ViewModel.ActiveDisplayModeName(card)}': '{modeArgs}'");

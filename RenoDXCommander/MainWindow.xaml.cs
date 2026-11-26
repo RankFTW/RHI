@@ -728,7 +728,6 @@ public sealed partial class MainWindow : Window
                                 DetailPanel.Visibility = Visibility.Visible;
                                 BuildOverridesPanel(target);
                                 _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
-                                if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
                                 if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
                                 if (NvidiaProfileDlssContainer.Visibility != Visibility.Visible)   NvidiaProfileDlssContainer.Visibility = Visibility.Visible;
                                 if (NvidiaProfileDriverContainer.Visibility != Visibility.Visible) NvidiaProfileDriverContainer.Visibility = Visibility.Visible;
@@ -749,8 +748,6 @@ public sealed partial class MainWindow : Window
             // "same card already built" skip and left the page blank.
             _lastBuiltCard = null;
             DetailPanel.Visibility = Visibility.Collapsed;
-            OverridesPanel.Children.Clear();
-            OverridesContainer.Visibility = Visibility.Collapsed;
             NeuralRenderingPanel.Children.Clear();
             NeuralRenderingContainer.Visibility = Visibility.Collapsed;
             NvidiaProfileDlssPanel.Children.Clear();

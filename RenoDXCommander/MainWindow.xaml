@@ -1076,20 +1076,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ── Game Overrides section ── -->
-                        <Border x:Name="OverridesContainer" x:FieldModifier="internal"
-                                Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
-                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                Padding="14,12" Visibility="Collapsed">
-                            <StackPanel Spacing="8">
-                                <!-- Collapse header — wired in BuildOverridesPanel -->
-                                <StackPanel x:Name="OverridesHeaderRow" x:FieldModifier="internal"
-                                            Orientation="Horizontal" Spacing="0"/>
-                                <!-- Body — all overrides content added here by builder -->
-                                <StackPanel x:Name="OverridesPanel" x:FieldModifier="internal" Spacing="6"/>
-                            </StackPanel>
-                        </Border>
-
                         <!-- ── Neural Rendering section ── -->
                         <Border x:Name="NeuralRenderingContainer" x:FieldModifier="internal"
                                 Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"

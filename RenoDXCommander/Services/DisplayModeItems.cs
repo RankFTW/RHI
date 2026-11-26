@@ -390,7 +390,7 @@ public static class DisplayModeItems
         new()
         {
             Key = DisplayModeItemKeys.LaunchArgs, Label = "Launch arguments", Group = GroupLaunch, Kind = DisplayModeValueKind.Text, AtLaunch = true,
-            Help = "Arguments RHI passes to the game in this mode (instead of the ones in Game Overrides), e.g. -fullscreen.",
+            Help = "Arguments RHI passes to the game in this mode (instead of the ones in the game's ⚙), e.g. -fullscreen.",
         },
     };
 

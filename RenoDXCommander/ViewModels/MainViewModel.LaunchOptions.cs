@@ -1,5 +1,5 @@
 // MainViewModel.LaunchOptions.cs — per-game launch executable and launch arguments (used when RHI launches the game).
-// Shown in Game Overrides and in the game's ⚙ (Game settings); both read and write through these.
+// Shown in the game's ⚙ (Game settings), which reads and writes through these.
 
 using RenoDXCommander.Services;
 

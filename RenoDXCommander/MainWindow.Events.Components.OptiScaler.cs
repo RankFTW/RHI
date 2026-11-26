@@ -466,7 +466,7 @@ public sealed partial class MainWindow
             var upscalerCell = new OsCell("Upscaler",
                 "Upscaler OptiScaler uses for the selected API. Auto lets OptiScaler choose based on your GPU.", apiUpscalerCombo);
 
-            // DLL name: same setting as in Game Overrides (DetailPanelBuilder.Overrides.DllShared.cs); usable before installing
+            // DLL name (DetailPanelBuilder.Overrides.DllShared.cs); usable before installing
             OsCell? dllNameCell = null;
             if (_detailPanelBuilder is { } dp)
             {
@@ -489,7 +489,7 @@ public sealed partial class MainWindow
                     closeThenRun: _ => { }); // never asks: no dialog to close for
                 dllNameCell = new OsCell("DLL name",
                     $"The name OptiScaler's DLL has in this game's folder. -------- uses the default ({OptiScalerService.GetDefaultDllName(card.GraphicsApi)}). "
-                    + "Names used by ReShade or Display Commander aren't listed. Same setting as in Game Overrides.",
+                    + "Names used by ReShade or Display Commander aren't listed.",
                     dllCombo, Ungated: true);
             }
 

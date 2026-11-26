@@ -63,7 +63,7 @@ public sealed partial class MainWindow
             var reshadeLogPath = Path.Combine(installPath, "ReShade.log");
             var cog = new CogDialog("ReShade", Content.XamlRoot);
 
-            // ── Setup, then Shaders and addons (same settings as Game Overrides; pickers close the dialog first, then
+            // ── Setup, then Shaders and addons (pickers close the dialog first, then
             // it reopens), Hotkeys, Updates, Files ──
             Func<Task>? runAfterClose = null;
             // Load ReShade as ASI (not for Vulkan: ReShade is a global layer there), added to the Setup section under
@@ -107,7 +107,7 @@ public sealed partial class MainWindow
                                     card.NotifyAll();
                                     if (dllNameCombo != null) dllNameCombo.IsEnabled = !turnOn;
                                     _detailPanelBuilder?.UpdateDetailComponentRows(card);
-                                    _detailPanelBuilder?.BuildOverridesPanel(card); // greys/ungreys the ReShade DLL name dropdown
+                                    _detailPanelBuilder?.BuildOverridesPanel(card); // sections that show ReShade's file name follow the change
                                 }
                                 catch (Exception ex)
                                 {
@@ -119,7 +119,7 @@ public sealed partial class MainWindow
                 }
             }
 
-            AddRsGameOverridesSection(cog, card, action => { runAfterClose = action; cog.Hide(); }, AddLoadingRows);
+            AddRsPerGameSections(cog, card, action => { runAfterClose = action; cog.Hide(); }, AddLoadingRows);
 
             // ── Hotkeys ───────────────────────────────────────────────────────────
             // Capture box + Apply per key: a key press only fills the box, Apply writes it.

@@ -1,4 +1,4 @@
-// DetailPanelBuilder.Overrides.DllShared.cs — Display Commander and OptiScaler DLL names, shared by Game Overrides
+// DetailPanelBuilder.Overrides.DllShared.cs — Display Commander and OptiScaler DLL names (they were also in Game Overrides until 2.9.6.3)
 // and the Display Commander / OptiScaler ⚙s (the ReShade one is in DetailPanelBuilder.Overrides.RsShared.cs).
 // The three names exclude each other: a component can't take a name another one uses.
 

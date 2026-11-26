@@ -241,9 +241,19 @@ internal sealed partial class DetailLayoutHost
         {
             Text = "Executable: " + (string.IsNullOrWhiteSpace(exe) ? "auto-detect" : System.IO.Path.GetFileName(exe)),
         };
-        exeItem.Click += (s, e) => SelectTab("GameOverrides");
+        // Both are in the game's settings (⚙ beside its name): a side panel in Spotlight, a dialog otherwise
+        async void OpenLaunchSettings()
+        {
+            try
+            {
+                if (IsSpotlight) OpenPanel(GameSettingsKey);
+                else await ShowGameSettingsCogAsync(anchor.XamlRoot);
+            }
+            catch (Exception ex) { Services.CrashReporter.Log($"[DetailLayoutHost.LaunchMenu] Game settings — {ex.Message}"); }
+        }
+        exeItem.Click += (s, e) => OpenLaunchSettings();
         var argsItem = new MenuFlyoutItem { Text = "Launch arguments..." };
-        argsItem.Click += (s, e) => SelectTab("GameOverrides");
+        argsItem.Click += (s, e) => OpenLaunchSettings();
         var shortcutItem = new MenuFlyoutItem { Text = "Create desktop shortcut" };
         shortcutItem.Click += async (s, e) =>
         {

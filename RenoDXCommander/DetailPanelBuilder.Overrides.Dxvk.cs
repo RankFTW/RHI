@@ -16,10 +16,10 @@ public partial class DetailPanelBuilder
         "vulkan-1.dll", "winmm.dll",
     ];
 
-    private void BuildManagementSection(GameCardViewModel card, string capturedName, OverridesPanelCtx ctx)
+    private void BuildManagementSection(GameCardViewModel card, string capturedName)
     {
         _window.ViewModel.SetLastUiAction($"BuildManagementSection({card.GameName})");
-        // ── Management section (single row: 4 buttons side by side with separators; Reset Overrides is in Game Overrides) ──
+        // ── Management section (single row: buttons side by side with separators; Reset is in the game settings ⚙) ──
         _window.ManagementPanel.Children.Clear();
 
         // Collapsible header

@@ -79,7 +79,7 @@ Other databases (`RenoDXdb*.json`, `engine-files/`) live in the separate `RankFT
 - `ViewModels/`: `MainViewModel.*.cs` (Init, Install, Update, Settings, Dxvk, GameMatching, BuildCards, CacheLoad, BackgroundScan…) and `GameCardViewModel.*.cs` (one per feature).
 - `Models/`: data records/enums, including persisted install records (`*InstalledRecord.cs`) and `GameKey`.
 - `MainWindow.xaml` + `MainWindow.*.cs`: window and event handlers.
-- `DetailPanelBuilder.*.cs`, `*PopupHelper.cs`, `*Dialog.cs`: **UI is built in C# code, not XAML templates.** There's one overrides builder (`DetailPanelBuilder`). There is one layout (Detail; Compact view was removed): game list + detail panel with 8 collapsible, reorderable sections (see `.claude/rules/rhi-ui.md`).
+- `DetailPanelBuilder.*.cs`, `*PopupHelper.cs`, `*Dialog.cs`: **UI is built in C# code, not XAML templates.** There's one overrides builder (`DetailPanelBuilder`). There is one layout (Detail; Compact view was removed): game list + detail panel with 7 collapsible, reorderable sections (see `.claude/rules/rhi-ui.md`).
 - Root `.ini` files: templates shipped beside the exe.
 
 Other: `RenoDXCommander.Tests/` (xUnit + FsCheck; main file `CoreLogicTests.cs`), `RHI.DropHelper/` (non-elevated drag-drop helper for admin mode), `tools/` (ManifestEditor, PCGW-Editor, RenoDXdb-Editor, RHI-Stats, scripts; `tools/game-db/` = community DB + merge scripts), `docs/` (guides, research, handovers). Gitignored reference copies: `Luma/`, `OptiScaler-DLSSNR-v*/`, `nvidiaProfileInspector-master/`.
@@ -99,7 +99,7 @@ Other: `RenoDXCommander.Tests/` (xUnit + FsCheck; main file `CoreLogicTests.cs`)
 
 **Naming**: internal string values are PascalCase without spaces (`"LiliumHdr"`); display labels are human-readable (`"Lilium HDR"`); fields `_camelCase`.
 
-**Per-game override (all 10 steps)**: (1) field in `GameNameService.cs`; (2) public accessor; (3) `LoadNameMappings()`/`SaveNameMappings()`; (4) `RenameGame()` migration (`MigrateDict`/`MigrateHashSet` or composite variants); (5) `IGameNameService.cs`; (6) expose in `MainViewModel.cs`; (7) Get/Set/Resolve in `MainViewModel.Settings.cs`; (8) UI in `DetailPanelBuilder.Overrides.cs`; (9) reset overrides handler; (10) `GameReportEncoder.cs`.
+**Per-game override (all 10 steps)**: (1) field in `GameNameService.cs`; (2) public accessor; (3) `LoadNameMappings()`/`SaveNameMappings()`; (4) `RenameGame()` migration (`MigrateDict`/`MigrateHashSet` or composite variants); (5) `IGameNameService.cs`; (6) expose in `MainViewModel.cs`; (7) Get/Set/Resolve in `MainViewModel.Settings.cs`; (8) UI in the matching ⚙ (game settings ⚙ or the component's ⚙; logic in a `DetailPanelBuilder.Overrides.*Shared.cs` partial; the Game Overrides section was removed in 2.9.6.3); (9) `DetailPanelBuilder.ResetGameSettings`; (10) `GameReportEncoder.cs`.
 
 **Composite keys**: per-store settings use `"GameName|Store"` via `GameKey.FromCard(name, source).ToKey()` / `GameKey.From(name, store).ToKey()`, with an optional `string store = ""` parameter on Get/Set methods. Legacy keys migrate by appending `|`. Name-only exceptions: wiki exclusions, UE-Extended opt-in/out, RTX HDR.
 

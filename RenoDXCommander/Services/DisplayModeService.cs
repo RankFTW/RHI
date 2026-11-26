@@ -117,7 +117,7 @@ public sealed class DisplayModeService
     /// <summary>
     /// Turns the game's mode off: remembers its values for the mode it's leaving, then writes its normal values
     /// (the global setting, else what it had before it entered a mode). Launch items aren't written: the HDR /
-    /// Resolution buttons and Game Overrides apply again. Already off = nothing to do.
+    /// Resolution buttons and the game's own launch options apply again. Already off = nothing to do.
     /// </summary>
     public SwitchResult TurnOff(DisplayModeContext ctx)
     {

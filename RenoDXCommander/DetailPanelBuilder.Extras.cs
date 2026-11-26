@@ -181,7 +181,7 @@ public partial class DetailPanelBuilder
 
         UpdateOsFeedback(card);
         // Tabs / Spotlight: refresh the tiles. Extras is built last in BuildOverridesPanel, so this
-        // also covers the Game Overrides and Management summaries after a full rebuild.
+        // also covers the Management summary after a full rebuild.
         Layout.SummaryChanged();
         __exSw.Stop();
         CrashReporter.Log($"[BuildExtrasSection] Total: {__exSw.ElapsedMilliseconds}ms '{card.GameName}'");

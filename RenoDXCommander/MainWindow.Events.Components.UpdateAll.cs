@@ -1,7 +1,6 @@
 // MainWindow.Events.Components.UpdateAll.cs — the "Update All" row each component's ⚙ has (v2.9.6): whether Update All and
-// automatic updates update that component in this game. The same per-game choice as Game Overrides › Update inclusion
-// (UpdateInclusionHelper), which goes away in 2.9.8. A component switched off for every game in Settings (Components to
-// check) shows that instead.
+// automatic updates update that component in this game (it was Game Overrides › Update inclusion until 2.9.6.3).
+// A component switched off for every game in Settings (Components to check) shows that instead.
 
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.ViewModels;
@@ -55,7 +54,7 @@ public sealed partial class MainWindow
                 bool exclude = i == 1;
                 if (isExcluded() != exclude) toggle();
                 _detailPanelBuilder?.UpdateDetailComponentRows(card);
-                _detailPanelBuilder?.QueueOverridesRebuild(gameName); // Game Overrides' Update inclusion summary
+                _detailPanelBuilder?.QueueOverridesRebuild(gameName); // the component notes show "not in Update All"
                 cog.SetSuccess(exclude ? $"Update All leaves {name} alone in this game." : $"Update All updates {name} in this game.");
             },
             isEnabled: !globallyOff);

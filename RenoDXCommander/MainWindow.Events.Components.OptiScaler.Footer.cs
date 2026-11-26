@@ -76,7 +76,7 @@ public sealed partial class MainWindow
             : "A fresh copy resets most settings."));
 
         var tip = MakeOsFooterNote(
-            "Crashing with ReShade and OptiScaler both installed? Rename ReShade (for example to d3d12.dll) in Game Overrides › DLL naming.");
+            "Crashing with ReShade and OptiScaler both installed? Rename ReShade (for example to d3d12.dll) in the ReShade ⚙ › ReShade DLL name.");
         tip.FontSize = 12;
         tip.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
         footer.Children.Add(tip);

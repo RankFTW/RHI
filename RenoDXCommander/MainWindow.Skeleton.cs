@@ -567,7 +567,7 @@ public sealed partial class MainWindow
         row5.Children.Add(normalRsPlaceholder);
         overridesContent.Children.Add(row5);
 
-        // Row 6: Action buttons (Change folder, Reset, Reset Overrides, Copy Report)
+        // Row 6: Action buttons (Change folder, Reset, Copy Report)
         for (int b = 0; b < 4; b++)
         {
             overridesContent.Children.Add(new Border
