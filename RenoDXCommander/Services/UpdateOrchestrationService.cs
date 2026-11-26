@@ -524,7 +524,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             .ToList();
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");
-        foreach (var c in auxInstalled)
+        // One line per card only when something is off (no record) or with verbose logging
+        foreach (var c in auxInstalled.Where(c => c.RsRecord == null || CrashReporter.VerboseLogging))
             _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Aux check: {c.GameName} RS={c.RsStatus} RsRec={c.RsRecord != null}");
 
         var auxTasks = auxInstalled.Select(card =>

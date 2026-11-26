@@ -123,30 +123,34 @@ public class WikiService : IWikiService
             var sample = mods.Take(5).Select(m => m.Name)
                 .Concat(mods.Count > 10 ? mods.Skip(mods.Count - 3).Select(m => m.Name) : Enumerable.Empty<string>());
             CrashReporter.Log($"[WikiService.FetchAllAsync] Parsed {mods.Count} specific mods. Sample: [{string.Join(", ", sample)}]");
-            // Log raw bytes of first 3 mod names to detect invisible Unicode
-            foreach (var m in mods.Take(3))
+            // Diagnostic dumps (hex of names, every normalised name: ~20,000 characters per fetch): verbose logging only
+            if (CrashReporter.VerboseLogging)
             {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(m.Name);
-                var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(m.Name);
-                CrashReporter.Log($"[WikiService.FetchAllAsync] Mod raw: '{m.Name}' hex=[{hex}] norm='{norm}'");
+                // Log raw bytes of first 3 mod names to detect invisible Unicode
+                foreach (var m in mods.Take(3))
+                {
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(m.Name);
+                    var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
+                    var norm = _gameDetection.NormalizeName(m.Name);
+                    CrashReporter.Log($"[WikiService.FetchAllAsync] Mod raw: '{m.Name}' hex=[{hex}] norm='{norm}'");
+                }
+                // Also log a known game that should match — search for 'Lies of P' or similar
+                var liesOfP = mods.FirstOrDefault(m => m.Name.Contains("Lies", StringComparison.OrdinalIgnoreCase));
+                if (liesOfP != null)
+                {
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(liesOfP.Name);
+                    var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
+                    var norm = _gameDetection.NormalizeName(liesOfP.Name);
+                    CrashReporter.Log($"[WikiService.FetchAllAsync] Mod 'Lies' raw: '{liesOfP.Name}' hex=[{hex}] norm='{norm}'");
+                }
+                else
+                {
+                    CrashReporter.Log("[WikiService.FetchAllAsync] Mod 'Lies': NOT FOUND in parsed mods");
+                }
+                // Full normalized dump for match diagnostics
+                var allNorms = mods.Select(m => _gameDetection.NormalizeName(m.Name)).OrderBy(n => n).ToList();
+                CrashReporter.Log($"[WikiService.FetchAllAsync] Normalized names ({allNorms.Count}): [{string.Join(", ", allNorms)}]");
             }
-            // Also log a known game that should match — search for 'Lies of P' or similar
-            var liesOfP = mods.FirstOrDefault(m => m.Name.Contains("Lies", StringComparison.OrdinalIgnoreCase));
-            if (liesOfP != null)
-            {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(liesOfP.Name);
-                var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(liesOfP.Name);
-                CrashReporter.Log($"[WikiService.FetchAllAsync] Mod 'Lies' raw: '{liesOfP.Name}' hex=[{hex}] norm='{norm}'");
-            }
-            else
-            {
-                CrashReporter.Log("[WikiService.FetchAllAsync] Mod 'Lies': NOT FOUND in parsed mods");
-            }
-            // Full normalized dump for match diagnostics
-            var allNorms = mods.Select(m => _gameDetection.NormalizeName(m.Name)).OrderBy(n => n).ToList();
-            CrashReporter.Log($"[WikiService.FetchAllAsync] Normalized names ({allNorms.Count}): [{string.Join(", ", allNorms)}]");
         }
 
         progress?.Report($"Found {mods.Count} mods, {genericNotes.Count} generic game notes");

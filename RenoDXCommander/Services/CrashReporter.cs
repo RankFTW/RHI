@@ -284,31 +284,34 @@ public static class CrashReporter
     /// Removes personally identifiable information from log entries before writing to disk.
     /// Replaces Windows usernames, Steam user IDs, and Xbox AUMIDs with safe placeholders.
     /// </summary>
-    private static string SanitisePath(string message)
+    internal static string SanitisePath(string message)
     {
+        // All three patterns need a backslash; most log lines have none
+        if (message.IndexOf('\\') < 0) return message;
+
         // Replace C:\Users\{username}\ with %USERPROFILE%\
-        message = System.Text.RegularExpressions.Regex.Replace(
-            message,
-            @"C:\\Users\\[^\\]+\\",
-            "%USERPROFILE%\\",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        message = UserProfileRegex.Replace(message, "%USERPROFILE%\\");
 
         // Replace Steam userdata\{numericId}\ with userdata\[userid]\
-        message = System.Text.RegularExpressions.Regex.Replace(
-            message,
-            @"(userdata\\)\d+(\\)",
-            "$1[userid]$2",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        message = SteamUserIdRegex.Replace(message, "$1[userid]$2");
 
         // Truncate Xbox AUMIDs — keep only up to the last underscore segment (package family)
         // e.g. Microsoft.ForteBaseGame_3.440.853.0_x64__8wekyb3d8bbwe → Microsoft.ForteBaseGame_[ver]
-        message = System.Text.RegularExpressions.Regex.Replace(
-            message,
-            @"(\\WindowsApps\\[^_]+)_[\d.]+_x64__\w+",
-            "$1_[ver]");
+        message = WindowsAppsRegex.Replace(message, "$1_[ver]");
 
         return message;
     }
+
+    // Compiled once: SanitisePath runs for every log line, often on the UI thread.
+    private static readonly System.Text.RegularExpressions.Regex UserProfileRegex = new(
+        @"C:\\Users\\[^\\]+\\",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex SteamUserIdRegex = new(
+        @"(userdata\\)\d+(\\)",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex WindowsAppsRegex = new(
+        @"(\\WindowsApps\\[^_]+)_[\d.]+_x64__\w+",
+        System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static void AppendSessionLog(string entry)
     {
