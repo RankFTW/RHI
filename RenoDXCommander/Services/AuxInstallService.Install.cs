@@ -46,7 +46,10 @@ public partial class AuxInstallService
         EnsureReShadeStaging();
 
         var effectiveChannel = channel ?? ChannelStable;
-        var rsStagedPath = useNormalReShade
+        // No Addons = the latest build without add-on support, unless the channel is a legacy version
+        // without add-on support ("6.3.3 (No Addons)"), which has its own staged files.
+        bool legacyNoAddon = useNormalReShade && IsLegacyNoAddonChannel(effectiveChannel);
+        var rsStagedPath = useNormalReShade && !legacyNoAddon
             ? (use32Bit ? RsNormalStagedPath32 : RsNormalStagedPath64)
             : GetStagedPathForChannel(effectiveChannel, use32Bit);
 
@@ -64,7 +67,7 @@ public partial class AuxInstallService
         }
 
         // If this is a legacy version and not cached, download it on-demand
-        if (!File.Exists(rsStagedPath) && !useNormalReShade && IsLegacyVersion(effectiveChannel))
+        if (!File.Exists(rsStagedPath) && (!useNormalReShade || legacyNoAddon) && IsLegacyVersion(effectiveChannel))
         {
             progress?.Report(($"Downloading ReShade {effectiveChannel}...", 15));
             var downloaded = await DownloadLegacyReShadeAsync(effectiveChannel, _http, progress);
@@ -142,7 +145,7 @@ public partial class AuxInstallService
             SourceUrl      = null,       // bundled — no remote URL
             RemoteFileSize = null,       // no remote size to track
             InstalledAt    = DateTime.UtcNow,
-            Channel        = useNormalReShade ? null : effectiveChannel,
+            Channel        = useNormalReShade && !legacyNoAddon ? null : effectiveChannel, // a legacy channel = pinned, never "update available"
         };
         SaveRecord(record);
         return record;

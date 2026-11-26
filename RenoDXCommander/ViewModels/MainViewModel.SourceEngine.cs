@@ -130,7 +130,7 @@ public partial class MainViewModel
         var installDir = card.InstallPath;
         var root = card.DetectedGame?.InstallPath is { Length: > 0 } r ? r : installDir;
         bool is32 = card.Is32Bit;
-        var channel = card.UseNormalReShade ? AuxInstallService.ChannelStable : ResolveReShadeChannel(card.GameName, card.Source ?? "");
+        var channel = ReShadeInstallChannel(card) ?? AuxInstallService.ChannelStable;
 
         // Stable DXVK, whatever variant the DXVK section uses
         var previousVariant = _dxvkService.SelectedVariant;

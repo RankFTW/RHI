@@ -139,7 +139,7 @@ public partial class MainViewModel
             if (selectedPacks != null)
                 await _shaderPackService.EnsurePacksAsync(selectedPacks);
 
-            var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName, card.Source ?? "");
+            var effectiveChannel = ReShadeInstallChannel(card) ?? "(Normal/NoAddons)";
             var filenameSource = forceFilename != null ? "Forced"
                 : (card.DllOverrideEnabled ? "UserDllOverride"
                 : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect"));
@@ -159,7 +159,7 @@ public partial class MainViewModel
                 useNormalReShade: card.UseNormalReShade,
                 overlayHotkey: _settingsViewModel.OverlayHotkey,
                 screenshotHotkey: _settingsViewModel.ScreenshotHotkey,
-                channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName, card.Source ?? ""),
+                channel: ReShadeInstallChannel(card),
                 store: card.Source,
                 mergeIni: GetKeepRsIniUpdated(card.GameName, card.Source ?? ""));
 

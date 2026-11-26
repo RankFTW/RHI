@@ -38,7 +38,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqStep(2,
             "Install ReShade",
             "ReShade is needed for RenoDX, Luma, frame limiters and DOF Fix. Click 'Install ReShade' in the Components section. RHI picks the right file name for the game's graphics API and installs the version with addon support.",
-            "Change the ReShade version per game in the ReShade ⚙ → ReShade channel: Stable, Nightly, Custom (your own DLL), No Addons or Legacy.\nThe ReShade ⚙ deploys reshade.ini or ReShadePreset.ini, sets per-game hotkeys, and can stop RHI changing this game's reshade.ini.\nDrag a ReShade preset (.ini) onto RHI to install it, along with the shaders it needs."));
+            "Change the ReShade version per game in the ReShade ⚙ → ReShade channel: Stable, Nightly, Custom (your own DLL), No Addons, Legacy (an older version) or Legacy No Addons (an older version without add-on support).\nThe ReShade ⚙ deploys reshade.ini or ReShadePreset.ini, sets per-game hotkeys, and can stop RHI changing this game's reshade.ini.\nDrag a ReShade preset (.ini) onto RHI to install it, along with the shaders it needs."));
 
         // Step 3a: RenoDX
         panel.Children.Add(BuildFaqSection(

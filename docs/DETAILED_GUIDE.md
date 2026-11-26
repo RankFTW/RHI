@@ -477,6 +477,7 @@ RHI names the ReShade DLL from the game's API and bitness:
 | **Custom** | Your own ReShade DLL. Put it in `%LOCALAPPDATA%\RHI\Custom\ReShade\` and choose it in the dialog. If you replace the file, RHI redeploys it on the next refresh or update check. |
 | **No Addons** | Standard ReShade without addon support. Switching removes addon ReShade, RenoDX, ReLimiter and Display Commander. Shaders still work. |
 | **Legacy...** | Pick an older version. Legacy games are left out of ReShade updates. |
+| **Legacy No Addons...** | Pick an older version without add-on support. Like No Addons, it removes RenoDX, ReLimiter and Display Commander from the game; like Legacy, the game is left out of ReShade updates. Not offered for Vulkan games. |
 
 Games whose anti-cheat blocks addon ReShade get **No Addons** automatically, once (currently HELLDIVERS 2). If you switch such a game back, your choice stays.
 

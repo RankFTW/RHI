@@ -13,6 +13,8 @@ namespace RenoDXCommander;
 public partial class DetailPanelBuilder
 {
     internal const string RsChannelLegacyItem = "Legacy...";
+    /// <summary>Opens the same version picker for builds without add-on support (not for Vulkan games).</summary>
+    internal const string RsChannelLegacyNoAddonItem = "Legacy No Addons...";
     internal static readonly string[] ShaderModeItems = { "Global", "Custom", "Select", "Off" };
     internal static readonly string[] AddonModeItems = { "Global", "Select", "Off" };
 
@@ -74,6 +76,8 @@ public partial class DetailPanelBuilder
     {
         var gameName = card.GameName;
         var items = new List<string> { "Stable", "Nightly", "Custom", "No Addons", RsChannelLegacyItem };
+        // Vulkan games share one layer and are never set to No Addons, so the legacy No Addons builds aren't offered
+        if (!card.RequiresVulkanInstall) items.Add(RsChannelLegacyNoAddonItem);
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var current = _window.ViewModel.GetReShadeChannelOverride(gameName, card.Source ?? "");
         if (current == null && card.RequiresVulkanInstall)
@@ -84,7 +88,16 @@ public partial class DetailPanelBuilder
                 .FirstOrDefault(ch => ch != null);
         }
 
-        if (card.UseNormalReShade) return (items, "No Addons");
+        if (card.UseNormalReShade)
+        {
+            // A legacy version without add-on support shows as itself ("6.3.3 (No Addons)")
+            if (AuxInstallService.IsLegacyNoAddonChannel(current) && items.Contains(RsChannelLegacyNoAddonItem))
+            {
+                items.Insert(items.IndexOf(RsChannelLegacyNoAddonItem), current!);
+                return (items, current!);
+            }
+            return (items, "No Addons");
+        }
         if (string.Equals(current, "Custom", StringComparison.OrdinalIgnoreCase)) return (items, "Custom");
         if (MainViewModel.IsLegacyVersion(current))
         {
@@ -96,7 +109,7 @@ public partial class DetailPanelBuilder
 
     /// <summary>True when picking this channel opens a dialog (picker or the Vulkan "apply to all" confirmation).</summary>
     internal static bool RsChannelPickNeedsDialog(GameCardViewModel card, string selected) =>
-        selected == RsChannelLegacyItem || selected == "Custom"
+        selected == RsChannelLegacyItem || selected == RsChannelLegacyNoAddonItem || selected == "Custom"
         || (card.RequiresVulkanInstall && selected == "Nightly");
 
     private async Task<bool> ConfirmVulkanChannelAsync(string message)
@@ -196,6 +209,10 @@ public partial class DetailPanelBuilder
             return true;
         }
 
+        // ── "Legacy No Addons..." opens the version picker for builds without add-on support ──
+        if (selected == RsChannelLegacyNoAddonItem)
+            return await ApplyLegacyNoAddonChannelAsync(card, capturedName);
+
         // ── An active legacy version picked again: nothing to do ──
         if (selected != "Stable" && selected != "Nightly" && selected != "No Addons" && selected != "Custom"
             && MainViewModel.IsLegacyVersion(selected))
@@ -210,9 +227,12 @@ public partial class DetailPanelBuilder
         {
             CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → No Addons mode");
             var targetCardNoAddon = FindCard(capturedName);
-            if (targetCardNoAddon != null && !targetCardNoAddon.UseNormalReShade)
+            // Also from a legacy version without add-ons: the flag is already on, only the build changes
+            bool fromLegacyNoAddon = targetCardNoAddon != null && targetCardNoAddon.UseNormalReShade
+                && AuxInstallService.IsLegacyNoAddonChannel(_window.ViewModel.GetReShadeChannelOverride(capturedName, card.Source ?? ""));
+            if (targetCardNoAddon != null && (!targetCardNoAddon.UseNormalReShade || fromLegacyNoAddon))
             {
-                _window.ViewModel.SetUseNormalReShade(targetCardNoAddon, true);
+                if (!targetCardNoAddon.UseNormalReShade) _window.ViewModel.SetUseNormalReShade(targetCardNoAddon, true);
                 // Clear any channel override since we're switching to normal
                 _window.ViewModel.SetReShadeChannelOverride(capturedName, null, card.Source ?? "");
                 // Auto-install the normal (no-addon) version
@@ -270,6 +290,71 @@ public partial class DetailPanelBuilder
 
         QueueOverridesRebuild(capturedName); // reflects update inclusion changes
         _window.ViewModel.NotifyUpdateButtonChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// "Legacy No Addons...": picks an older ReShade version without add-on support for this game. The game is set
+    /// to No Addons (which removes RenoDX, ReLimiter and Display Commander, as the No Addons channel does) and
+    /// pinned to that version, like a legacy version with add-ons.
+    /// </summary>
+    private async Task<bool> ApplyLegacyNoAddonChannelAsync(GameCardViewModel card, string capturedName)
+    {
+        if (card.RequiresVulkanInstall) return false; // not offered for Vulkan games
+        var legacyVersions = _window.ViewModel.Manifest?.LegacyReShadeAvailable;
+        if (legacyVersions == null || legacyVersions.Count == 0) return false;
+
+        var radioButtons = new RadioButtons { MaxColumns = 1 };
+        foreach (var ver in legacyVersions)
+            radioButtons.Items.Add(ver);
+
+        var pickerContent = new StackPanel { Spacing = 12 };
+        pickerContent.Children.Add(new TextBlock
+        {
+            Text = "An older ReShade version without add-on support, for games whose anti-cheat blocks add-ons.\n"
+                 + "RenoDX, ReLimiter and Display Commander need add-ons and are removed from this game.\n"
+                 + "The game will be excluded from automatic ReShade updates.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 12,
+        });
+        pickerContent.Children.Add(radioButtons);
+
+        var pickerDialog = new ContentDialog
+        {
+            Title = "Select Legacy ReShade Version (No Addons)",
+            Content = new ScrollViewer { Content = pickerContent, MaxHeight = 400 },
+            PrimaryButtonText = "Confirm",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        if (await DialogService.ShowSafeAsync(pickerDialog) != ContentDialogResult.Primary
+            || radioButtons.SelectedItem is not string pickedVersion)
+            return false;
+
+        var channel = AuxInstallService.MakeLegacyNoAddonChannel(pickedVersion);
+        if (!AuxInstallService.IsLegacyVersionCached(channel)
+            && !await AuxInstallService.DownloadLegacyReShadeAsync(channel, _window.ViewModel.HttpClient))
+        {
+            CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}': ReShade {channel} couldn't be downloaded — channel unchanged");
+            return false;
+        }
+
+        var target = FindCard(capturedName);
+        if (target == null) return false;
+
+        CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → legacy {channel}");
+        bool wasInstalled = target.IsRsInstalled || target.RsStatus == GameStatus.NotInstalled;
+        // Coming from a build with add-ons: the same switch as the No Addons channel (removes the add-on ReShade
+        // and the components that need add-ons)
+        if (!target.UseNormalReShade) _window.ViewModel.SetUseNormalReShade(target, true);
+        _window.ViewModel.SetReShadeChannelOverride(capturedName, channel, card.Source ?? "");
+        if (wasInstalled) await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(target);
+
+        _window.ViewModel.NotifyUpdateButtonChanged();
+        QueueOverridesRebuild(capturedName); // greys out the addon controls, notes show the pinned version
         return true;
     }
 

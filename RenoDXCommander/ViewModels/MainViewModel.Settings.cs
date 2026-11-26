@@ -122,6 +122,17 @@ public partial class MainViewModel
     public static bool IsLegacyVersion(string? channel) => AuxInstallService.IsLegacyVersion(channel);
 
     /// <summary>
+    /// The channel to install ReShade from for this game: null for No Addons (the latest build without add-on
+    /// support), except a legacy version without add-on support, which is passed on with the No Addons flag.
+    /// </summary>
+    internal string? ReShadeInstallChannel(GameCardViewModel card)
+    {
+        var channel = ResolveReShadeChannel(card.GameName, card.Source ?? "");
+        if (!card.UseNormalReShade) return channel;
+        return AuxInstallService.IsLegacyNoAddonChannel(channel) ? channel : null;
+    }
+
+    /// <summary>
     /// Resolves the effective ReShade channel for a game.
     /// Returns the per-game override if set, otherwise defaults to Stable.
     /// </summary>

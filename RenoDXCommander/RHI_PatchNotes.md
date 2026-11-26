@@ -5,6 +5,9 @@
 
 ## v2.9.6.3 Beta
 
+### New
+- **Legacy No Addons ReShade channel.** The ReShade ⚙ › ReShade channel list has a new choice, Legacy No Addons..., for an older ReShade version without add-on support (for games whose anti-cheat blocks add-ons and that need an older ReShade). Pick a version and RHI downloads it, installs it and keeps the game on it: it is left out of ReShade updates, like the other legacy versions. As with the No Addons channel, RenoDX, ReLimiter and Display Commander need add-ons and are removed from the game. Not available for Vulkan games.
+
 ### Changes
 - **Game Overrides is gone.** Its settings have been in their new places since 2.9.6, and those are now the only places:
   - Game name, Bitness, Graphics API, Launch executable and arguments, and Reset: the game's ⚙ beside its name.

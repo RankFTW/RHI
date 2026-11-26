@@ -25,7 +25,7 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - One-time Nightly migration: `__nightly_migration_pending` flag → all games without override get "Nightly"
 
 ## Legacy ReShade
-- RS Channel dropdown: Stable, Nightly, Legacy... (opens version picker), Custom
+- RS Channel dropdown: Stable, Nightly, Custom, No Addons, Legacy... (opens version picker), Legacy No Addons... (same picker, builds without add-on support)
 - Version list from manifest `legacyReShadeAvailable` array (zero app maintenance)
 - URL pattern: `https://reshade.me/downloads/ReShade_Setup_X.Y.Z_Addon.exe`
 - Game excluded from RS update checks when on legacy version
@@ -34,6 +34,7 @@ fileMatchPattern: "*ReShade*,*AuxInstall*,*Vulkan*,*reshade*"
 - Manifest `noAddonReShadeGames` (2.9.6.2): No Addons by default, once per game, user's choice sticks; see rhi-manifest.md
 - Addon compatibility warning shown for legacy versions
 - `InstallReShadeAsync` must download on-demand if staged DLLs don't exist
+- **Legacy No Addons** (2.9.6.3, user request): dropdown item "Legacy No Addons..." (`RsChannelLegacyNoAddonItem`, not offered for Vulkan games) opens the same version picker and saves the channel value `"<version> (No Addons)"` (`AuxInstallService.LegacyNoAddonSuffix`, `MakeLegacyNoAddonChannel` / `IsLegacyNoAddonChannel` / `LegacyVersionNumber`) **together with** the game's No Addons flag (`UseNormalReShade`, set through `SetUseNormalReShade`, which removes RenoDX / ReLimiter / Display Commander). It is a legacy version in every other way: `IsLegacyVersion` is true (so it is left out of ReShade updates), staged in `LegacyReshade\<version> (No Addons)\`, downloaded from `ReShade_Setup_X.Y.Z.exe` (no `_Addon`; `LegacyDownloadUrl`), record `AddonType` = `ReShadeNormal` with `Channel` set. **Callers that install ReShade must pass the channel even when `UseNormalReShade` is on**: use `MainViewModel.ReShadeInstallChannel(card)` (null = latest No Addons build), never `card.UseNormalReShade ? null : ResolveReShadeChannel(...)`. Picking No Addons from it keeps the flag and clears the channel; Stable / Nightly / Custom / Legacy clear the flag as before. Tests: `LegacyNoAddonChannelTests`.
 
 ## Custom ReShade
 - Folder: `%LocalAppData%\RHI\Custom\ReShade\` — user places any `.dll` files

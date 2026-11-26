@@ -253,7 +253,9 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                             && File.Exists(System.IO.Path.Combine(card.InstallPath, "dgVoodoo.conf")))
                             ? "dxgi.dll"
                             : MainViewModel.ResolveAutoReShadeFilename(card.DetectedApis));
-                var effectiveChannel = card.UseNormalReShade ? null : channelResolver?.Invoke(card.GameName, card.Source) ?? AuxInstallService.ChannelStable;
+                var resolvedChannel = channelResolver?.Invoke(card.GameName, card.Source) ?? AuxInstallService.ChannelStable;
+                // No Addons installs the latest build without add-ons, unless the channel is a legacy version without them
+                var effectiveChannel = card.UseNormalReShade && !AuxInstallService.IsLegacyNoAddonChannel(resolvedChannel) ? null : resolvedChannel;
                 var record = await _auxInstaller.InstallReShadeAsync(
                     card.GameName, card.InstallPath,
                     shaderModeOverride: card.ShaderModeOverride,

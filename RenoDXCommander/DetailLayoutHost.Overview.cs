@@ -261,7 +261,11 @@ internal sealed partial class DetailLayoutHost
         {
             case "Rs":
             {
-                if (card.UseNormalReShade) return "No Addons channel · addons off";
+                if (card.UseNormalReShade)
+                    return vm.GetReShadeChannelOverride(card.GameName, store) is { } legacyNoAddon
+                           && Services.AuxInstallService.IsLegacyNoAddonChannel(legacyNoAddon)
+                        ? $"{legacyNoAddon} channel · addons off"
+                        : "No Addons channel · addons off";
                 var channel = vm.GetReShadeChannelOverride(card.GameName, store) ?? Settings.ReShadeChannel;
                 if (string.IsNullOrWhiteSpace(channel)) channel = "Stable";
                 var shaders = vm.GetPerGameShaderMode(card.GameName, store);
