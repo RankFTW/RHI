@@ -28,18 +28,14 @@ public partial class DlssPresetService
     [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr NvAPI_QueryInterface(uint id);
 
-    private const uint NVAPI_DRS_SET_SETTING_ID = 0x8A2CF5F5; // Primary (R610+), fallback: 0x577DD202
-    private const uint NVAPI_DRS_SET_SETTING_LEGACY_ID = 0x577DD202; // Legacy 3-param version (works for BINARY settings)
-    private const uint NVAPI_DRS_GET_SETTING_ID = 0xEA99498D; // Primary (R610+), fallback: 0x73BF8338
+    private const uint NVAPI_DRS_SET_SETTING_ID = 0x8A2CF5F5;
+    private const uint NVAPI_DRS_GET_SETTING_ID = 0xEA99498D;
     private const uint NVAPI_DRS_SAVE_SETTINGS_ID = 0xFCBC7E14;
     private const uint NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID = 0xFA5B6166;
     private const uint NVAPI_DRS_DELETE_PROFILE_SETTING_ID = 0xE4A26362;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_SetSettingPtr_t(IntPtr hSession, IntPtr hProfile, IntPtr pSetting, uint x, uint y);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int NvAPI_DRS_SetSettingLegacy_t(IntPtr hSession, IntPtr hProfile, IntPtr pSetting);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_GetSettingPtr_t(IntPtr hSession, IntPtr hProfile, uint settingId, IntPtr pSetting, ref uint x);
@@ -54,7 +50,6 @@ public partial class DlssPresetService
     private delegate int NvAPI_DRS_DeleteProfileSetting_t(IntPtr hSession, IntPtr hProfile, uint settingId);
 
     private static NvAPI_DRS_SetSettingPtr_t? _nativeSetSettingPtr;
-    private static NvAPI_DRS_SetSettingLegacy_t? _nativeSetSettingLegacy;
     private static NvAPI_DRS_GetSettingPtr_t? _nativeGetSettingPtr;
     private static NvAPI_DRS_SaveSettings_t? _nativeSaveSettings;
     private static NvAPI_DRS_RestoreProfileDefault_t? _nativeRestoreProfileDefault;
@@ -64,15 +59,12 @@ public partial class DlssPresetService
     {
         if (_nativeSetSettingPtr != null) return;
         var setPtr = NvAPI_QueryInterface(NVAPI_DRS_SET_SETTING_ID);
-        var setLegacyPtr = NvAPI_QueryInterface(NVAPI_DRS_SET_SETTING_LEGACY_ID);
         var getPtr = NvAPI_QueryInterface(NVAPI_DRS_GET_SETTING_ID);
         var savePtr = NvAPI_QueryInterface(NVAPI_DRS_SAVE_SETTINGS_ID);
         var restorePtr = NvAPI_QueryInterface(NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID);
         var deletePtr = NvAPI_QueryInterface(NVAPI_DRS_DELETE_PROFILE_SETTING_ID);
         if (setPtr != IntPtr.Zero)
             _nativeSetSettingPtr = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SetSettingPtr_t>(setPtr);
-        if (setLegacyPtr != IntPtr.Zero)
-            _nativeSetSettingLegacy = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SetSettingLegacy_t>(setLegacyPtr);
         if (getPtr != IntPtr.Zero)
             _nativeGetSettingPtr = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_GetSettingPtr_t>(getPtr);
         if (savePtr != IntPtr.Zero)

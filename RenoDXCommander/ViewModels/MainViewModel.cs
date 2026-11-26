@@ -690,10 +690,6 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _engineTypeCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _resolvedPathCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _addonFileCache = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>Game keys queued for ReShade auto-reinstall after BuildCards — WindowsApps games
-    /// whose path changed and the DLL couldn't be copied (old folder deleted by Windows on update).</summary>
-    private readonly HashSet<string> _pendingRsReinstall = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>Transient — stores Control UE install options between dialog and post-install step.</summary>
     private Services.ControlUeInstallOptions? _controlUeInstallOptions;
     private Dictionary<string, MachineType> _bitnessCache = new(StringComparer.OrdinalIgnoreCase);

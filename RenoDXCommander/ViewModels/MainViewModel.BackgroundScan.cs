@@ -477,7 +477,6 @@ public partial class MainViewModel
             await MergeCardsAsync(freshCards);
             await addonCheckTask; // never throws (both steps catch their own errors)
             PublishFolderMigrationNotices();
-            ReinstallPendingWindowsAppsReShade("RunBackgroundScanAndMergeAsync"); // marked by BuildCards above
             ApplyManifestNoAddonReShade("RunBackgroundScanAndMergeAsync"); // manifest noAddonReShadeGames, once per game
 
             // Save updated library
@@ -764,39 +763,6 @@ public partial class MainViewModel
     /// cached cards. Updates existing cards in-place (so WinUI bindings fire),
     /// adds new games, and removes stale games.
     /// </summary>
-    /// <summary>
-    /// Reinstalls ReShade for WindowsApps (Game Pass) games whose folder changed during this BuildCards (it marks them in
-    /// <c>_pendingRsReinstall</c>). Windows deletes the old folder on a game update, so the DLL can't be moved across.
-    /// Both card paths call it: the full scan (InitializeAsync, Refresh) and the background merge after a cached start,
-    /// which until Nov 2026 marked the games and never reinstalled (Installed shown, no DLL, until Refresh).
-    /// </summary>
-    private void ReinstallPendingWindowsAppsReShade(string caller)
-    {
-        if (_pendingRsReinstall.Count == 0) return;
-        var toReinstall = _allCards
-            .Where(c => _pendingRsReinstall.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey())
-                     && !string.IsNullOrEmpty(c.InstallPath))
-            .ToList();
-        _pendingRsReinstall.Clear();
-        if (toReinstall.Count == 0) return;
-        _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstalling ReShade for {toReinstall.Count} WindowsApps game(s) after path update");
-        _ = Task.Run(async () =>
-        {
-            foreach (var card in toReinstall)
-            {
-                try
-                {
-                    _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstalling ReShade for '{card.GameName}' at new path '{card.InstallPath}'");
-                    await InstallReShadeInternalAsync(card, forceFilename: null);
-                }
-                catch (Exception ex)
-                {
-                    _crashReporter.Log($"[MainViewModel.{caller}] Auto-reinstall failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        });
-    }
-
     private async Task MergeCardsAsync(List<GameCardViewModel> freshCards)
     {
         _crashReporter.Log($"[MergeCards] Merging {freshCards.Count} fresh cards into {_allCards.Count} existing cards...");

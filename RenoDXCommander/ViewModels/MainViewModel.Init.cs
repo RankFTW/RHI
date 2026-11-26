@@ -829,7 +829,6 @@ public partial class MainViewModel
             SaveGameApiCache();
 
             // Auto-reinstall ReShade for WindowsApps games whose path changed during this build
-            ReinstallPendingWindowsAppsReShade("InitializeAsync");
             // Manifest noAddonReShadeGames: ReShade without add-ons by default (once per game)
             ApplyManifestNoAddonReShade("InitializeAsync");
 
