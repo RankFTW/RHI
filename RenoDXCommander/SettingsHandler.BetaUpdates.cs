@@ -87,6 +87,8 @@ public partial class SettingsHandler
                 {
                     Content = "Back to stable",
                     Margin  = new Thickness(0, 4, 0, 0),
+                    Style   = FindStyle("SettingsPrimaryButtonStyle"),
+                    Foreground = Application.Current.Resources.TryGetValue("SettingsButtonBlueBrush", out var br) ? br as Microsoft.UI.Xaml.Media.Brush : null,
                     Visibility = ViewModel.BetaOptIn ? Visibility.Visible : Visibility.Collapsed,
                 };
                 ToolTipService.SetToolTip(backBtn,
