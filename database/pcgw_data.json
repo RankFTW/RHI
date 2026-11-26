@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56161,
-  "generated": "2026-11-26T17:17:44Z",
+  "generated": "2026-11-26T19:17:44Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -7657,6 +7657,8 @@
     },
     "Am I Nima": {
       "steam_appid": 3224600,
+      "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\HO! Games\\Am I Nima",
       "engine": "Unity"
     },
     "AMA Superbike": {
