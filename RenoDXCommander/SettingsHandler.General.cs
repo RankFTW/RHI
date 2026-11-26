@@ -209,6 +209,7 @@ public partial class SettingsHandler
             var currentScreenshotHotkey = _currentScreenshotHotkeyString;
             var rsVariableListUseTabs = ViewModel.Settings.RsVariableListUseTabs;
             var shippedAddonsEnabled = ViewModel.Settings.RsShippedAddonsEnabled;
+            var overlaySide = ViewModel.Settings.RsOverlaySide;
 
             await Task.Run(() =>
             {
@@ -248,6 +249,8 @@ public partial class SettingsHandler
                         // Built-in add-ons setting, both ways (reshade.ini + ReShadeN.ini only, not presets)
                         AuxInstallService.WriteShippedAddonsSetting(card.InstallPath, shippedAddonsEnabled);
                         if (!shippedAddonsEnabled) AuxInstallService.ApplyShippedAddonsSettingToGame(card.InstallPath); // URTI keeps Generic Depth
+                        // ReShade menu position (nothing is written for "ReShade default")
+                        AuxInstallService.WriteOverlaySide(card.InstallPath, overlaySide);
                         updatedCount++;
                     }
                     catch (Exception ex)
@@ -259,8 +262,8 @@ public partial class SettingsHandler
 
             // Show confirmation dialog
             var appliedSettings = string.IsNullOrEmpty(screenshotPath)
-                ? "ReShade hotkeys, effect list style and built-in add-ons setting"
-                : "Screenshot path, ReShade hotkeys, effect list style and built-in add-ons setting";
+                ? "ReShade hotkeys, effect list style, built-in add-ons setting and menu position"
+                : "Screenshot path, ReShade hotkeys, effect list style, built-in add-ons setting and menu position";
             var dialog = new ContentDialog
             {
                 Title = "Keys and screenshots",

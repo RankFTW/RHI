@@ -391,6 +391,7 @@ public partial class SettingsHandler
         EnsureOsCustomBuildsCard();
         EnsureControllerSetting();
         EnsureShippedAddonsSetting();
+        EnsureOverlaySideSetting();   // under Built-in add-ons
         EnsureReLimiterPclSetting();
         EnsureBetaUpdatesSetting();
         EnsureUpliftKeySetting();

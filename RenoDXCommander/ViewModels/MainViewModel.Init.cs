@@ -299,6 +299,8 @@ public partial class MainViewModel
         AuxInstallService.RsIniLockedResolver = (gameName, store) => !GetKeepRsIniUpdated(gameName, store);
         // Settings > ReShade: keep Generic Depth / Effect Runtime Sync enabled (templates disable them)
         AuxInstallService.ShippedAddonsEnabledResolver = () => _settingsViewModel.RsShippedAddonsEnabled;
+        // Settings > ReShade: which side ReShade's menu is docked on in every game (Default = left alone)
+        AuxInstallService.OverlaySideResolver = () => _settingsViewModel.RsOverlaySide;
         UpdateOrchestrationService.AfterSourceAddonUpdate = ApplySourceSetupAsync;
 
         // Universal MFG Unlocker moves in and out of OptiScaler\plugins with OptiScaler 10 builds

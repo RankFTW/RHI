@@ -65,8 +65,6 @@ public partial class SettingsHandler
             column.Children.Insert(column.Children.IndexOf(styleRow) + 1, row);
             _shippedAddonsCombo = combo;
 
-            ToolTipService.SetToolTip(_window.ApplyHotkeyBtn,
-                "Writes the overlay key, screenshot key, screenshot folder, effect list style and built-in add-ons setting into every game's reshade.ini. Skips hidden games and games set to keep their own reshade.ini.");
         }
         catch (Exception ex)
         {

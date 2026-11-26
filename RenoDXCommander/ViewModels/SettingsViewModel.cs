@@ -44,6 +44,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _ueExtendedWarningDismissed;
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _rsVariableListUseTabs = true; // Group effect files with tabs instead of a tree
+    [ObservableProperty] private string _rsOverlaySide = "Default"; // ReShade menu position in every game: Default (leave alone) | Left | Right
     [ObservableProperty] private bool _rsShippedAddonsEnabled; // false = reshade.ini disables Generic Depth + Effect Runtime Sync (RHI default)
     [ObservableProperty] private bool _addonWarningDismissed;
     [ObservableProperty] private bool _dxvkWarningDismissed;
@@ -378,6 +379,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("RsShippedAddonsEnabled", out var rsShipVal))
             RsShippedAddonsEnabled = rsShipVal == "true";
 
+        if (s.TryGetValue("RsOverlaySide", out var rsSideVal))
+            RsOverlaySide = Services.ReShadeOverlayDock.Normalize(rsSideVal);
+
         if (s.TryGetValue("AddonWarningDismissed", out var awdVal))
             AddonWarningDismissed = awdVal == "true";
 
@@ -656,6 +660,7 @@ public partial class SettingsViewModel : ObservableObject
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["RsVariableListUseTabs"]    = RsVariableListUseTabs ? "true" : "false";
         s["RsShippedAddonsEnabled"]   = RsShippedAddonsEnabled ? "true" : "false";
+        s["RsOverlaySide"]            = Services.ReShadeOverlayDock.Normalize(RsOverlaySide);
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
         s["DxvkWarningDismissed"] = DxvkWarningDismissed ? "true" : "false";
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";

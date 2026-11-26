@@ -489,6 +489,7 @@ In **Settings → ReShade & RenoDX → Keys, screenshots and brightness**:
 - **Screenshot folder**, and **Folder per game** to give each game its own subfolder.
 - **Effect list style**: Tabs or Tree.
 - **Built-in add-ons**: RHI turns ReShade's own Generic Depth and Effect Runtime Sync add-ons off by default. **Enabled** keeps them on (depth-based shaders need Generic Depth).
+- **ReShade menu position**: **Left** or **Right** docks ReShade's menu on that side of the screen in every game; **ReShade default** leaves each game's layout alone. A game where you undocked the menu or arranged it another way keeps your layout.
 - **Write these to all games** applies the above everywhere now.
 - **Peak brightness**: your display's peak in nits (type it or click **Auto**). RHI writes it to RenoDX's presets on install, update and ini deploy. The ⚙ chooses whether that happens automatically and which presets (1, 2, 3) get it. **Write peak brightness to all games** writes it everywhere now.
 
