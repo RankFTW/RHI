@@ -266,6 +266,11 @@ public partial class MainViewModel
         // Check Vulkan layer status once before the parallel loop (avoid registry reads per-card)
         var vulkanLayerInstalled = VulkanLayerService.IsLayerInstalled();
 
+        // Luma and DXVK install records, read once for the whole pass and only read inside the loop
+        // (GetRecordByPath / FindRecord re-read their file on every call).
+        var lumaRecords = LumaService.GetAllRecords();
+        var dxvkRecords = _dxvkService.LoadAllRecords();
+
         Parallel.ForEach(gameInfos, (item) =>
         {
             var gameStopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -1322,7 +1327,9 @@ public partial class MainViewModel
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
                 // First check for an existing tracking record
-                var dxvkRec = _dxvkService.FindRecord(game.Name, installPath);
+                var dxvkRec = dxvkRecords.Find(r =>
+                    string.Equals(r.GameName, game.Name, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(r.InstallPath, installPath, StringComparison.OrdinalIgnoreCase));
                 if (dxvkRec != null)
                 {
                     newCard.DxvkRecord = dxvkRec;
@@ -1558,7 +1565,7 @@ public partial class MainViewModel
                 newCard.IsLumaMode = false;
                 LogPhase("DLSS");
                 // Check if Luma is installed on disk
-                var lumaRec = LumaService.GetRecordByPath(installPath);
+                var lumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (lumaRec != null)
                 {
                     newCard.LumaRecord = lumaRec;
@@ -1597,7 +1604,7 @@ public partial class MainViewModel
                         newCard.LumaHdrSupported = bcEntry.HdrSupported;
                         newCard.LumaDlssFsrSupported = bcEntry.DlssFsrSupported;
                     }
-                    var lumaRec = LumaService.GetRecordByPath(installPath);
+                    var lumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                     if (lumaRec != null)
                     {
                         newCard.LumaRecord = lumaRec;
@@ -1611,7 +1618,7 @@ public partial class MainViewModel
             // a bespoke mod not on the wiki), synthesize a Discord-style LumaMod so the row shows.
             if (newCard.LumaMod == null)
             {
-                var bespokeLumaRec = LumaService.GetRecordByPath(installPath);
+                var bespokeLumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (bespokeLumaRec != null)
                 {
                     newCard.LumaMod = new LumaMod

@@ -52,9 +52,9 @@ public class NormalReShadeUpdateService : INormalReShadeUpdateService
             // Use SendAsync so we can read the HTML body even when the server returns a 5xx
             // error (reshade.me returns HTTP 500 due to a PHP template cache write failure
             // even though the page itself renders correctly with the download links present).
-            using var response = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Get, ReShadeMeUrl));
-            var html = await response.Content.ReadAsStringAsync();
-            CrashReporter.Log($"[NormalReShadeUpdateService.CheckLatestVersionAsync] Page fetched (HTTP {(int)response.StatusCode}), {html.Length} chars");
+            // The page is shared with the other ReShade update check (ReShadeHomePage), one download for both.
+            var (html, status) = await ReShadeHomePage.GetAsync(_http, ReShadeMeUrl);
+            CrashReporter.Log($"[NormalReShadeUpdateService.CheckLatestVersionAsync] Page fetched (HTTP {status}), {html.Length} chars");
 
             // Find all matches and pick the one that does NOT have _Addon suffix
             foreach (Match match in DownloadLinkRegex.Matches(html))

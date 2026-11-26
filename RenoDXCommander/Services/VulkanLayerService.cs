@@ -21,6 +21,24 @@ public static class VulkanLayerService
     private static string LayerDllPath => Path.Combine(LayerDirectory, LayerDllName);
     private static string LayerManifestPath => Path.Combine(LayerDirectory, LayerManifestName);
 
+    private static readonly object _verLock = new();
+    private static (long length, DateTime writeUtc, string? version) _verCache;
+
+    /// <summary>Installed layer version, re-read only when the file's size or date changes
+    /// (never size alone: Stable and Nightly 6.8.0 are the same size).</summary>
+    public static string? InstalledLayerVersionCached()
+    {
+        var fi = new FileInfo(Path.Combine(LayerDirectory, LayerDllName));
+        if (!fi.Exists) return null;
+        lock (_verLock)
+        {
+            if (_verCache.length == fi.Length && _verCache.writeUtc == fi.LastWriteTimeUtc) return _verCache.version;
+            var v = AuxInstallService.ReadInstalledVersion(LayerDirectory, LayerDllName);
+            _verCache = (fi.Length, fi.LastWriteTimeUtc, v);
+            return v;
+        }
+    }
+
     // ── Admin detection ───────────────────────────────────────────────────────────
 
     /// <summary>

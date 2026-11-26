@@ -473,6 +473,8 @@ public partial class MainViewModel
 
         // Load DXVK installed records for matching
         var dxvkRecords = _dxvkService.LoadAllRecords();
+        // Luma install records, read once for the whole pass (GetRecordByPath re-reads the file per call)
+        var lumaRecords = LumaService.GetAllRecords();
 
         var cards = new List<GameCardViewModel>(allGames.Count);
 
@@ -1021,7 +1023,7 @@ public partial class MainViewModel
                 newCard.IsLumaMode = false;
                 newCard.LumaRenodxCompatible = true;
                 // Luma install record is checked by path — uses a local JSON file read
-                var lumaRec = LumaService.GetRecordByPath(installPath);
+                var lumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (lumaRec != null)
                 {
                     newCard.LumaRecord = lumaRec;
@@ -1059,7 +1061,7 @@ public partial class MainViewModel
                     newCard.LumaHdrSupported = clEntry.HdrSupported;
                     newCard.LumaDlssFsrSupported = clEntry.DlssFsrSupported;
                 }
-                var lumaRec = LumaService.GetRecordByPath(installPath);
+                var lumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (lumaRec != null)
                 {
                     newCard.LumaRecord = lumaRec;
@@ -1071,7 +1073,7 @@ public partial class MainViewModel
             // ── Bespoke drag-dropped Luma fallback ─────────────────────────────
             if (newCard.LumaMod == null)
             {
-                var bespokeLumaRec = LumaService.GetRecordByPath(installPath);
+                var bespokeLumaRec = lumaRecords.FirstOrDefault(r => r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (bespokeLumaRec != null)
                 {
                     newCard.LumaMod = new LumaMod

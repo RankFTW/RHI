@@ -323,8 +323,7 @@ public class PcgwService : IPcgwService
                 // 304 — content unchanged. Load from disk cache if we don't have it in memory yet.
                 if (_centralData == null && File.Exists(CentralCachePath))
                 {
-                    var cachedJson = await File.ReadAllTextAsync(CentralCachePath).ConfigureAwait(false);
-                    LoadFromJson(cachedJson);
+                    await LoadFromFileAsync(CentralCachePath).ConfigureAwait(false);
                     CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] 304 — loaded {_centralData?.Games.Count ?? 0:N0} games from disk cache");
                 }
                 else
@@ -361,8 +360,7 @@ public class PcgwService : IPcgwService
             {
                 try
                 {
-                    var cachedJson = await File.ReadAllTextAsync(CentralCachePath).ConfigureAwait(false);
-                    LoadFromJson(cachedJson);
+                    await LoadFromFileAsync(CentralCachePath).ConfigureAwait(false);
                     CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Loaded {_centralData?.Games.Count ?? 0:N0} games from disk cache (after error)");
                 }
                 catch (Exception ex2) { CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Disk cache fallback failed — {ex2.Message}"); }
@@ -370,9 +368,18 @@ public class PcgwService : IPcgwService
         }
     }
 
-    private void LoadFromJson(string json)
+    private void LoadFromJson(string json) =>
+        Apply(JsonSerializer.Deserialize<PcgwCentralFile>(json, s_readOptions));
+
+    /// <summary>Parses the disk cache straight from the file stream (no 10 MB string for a 5 MB file).</summary>
+    private async Task LoadFromFileAsync(string path)
     {
-        var file = JsonSerializer.Deserialize<PcgwCentralFile>(json, s_readOptions);
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+        Apply(await JsonSerializer.DeserializeAsync<PcgwCentralFile>(stream, s_readOptions).ConfigureAwait(false));
+    }
+
+    private void Apply(PcgwCentralFile? file)
+    {
         if (file == null) return;
 
         var data = new PcgwCentralData();

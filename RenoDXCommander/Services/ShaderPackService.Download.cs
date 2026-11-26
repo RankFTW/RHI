@@ -593,17 +593,26 @@ public partial class ShaderPackService
         }
     }
 
+    // Direct-download packs are checked once per minute, not once per game in the same pass.
+    // Failed lookups ("unknown") are never remembered.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string token, DateTime atUtc)> _directVersionMemo
+        = new(StringComparer.OrdinalIgnoreCase);
+
     private async Task<string> ResolveDirectUrlVersion(ShaderPack pack)
     {
         try
         {
+            if (_directVersionMemo.TryGetValue(pack.Url, out var memo) && DateTime.UtcNow - memo.atUtc < TimeSpan.FromSeconds(60))
+                return memo.token;
             var req = new HttpRequestMessage(HttpMethod.Head, pack.Url);
             req.Headers.Add("User-Agent", "RHI");
             using var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "unknown";
             var etag = resp.Headers.ETag?.Tag;
             var modified = resp.Content.Headers.LastModified?.ToString("O");
-            return etag ?? modified ?? "unknown";
+            var token = etag ?? modified ?? "unknown";
+            if (token != "unknown") _directVersionMemo[pack.Url] = (token, DateTime.UtcNow);
+            return token;
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ResolveDirectUrlVersion] Failed to resolve version for URL — {ex.Message}"); return "unknown"; }
     }

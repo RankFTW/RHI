@@ -585,6 +585,8 @@ public partial class GameDetectionService : IGameDetectionService
     public string NormalizeName(string name)
     {
         if (string.IsNullOrEmpty(name)) return "";
+        var original = name;
+        if (_normCache.TryGetValue(original, out var hit)) return hit;
 
         // 1. Strip common trademark/copyright symbols that are never part of the title
         name = name.Replace("™", "").Replace("®", "").Replace("©", "");
@@ -602,6 +604,12 @@ public partial class GameDetectionService : IGameDetectionService
 
         // 3. Lower-case, then strip everything that isn't a letter or digit.
         //    This handles ':', '-', ''', '!', spaces, etc. uniformly.
-        return Regex.Replace(sb.ToString().ToLowerInvariant(), @"[^a-z0-9]", "");
+        var result = Regex.Replace(sb.ToString().ToLowerInvariant(), @"[^a-z0-9]", "");
+        // Capped: PcgwService normalises 56,000 titles through this method and those must not all be kept.
+        if (_normCache.Count < 20000) _normCache[original] = result;
+        return result;
     }
+
+    // MatchGame normalises every mod name again for each game; remember the results.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _normCache = new(StringComparer.Ordinal);
 }

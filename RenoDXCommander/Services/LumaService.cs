@@ -34,13 +34,30 @@ public class LumaService : ILumaService
 
     // ── Wiki fetch & parse ────────────────────────────────────────────────────────
 
+    private readonly object _wikiLock = new();
+    private Task<string>? _wikiHtmlTask;
+    private DateTime _wikiHtmlAtUtc;
+
+    // Both wiki readers start together: share one download. Reused for 10 s only, so Refresh and the hourly check fetch fresh.
+    private Task<string> GetWikiHtmlAsync()
+    {
+        lock (_wikiLock)
+        {
+            if (_wikiHtmlTask != null && !_wikiHtmlTask.IsFaulted && !_wikiHtmlTask.IsCanceled
+                && (!_wikiHtmlTask.IsCompleted || DateTime.UtcNow - _wikiHtmlAtUtc < TimeSpan.FromSeconds(10)))
+                return _wikiHtmlTask;
+            _wikiHtmlAtUtc = DateTime.UtcNow;
+            return _wikiHtmlTask = PageFetch.GetStringAsync(_http, WikiUrl);
+        }
+    }
+
     /// <summary>
     /// Fetches the Luma wiki and returns completed mods with their metadata.
     /// </summary>
     public async Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null)
     {
         progress?.Report("Fetching Luma wiki...");
-        var html = await PageFetch.GetStringAsync(_http, WikiUrl);
+        var html = await GetWikiHtmlAsync();
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
@@ -190,7 +207,7 @@ public class LumaService : ILumaService
         try
         {
             // The UE table is on the main Luma wiki page (same page as completed mods)
-            var html = await PageFetch.GetStringAsync(_http, WikiUrl);
+            var html = await GetWikiHtmlAsync();
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 

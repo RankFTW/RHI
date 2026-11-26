@@ -601,6 +601,9 @@ public partial class DetailPanelBuilder
         Layout.RefreshOverviewProgress();
     }
 
+    // 1 while a queued callback is already going to run UpdateDetailComponentRows
+    private int _componentRowsRefreshQueued;
+
     public void DetailCard_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (_currentDetailCard == null) return;
@@ -616,10 +619,13 @@ public partial class DetailPanelBuilder
             });
             return;
         }
-        _dispatcherQueue.TryEnqueue(() =>
+        // One row refresh covers every change made before it runs (NotifyAll raises ~218 properties).
+        bool doRows = System.Threading.Interlocked.Exchange(ref _componentRowsRefreshQueued, 1) == 0;
+        bool queued = _dispatcherQueue.TryEnqueue(() =>
         {
+            if (doRows) System.Threading.Interlocked.Exchange(ref _componentRowsRefreshQueued, 0); // clear first
             if (_currentDetailCard == null) return;
-            UpdateDetailComponentRows(_currentDetailCard);
+            if (doRows) UpdateDetailComponentRows(_currentDetailCard);
             OnExtrasCardPropertyChanged(_currentDetailCard, e.PropertyName);
             if (e.PropertyName is "IsRunning" or "IsFavourite" or "IsHidden" or "Is32Bit" or "GraphicsApiLabel")
                 _dispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, Layout.RefreshHeader);
@@ -677,6 +683,7 @@ public partial class DetailPanelBuilder
                     ? Visibility.Visible : Visibility.Collapsed;
             }
         });
+        if (!queued && doRows) System.Threading.Interlocked.Exchange(ref _componentRowsRefreshQueued, 0);
     }
 
     /// <summary>Returns a color hex string based on message content: green for installs, red for removals, blue default.</summary>

@@ -637,7 +637,6 @@ public class AddonPackService : IAddonPackService
         // Also include addons that are deployed to game folders but whose staging file was
         // deleted or never persisted (e.g. MFG Ada Unlock installed on a previous session).
         // Match deployed filenames against OriginalName64/32 in versions.json.
-        var deployments = LoadDeployments();
         var deployedOriginalNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var deploymentSnapshot = LoadDeployments();
         foreach (var (_, trackedFiles) in deploymentSnapshot)
@@ -666,6 +665,22 @@ public class AddonPackService : IAddonPackService
 
         CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] Checking {downloadedNames.Count} addon(s) for updates...");
 
+        // Start every version lookup now so they run together; the loop below uses the results in order.
+        var apiTasks  = new Dictionary<string, Task<(string? downloadUrl64, string? downloadUrl32, string? versionTag)>>(StringComparer.OrdinalIgnoreCase);
+        var headTasks = new Dictionary<string, Task<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in downloadedNames)
+        {
+            var e = _packs.FirstOrDefault(p => SanitizeFileName(p.PackageName).Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (e == null) continue;
+            if (!string.IsNullOrEmpty(e.ReleaseApiUrl))
+                apiTasks[name] = ResolveDownloadUrlFromApiAsync(e.ReleaseApiUrl);
+            else
+            {
+                var url = e.DownloadUrl64 ?? e.DownloadUrl32 ?? e.DownloadUrl;
+                if (!string.IsNullOrEmpty(url)) headTasks[name] = ResolveVersionToken(url);
+            }
+        }
+
         foreach (var name in downloadedNames)
         {
             // Find matching AddonEntry in AvailablePacks
@@ -685,7 +700,7 @@ public class AddonPackService : IAddonPackService
                 string remoteVersion;
                 if (!string.IsNullOrEmpty(entry.ReleaseApiUrl))
                 {
-                    var (_, _, tag) = await ResolveDownloadUrlFromApiAsync(entry.ReleaseApiUrl).ConfigureAwait(false);
+                    var (_, _, tag) = await apiTasks[name].ConfigureAwait(false);
                     if (tag == null)
                     {
                         CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] Could not resolve version from API for '{entry.PackageName}', skipping.");
@@ -705,7 +720,7 @@ public class AddonPackService : IAddonPackService
                         continue;
                     }
 
-                    remoteVersion = await ResolveVersionToken(versionUrl);
+                    remoteVersion = await headTasks[name];
                 }
                 var storedVersion = versions.TryGetValue(entry.PackageName, out var info)
                     ? info.Version

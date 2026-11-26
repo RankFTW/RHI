@@ -136,16 +136,7 @@ public partial class GameCardViewModel
         }
 
         // Vulkan layer version (for detail panel display)
-        var layerDllPath = Path.Combine(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
-        if (File.Exists(layerDllPath))
-        {
-            _vulkanLayerInstalledVersion = Services.AuxInstallService.ReadInstalledVersion(
-                VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
-        }
-        else
-        {
-            _vulkanLayerInstalledVersion = null;
-        }
+        _vulkanLayerInstalledVersion = VulkanLayerService.InstalledLayerVersionCached();
     }
 
     /// <summary>
