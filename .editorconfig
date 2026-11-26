@@ -1,0 +1,31 @@
+root = true
+
+[*.cs]
+# Encoding and formatting
+charset = utf-8-bom
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Unused code — suggestions (not warnings) so the count stays manageable
+dotnet_diagnostic.IDE0051.severity = suggestion  # unused private members
+dotnet_diagnostic.IDE0052.severity = suggestion  # unread private members
+dotnet_diagnostic.IDE0005.severity = suggestion  # unnecessary using directives
+
+# Nullable — keep the existing ~90 warnings from rising; new code must not add nullable warnings
+dotnet_diagnostic.CS8600.severity = warning
+dotnet_diagnostic.CS8601.severity = warning
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+dotnet_diagnostic.CS8604.severity = warning
+dotnet_diagnostic.CS8618.severity = warning
+dotnet_diagnostic.CS8625.severity = warning
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{json,jsonl}]
+indent_style = space
+indent_size = 2
