@@ -3,6 +3,28 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
+## v2.9.6.3 Beta
+
+### Changes
+- **Faster start.** RHI's game list is up to date over a second sooner after launch: add-on update checks now run together instead of one after another, the ReShade and Luma pages are each downloaded once instead of twice, and install records are read once instead of once per game.
+- The selected game's page now redraws its component rows once after a change instead of hundreds of times, which makes startup and the moment after an install or uninstall smoother.
+- Background update checks are quicker: each shader pack is checked once per pass rather than once for every game that uses it.
+- Launching RHI no longer rewrites files that haven't changed: OptiScaler's Streamline files in game folders, HSF's list of installed files and RHI's add-on record are only written when something is different.
+
+### Bug Fixes
+- Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
+- Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
+- Fixed RHI sometimes losing track of an add-on it put in a game when several games changed in the same pass, which could leave an old add-on file behind in that game.
+- Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
+- Fixed session logs missing their first lines when RHI was started with Admin Mode on.
+- Several of RHI's saved files (add-on versions, Nexus update baselines, new-mod markers, chosen artwork, window position and others) could be left cut off by a crash or power cut mid-save. They are now saved in one step.
+
+### Maintenance
+- Session logs are about 20% smaller: large diagnostic dumps are only written with verbose logging on.
+- Folder paths that come from the online manifest (DLSS and Streamline locations, games split into several entries) are checked to stay inside the game's folder.
+- DLSS detection's saved paths are now safe to use from several scans at once.
+- The installer no longer picks up leftover .old, .tmp or .bak files.
+
 ## v2.9.6.2
 
 ### New

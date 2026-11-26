@@ -13,7 +13,7 @@ WinUI 3 desktop app (.NET 8, C#, CommunityToolkit.Mvvm, Microsoft.Extensions.Dep
 
 ## Build & publish rule
 
-**After every code change, run `publish.bat`.** That is the build the user actually runs (`C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI\RHI.exe`); plain `dotnet build` output is not the running app. Note: `publish.bat` force-closes any running RHI first.
+**After every code change, run `publish.bat`.** That is the build the user actually runs (`C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI\RHI.exe`); plain `dotnet build` output is not the running app. Note: `publish.bat` closes any running RHI first (shutdown signal file, force-stop after 10 s) and exits with code 1 when the build fails.
 
 ```
 & "g:\RDXC\publish.bat"                                                          # build + deploy (Release, win-x64, single file)
