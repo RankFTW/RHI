@@ -71,7 +71,7 @@ public partial class DetailPanelBuilder
         _optiScalerService = optiScalerService;
 
         // Set hand cursor on link buttons so they feel like clickable links
-        var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var handCursor = HandCursor;
         var cursorProp = DetailPanelBuilder.CursorProp;
         cursorProp?.SetValue(_window.DetailNexusModsBtn, handCursor);
         cursorProp?.SetValue(_window.DetailPcgwBtn, handCursor);
@@ -188,8 +188,8 @@ public partial class DetailPanelBuilder
                 {
                     badge.PointerPressed += async (s, e) =>
                         await Windows.System.Launcher.LaunchUriAsync(new Uri(donationUrl));
-                    var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-                    var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+                    var handCursor = HandCursor;
+                    var arrowCursor = ArrowCursor;
                     var cursorProp = DetailPanelBuilder.CursorProp;
                     badge.PointerEntered += (s, e) => cursorProp?.SetValue(badge, handCursor);
                     badge.PointerExited += (s, e) => cursorProp?.SetValue(badge, arrowCursor);
@@ -641,8 +641,8 @@ public partial class DetailPanelBuilder
         };
         ToolTipService.SetToolTip(handle, "Drag to reorder sections");
 
-        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-        var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var handCursor  = HandCursor;
+        var arrowCursor = ArrowCursor;
         var cursorProp  = DetailPanelBuilder.CursorProp;
 
         handle.PointerEntered += (s, e) =>
@@ -801,7 +801,7 @@ public partial class DetailPanelBuilder
     private void ComponentsHeader_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         _window.DetailComponentsTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
-        var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var handCursor = HandCursor;
         DetailPanelBuilder.CursorProp
             ?.SetValue(_window.DetailComponentsHeader, handCursor);
     }
@@ -809,7 +809,7 @@ public partial class DetailPanelBuilder
     private void ComponentsHeader_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         _window.DetailComponentsTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-        var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var arrowCursor = ArrowCursor;
         DetailPanelBuilder.CursorProp
             ?.SetValue(_window.DetailComponentsHeader, arrowCursor);
     }

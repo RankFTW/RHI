@@ -829,7 +829,7 @@ public partial class MainViewModel : ObservableObject
         _dllOverrideService = dllOverrideService;
         _gameNameService = gameNameService;
         _gameInitializationService = gameInitializationService;
-        _addonPackService = new AddonPackService(http);
+        _addonPackService = new AddonPackService(http, etagCache);
         _nexusModsService = nexusModsService;
         _pcgwService = pcgwService;
         _uwFixService = uwFixService;

@@ -86,9 +86,13 @@ public class AddonPackService : IAddonPackService
         EffectInstallPath: null,
         DeployFileName: "renodx-dlssfix");
 
-    public AddonPackService(HttpClient http)
+    /// <summary>Shared GitHub ETag cache for release lookups (null only where none is supplied: plain requests).</summary>
+    private readonly GitHubETagCache? _etagCache;
+
+    public AddonPackService(HttpClient http, GitHubETagCache? etagCache = null)
     {
         _http = http;
+        _etagCache = etagCache;
         try { Directory.CreateDirectory(StagingDir); } catch (Exception ex) { CrashReporter.Log($"[AddonPackService.ctor] Failed to create staging folder — {ex.Message}"); }
         try { Directory.CreateDirectory(CustomAddonsDir); } catch (Exception ex) { CrashReporter.Log($"[AddonPackService.ctor] Failed to create custom addons folder — {ex.Message}"); }
 
@@ -1350,19 +1354,35 @@ public class AddonPackService : IAddonPackService
         {
             var effectiveUrl = releaseApiUrl;
 
-            using var req = new HttpRequestMessage(HttpMethod.Get, effectiveUrl);
-            req.Headers.Add("User-Agent", "RHI");
-            req.Headers.Add("Accept", "application/vnd.github+json");
-            // GitHub token is attached by GitHubTokenHandler for GitHub hosts only
-            // (releaseApiUrl comes from the manifest and could point anywhere).
-            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode)
+            string json;
+            if (_etagCache != null)
             {
-                CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] HTTP {(int)resp.StatusCode} for {effectiveUrl}");
-                return (null, null, null);
+                // Through the shared ETag cache: an unchanged release answers 304, which doesn't count
+                // against GitHub's 60-an-hour limit, and while rate-limited the last answer is still used.
+                var cachedOrFresh = await _etagCache.GetWithETagAsync(_http, effectiveUrl).ConfigureAwait(false);
+                if (cachedOrFresh == null)
+                {
+                    CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] No answer for {effectiveUrl}");
+                    return (null, null, null);
+                }
+                json = cachedOrFresh;
+            }
+            else
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, effectiveUrl);
+                req.Headers.Add("User-Agent", "RHI");
+                req.Headers.Add("Accept", "application/vnd.github+json");
+                // GitHub token is attached by GitHubTokenHandler for GitHub hosts only
+                // (releaseApiUrl comes from the manifest and could point anywhere).
+                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] HTTP {(int)resp.StatusCode} for {effectiveUrl}");
+                    return (null, null, null);
+                }
+                json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
             }
 
-            var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var root = doc.RootElement;
 

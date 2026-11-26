@@ -218,6 +218,39 @@ public partial class GameCardViewModel
         NotifyDlssStreamlineDependents();
     }
 
+    /// <summary>
+    /// Takes over another card's DLSS / Streamline state without touching the disk: the detection result,
+    /// the displayed versions and everything <see cref="RefreshBackupState"/> caches. For the UI thread
+    /// (the background scan's merge), with <paramref name="fresh"/> already refreshed on a background thread.
+    /// </summary>
+    public void CopyDlssStateFrom(GameCardViewModel fresh)
+    {
+        DlssDetection = fresh.DlssDetection;
+
+        DlssInstalledVersion       = fresh.DlssInstalledVersion;
+        DlssdInstalledVersion      = fresh.DlssdInstalledVersion;
+        DlssgInstalledVersion      = fresh.DlssgInstalledVersion;
+        DlssnrInstalledVersion     = fresh.DlssnrInstalledVersion;
+        StreamlineInstalledVersion = fresh.StreamlineInstalledVersion;
+
+        _dlssHasBackup       = fresh._dlssHasBackup;
+        _dlssdHasBackup      = fresh._dlssdHasBackup;
+        _dlssgHasBackup      = fresh._dlssgHasBackup;
+        _dlssnrHasBackup     = fresh._dlssnrHasBackup;
+        _streamlineHasBackup = fresh._streamlineHasBackup;
+        _dlssnrIsCustom      = fresh._dlssnrIsCustom;
+        _streamlineIsCustom  = fresh._streamlineIsCustom;
+
+        _rsIniExists       = fresh._rsIniExists;
+        _dcIniExists       = fresh._dcIniExists;
+        _ulIniExists       = fresh._ulIniExists;
+        _osIniExists       = fresh._osIniExists;
+        _vulkanRsIniExists = fresh._vulkanRsIniExists;
+        _vulkanLayerInstalledVersion = fresh._vulkanLayerInstalledVersion;
+
+        NotifyDlssStreamlineDependents();
+    }
+
     private void NotifyDlssStreamlineDependents()
     {
         OnPropertyChanged(nameof(HasDlss));

@@ -263,72 +263,90 @@ public partial class MainViewModel
                 // Automatic backup (Settings › Backup and restore): reads cards, so it starts on the UI thread
                 DispatcherQueue?.TryEnqueue(() => _ = MaybeAutoBackupAsync("periodic"));
 
-                // Re-fetch wiki to detect new mods
-                try
-                {
-                    var wikiResult = await _wikiService.FetchAllAsync();
-                    if (wikiResult.Mods != null)
-                    {
-                        _allMods = wikiResult.Mods;
-                        _genericNotes = wikiResult.GenericNotes ?? new();
-                        _crashReporter.Log($"[MainViewModel] Periodic wiki refresh complete — {_allMods.Count} mods");
+                // The list fetches below don't depend on each other or on the component refreshes further down,
+                // so they run alongside them and are awaited before the update check.
 
-                        // Detect new wiki mods
-                        var currentModNames = _allMods
-                            .Where(m => m.SnapshotUrl != null || m.NexusUrl != null)
-                            .Select(m => m.Name)
-                            .ToList();
-                        _crashReporter.Log($"[MainViewModel] Periodic wiki mods check: {currentModNames.Count} downloadable mods");
-                        var newMods = _seenWikiModsService.GetNewMods(currentModNames);
-                        _crashReporter.Log($"[MainViewModel] Periodic new wiki mods: {newMods.Count} (seen: {_seenWikiModsService.GetSeenMods().Count})");
-                        if (newMods.Count > 0)
+                async Task RefreshWikiAsync()
+                {
+                    // Re-fetch wiki to detect new mods
+                    try
+                    {
+                        var wikiResult = await _wikiService.FetchAllAsync();
+                        if (wikiResult.Mods != null)
                         {
-                            _crashReporter.Log($"[MainViewModel] Periodic new mods: {string.Join(", ", newMods.Take(10))}{(newMods.Count > 10 ? "..." : "")}");
-                            DispatcherQueue?.TryEnqueue(() => NewWikiMods = newMods);
+                            _allMods = wikiResult.Mods;
+                            _genericNotes = wikiResult.GenericNotes ?? new();
+                            _crashReporter.Log($"[MainViewModel] Periodic wiki refresh complete — {_allMods.Count} mods");
+
+                            // Detect new wiki mods
+                            var currentModNames = _allMods
+                                .Where(m => m.SnapshotUrl != null || m.NexusUrl != null)
+                                .Select(m => m.Name)
+                                .ToList();
+                            _crashReporter.Log($"[MainViewModel] Periodic wiki mods check: {currentModNames.Count} downloadable mods");
+                            var newMods = _seenWikiModsService.GetNewMods(currentModNames);
+                            _crashReporter.Log($"[MainViewModel] Periodic new wiki mods: {newMods.Count} (seen: {_seenWikiModsService.GetSeenMods().Count})");
+                            if (newMods.Count > 0)
+                            {
+                                _crashReporter.Log($"[MainViewModel] Periodic new mods: {string.Join(", ", newMods.Take(10))}{(newMods.Count > 10 ? "..." : "")}");
+                                DispatcherQueue?.TryEnqueue(() => NewWikiMods = newMods);
+                            }
                         }
                     }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic wiki fetch failed — {ex.Message}"); }
                 }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic wiki fetch failed — {ex.Message}"); }
 
-                // Re-fetch Ultra+ mods and detect new ones
-                try
+                async Task RefreshUltraPlusAsync()
                 {
-                    await _ultraPlusService.InitAsync();
-                    var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
-                    _crashReporter.Log($"[MainViewModel] Periodic Ultra+ mods check: {currentUltraPlusMods.Count} mods");
-                    var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
-                    _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
-                    if (newUltraPlusMods.Count > 0)
+                    // Re-fetch Ultra+ mods and detect new ones
+                    try
                     {
-                        _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
-                        DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                        await _ultraPlusService.InitAsync();
+                        var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                        _crashReporter.Log($"[MainViewModel] Periodic Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+                        var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                        _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                        if (newUltraPlusMods.Count > 0)
+                        {
+                            _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                            DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                        }
                     }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Ultra+ fetch failed — {ex.Message}"); }
                 }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Ultra+ fetch failed — {ex.Message}"); }
 
-                // Re-fetch Luma mods and detect new ones
-                try
+                async Task RefreshLumaAsync()
                 {
-                    // Wiki + releases, merged as at startup (wiki alone dropped the release-only mods)
-                    var lumaTask    = _lumaService.FetchCompletedModsAsync();
-                    var lumaRelTask = _lumaService.FetchReleasesModsAsync();
-                    var wikiLuma = await lumaTask;
-                    var relLuma  = await lumaRelTask;
-                    _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
-                    var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
-                    _crashReporter.Log($"[MainViewModel] Periodic Luma mods check: {currentLumaMods.Count} mods");
-                    var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);
-                    _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {newLumaMods.Count} (seen: {_seenLumaModsService.GetSeenMods().Count})");
-                    if (newLumaMods.Count > 0)
+                    // Re-fetch Luma mods and detect new ones
+                    try
                     {
-                        _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {string.Join(", ", newLumaMods.Take(10))}{(newLumaMods.Count > 10 ? "..." : "")}");
-                        DispatcherQueue?.TryEnqueue(() => NewLumaMods = newLumaMods);
+                        // Wiki + releases, merged as at startup (wiki alone dropped the release-only mods)
+                        var lumaTask    = _lumaService.FetchCompletedModsAsync();
+                        var lumaRelTask = _lumaService.FetchReleasesModsAsync();
+                        var wikiLuma = await lumaTask;
+                        var relLuma  = await lumaRelTask;
+                        _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
+                        var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
+                        _crashReporter.Log($"[MainViewModel] Periodic Luma mods check: {currentLumaMods.Count} mods");
+                        var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);
+                        _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {newLumaMods.Count} (seen: {_seenLumaModsService.GetSeenMods().Count})");
+                        if (newLumaMods.Count > 0)
+                        {
+                            _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {string.Join(", ", newLumaMods.Take(10))}{(newLumaMods.Count > 10 ? "..." : "")}");
+                            DispatcherQueue?.TryEnqueue(() => NewLumaMods = newLumaMods);
+                        }
                     }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Luma fetch failed — {ex.Message}"); }
                 }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Luma fetch failed — {ex.Message}"); }
-                try { await _dlssStreamlineService.FetchManifestAsync(); }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
-                await OsPresetService.FetchManifestAsync(_http);
+
+                async Task RefreshDlssManifestAsync()
+                {
+                    try { await _dlssStreamlineService.FetchManifestAsync(); }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
+                }
+
+                var listsTask = Task.WhenAll(RefreshWikiAsync(), RefreshUltraPlusAsync(), RefreshLumaAsync(),
+                    RefreshDlssManifestAsync(), OsPresetService.FetchManifestAsync(_http));
 
                 // Check and re-stage Cost Scaler + RTX40MFG, auto-deploy to installed games
                 try
@@ -395,6 +413,9 @@ public partial class MainViewModel
 
                 try { await UpdateBfiPresenterInstallsAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic BFI Presenter check failed — {ex.Message}"); }
+
+                try { await listsTask; }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic list refresh failed — {ex.Message}"); }
 
                 _forceUpdateCheck = true; // bypass cooldown since we ARE the cooldown
                 var records = _installer.LoadAll();

@@ -197,6 +197,17 @@
   </ItemGroup>
 
 
+  <!-- The Windows App SDK brings in Windows ML's native runtimes (onnxruntime.dll 20.7 MB, DirectML.dll 17.8 MB).
+       Nothing in RHI uses Windows ML, so they are left out of the published single-file exe (about 22% smaller).
+       Publish only: debug and test output are untouched. -->
+  <Target Name="RhiDropUnusedWindowsMl" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <RhiUnusedMlFile Include="@(ResolvedFileToPublish)" Condition="'%(Filename)%(Extension)' == 'onnxruntime.dll' Or '%(Filename)%(Extension)' == 'DirectML.dll'" />
+      <ResolvedFileToPublish Remove="@(RhiUnusedMlFile)" />
+    </ItemGroup>
+    <Message Importance="high" Text="RHI: left out of the publish: @(RhiUnusedMlFile->'%(Filename)%(Extension)', ', ')" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />

@@ -6,9 +6,12 @@
 ## v2.9.6.3 Beta
 
 ### Changes
-- **Faster start.** RHI's game list is up to date over a second sooner after launch: add-on update checks now run together instead of one after another, the ReShade and Luma pages are each downloaded once instead of twice, and install records are read once instead of once per game.
+- **Smaller download.** RHI is about a quarter smaller (128 MB instead of 175 MB), so the installer and every update download faster. Windows machine-learning files that RHI never used are no longer included.
+- **Faster start.** RHI's game list is up to date about two seconds sooner after launch: add-on update checks now run together and alongside the game scan instead of holding it up, the ReShade and Luma pages are each downloaded once instead of twice, and install records are read once instead of once per game.
+- RHI no longer hitches for about half a second when the scan at launch finishes: DLSS files are now read in the background instead of while the window is being updated.
 - The selected game's page now redraws its component rows once after a change instead of hundreds of times, which makes startup and the moment after an install or uninstall smoother.
-- Background update checks are quicker: each shader pack is checked once per pass rather than once for every game that uses it.
+- Update checks are several seconds quicker, both the background ones and Check for updates: checks that don't depend on each other now run at the same time, and each shader pack is checked once per pass rather than once for every game that uses it.
+- Add-on update checks use fewer of GitHub's hourly requests (an unchanged release costs none) and keep working from the last answer while GitHub's limit is used up.
 - Launching RHI no longer rewrites files that haven't changed: OptiScaler's Streamline files in game folders, HSF's list of installed files and RHI's add-on record are only written when something is different.
 
 ### Bug Fixes
@@ -24,6 +27,7 @@
 - Folder paths that come from the online manifest (DLSS and Streamline locations, games split into several entries) are checked to stay inside the game's folder.
 - DLSS detection's saved paths are now safe to use from several scans at once.
 - The installer no longer picks up leftover .old, .tmp or .bak files.
+- RHI's saved GitHub answers (several MB) are loaded in the background at launch and only saved again when something changed.
 
 ## v2.9.6.2
 

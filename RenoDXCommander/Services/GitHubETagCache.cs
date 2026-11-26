@@ -45,17 +45,57 @@ public class GitHubETagCache
         _cachePath = cachePath;
         // A token saved or removed changes the limit (60 vs 5,000 an hour): check GitHub again
         GitHubTokenHandler.TokenChanged += () => ClearRateLimit("token changed");
-        var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(_cachePath, out _);
-        if (saved == null) return;
-        var cutoff = DateTime.UtcNow - MaxAge;
-        foreach (var (url, e) in saved)
-        {
-            if (e.SavedUtc < cutoff || string.IsNullOrEmpty(e.ETag) || e.Body == null) continue;
-            _cache[url] = (e.ETag, e.Body);
-            _savedUtc[url] = e.SavedUtc;
-        }
-        CrashReporter.Log($"[GitHubETagCache] Loaded {_cache.Count} saved ETag(s)");
+        // The file is several MB: read it on a background thread instead of before the window opens.
+        // Everything that reads or changes the cache waits for this first (EnsureLoaded).
+        _loadTask = Task.Run(Load);
     }
+
+    private readonly Task _loadTask;
+
+    private void Load()
+    {
+        try
+        {
+            var saved = SafeJsonFile.Read<Dictionary<string, SavedEntry>>(_cachePath, out _);
+            if (saved != null)
+            {
+                var cutoff = DateTime.UtcNow - MaxAge;
+                foreach (var (url, e) in saved)
+                {
+                    if (e.SavedUtc < cutoff || string.IsNullOrEmpty(e.ETag) || e.Body == null) continue;
+                    _cache[url] = (e.ETag, e.Body);
+                    _savedUtc[url] = e.SavedUtc;
+                }
+                CrashReporter.Log($"[GitHubETagCache] Loaded {_cache.Count} saved ETag(s)");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[GitHubETagCache] Load failed — {ex.GetType().Name}: {ex.Message}");
+        }
+        // What is on disk now, so a save with nothing new is skipped
+        _writtenSignature = Signature();
+    }
+
+    /// <summary>
+    /// Waits for the saved cache to be in memory. Must come before any read or change of the cache, and
+    /// before any save: a save made earlier would replace the file with an empty or partial cache.
+    /// </summary>
+    private void EnsureLoaded() => _loadTask.Wait();
+
+    /// <summary>Order-independent fingerprint of the saved content (URL, ETag, body length).</summary>
+    private long Signature()
+    {
+        long sig = 0;
+        unchecked
+        {
+            foreach (var kv in _cache)
+                sig += (long)HashCode.Combine(kv.Key, kv.Value.etag, kv.Value.body?.Length ?? -1) * 1099511628211L + 1;
+        }
+        return sig;
+    }
+
+    private long _writtenSignature;
 
     // Startup fires many API calls at once; batch their saves into one write 2 s after the last change.
     private System.Threading.Timer? _persistTimer;
@@ -70,8 +110,13 @@ public class GitHubETagCache
         }
     }
 
-    private void WriteNow()
+    internal void WriteNow()
     {
+        EnsureLoaded();
+        // Refresh removes entries and fetches them again; when they come back unchanged the file
+        // (several MB) already holds exactly this, so it isn't rewritten.
+        var signature = Signature();
+        if (signature == Interlocked.Read(ref _writtenSignature)) return;
         var snapshot = _cache.ToArray().ToDictionary(
             kv => kv.Key,
             kv => new SavedEntry
@@ -80,7 +125,8 @@ public class GitHubETagCache
                 Body = kv.Value.body,
                 SavedUtc = _savedUtc.TryGetValue(kv.Key, out var t) ? t : DateTime.UtcNow,
             });
-        SafeJsonFile.Write(_cachePath, snapshot, "GitHubETagCache.Persist");
+        if (SafeJsonFile.Write(_cachePath, snapshot, "GitHubETagCache.Persist"))
+            Interlocked.Exchange(ref _writtenSignature, signature);
     }
 
     /// <summary>Set when GitHub returns 403 with X-RateLimit-Remaining=0; cleared at the reset time.</summary>
@@ -127,6 +173,7 @@ public class GitHubETagCache
     /// </summary>
     public void Invalidate(string url)
     {
+        EnsureLoaded();
         _checkedUtc.TryRemove(url, out _);
         if (_cache.TryRemove(url, out _)) { _savedUtc.TryRemove(url, out _); Persist(); }
     }
@@ -146,6 +193,7 @@ public class GitHubETagCache
     /// </summary>
     public async Task<string?> GetWithETagAsync(HttpClient http, string url, string? userAgent = null)
     {
+        if (!_loadTask.IsCompleted) await _loadTask.ConfigureAwait(false);
         if (_checkedUtc.TryGetValue(url, out var checkedAt) && DateTime.UtcNow - checkedAt < FreshFor
             && _cache.TryGetValue(url, out var fresh) && fresh.body != null)
             return fresh.body;

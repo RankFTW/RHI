@@ -114,8 +114,8 @@ public partial class DetailPanelBuilder
 
         driverHeaderRow.PointerEntered += (s, e) => driverTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
         driverHeaderRow.PointerExited  += (s, e) => driverTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-        var driverHandCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-        var driverArrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var driverHandCursor  = HandCursor;
+        var driverArrowCursor = ArrowCursor;
         var driverCursorProp  = DetailPanelBuilder.CursorProp;
         driverHeaderRow.PointerEntered += (s, e) => driverCursorProp?.SetValue(driverHeaderRow, driverHandCursor);
         driverHeaderRow.PointerExited  += (s, e) => driverCursorProp?.SetValue(driverHeaderRow, driverArrowCursor);

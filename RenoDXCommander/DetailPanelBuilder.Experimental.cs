@@ -56,8 +56,8 @@ public partial class DetailPanelBuilder
 
         headerRow.PointerEntered += (s, e) => title.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
         headerRow.PointerExited  += (s, e) => title.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-        var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var handCursor  = HandCursor;
+        var arrowCursor = ArrowCursor;
         var cursorProp  = DetailPanelBuilder.CursorProp;
         headerRow.PointerEntered += (s, e) => cursorProp?.SetValue(headerRow, handCursor);
         headerRow.PointerExited  += (s, e) => cursorProp?.SetValue(headerRow, arrowCursor);

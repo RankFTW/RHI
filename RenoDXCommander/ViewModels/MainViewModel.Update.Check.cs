@@ -130,26 +130,141 @@ public partial class MainViewModel
             return;
         }
 
-        // Check ReLimiter for updates (single global check, applies to all cards with UL installed)
-        if (!_settingsViewModel.GlobalSkipUlUpdates)
+        // The checks below are independent (each has its own service, its own card fields and its own
+        // try/catch), so they run side by side instead of one after another. Kept in order inside one task:
+        // the OptiScaler checks, the components that copy updates into game folders, and the two Nexus checks.
+
+        async Task CheckUlAsync()
         {
-        try
-        {
-            // Per game: v4 games against the latest release, games staying on v3 against the last v3 release
-            var ulOutdated = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update result: {(ulOutdated == null ? "check failed" : ulOutdated.Count + " game(s)")}, cards with UL installed: {cards.Count(c => c.UlStatus == GameStatus.Installed)}");
-            if (ulOutdated != null)
+            // Check ReLimiter for updates (single global check, applies to all cards with UL installed)
+            if (!_settingsViewModel.GlobalSkipUlUpdates)
             {
-                var outdated = new HashSet<GameCardViewModel>(ulOutdated);
+            try
+            {
+                // Per game: v4 games against the latest release, games staying on v3 against the last v3 release
+                var ulOutdated = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update result: {(ulOutdated == null ? "check failed" : ulOutdated.Count + " game(s)")}, cards with UL installed: {cards.Count(c => c.UlStatus == GameStatus.Installed)}");
+                if (ulOutdated != null)
+                {
+                    var outdated = new HashSet<GameCardViewModel>(ulOutdated);
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        foreach (var card in cards.Where(c => !IsUlPinned(c)))
+                        {
+                            if (outdated.Contains(card) && card.UlStatus == GameStatus.Installed)
+                                card.UlStatus = GameStatus.UpdateAvailable;
+                            // e.g. the game's v3 / v4 choice changed since the last check
+                            else if (!outdated.Contains(card) && card.UlStatus == GameStatus.UpdateAvailable)
+                                card.UlStatus = GameStatus.Installed;
+                        }
+
+                        HasUpdatesAvailable = AnyUpdateAvailable;
+                        OnPropertyChanged(nameof(AnyUpdateAvailable));
+                        OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                        OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                        OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update check failed — {ex.Message}");
+            }
+            }
+        }
+
+        async Task CheckDcAsync()
+        {
+            // Check Display Commander for updates (single global check, applies to all cards with DC installed)
+            if (!_settingsViewModel.GlobalSkipDcUpdates)
+            {
+            try
+            {
+                var dcUpdateAvailable = await CheckDcUpdateAsync(cards).ConfigureAwait(false);
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DC update result: {dcUpdateAvailable}, cards with DC installed: {cards.Count(c => c.DcStatus == GameStatus.Installed)}");
+                if (dcUpdateAvailable)
+                {
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        foreach (var card in cards.Where(c => c.DcStatus == GameStatus.Installed))
+                            card.DcStatus = GameStatus.UpdateAvailable;
+
+                        HasUpdatesAvailable = AnyUpdateAvailable;
+                        OnPropertyChanged(nameof(AnyUpdateAvailable));
+                        OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                        OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                        OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DC update check failed — {ex.Message}");
+            }
+            }
+        }
+
+        async Task CheckOptiScalerAsync()
+        {
+            // Check OptiScaler for updates (single global check, applies to all cards with OS installed)
+            if (!_settingsViewModel.GlobalSkipOsUpdates)
+            {
+            try
+            {
+                await _optiScalerService.CheckForUpdateAsync().ConfigureAwait(false);
+                var osUpdateAvailable = _optiScalerService.HasUpdate;
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS stable update result: {osUpdateAvailable}, cards with OS installed: {cards.Count(c => c.OsStatus == GameStatus.Installed)}");
+
+                // Also check nightly if any installed game uses it
+                bool anyNightly = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "Nightly");
+                if (anyNightly)
+                {
+                    await _optiScalerService.CheckForNightlyUpdateAsync().ConfigureAwait(false);
+                    // Also refresh the available builds list so the cog dialog has current entries
+                    _ = _optiScalerService.FetchAvailableNightlyBuildsAsync();
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS nightly update result: {_optiScalerService.HasUpdateNightly}");
+                }
+
+                // Also check DLSS NR if any installed game uses it
+                bool anyDlssNr = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr");
+                if (anyDlssNr)
+                {
+                    await _optiScalerService.CheckForDlssNrUpdateAsync().ConfigureAwait(false);
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS DLSS NR update result: {_optiScalerService.HasUpdateDlssNr}");
+                }
+
+                // Also check F5 DLSSNR if any installed game uses it
+                bool anyF5 = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "F5");
+                if (anyF5)
+                {
+                    await _optiScalerService.CheckForF5UpdateAsync().ConfigureAwait(false);
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS F5 DLSSNR update result: {_optiScalerService.HasUpdateF5}");
+                }
+
+                // Recommended forks (manifest osForks) that an installed game uses
+                foreach (var forkVariant in cards.Where(c => c.OsStatus == GameStatus.Installed)
+                             .Select(c => GetOsVariant(c.GameName, c.Source ?? "")).Where(OsVariants.IsFork).Distinct().ToList())
+                {
+                    var forkUpdate = await OsForkService.CheckForUpdateAsync(forkVariant).ConfigureAwait(false);
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS fork {forkVariant} update result: {forkUpdate}");
+                }
+
                 DispatcherQueue?.TryEnqueue(() =>
                 {
-                    foreach (var card in cards.Where(c => !IsUlPinned(c)))
+                    foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
                     {
-                        if (outdated.Contains(card) && card.UlStatus == GameStatus.Installed)
-                            card.UlStatus = GameStatus.UpdateAvailable;
-                        // e.g. the game's v3 / v4 choice changed since the last check
-                        else if (!outdated.Contains(card) && card.UlStatus == GameStatus.UpdateAvailable)
-                            card.UlStatus = GameStatus.Installed;
+                        var osVariant = GetOsVariant(card.GameName, card.Source ?? "");
+                        bool osHasUpdate = osVariant switch {
+                            "Nightly" => _optiScalerService.HasUpdateNightly,
+                            "DlssNr"  => _optiScalerService.HasUpdateDlssNr,
+                            "F5"      => _optiScalerService.HasUpdateF5,
+                            _ when OsVariants.IsCustom(osVariant) => false, // custom builds are never updated
+                            _ when OsVariants.IsFork(osVariant)   => OsForkService.HasUpdate(osVariant),
+                            _         => _optiScalerService.HasUpdate
+                        };
+                        // A game pinned to a release stays on it
+                        if (osHasUpdate && GetOsPinnedRelease(card.GameName, card.Source ?? "") != null) osHasUpdate = false;
+                        if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;
                     }
 
                     HasUpdatesAvailable = AnyUpdateAvailable;
@@ -158,125 +273,33 @@ public partial class MainViewModel
                     OnPropertyChanged(nameof(UpdateAllBtnForeground));
                     OnPropertyChanged(nameof(UpdateAllBtnBorder));
                 });
-            }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update check failed — {ex.Message}");
-        }
-        }
 
-        // Check Display Commander for updates (single global check, applies to all cards with DC installed)
-        if (!_settingsViewModel.GlobalSkipDcUpdates)
-        {
-        try
-        {
-            var dcUpdateAvailable = await CheckDcUpdateAsync(cards).ConfigureAwait(false);
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DC update result: {dcUpdateAvailable}, cards with DC installed: {cards.Count(c => c.DcStatus == GameStatus.Installed)}");
-            if (dcUpdateAvailable)
-            {
-                DispatcherQueue?.TryEnqueue(() =>
+                // Check OptiPatcher update and auto-deploy if newer version available
+                try
                 {
-                    foreach (var card in cards.Where(c => c.DcStatus == GameStatus.Installed))
-                        card.DcStatus = GameStatus.UpdateAvailable;
-
-                    HasUpdatesAvailable = AnyUpdateAvailable;
-                    OnPropertyChanged(nameof(AnyUpdateAvailable));
-                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DC update check failed — {ex.Message}");
-        }
-        }
-
-        // Check OptiScaler for updates (single global check, applies to all cards with OS installed)
-        if (!_settingsViewModel.GlobalSkipOsUpdates)
-        {
-        try
-        {
-            await _optiScalerService.CheckForUpdateAsync().ConfigureAwait(false);
-            var osUpdateAvailable = _optiScalerService.HasUpdate;
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS stable update result: {osUpdateAvailable}, cards with OS installed: {cards.Count(c => c.OsStatus == GameStatus.Installed)}");
-
-            // Also check nightly if any installed game uses it
-            bool anyNightly = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "Nightly");
-            if (anyNightly)
-            {
-                await _optiScalerService.CheckForNightlyUpdateAsync().ConfigureAwait(false);
-                // Also refresh the available builds list so the cog dialog has current entries
-                _ = _optiScalerService.FetchAvailableNightlyBuildsAsync();
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS nightly update result: {_optiScalerService.HasUpdateNightly}");
-            }
-
-            // Also check DLSS NR if any installed game uses it
-            bool anyDlssNr = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr");
-            if (anyDlssNr)
-            {
-                await _optiScalerService.CheckForDlssNrUpdateAsync().ConfigureAwait(false);
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS DLSS NR update result: {_optiScalerService.HasUpdateDlssNr}");
-            }
-
-            // Also check F5 DLSSNR if any installed game uses it
-            bool anyF5 = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "F5");
-            if (anyF5)
-            {
-                await _optiScalerService.CheckForF5UpdateAsync().ConfigureAwait(false);
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS F5 DLSSNR update result: {_optiScalerService.HasUpdateF5}");
-            }
-
-            // Recommended forks (manifest osForks) that an installed game uses
-            foreach (var forkVariant in cards.Where(c => c.OsStatus == GameStatus.Installed)
-                         .Select(c => GetOsVariant(c.GameName, c.Source ?? "")).Where(OsVariants.IsFork).Distinct().ToList())
-            {
-                var forkUpdate = await OsForkService.CheckForUpdateAsync(forkVariant).ConfigureAwait(false);
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS fork {forkVariant} update result: {forkUpdate}");
-            }
-
-            DispatcherQueue?.TryEnqueue(() =>
-            {
-                foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
-                {
-                    var osVariant = GetOsVariant(card.GameName, card.Source ?? "");
-                    bool osHasUpdate = osVariant switch {
-                        "Nightly" => _optiScalerService.HasUpdateNightly,
-                        "DlssNr"  => _optiScalerService.HasUpdateDlssNr,
-                        "F5"      => _optiScalerService.HasUpdateF5,
-                        _ when OsVariants.IsCustom(osVariant) => false, // custom builds are never updated
-                        _ when OsVariants.IsFork(osVariant)   => OsForkService.HasUpdate(osVariant),
-                        _         => _optiScalerService.HasUpdate
-                    };
-                    // A game pinned to a release stays on it
-                    if (osHasUpdate && GetOsPinnedRelease(card.GameName, card.Source ?? "") != null) osHasUpdate = false;
-                    if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;
+                    bool optiPatcherHasUpdate = await _optiScalerService.CheckOptiPatcherUpdateAsync().ConfigureAwait(false);
+                    if (optiPatcherHasUpdate)
+                    {
+                        _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] OptiPatcher update available — downloading and auto-deploying");
+                        await _optiScalerService.EnsureOptiPatcherStagingAsync().ConfigureAwait(false);
+                    }
                 }
-
-                HasUpdatesAvailable = AnyUpdateAvailable;
-                OnPropertyChanged(nameof(AnyUpdateAvailable));
-                OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                OnPropertyChanged(nameof(UpdateAllBtnBorder));
-            });
-
-            // Check OptiPatcher update and auto-deploy if newer version available
-            try
-            {
-                bool optiPatcherHasUpdate = await _optiScalerService.CheckOptiPatcherUpdateAsync().ConfigureAwait(false);
-                if (optiPatcherHasUpdate)
+                catch (Exception ex)
                 {
-                    _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] OptiPatcher update available — downloading and auto-deploying");
-                    await _optiScalerService.EnsureOptiPatcherStagingAsync().ConfigureAwait(false);
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OptiPatcher update check failed — {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OptiPatcher update check failed — {ex.Message}");
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS update check failed — {ex.Message}");
             }
+            }
+        }
 
+        // DLSS Enabler, RTX Encore, DLSS5 add-ons: these can copy an update into game folders, so one at a time.
+        // As before, they are skipped together with the OptiScaler checks (Update inclusion).
+        async Task CheckGameFolderComponentsAsync()
+        {
             // Check DLSS Enabler update and auto-deploy if newer version available
             try
             {
@@ -356,155 +379,191 @@ public partial class MainViewModel
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DLSS Tool SF check failed — {ex.Message}");
             }
         }
-        catch (Exception ex)
+
+        async Task CheckDxvkAsync()
         {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS update check failed — {ex.Message}");
-        }
-        }
-
-        // Check DXVK for updates — check each variant that's actually in use
-        try
-        {
-            var dxvkCards = cards.Where(c => c.DxvkStatus == GameStatus.Installed).ToList();
-            var variantsInUse = dxvkCards
-                .Select(c => ResolveDxvkVariant(c.GameName, c.Source ?? ""))
-                .Distinct()
-                .ToList();
-
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK variants in use: [{string.Join(", ", variantsInUse)}], cards with DXVK installed: {dxvkCards.Count}");
-
-            foreach (var variant in variantsInUse)
+            // Check DXVK for updates — check each variant that's actually in use
+            try
             {
-                // Temporarily switch the service variant to check this one
-                var savedVariant = _dxvkService.SelectedVariant;
-                _dxvkService.SelectedVariant = variant;
-                await _dxvkService.CheckForUpdateAsync().ConfigureAwait(false);
-                var hasUpdate = _dxvkService.HasUpdate;
-                _dxvkService.SelectedVariant = savedVariant;
+                var dxvkCards = cards.Where(c => c.DxvkStatus == GameStatus.Installed).ToList();
+                var variantsInUse = dxvkCards
+                    .Select(c => ResolveDxvkVariant(c.GameName, c.Source ?? ""))
+                    .Distinct()
+                    .ToList();
 
-                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {variant} update result: {hasUpdate}");
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK variants in use: [{string.Join(", ", variantsInUse)}], cards with DXVK installed: {dxvkCards.Count}");
 
-                if (hasUpdate)
+                foreach (var variant in variantsInUse)
                 {
-                    var capturedVariant = variant;
-                    DispatcherQueue?.TryEnqueue(() =>
+                    // Temporarily switch the service variant to check this one
+                    var savedVariant = _dxvkService.SelectedVariant;
+                    _dxvkService.SelectedVariant = variant;
+                    await _dxvkService.CheckForUpdateAsync().ConfigureAwait(false);
+                    var hasUpdate = _dxvkService.HasUpdate;
+                    _dxvkService.SelectedVariant = savedVariant;
+
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {variant} update result: {hasUpdate}");
+
+                    if (hasUpdate)
                     {
-                        int flagged = 0;
-                        foreach (var card in dxvkCards)
+                        var capturedVariant = variant;
+                        DispatcherQueue?.TryEnqueue(() =>
                         {
-                            var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
-                            if (resolvedVariant == capturedVariant)
+                            int flagged = 0;
+                            foreach (var card in dxvkCards)
                             {
-                                card.DxvkStatus = GameStatus.UpdateAvailable;
-                                flagged++;
+                                var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
+                                if (resolvedVariant == capturedVariant)
+                                {
+                                    card.DxvkStatus = GameStatus.UpdateAvailable;
+                                    flagged++;
+                                }
                             }
-                        }
-                        _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {capturedVariant}: flagged {flagged} card(s) as UpdateAvailable");
+                            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {capturedVariant}: flagged {flagged} card(s) as UpdateAvailable");
 
-                        HasUpdatesAvailable = AnyUpdateAvailable;
-                        OnPropertyChanged(nameof(AnyUpdateAvailable));
-                        OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                        OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                        OnPropertyChanged(nameof(UpdateAllBtnBorder));
-                    });
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update check failed — {ex.Message}");
-        }
-
-        // ── Nexus Mods update check (external-only games with Nexus URLs) ─────────
-        if (nexusEnabled)
-        try
-        {
-            // For external-only games, the Nexus URL is in ExternalUrl (set by manifest forceExternalOnly).
-            // For wiki-matched games with both Snapshot+Nexus, it's in NexusUrl (from GameMod).
-            var nexusModsToCheck = cards
-                .Where(c => !c.ExcludeFromUpdateAllRenoDx
-                    && (c.Status == GameStatus.Installed || c.Status == GameStatus.Available || c.Status == GameStatus.NotInstalled))
-                .Select(c =>
-                {
-                    // Resolve the Nexus URL: ExternalUrl for external-only, NexusUrl for wiki-matched
-                    string? nexusUrl = null;
-                    if (c.IsExternalOnly && !string.IsNullOrEmpty(c.ExternalUrl)
-                        && c.ExternalUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
-                        nexusUrl = c.ExternalUrl;
-                    else if (!string.IsNullOrEmpty(c.NexusUrl))
-                        nexusUrl = c.NexusUrl;
-                    return (c.GameName, NexusUrl: nexusUrl, c.RdxInstalledVersion);
-                })
-                .Where(x => !string.IsNullOrEmpty(x.NexusUrl))
-                .Select(x => (x.GameName, x.NexusUrl!, x.RdxInstalledVersion))
-                .ToList();
-
-            if (nexusModsToCheck.Count > 0)
-            {
-                var nexusUpdated = await _nexusUpdateService.CheckForUpdatesAsync(nexusModsToCheck).ConfigureAwait(false);
-                if (nexusUpdated.Count > 0)
-                {
-                    DispatcherQueue?.TryEnqueue(() =>
-                    {
-                        foreach (var card in cards.Where(c => nexusUpdated.Contains(c.GameName)))
-                        {
-                            if (card.Status == GameStatus.Installed)
-                                card.Status = GameStatus.UpdateAvailable;
-                        }
-                        // Nexus updates do NOT contribute to Update All button
-                    });
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed — {ex.Message}");
-        }
-
-        // ── Nexus Mods update check for Luma mods ──
-        if (nexusEnabled) await CheckLumaNexusUpdatesAsync(cards).ConfigureAwait(false);
-        try
-        {
-            var emuCards = cards.Where(c => c.IsEmulator && c.Status == GameStatus.Installed && c.EmulatorAddonNames?.Count > 0).ToList();
-            _crashReporter.Log($"[CheckForUpdatesAsync] Emulator update check: {emuCards.Count} card(s) eligible (total emulators={cards.Count(c => c.IsEmulator)}, installed={cards.Count(c => c.IsEmulator && c.Status == GameStatus.Installed)}, hasAddons={cards.Count(c => c.IsEmulator && c.EmulatorAddonNames?.Count > 0)})");
-            foreach (var emuCard in emuCards)
-            {
-                var deployPath = ModInstallService.GetAddonDeployPath(emuCard.InstallPath);
-                bool anyUpdate = false;
-
-                foreach (var wikiName in emuCard.EmulatorAddonNames!)
-                {
-                    // Same resolution as install / uninstall (manifest addonUrls, then wiki)
-                    var (addonUrl, fileName) = ResolveEmulatorAddon(wikiName);
-                    if (addonUrl == null || fileName == null) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — no manifest URL or wiki SnapshotUrl"); continue; }
-
-                    var localFile = Path.Combine(deployPath, fileName);
-                    if (!File.Exists(localFile)) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — file missing: {fileName}"); anyUpdate = true; break; }
-
-                    // Check remote size
-                    try
-                    {
-                        using var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, addonUrl)).ConfigureAwait(false);
-                        if (headResp.IsSuccessStatusCode && headResp.Content.Headers.ContentLength.HasValue)
-                        {
-                            var localSize = new FileInfo(localFile).Length;
-                            if (headResp.Content.Headers.ContentLength.Value != localSize)
-                            {
-                                _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — size mismatch: local={localSize}, remote={headResp.Content.Headers.ContentLength.Value}");
-                                anyUpdate = true;
-                                break;
-                            }
-                        }
+                            HasUpdatesAvailable = AnyUpdateAvailable;
+                            OnPropertyChanged(nameof(AnyUpdateAvailable));
+                            OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                            OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                            OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                        });
                     }
-                    catch { /* Skip on error — don't flag as update */ }
                 }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update check failed — {ex.Message}");
+            }
+        }
 
-                if (anyUpdate)
+        async Task CheckNexusAsync()
+        {
+            // ── Nexus Mods update check (external-only games with Nexus URLs) ─────────
+            if (nexusEnabled)
+            try
+            {
+                // For external-only games, the Nexus URL is in ExternalUrl (set by manifest forceExternalOnly).
+                // For wiki-matched games with both Snapshot+Nexus, it's in NexusUrl (from GameMod).
+                var nexusModsToCheck = cards
+                    .Where(c => !c.ExcludeFromUpdateAllRenoDx
+                        && (c.Status == GameStatus.Installed || c.Status == GameStatus.Available || c.Status == GameStatus.NotInstalled))
+                    .Select(c =>
+                    {
+                        // Resolve the Nexus URL: ExternalUrl for external-only, NexusUrl for wiki-matched
+                        string? nexusUrl = null;
+                        if (c.IsExternalOnly && !string.IsNullOrEmpty(c.ExternalUrl)
+                            && c.ExternalUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                            nexusUrl = c.ExternalUrl;
+                        else if (!string.IsNullOrEmpty(c.NexusUrl))
+                            nexusUrl = c.NexusUrl;
+                        return (c.GameName, NexusUrl: nexusUrl, c.RdxInstalledVersion);
+                    })
+                    .Where(x => !string.IsNullOrEmpty(x.NexusUrl))
+                    .Select(x => (x.GameName, x.NexusUrl!, x.RdxInstalledVersion))
+                    .ToList();
+
+                if (nexusModsToCheck.Count > 0)
                 {
-                    _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' has updates available");
+                    var nexusUpdated = await _nexusUpdateService.CheckForUpdatesAsync(nexusModsToCheck).ConfigureAwait(false);
+                    if (nexusUpdated.Count > 0)
+                    {
+                        DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            foreach (var card in cards.Where(c => nexusUpdated.Contains(c.GameName)))
+                            {
+                                if (card.Status == GameStatus.Installed)
+                                    card.Status = GameStatus.UpdateAvailable;
+                            }
+                            // Nexus updates do NOT contribute to Update All button
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed — {ex.Message}");
+            }
+
+            // ── Nexus Mods update check for Luma mods ──
+            if (nexusEnabled) await CheckLumaNexusUpdatesAsync(cards).ConfigureAwait(false);
+        }
+
+        async Task CheckEmulatorAsync()
+        {
+            try
+            {
+                var emuCards = cards.Where(c => c.IsEmulator && c.Status == GameStatus.Installed && c.EmulatorAddonNames?.Count > 0).ToList();
+                _crashReporter.Log($"[CheckForUpdatesAsync] Emulator update check: {emuCards.Count} card(s) eligible (total emulators={cards.Count(c => c.IsEmulator)}, installed={cards.Count(c => c.IsEmulator && c.Status == GameStatus.Installed)}, hasAddons={cards.Count(c => c.IsEmulator && c.EmulatorAddonNames?.Count > 0)})");
+                foreach (var emuCard in emuCards)
+                {
+                    var deployPath = ModInstallService.GetAddonDeployPath(emuCard.InstallPath);
+                    bool anyUpdate = false;
+
+                    foreach (var wikiName in emuCard.EmulatorAddonNames!)
+                    {
+                        // Same resolution as install / uninstall (manifest addonUrls, then wiki)
+                        var (addonUrl, fileName) = ResolveEmulatorAddon(wikiName);
+                        if (addonUrl == null || fileName == null) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — no manifest URL or wiki SnapshotUrl"); continue; }
+
+                        var localFile = Path.Combine(deployPath, fileName);
+                        if (!File.Exists(localFile)) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — file missing: {fileName}"); anyUpdate = true; break; }
+
+                        // Check remote size
+                        try
+                        {
+                            using var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, addonUrl)).ConfigureAwait(false);
+                            if (headResp.IsSuccessStatusCode && headResp.Content.Headers.ContentLength.HasValue)
+                            {
+                                var localSize = new FileInfo(localFile).Length;
+                                if (headResp.Content.Headers.ContentLength.Value != localSize)
+                                {
+                                    _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — size mismatch: local={localSize}, remote={headResp.Content.Headers.ContentLength.Value}");
+                                    anyUpdate = true;
+                                    break;
+                                }
+                            }
+                        }
+                        catch { /* Skip on error — don't flag as update */ }
+                    }
+
+                    if (anyUpdate)
+                    {
+                        _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' has updates available");
+                        DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            emuCard.Status = GameStatus.UpdateAvailable;
+                            HasUpdatesAvailable = AnyUpdateAvailable;
+                            OnPropertyChanged(nameof(AnyUpdateAvailable));
+                            OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                            OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                            OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                        });
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' is up to date");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Emulator update check failed — {ex.Message}");
+            }
+        }
+
+        async Task CheckDofFixAsync()
+        {
+            // ── DOF Fix update check ──────────────────────────────────────────────
+            try
+            {
+                await _dofFixService.CheckForUpdateAsync().ConfigureAwait(false);
+                if (_dofFixService.HasUpdate)
+                {
                     DispatcherQueue?.TryEnqueue(() =>
                     {
-                        emuCard.Status = GameStatus.UpdateAvailable;
+                        foreach (var card in cards.Where(c => c.IsDofFixEligible && c.DofFixStatus == GameStatus.Installed))
+                            card.DofFixStatus = GameStatus.UpdateAvailable;
+
                         HasUpdatesAvailable = AnyUpdateAvailable;
                         OnPropertyChanged(nameof(AnyUpdateAvailable));
                         OnPropertyChanged(nameof(UpdateAllBtnBackground));
@@ -512,40 +571,22 @@ public partial class MainViewModel
                         OnPropertyChanged(nameof(UpdateAllBtnBorder));
                     });
                 }
-                else
-                {
-                    _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' is up to date");
-                }
             }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Emulator update check failed — {ex.Message}");
-        }
-
-        // ── DOF Fix update check ──────────────────────────────────────────────
-        try
-        {
-            await _dofFixService.CheckForUpdateAsync().ConfigureAwait(false);
-            if (_dofFixService.HasUpdate)
+            catch (Exception ex)
             {
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    foreach (var card in cards.Where(c => c.IsDofFixEligible && c.DofFixStatus == GameStatus.Installed))
-                        card.DofFixStatus = GameStatus.UpdateAvailable;
-
-                    HasUpdatesAvailable = AnyUpdateAvailable;
-                    OnPropertyChanged(nameof(AnyUpdateAvailable));
-                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
-                });
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DOF Fix update check failed — {ex.Message}");
             }
         }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DOF Fix update check failed — {ex.Message}");
-        }
+
+        await Task.WhenAll(
+            CheckUlAsync(),
+            CheckDcAsync(),
+            CheckOptiScalerAsync(),
+            _settingsViewModel.GlobalSkipOsUpdates ? Task.CompletedTask : CheckGameFolderComponentsAsync(),
+            CheckDxvkAsync(),
+            CheckNexusAsync(),
+            CheckEmulatorAsync(),
+            CheckDofFixAsync()).ConfigureAwait(false);
 
         // Record successful check time
         _settingsViewModel.LastUpdateCheckUtc = DateTime.UtcNow.ToString("o");

@@ -233,12 +233,23 @@ public partial class GameCardViewModel : ObservableObject
     /// </summary>
     public void NotifyAll()
     {
+        // The list is the same for every card and every call: build it once.
+        foreach (var args in s_notifyAllArgs ??= BuildNotifyAllList())
+            OnPropertyChanged(args);
+    }
+
+    private static System.ComponentModel.PropertyChangedEventArgs[]? s_notifyAllArgs;
+
+    /// <summary>Every property <see cref="NotifyAll"/> raises, each once, in order.</summary>
+    private static System.ComponentModel.PropertyChangedEventArgs[] BuildNotifyAllList()
+    {
         var notified = new HashSet<string>(StringComparer.Ordinal);
+        var list = new List<System.ComponentModel.PropertyChangedEventArgs>(256);
 
         void NotifyOnce(string propertyName)
         {
             if (notified.Add(propertyName))
-                OnPropertyChanged(propertyName);
+                list.Add(new System.ComponentModel.PropertyChangedEventArgs(propertyName));
         }
 
         // ── RenoDX: Status dependents ─────────────────────────────────────────
@@ -516,5 +527,7 @@ public partial class GameCardViewModel : ObservableObject
         // ── Nexus Mods / PCGW link computed properties ───────────────────────
         NotifyOnce(nameof(HasNexusModsUrl));
         NotifyOnce(nameof(HasPcgwUrl));
+
+        return list.ToArray();
     }
 }
