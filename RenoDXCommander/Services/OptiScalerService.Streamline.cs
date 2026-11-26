@@ -60,7 +60,12 @@ public partial class OptiScalerService
             try
             {
                 // Plain File.Copy — no .original backups. These are RHI-managed files, not game originals.
-                File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), overwrite: true);
+                // Same size and modified time = RHI already put this exact file there (File.Copy keeps the
+                // source's time), so launches with nothing changed write nothing into the game.
+                var dest = Path.Combine(destDir, Path.GetFileName(file));
+                var s = new FileInfo(file); var d = new FileInfo(dest);
+                if (d.Exists && d.Length == s.Length && d.LastWriteTimeUtc == s.LastWriteTimeUtc) continue;
+                File.Copy(file, dest, overwrite: true);
                 copied++;
             }
             catch (Exception ex)
@@ -69,7 +74,7 @@ public partial class OptiScalerService
             }
         }
 
-        CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {copied} Streamline file(s) from '{Path.GetFileName(sourceDir)}' to {installPath}");
+        CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {copied} of {files.Length} Streamline file(s) from '{Path.GetFileName(sourceDir)}' to {installPath}");
 
         // Also deploy the newest nvngx_dlssg.dll into the Streamline folder.
         // This enables FG support within Streamline when using OptiScaler Nightly/DLSS NR.
@@ -84,6 +89,8 @@ public partial class OptiScalerService
                 var cachedDlssg = await dlssSvc.EnsureNewestDlssgCachedAsync().ConfigureAwait(false);
                 if (cachedDlssg != null && File.Exists(cachedDlssg))
                 {
+                    var s = new FileInfo(cachedDlssg); var d = new FileInfo(dlssgDest);
+                    if (d.Exists && d.Length == s.Length && d.LastWriteTimeUtc == s.LastWriteTimeUtc) return;
                     File.Copy(cachedDlssg, dlssgDest, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {DlssgDll} to Streamline folder in '{installPath}'");
                 }

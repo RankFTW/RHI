@@ -1027,6 +1027,9 @@ public class AddonPackService : IAddonPackService
 
         // Record deployed files in the tracker (keyed by the folder the files are actually in)
         var deployments = LoadDeployments();
+        // Every entry as text, to tell at the end which ones this call changed
+        static string Sig(HashSet<string> files) => string.Join(",", files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase));
+        var before = deployments.ToDictionary(kv => kv.Key, kv => Sig(kv.Value), StringComparer.OrdinalIgnoreCase);
         if (!deployments.TryGetValue(deployDir, out var trackedFiles))
         {
             trackedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1126,8 +1129,26 @@ public class AddonPackService : IAddonPackService
             CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to enumerate deploy directory for stale removal — {ex.Message}");
         }
 
-        // Save updated tracker
-        SaveDeployments(deployments);
+        // Save updated tracker.
+        // Write only this call's own changes onto the newest file, so parallel games can't overwrite each other
+        // (and nothing is written when nothing changed). An empty set is the same as a missing key.
+        var changedKeys = deployments.Keys.Union(before.Keys, StringComparer.OrdinalIgnoreCase)
+            .Where(k => (deployments.TryGetValue(k, out var now) && now.Count > 0 ? Sig(now) : "")
+                     != (before.TryGetValue(k, out var was) ? was : ""))
+            .ToList();
+        if (changedKeys.Count > 0)
+        {
+            lock (_deploymentsLock)
+            {
+                var fresh = LoadDeployments();
+                foreach (var k in changedKeys)
+                {
+                    if (deployments.TryGetValue(k, out var set) && set.Count > 0) fresh[k] = set;
+                    else fresh.Remove(k);
+                }
+                SaveDeployments(fresh);
+            }
+        }
 
         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployment complete for '{gameName}'. Deployed {deployedFileNames.Count} addon(s).");
     }

@@ -705,7 +705,9 @@ public partial class HsfService
         if (failed) return changed; // try the rest next time; keep the old record and version
 
         RemoveStale(addonDir, previous, recorded);
-        RhiInstallManifest.SetComponent(installPath, Component, recorded);
+        // Unchanged list = no rewrite of the game's rhi_install.txt (this runs for every HSF game at each check)
+        if (!previous.SequenceEqual(recorded, StringComparer.OrdinalIgnoreCase))
+            RhiInstallManifest.SetComponent(installPath, Component, recorded);
         var marker = ReadMarker(installPath);
         if (changed || marker.Version != StagedVersion)
         {
