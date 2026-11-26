@@ -40,7 +40,7 @@ public partial class DialogService
         try
         {
             await WaitForXamlRootAsync();
-            var updateInfo = await _updateService.CheckForUpdateAsync(betaOptIn: false);
+            var updateInfo = await _updateService.FetchStableReleaseAsync();
             if (updateInfo == null)
             {
                 CrashReporter.Log("[DialogService.BackToStableAsync] No stable release found");

@@ -9,6 +9,9 @@ public interface IUpdateService
 
     Task<UpdateInfo?> CheckForUpdateAsync(bool betaOptIn = false);
 
+    /// <summary>Fetches the latest stable release regardless of whether it is newer than the current build. Used by "Back to stable".</summary>
+    Task<UpdateInfo?> FetchStableReleaseAsync();
+
     Task<string?> DownloadInstallerAsync(
         string downloadUrl,
         IProgress<(string msg, double pct)>? progress = null,

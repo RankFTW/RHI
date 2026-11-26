@@ -127,6 +127,41 @@ public class UpdateService : IUpdateService
         }
     }
 
+    /// <summary>
+    /// Fetches the latest stable release regardless of whether it is newer than the current build.
+    /// Used by "Back to stable" so beta users can downgrade to the last stable release.
+    /// </summary>
+    public async Task<UpdateInfo?> FetchStableReleaseAsync()
+    {
+        try
+        {
+            var stable = await FetchReleaseAsync(LatestReleaseApiUrl).ConfigureAwait(false);
+            stable ??= await FetchReleaseAsync(ReleaseApiUrl).ConfigureAwait(false);
+            stable = Newer(stable, await FetchLatestViaWebAsync(LatestReleaseWebUrl).ConfigureAwait(false), "release");
+            if (stable == null)
+            {
+                CrashReporter.Log("[UpdateService.FetchStableReleaseAsync] No stable release found");
+                return null;
+            }
+            var current = AppVersionInfo.Current;
+            CrashReporter.Log($"[UpdateService.FetchStableReleaseAsync] Stable={stable.Value.version.ToDisplayString()}, current={current.ToDisplayString()}");
+            return new UpdateInfo
+            {
+                CurrentVersion        = new Version(current.Major, current.Minor, current.Build, current.Revision),
+                RemoteVersion         = new Version(stable.Value.version.Major, stable.Value.version.Minor, stable.Value.version.Build, stable.Value.version.Revision),
+                DownloadUrl           = stable.Value.downloadUrl,
+                DisplayVersion        = stable.Value.version.ToDisplayString(),
+                CurrentDisplayVersion = current.ToDisplayString(),
+                IsBeta                = false,
+            };
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[UpdateService.FetchStableReleaseAsync] Failed — {ex.Message}");
+            return null;
+        }
+    }
+
     /// <summary>The newer of the API answer and the website's; logs when the website's wins (API copy stale).</summary>
     private static (RdxcVersion version, string downloadUrl)? Newer(
         (RdxcVersion version, string downloadUrl)? api, (RdxcVersion version, string downloadUrl)? web, string what)
