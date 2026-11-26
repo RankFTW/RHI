@@ -447,7 +447,20 @@ public partial class MainViewModel
                 // Disable driver FPS limiter for this game (conflicts with ReLimiter)
                 try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
                 catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallUlAsync] Failed to disable driver FPS limiter — {ex.Message}"); }
-                DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit
+
+                // Disable driver Low Latency Mode for this game (conflicts with ReLimiter — causes stutters/issues)
+                try
+                {
+                    uint llMode = _dlssPresetService.GetLowLatencyMode(card.GameName, card.InstallPath);
+                    if (llMode != 0)
+                    {
+                        _dlssPresetService.SetLowLatencyMode(card.GameName, card.InstallPath, 0);
+                        CrashReporter.Log($"[MainViewModel.InstallUlAsync] Disabled Low Latency Mode (was {llMode}) for '{card.GameName}'");
+                    }
+                }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InstallUlAsync] Failed to disable Low Latency Mode — {ex.Message}"); }
+
+                DriverProfileChanged?.Invoke(card); // Driver Settings re-reads the FPS limit and Low Latency
 
                 // Apply shared presets setting to the newly deployed INI if enabled
                 if (_settingsViewModel.UlSharedPresets)

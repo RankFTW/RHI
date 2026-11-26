@@ -29,6 +29,7 @@
 ### Bug Fixes
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
+- ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.
 - Fixed RHI sometimes losing track of an add-on it put in a game when several games changed in the same pass, which could leave an old add-on file behind in that game.
 - Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
 - Fixed session logs missing their first lines when RHI was started with Admin Mode on.
