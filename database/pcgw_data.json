@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56160,
-  "generated": "2026-11-26T15:17:44Z",
+  "game_count": 56161,
+  "generated": "2026-11-26T17:17:44Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -14005,6 +14005,12 @@
       "engine": "Unity"
     },
     "Awaken - Astral Blade": {
+      "steam_appid": 1716310,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\DarkPigeonGames\\AWAKEN - Astral Blade\\GameSave\\",
+      "engine": "Unity"
+    },
+    "Awaken: Astral Blade": {
       "steam_appid": 1716310,
       "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\DarkPigeonGames\\AWAKEN - Astral Blade\\GameSave\\",
@@ -158022,6 +158028,7 @@
     },
     "Subject 13": {
       "steam_appid": 322970,
+      "dx9": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Microids\\Subject13",
       "engine": "Unity"
     },
