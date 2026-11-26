@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56157,
-  "generated": "2026-11-26T03:17:43Z",
+  "game_count": 56158,
+  "generated": "2026-11-26T07:17:44Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -82350,6 +82350,7 @@
     "IHF Handball Challenge 14": {
       "steam_appid": 279460
     },
+    "IHRA Motorsports Drag Racing": {},
     "IHUGU": {
       "steam_appid": 703050
     },
