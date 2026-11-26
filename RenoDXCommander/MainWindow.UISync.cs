@@ -326,6 +326,9 @@ public sealed partial class MainWindow
     /// <summary>Settings › Get beta updates turned on: look for an update (beta included) now.</summary>
     internal Task CheckForAppUpdateNowAsync() => _dialogService.CheckForAppUpdateAsync();
 
+    /// <summary>Settings › Back to stable: fetch the latest release (beta excluded) and install it.</summary>
+    internal Task BackToStableAsync() => _dialogService.BackToStableAsync();
+
     private async Task ShowPatchNotesDialogAsync()
         => await _dialogService.ShowPatchNotesDialogAsync();
 

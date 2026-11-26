@@ -6,6 +6,9 @@
 ## v2.9.6.3 Beta 1
 
 ### New
+- **Back to stable.** A "Back to stable" button appears below the Get beta updates toggle in Settings when beta updates are on and you are on a beta. Clicking it downloads and installs the latest stable release.
+
+### New
 - **ReShade menu position.** Settings › ReShade › Keys and screenshots has a new ReShade menu position setting: ReShade default, Left or Right. Left or Right docks ReShade's menu on that side of the screen in every game, for example on the right so it doesn't cover a frame rate display on the left. It applies whenever RHI writes a game's reshade.ini, or to every game at once with Write these to all games (close the games first). A game where you undocked the menu or arranged it another way keeps your layout.
 - **Legacy No Addons ReShade channel.** The ReShade ⚙ › ReShade channel list has a new choice, Legacy No Addons..., for an older ReShade version without add-on support (for games whose anti-cheat blocks add-ons and that need an older ReShade). Pick a version and RHI downloads it, installs it and keeps the game on it: it is left out of ReShade updates, like the other legacy versions. As with the No Addons channel, RenoDX, ReLimiter and Display Commander need add-ons and are removed from the game. Not available for Vulkan games.
 
@@ -31,6 +34,8 @@
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.
 - Fixed RHI sometimes losing track of an add-on it put in a game when several games changed in the same pass, which could leave an old add-on file behind in that game.
+- Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
+- Fixed session logs missing their first lines when RHI was started with Admin Mode on.
 - Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
 - Fixed session logs missing their first lines when RHI was started with Admin Mode on.
 - Several of RHI's saved files (add-on versions, Nexus update baselines, new-mod markers, chosen artwork, window position and others) could be left cut off by a crash or power cut mid-save. They are now saved in one step.
