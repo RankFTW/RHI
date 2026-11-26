@@ -39,7 +39,12 @@ public partial class MainViewModel
                     foreach (var split in splits)
                     {
                         var splitPath = Path.Combine(basePath, split.SubPath);
-                        if (Directory.Exists(splitPath))
+                        // The sub-path comes from the remote manifest: it must stay inside the game folder
+                        // (an empty sub-path means the game folder itself).
+                        bool splitInside = string.IsNullOrEmpty(split.SubPath) || FileHelper.SafeCombine(basePath, split.SubPath) != null;
+                        if (!splitInside)
+                            _crashReporter.Log($"[BuildCards] splitGames sub-path for '{game.Name}' leaves the game folder, ignored: '{split.SubPath}'");
+                        if (splitInside && Directory.Exists(splitPath))
                         {
                             expanded.Add(new DetectedGame
                             {
@@ -444,7 +449,7 @@ public partial class MainViewModel
                     InstallPath   = installPath,
                     Store         = game.Source ?? "",
                     AddonFileName = addonOnDisk,
-                    InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(installPath, addonOnDisk)),
+                    InstalledAt   = FoundAddonWriteTimeUtc(installPath, addonOnDisk),
                     SnapshotUrl   = ResolveAddonUrl(addonName!),
                 };
                 _installer.SaveRecordPublic(record);
@@ -1503,12 +1508,21 @@ public partial class MainViewModel
                         && !string.IsNullOrEmpty(dlssRelPath))
                     {
                         var dlssAbsPath = Path.Combine(game.InstallPath, dlssRelPath);
-                        if (Directory.Exists(dlssAbsPath))
+                        // Manifest paths must stay inside the game folder (DLSS swaps write there)
+                        bool dlssInside = FileHelper.SafeCombine(game.InstallPath, dlssRelPath) != null;
+                        if (!dlssInside)
+                            _crashReporter.Log($"[BuildCards] DLSS manifest path override for '{game.Name}' leaves the game folder, ignored: '{dlssRelPath}'");
+                        if (dlssInside && Directory.Exists(dlssAbsPath))
                         {
                             string? slAbsPath = null;
                             if (_manifest?.StreamlinePathOverrides?.TryGetValue(game.Name, out var slRelPath) == true
                                 && !string.IsNullOrEmpty(slRelPath))
-                                slAbsPath = Path.Combine(game.InstallPath, slRelPath);
+                            {
+                                if (FileHelper.SafeCombine(game.InstallPath, slRelPath) != null)
+                                    slAbsPath = Path.Combine(game.InstallPath, slRelPath);
+                                else
+                                    _crashReporter.Log($"[BuildCards] Streamline manifest path override for '{game.Name}' leaves the game folder, ignored: '{slRelPath}'");
+                            }
 
                             var overrideResult = _dlssStreamlineService.DetectFromExactPath(dlssAbsPath, slAbsPath);
                             if (overrideResult.HasAny)

@@ -309,8 +309,12 @@ public partial class MainViewModel
                 // Re-fetch Luma mods and detect new ones
                 try
                 {
-                    var lumaTask = _lumaService.FetchCompletedModsAsync();
-                    _lumaMods = await lumaTask;
+                    // Wiki + releases, merged as at startup (wiki alone dropped the release-only mods)
+                    var lumaTask    = _lumaService.FetchCompletedModsAsync();
+                    var lumaRelTask = _lumaService.FetchReleasesModsAsync();
+                    var wikiLuma = await lumaTask;
+                    var relLuma  = await lumaRelTask;
+                    _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
                     var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
                     _crashReporter.Log($"[MainViewModel] Periodic Luma mods check: {currentLumaMods.Count} mods");
                     var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);

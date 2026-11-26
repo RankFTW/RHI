@@ -73,6 +73,17 @@ public partial class MainViewModel
     }
 
     /// <summary>
+    /// Date for a record made for an addon found on disk. The addon may sit in ReShade's AddonPath folder
+    /// rather than the game folder, and Windows reports the year 1601 for a file that isn't there.
+    /// </summary>
+    private static DateTime FoundAddonWriteTimeUtc(string installPath, string addonOnDisk)
+    {
+        var addonFull = Path.Combine(ModInstallService.GetAddonDeployPath(installPath), addonOnDisk);
+        if (!File.Exists(addonFull)) addonFull = Path.Combine(installPath, addonOnDisk);
+        return File.Exists(addonFull) ? File.GetLastWriteTimeUtc(addonFull) : DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// The saved record names an addon that is gone, but the scan found a copy of it under another name
     /// ("renodx-x (1).addon64"): point the record at the file on disk so the version, filename badge and
     /// uninstall use the real file.
@@ -571,7 +582,7 @@ public partial class MainViewModel
                 InstallPath   = scanPath,
                 Store         = game.Source ?? "",
                 AddonFileName = addonOnDisk,
-                InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
+                InstalledAt   = FoundAddonWriteTimeUtc(scanPath, addonOnDisk),
                 SnapshotUrl   = ResolveAddonUrl(addonName!),
             };
             _installer.SaveRecordPublic(record);

@@ -727,7 +727,8 @@ public class ModInstallService : IModInstallService
         lock (SafeJsonFile.LockFor(DbPath))
         {
             var db = LoadDb();
-            db.RemoveAll(r => r.GameName == record.GameName && r.InstallPath == record.InstallPath);
+            db.RemoveAll(r => r.GameName.Equals(record.GameName, StringComparison.OrdinalIgnoreCase)
+                           && r.InstallPath.Equals(record.InstallPath, StringComparison.OrdinalIgnoreCase));
             SaveDb(db);
         }
     }
@@ -752,7 +753,8 @@ public class ModInstallService : IModInstallService
         lock (SafeJsonFile.LockFor(DbPath))
         {
             var db = LoadDb();
-            db.RemoveAll(r => r.GameName == record.GameName && r.InstallPath == record.InstallPath);
+            db.RemoveAll(r => r.GameName.Equals(record.GameName, StringComparison.OrdinalIgnoreCase)
+                           && r.InstallPath.Equals(record.InstallPath, StringComparison.OrdinalIgnoreCase));
             SaveDb(db);
         }
     }
@@ -763,7 +765,7 @@ public class ModInstallService : IModInstallService
         {
             var db = LoadDb();
             var i  = db.FindIndex(r =>
-                r.GameName == record.GameName &&
+                r.GameName.Equals(record.GameName, StringComparison.OrdinalIgnoreCase) &&
                 r.InstallPath.Equals(record.InstallPath, StringComparison.OrdinalIgnoreCase));
             if (i >= 0) db[i] = record; else db.Add(record);
             SaveDb(db);

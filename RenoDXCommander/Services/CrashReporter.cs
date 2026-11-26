@@ -72,7 +72,20 @@ public static class CrashReporter
             Directory.CreateDirectory(LogDir);
             PruneSessionLogs();
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
+            // Never reuse an existing file: with Admin Mode the non-elevated copy and the elevated one it
+            // starts usually share the same second, and the first deletes "its" log when it exits.
+            var basePath = Path.Combine(LogDir, $"session_{timestamp}");
+            var path = basePath + ".txt";
+            for (int n = 2; n < 50; n++)
+            {
+                try
+                {
+                    using (new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read)) { }
+                    break;
+                }
+                catch (IOException) { path = $"{basePath}_{n}.txt"; } // another RHI process has that name
+            }
+            SessionLogPath = path;
             File.WriteAllText(SessionLogPath,
                 $"═══ RHI v{AppVersion} — Session started {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
                 Encoding.UTF8);

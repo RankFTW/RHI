@@ -417,17 +417,21 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         // - Partial (any required path is null) — new DLLs may have appeared
         // - Outdated (cache version < current) — new DLL types were added since entry was created
         EnsureTrustedCacheLoaded();
-        var toRemove = _trustedPathCache!
-            .Where(kvp => kvp.Value.DlssPath == null || kvp.Value.DlssdPath == null
-                       || kvp.Value.DlssgPath == null || kvp.Value.StreamlineFolder == null
-                       || kvp.Value.CacheVersion < CurrentTrustedCacheVersion)
-            .Select(kvp => kvp.Key)
-            .ToList();
+        List<string> toRemove;
+        lock (_trustedLock)
+        {
+            toRemove = _trustedPathCache!
+                .Where(kvp => kvp.Value.DlssPath == null || kvp.Value.DlssdPath == null
+                           || kvp.Value.DlssgPath == null || kvp.Value.StreamlineFolder == null
+                           || kvp.Value.CacheVersion < CurrentTrustedCacheVersion)
+                .Select(kvp => kvp.Key)
+                .ToList();
+            foreach (var key in toRemove)
+                _trustedPathCache!.Remove(key);
+        }
 
         if (toRemove.Count > 0)
         {
-            foreach (var key in toRemove)
-                _trustedPathCache!.Remove(key);
             SaveTrustedCache();
             CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Invalidated {toRemove.Count} partial/outdated trusted entries for re-scan");
         }
@@ -465,7 +469,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(ScanSkipCachePath)!);
-                var json = JsonSerializer.Serialize(_scanSkipCache, new JsonSerializerOptions { WriteIndented = true });
+                // Serialise under the cache's own lock: other threads change it during the parallel scan
+                string json;
+                lock (_scanSkipCacheLock)
+                    json = JsonSerializer.Serialize(_scanSkipCache, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(ScanSkipCachePath, json);
             }
             catch (Exception ex)
@@ -479,6 +486,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     private static readonly string TrustedPathCachePath = Path.Combine(BaseStagingDir, "dlss_trusted_paths.json");
     private Dictionary<string, TrustedPathEntry>? _trustedPathCache;
+    /// <summary>Guards every read and write of _trustedPathCache and its entries (BuildCards uses it from many
+    /// threads). Never held during file reads or writes, or the parallel scan would run one game at a time.</summary>
+    private readonly object _trustedLock = new();
 
     /// <summary>
     /// Attempts a fast detection using trusted cached paths. Returns a valid result if all
@@ -487,8 +497,13 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public DlssDetectionResult? TryFastDetect(string gameName, string installPath, bool anyConfirmCount = false)
     {
         EnsureTrustedCacheLoaded();
-        if (!_trustedPathCache!.TryGetValue(gameName, out var entry) || (!anyConfirmCount && entry.ConfirmCount < SkipThreshold))
-            return null;
+        TrustedPathEntry entry;
+        lock (_trustedLock)
+        {
+            if (!_trustedPathCache!.TryGetValue(gameName, out var live) || (!anyConfirmCount && live.ConfirmCount < SkipThreshold))
+                return null;
+            entry = live.Clone(); // a copy: the file checks below run outside the lock
+        }
 
         // Validate cached paths are inside the game's install tree (not a sibling game)
         var searchRoot = ResolveSearchRoot(installPath);
@@ -601,7 +616,21 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             entry.OriginalStreamlineVersion = result.OriginalStreamlineVersion;
             needsSave = true;
         }
-        if (needsSave) SaveTrustedCache();
+        if (needsSave)
+        {
+            lock (_trustedLock)
+            {
+                if (_trustedPathCache!.TryGetValue(gameName, out var live))
+                {
+                    live.OriginalDlssVersion ??= entry.OriginalDlssVersion;
+                    live.OriginalDlssdVersion ??= entry.OriginalDlssdVersion;
+                    live.OriginalDlssgVersion ??= entry.OriginalDlssgVersion;
+                    live.OriginalDlssnrVersion ??= entry.OriginalDlssnrVersion;
+                    live.OriginalStreamlineVersion ??= entry.OriginalStreamlineVersion;
+                }
+            }
+            SaveTrustedCache();
+        }
 
         return anyValid ? result : null;
     }
@@ -612,45 +641,48 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public void RecordTrustedPath(string gameName, DlssDetectionResult detection)
     {
         EnsureTrustedCacheLoaded();
-        if (_trustedPathCache!.TryGetValue(gameName, out var existing))
+        lock (_trustedLock)
         {
-            if (string.Equals(existing.DlssPath, detection.DlssPath, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(existing.DlssdPath, detection.DlssdPath, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(existing.DlssgPath, detection.DlssgPath, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(existing.DlssnrPath, detection.DlssnrPath, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(existing.StreamlineFolder, detection.StreamlineFolder, StringComparison.OrdinalIgnoreCase))
-                existing.ConfirmCount++;
+            if (_trustedPathCache!.TryGetValue(gameName, out var existing))
+            {
+                if (string.Equals(existing.DlssPath, detection.DlssPath, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.DlssdPath, detection.DlssdPath, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.DlssgPath, detection.DlssgPath, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.DlssnrPath, detection.DlssnrPath, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.StreamlineFolder, detection.StreamlineFolder, StringComparison.OrdinalIgnoreCase))
+                    existing.ConfirmCount++;
+                else
+                {
+                    existing.DlssPath = detection.DlssPath; existing.DlssdPath = detection.DlssdPath;
+                    existing.DlssgPath = detection.DlssgPath; existing.DlssnrPath = detection.DlssnrPath;
+                    existing.StreamlineFolder = detection.StreamlineFolder;
+                    existing.ConfirmCount = 1;
+                }
+                // Always keep CacheVersion current so future version bumps don't force unnecessary rescans
+                existing.CacheVersion = CurrentTrustedCacheVersion;
+                // Update original versions (keep existing if already set, overwrite if detection has them)
+                existing.OriginalDlssVersion ??= detection.OriginalDlssVersion;
+                existing.OriginalDlssdVersion ??= detection.OriginalDlssdVersion;
+                existing.OriginalDlssgVersion ??= detection.OriginalDlssgVersion;
+                existing.OriginalDlssnrVersion ??= detection.OriginalDlssnrVersion;
+                existing.OriginalStreamlineVersion ??= detection.OriginalStreamlineVersion;
+            }
             else
             {
-                existing.DlssPath = detection.DlssPath; existing.DlssdPath = detection.DlssdPath;
-                existing.DlssgPath = detection.DlssgPath; existing.DlssnrPath = detection.DlssnrPath;
-                existing.StreamlineFolder = detection.StreamlineFolder;
-                existing.ConfirmCount = 1;
+                _trustedPathCache[gameName] = new TrustedPathEntry
+                {
+                    DlssPath = detection.DlssPath, DlssdPath = detection.DlssdPath,
+                    DlssgPath = detection.DlssgPath, DlssnrPath = detection.DlssnrPath,
+                    StreamlineFolder = detection.StreamlineFolder,
+                    ConfirmCount = 1,
+                    CacheVersion = CurrentTrustedCacheVersion,
+                    OriginalDlssVersion = detection.OriginalDlssVersion,
+                    OriginalDlssdVersion = detection.OriginalDlssdVersion,
+                    OriginalDlssgVersion = detection.OriginalDlssgVersion,
+                    OriginalDlssnrVersion = detection.OriginalDlssnrVersion,
+                    OriginalStreamlineVersion = detection.OriginalStreamlineVersion,
+                };
             }
-            // Always keep CacheVersion current so future version bumps don't force unnecessary rescans
-            existing.CacheVersion = CurrentTrustedCacheVersion;
-            // Update original versions (keep existing if already set, overwrite if detection has them)
-            existing.OriginalDlssVersion ??= detection.OriginalDlssVersion;
-            existing.OriginalDlssdVersion ??= detection.OriginalDlssdVersion;
-            existing.OriginalDlssgVersion ??= detection.OriginalDlssgVersion;
-            existing.OriginalDlssnrVersion ??= detection.OriginalDlssnrVersion;
-            existing.OriginalStreamlineVersion ??= detection.OriginalStreamlineVersion;
-        }
-        else
-        {
-            _trustedPathCache[gameName] = new TrustedPathEntry
-            {
-                DlssPath = detection.DlssPath, DlssdPath = detection.DlssdPath,
-                DlssgPath = detection.DlssgPath, DlssnrPath = detection.DlssnrPath,
-                StreamlineFolder = detection.StreamlineFolder,
-                ConfirmCount = 1,
-                CacheVersion = CurrentTrustedCacheVersion,
-                OriginalDlssVersion = detection.OriginalDlssVersion,
-                OriginalDlssdVersion = detection.OriginalDlssdVersion,
-                OriginalDlssgVersion = detection.OriginalDlssgVersion,
-                OriginalDlssnrVersion = detection.OriginalDlssnrVersion,
-                OriginalStreamlineVersion = detection.OriginalStreamlineVersion,
-            };
         }
         SaveTrustedCache();
     }
@@ -704,7 +736,8 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         }
         if (hadSkip) SaveScanCache();
         EnsureTrustedCacheLoaded();
-        bool hadTrusted = _trustedPathCache!.Remove(gameName);
+        bool hadTrusted;
+        lock (_trustedLock) hadTrusted = _trustedPathCache!.Remove(gameName);
         if (hadTrusted) SaveTrustedCache();
         CrashReporter.Log($"[DlssStreamlineService.ForgetGame] '{gameName}' — skip entry {(hadSkip ? "removed" : "none")}, trusted paths {(hadTrusted ? "removed" : "none")}");
     }
@@ -713,24 +746,29 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public void InvalidateTrustedPath(string gameName)
     {
         EnsureTrustedCacheLoaded();
-        if (_trustedPathCache!.Remove(gameName)) SaveTrustedCache();
+        bool removed;
+        lock (_trustedLock) removed = _trustedPathCache!.Remove(gameName);
+        if (removed) SaveTrustedCache();
     }
 
     private void EnsureTrustedCacheLoaded()
     {
-        if (_trustedPathCache != null) return;
-        try
+        lock (_trustedLock)
         {
-            if (File.Exists(TrustedPathCachePath))
+            if (_trustedPathCache != null) return;
+            try
             {
-                var json = File.ReadAllText(TrustedPathCachePath);
-                _trustedPathCache = JsonSerializer.Deserialize<Dictionary<string, TrustedPathEntry>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new(StringComparer.OrdinalIgnoreCase);
+                if (File.Exists(TrustedPathCachePath))
+                {
+                    var json = File.ReadAllText(TrustedPathCachePath);
+                    _trustedPathCache = JsonSerializer.Deserialize<Dictionary<string, TrustedPathEntry>>(json,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                        ?? new(StringComparer.OrdinalIgnoreCase);
+                }
+                else _trustedPathCache = new(StringComparer.OrdinalIgnoreCase);
             }
-            else _trustedPathCache = new(StringComparer.OrdinalIgnoreCase);
+            catch { _trustedPathCache = new(StringComparer.OrdinalIgnoreCase); }
         }
-        catch { _trustedPathCache = new(StringComparer.OrdinalIgnoreCase); }
     }
 
     private void SaveTrustedCache()
@@ -740,7 +778,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(TrustedPathCachePath)!);
-                var json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
+                // Serialise under the cache's lock (other threads change it during the parallel scan);
+                // the file write stays outside it.
+                string json;
+                lock (_trustedLock)
+                    json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
                 FileHelper.WriteAllTextAtomic(TrustedPathCachePath, json, "DlssStreamlineService.SaveTrustedCache");
             }
             catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SaveTrustedCache] Failed — {ex.Message}"); }
@@ -935,4 +977,7 @@ public class TrustedPathEntry
     public string? OriginalDlssgVersion { get; set; }
     public string? OriginalDlssnrVersion { get; set; }
     public string? OriginalStreamlineVersion { get; set; }
+
+    /// <summary>A copy to read outside the cache lock.</summary>
+    internal TrustedPathEntry Clone() => (TrustedPathEntry)MemberwiseClone();
 }

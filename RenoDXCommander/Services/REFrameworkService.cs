@@ -47,6 +47,8 @@ public class REFrameworkService : IREFrameworkService
 
     /// <summary>Session-level cache for the latest release tag to avoid repeated API calls.</summary>
     private string? _cachedLatestVersion;
+    /// <summary>When the cached tag was looked up. It is reused for 5 minutes only, so RHI sitting in the tray still sees new releases.</summary>
+    private DateTime _cachedLatestAtUtc;
 
     public REFrameworkService(HttpClient http, GitHubETagCache etagCache)
     {
@@ -182,8 +184,8 @@ public class REFrameworkService : IREFrameworkService
 
     public async Task<string?> GetLatestVersionAsync()
     {
-        // Return session-cached value if available
-        if (_cachedLatestVersion != null)
+        // Reuse a recent lookup (the check and the install in one pass share it)
+        if (_cachedLatestVersion != null && DateTime.UtcNow - _cachedLatestAtUtc < TimeSpan.FromMinutes(5))
             return _cachedLatestVersion;
 
         // The web page redirect costs no API quota (60/hour without a token) and is the same
@@ -193,6 +195,7 @@ public class REFrameworkService : IREFrameworkService
         if (fromRedirect != null)
         {
             _cachedLatestVersion = fromRedirect;
+            _cachedLatestAtUtc = DateTime.UtcNow;
             CrashReporter.Log($"[REFrameworkService.GetLatestVersionAsync] Latest tag (web): {_cachedLatestVersion}");
             return _cachedLatestVersion;
         }
@@ -217,6 +220,7 @@ public class REFrameworkService : IREFrameworkService
                 if (first.TryGetProperty("tag_name", out var tagProp))
                 {
                     _cachedLatestVersion = ExtractVersionNumber(tagProp.GetString());
+                    _cachedLatestAtUtc = DateTime.UtcNow;
                     CrashReporter.Log($"[REFrameworkService.GetLatestVersionAsync] Latest tag: {_cachedLatestVersion}");
                     return _cachedLatestVersion;
                 }
