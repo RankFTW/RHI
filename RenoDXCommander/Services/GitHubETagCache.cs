@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.IO.Compression;
+using System.Text;
 using System.Net;
 using System.Net.Http.Headers;
 
@@ -218,6 +220,9 @@ public class GitHubETagCache
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", "1.0"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        // Ask for gzip (release lists are ~10x smaller). Only here: the shared client must not decompress
+        // automatically, because several size checks rely on Content-Length.
+        request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
         // The GitHub token (if any) is attached by GitHubTokenHandler for GitHub hosts only.
 
@@ -229,7 +234,7 @@ public class GitHubETagCache
 
         // Add cached ETag if we have one
         if (_cache.TryGetValue(url, out var cached))
-            request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(cached.etag));
+            request.Headers.IfNoneMatch.Add(ParseETag(cached.etag));
 
         // API responses are small: give up after 30 s instead of the shared client's 10-minute
         // download timeout, so one stuck call can't hold up startup checks.
@@ -306,10 +311,11 @@ public class GitHubETagCache
             return null; // Let caller handle the error
         }
 
-        var body = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
+        var body = await ReadBodyAsync(response, timeout.Token).ConfigureAwait(false);
 
         // Cache the ETag and body for next time
-        var etag = response.Headers.ETag?.Tag;
+        // Kept whole, W/ included: GitHub marks compressed answers' ETags weak, and the next request must send it back as is
+        var etag = response.Headers.ETag?.ToString();
         if (etag != null)
         {
             _cache[url] = (etag, body);
@@ -319,6 +325,21 @@ public class GitHubETagCache
         }
 
         return body;
+    }
+
+    /// <summary>A saved ETag back into a header value: whole tags (<c>W/"…"</c> or <c>"…"</c>) as saved, older entries (bare quoted tag) as strong.</summary>
+    internal static EntityTagHeaderValue ParseETag(string saved)
+        => EntityTagHeaderValue.TryParse(saved, out var tag) ? tag : new EntityTagHeaderValue(saved);
+
+    /// <summary>The answer as text, decompressing it when GitHub sent it gzipped.</summary>
+    internal static async Task<string> ReadBodyAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (!response.Content.Headers.ContentEncoding.Contains("gzip", StringComparer.OrdinalIgnoreCase))
+            return await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        await using var raw = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        await using var gz = new GZipStream(raw, CompressionMode.Decompress);
+        using var reader = new StreamReader(gz, Encoding.UTF8);
+        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
     }
 
     private static string TruncateUrl(string url) => url.Length > 80 ? url[..80] + "..." : url;

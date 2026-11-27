@@ -150,6 +150,7 @@ fileMatchPattern: "*Install*,*Update*,*Orchestration*"
 - Early return paths in `DeployAddonsForCard` must also call the INI method
 
 ## Update Check Logic
+- **GitHub answers are gzipped** (Nov 2026 audit N3): `GitHubETagCache.FetchAsync` sends `Accept-Encoding: gzip` and decompresses in `ReadBodyAsync`, for its own requests only (the shared client must not decompress: size checks rely on `Content-Length`). ETags are saved whole with `W/` (GitHub marks compressed answers weak) and sent back through `ParseETag`, or 304s stop matching.
 
 ### RenoDX Updates
 - Content-Length comparison for standard addons
