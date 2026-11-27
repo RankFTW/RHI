@@ -367,7 +367,7 @@ public partial class MainViewModel
     /// addon scanning, PCGW/Nexus/Lyall lookups, and wiki matching.
     /// Phase 2's MergeCards fills in the remaining data.
     /// </summary>
-    private Task LoadCacheAndBuildCardsAsync(SavedGameLibrary savedLib)
+    private async Task LoadCacheAndBuildCardsAsync(SavedGameLibrary savedLib)
     {
         _crashReporter.Log("[MainViewModel.LoadCacheAndBuildCardsAsync] Starting cache-based card load...");
 
@@ -478,6 +478,13 @@ public partial class MainViewModel
 
         // Check Vulkan layer status once before the loop (avoid registry reads per-card)
         var vulkanLayerInstalled = VulkanLayerService.IsLayerInstalled();
+
+        // Audit D5: read the DLSS / Streamline file versions and Unreal versions the loop needs on a background
+        // thread first (they were ~0.35 s and up to 0.25 s of UI-thread time). Cards are still created here on
+        // the UI thread; the loop only looks the values up and reads anything not prefetched itself.
+        long prefetchStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        var prefetch = await PrefetchCacheFileInfoAsync(savedLib, allGames);
+        long prefetchTicks = System.Diagnostics.Stopwatch.GetTimestamp() - prefetchStart;
 
         // Audit P9(a): where the card loop's time goes (measurement only; feeds the D5 decision)
         long loopStart = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -607,7 +614,7 @@ public partial class MainViewModel
             long engineHintStart = System.Diagnostics.Stopwatch.GetTimestamp();
             var engineHint = engineOverrideLabel != null
                 ? engineOverrideLabel
-                : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, installPath)
+                : engine == EngineType.Unreal       ? prefetch.EngineHint(installPath)
                 : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
                 : engine == EngineType.Unity        ? "Unity"
                 : engine == EngineType.REEngine     ? "RE Engine" : "";
@@ -882,21 +889,21 @@ public partial class MainViewModel
                 {
                     var commonPath     = Path.Combine(dlssCache.StreamlineFolder, "sl.common.dll");
                     var interposerPath = Path.Combine(dlssCache.StreamlineFolder, "sl.interposer.dll");
-                    detection.StreamlineInterposerPath = File.Exists(commonPath) ? commonPath
-                        : File.Exists(interposerPath) ? interposerPath : null;
+                    detection.StreamlineInterposerPath = prefetch.Exists(commonPath) ? commonPath
+                        : prefetch.Exists(interposerPath) ? interposerPath : null;
                 }
 
                 // Read current versions from the cached paths (fast File.Exists + FileVersionInfo)
-                if (detection.DlssPath != null && File.Exists(detection.DlssPath))
-                    detection.DlssVersion = _dlssStreamlineService.GetFileVersion(detection.DlssPath);
-                if (detection.DlssdPath != null && File.Exists(detection.DlssdPath))
-                    detection.DlssdVersion = _dlssStreamlineService.GetFileVersion(detection.DlssdPath);
-                if (detection.DlssgPath != null && File.Exists(detection.DlssgPath))
-                    detection.DlssgVersion = _dlssStreamlineService.GetFileVersion(detection.DlssgPath);
-                if (detection.DlssnrPath != null && File.Exists(detection.DlssnrPath))
-                    detection.DlssnrVersion = _dlssStreamlineService.GetFileVersion(DlssNrCostScalerService.ResolveRealNrDllPath(detection.DlssnrPath)); // real DLL behind an NR Cost Scaler proxy
-                if (detection.StreamlineInterposerPath != null && File.Exists(detection.StreamlineInterposerPath))
-                    detection.StreamlineVersion = _dlssStreamlineService.GetFileVersion(detection.StreamlineInterposerPath);
+                if (detection.DlssPath != null)
+                    detection.DlssVersion = prefetch.Version(detection.DlssPath);
+                if (detection.DlssdPath != null)
+                    detection.DlssdVersion = prefetch.Version(detection.DlssdPath);
+                if (detection.DlssgPath != null)
+                    detection.DlssgVersion = prefetch.Version(detection.DlssgPath);
+                if (detection.DlssnrPath != null)
+                    detection.DlssnrVersion = prefetch.NrVersion(detection.DlssnrPath); // real DLL behind an NR Cost Scaler proxy
+                if (detection.StreamlineInterposerPath != null)
+                    detection.StreamlineVersion = prefetch.Version(detection.StreamlineInterposerPath);
 
                 if (detection.HasAny)
                     newCard.ApplyDlssDetection(detection);
@@ -1155,7 +1162,8 @@ public partial class MainViewModel
         long loopTicks = System.Diagnostics.Stopwatch.GetTimestamp() - loopStart;
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Lightweight card build complete: {_allCards.Count} cards — "
             + $"loop {Ms(loopTicks)} ms: DLSS versions {Ms(dlssTicks)} ms, backup state {Ms(backupTicks)} ms, "
-            + $"engine hint {Ms(engineHintTicks)} ms, other {Ms(loopTicks - dlssTicks - backupTicks - engineHintTicks)} ms");
+            + $"engine hint {Ms(engineHintTicks)} ms, other {Ms(loopTicks - dlssTicks - backupTicks - engineHintTicks)} ms; "
+            + $"prefetch {Ms(prefetchTicks)} ms off the UI thread ({prefetch.Summary})");
 
         // 10. Apply card overrides and manifest card overrides
         //     (manifest is null during cache phase — ApplyManifestCardOverrides is a no-op with null)
@@ -1222,8 +1230,6 @@ public partial class MainViewModel
         SubStatusText = "";
 
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Cache phase complete — {_allCards.Count} cards displayed");
-
-        return Task.CompletedTask;
     }
 
 }
