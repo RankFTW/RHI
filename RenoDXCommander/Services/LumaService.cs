@@ -1045,8 +1045,10 @@ public class LumaService : ILumaService
 
     // ── Releases API — asset discovery ───────────────────────────────────────────
 
+    // Only the newest release is read. One, not five: the list answer is ~1.2 MB for five. Not /releases/latest,
+    // which skips pre-releases and could return a different release.
     private const string LumaReleasesListApi =
-        "https://api.github.com/repos/Filoppi/Luma-Framework/releases?per_page=5";
+        "https://api.github.com/repos/Filoppi/Luma-Framework/releases?per_page=1";
 
     // Generics and dev tools — not real game mods, skip them
     private static readonly HashSet<string> ReleasesApiExclusions = new(StringComparer.OrdinalIgnoreCase)
