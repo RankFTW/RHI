@@ -54,6 +54,15 @@ public interface IOptiScalerService
     Task<bool> CheckOptiPatcherUpdateAsync();
 
     /// <summary>
+    /// Copies the staged OptiPatcher into games that have it where their copy differs from staging
+    /// (skips hidden games and games where it was removed). Returns how many were updated.
+    /// </summary>
+    int SyncOptiPatcherToGames();
+
+    /// <summary>Install folders of hidden games (left alone by the OptiPatcher sync). Set by MainViewModel.</summary>
+    Func<IReadOnlyCollection<string>?>? HiddenGamePathsProvider { get; set; }
+
+    /// <summary>
     /// Moves OptiPatcher.asi from &lt;game&gt;\plugins into OptiScaler\plugins for every game with an
     /// OptiScaler 10 build (nightly, F5, DLSS NR), where older RHI versions put it in the wrong place.
     /// </summary>

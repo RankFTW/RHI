@@ -255,6 +255,23 @@ public partial class MainViewModel
 
     // ── OptiScaler Nightly cleanup ────────────────────────────────────────────
 
+    /// <summary>Install folders of hidden games (background syncs leave them alone). Snapshot; safe off the UI thread.</summary>
+    internal IReadOnlyCollection<string>? HiddenInstallPaths()
+    {
+        try
+        {
+            return _allCards.ToArray()
+                .Where(c => c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))
+                .Select(c => c.InstallPath!)
+                .ToList();
+        }
+        catch (InvalidOperationException ex) // list changed while copying
+        {
+            _crashReporter.Log($"[MainViewModel.HiddenInstallPaths] {ex.Message}");
+            return null;
+        }
+    }
+
     /// <summary>
     /// The nightly builds to keep when old ones are removed: every build a game is pinned to (its
     /// OptiScaler ⚙, Control's UE fix). Null when Settings › Remove old Nightly builds is off.

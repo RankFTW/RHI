@@ -283,6 +283,11 @@ public partial class MainViewModel
                         _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] OptiPatcher update available — downloading and auto-deploying");
                         await _optiScalerService.EnsureOptiPatcherStagingAsync().ConfigureAwait(false);
                     }
+                    else
+                    {
+                        // No new build: still bring games whose copy is out of date (game was running last time)
+                        _optiScalerService.SyncOptiPatcherToGames();
+                    }
                 }
                 catch (Exception ex)
                 {
