@@ -414,15 +414,9 @@ public static class DisplayModeItems
         return null;
     }
 
-    /// <summary>Every reshade*.ini in the game folder (keys go in all of them, like the ReShade ⚙).</summary>
-    private static IEnumerable<string> ReShadeInis(DisplayModeContext c)
-    {
-        if (!Directory.Exists(c.InstallPath)) return Array.Empty<string>();
-        return Directory.EnumerateFiles(c.InstallPath, "reshade*.ini")
-            .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                     && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-            .ToList();
-    }
+    /// <summary>reshade.ini and ReShadeN.ini in the game folder (keys go in all of them, like the ReShade ⚙); never ReShadePreset.ini.</summary>
+    private static IEnumerable<string> ReShadeInis(DisplayModeContext c) =>
+        AuxInstallService.ReShadeConfigFiles(c.InstallPath).ToList();
 
     /// <summary>RE Framework games also keep a relimiter.ini in _storage_ (same as the Settings "write to all" button).</summary>
     private static IEnumerable<string> ReLimiterExtraInis(DisplayModeContext c)

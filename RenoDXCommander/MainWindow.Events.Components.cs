@@ -168,10 +168,8 @@ public sealed partial class MainWindow
                 {
                     try
                     {
-                        var iniFiles = Directory.EnumerateFiles(gamePath, "reshade*.ini")
-                            .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                                     && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-                            .ToList();
+                        // reshade.ini + ReShadeN.ini only, never ReShadePreset.ini
+                        var iniFiles = AuxInstallService.ReShadeConfigFiles(gamePath).ToList();
                         foreach (var file in iniFiles)
                             applyToIni(file, hotkey);
                         return (iniFiles.Count, (string?)null);

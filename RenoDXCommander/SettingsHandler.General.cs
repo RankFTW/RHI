@@ -220,10 +220,7 @@ public partial class SettingsHandler
                     if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
                     // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
-                    var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                        .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                                 && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+                    var iniFiles = AuxInstallService.ReShadeConfigFiles(card.InstallPath).ToList(); // never ReShadePreset.ini
 
                     if (iniFiles.Count == 0) continue;
 
@@ -346,10 +343,7 @@ public partial class SettingsHandler
                     if (card.IsHidden) continue; // hidden games are left alone
                     if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
-                    var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                        .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                                 && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+                    var iniFiles = AuxInstallService.ReShadeConfigFiles(card.InstallPath).ToList(); // never ReShadePreset.ini
 
                     if (iniFiles.Count == 0) continue;
 
