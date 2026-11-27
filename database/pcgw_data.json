@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56169,
-  "generated": "2026-11-27T21:17:47Z",
+  "generated": "2026-11-27T23:17:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -23721,6 +23721,7 @@
     },
     "Bread & Fred": {
       "steam_appid": 1607680,
+      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\SandCastles\\Bread_Fred\\",
       "engine": "Unity"
     },
