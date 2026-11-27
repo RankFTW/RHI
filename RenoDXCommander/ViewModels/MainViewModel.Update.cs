@@ -41,10 +41,6 @@ public partial class MainViewModel
     /// </summary>
     private int _consecutiveProbeFailures;
 
-    /// <summary>Set to true by dev test buttons (IDLE, PEGGED, Native Block, Known Sig) so the
-    /// dump path writes test_*.dmp to a separate folder, never affecting real freeze dumps.</summary>
-    internal bool IsTestFreezeActive;
-
     /// <summary>Logs process resource counters — private bytes, GC heap, handles, GDI/USER objects, system memory.</summary>
     private static void LogResourceCounters(string context)
     {

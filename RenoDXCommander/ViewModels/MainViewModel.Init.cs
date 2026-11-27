@@ -259,23 +259,6 @@ public partial class MainViewModel
             try { System.IO.File.Delete(uncleanMarkerPath); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeCoreAsync] Failed to delete unclean-restart marker — {ex.Message}"); }
         }
 
-        // Check for pending-dump marker — written by the dump task before MiniDumpWriteDump starts.
-        // If present, the previous session froze and wrote (or attempted) a dump. Log path and size.
-        var pendingDumpMarker = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "rhi_pending_dump");
-        if (System.IO.File.Exists(pendingDumpMarker))
-        {
-            string dumpInfo = "";
-            try { dumpInfo = System.IO.File.ReadAllText(pendingDumpMarker).Trim(); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeCoreAsync] Failed to read pending-dump marker — {ex.Message}"); }
-            // dumpInfo is either "path" (write started but log line may be lost) or "path|SizeMB" (write confirmed)
-            var dumpPath = dumpInfo.Contains('|') ? dumpInfo.Split('|')[0] : dumpInfo;
-            var dumpSize = dumpInfo.Contains('|') ? dumpInfo.Split('|')[1] : "size unknown";
-            bool dumpExists = !string.IsNullOrEmpty(dumpPath) && System.IO.File.Exists(dumpPath);
-            _crashReporter.Log($"[MainViewModel.InitializeAsync] Previous session freeze dump: '{System.IO.Path.GetFileName(dumpPath)}' ({dumpSize}) — {(dumpExists ? "EXISTS on disk" : "NOT FOUND on disk")}");
-            try { System.IO.File.Delete(pendingDumpMarker); } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeCoreAsync] Failed to delete pending-dump marker — {ex.Message}"); }
-        }
-
         // Sync global peak nits setting for INI deploys
         AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
         AuxInstallService.GlobalPeakNitsEnabled = _settingsViewModel.PeakNitsEnabled;

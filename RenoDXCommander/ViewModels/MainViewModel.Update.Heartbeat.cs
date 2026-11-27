@@ -393,68 +393,11 @@ public partial class MainViewModel
                     // Native stack capture
                     _ = Task.Run(CaptureNativeUiThreadStack);
 
-                    // ── 5. Minidump — dev freeze-test buttons only, ~2s after detection ──
+                    // ── 5. No minidump ──
                     // Real freezes never write a dump: a full-memory dump (1–1.3 GB) pages the whole
                     // process back in and turned short stalls into minute-long hangs while a game was
-                    // using most of the RAM (Phantom Blade Zero, Nov 2026). Test freezes write
-                    // test_*.dmp to test_dumps\. dumpCompleted is signalled so the restart task can wait.
-                    if (DevUnlockService.IsUnlocked && IsTestFreezeActive)
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await Task.Delay(2_000).ConfigureAwait(false);
-                            if (_backgroundStopped) return;
-
-                            // Re-probe to confirm still frozen
-                            var reProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                            if (DispatcherQueue?.TryEnqueue(() => reProbe.TrySetResult(true)) != true) return;
-                            bool stillFrozen;
-                            try   { await reProbe.Task.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false); stillFrozen = false; }
-                            catch (TimeoutException) { stillFrozen = true; }
-                            if (!stillFrozen) { CrashReporter.LogSync("[Heartbeat.Dump] UI recovered before 2s — skipping minidump"); return; }
-
-                            var dumpTs = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-                            var dumpDir = System.IO.Path.Combine(
-                                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "test_dumps");
-                            System.IO.Directory.CreateDirectory(dumpDir);
-                            var dumpPath = System.IO.Path.Combine(dumpDir, $"test_{dumpTs}.dmp");
-                            CrashReporter.LogSync($"[Heartbeat.Dump] Writing TEST minidump to '{dumpPath}'...");
-
-                            var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
-                            var pid = (uint)Environment.ProcessId;
-                            const NativeInterop.PssCaptureFlags captureFlags =
-                                NativeInterop.PssCaptureFlags.PSS_CAPTURE_VA_CLONE         |
-                                NativeInterop.PssCaptureFlags.PSS_CAPTURE_HANDLES          |
-                                NativeInterop.PssCaptureFlags.PSS_CAPTURE_HANDLE_BASIC_INFORMATION |
-                                NativeInterop.PssCaptureFlags.PSS_CAPTURE_THREADS          |
-                                NativeInterop.PssCaptureFlags.PSS_CAPTURE_THREAD_CONTEXT   |
-                                NativeInterop.PssCaptureFlags.PSS_CREATE_BREAKAWAY_OPTIONAL;
-                            IntPtr snapshotHandle = IntPtr.Zero;
-                            uint pssErr = NativeInterop.PssCaptureSnapshot(hProcess, captureFlags, NativeInterop.CONTEXT_ALL_X64, out snapshotHandle);
-                            if (pssErr != 0) { CrashReporter.LogSync($"[Heartbeat.Dump] PssCaptureSnapshot failed ({pssErr}) — falling back to direct dump"); snapshotHandle = IntPtr.Zero; }
-                            try
-                            {
-                                using var fs = new System.IO.FileStream(dumpPath, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
-                                var dumpHandle = snapshotHandle != IntPtr.Zero ? snapshotHandle : hProcess;
-                                bool ok = NativeInterop.MiniDumpWriteDump(dumpHandle, pid, fs.SafeFileHandle.DangerousGetHandle(),
-                                    NativeInterop.MiniDumpType.MiniDumpWithFullMemory | NativeInterop.MiniDumpType.MiniDumpWithThreadInfo,
-                                    IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-                                if (ok)
-                                {
-                                    var sizeMb = new System.IO.FileInfo(dumpPath).Length / 1024 / 1024;
-                                    CrashReporter.LogSync($"[Heartbeat.Dump] Test minidump written ({sizeMb} MB) — '{dumpPath}'");
-                                }
-                                else
-                                    CrashReporter.LogSync($"[Heartbeat.Dump] MiniDumpWriteDump failed — Win32 error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
-                            }
-                            finally { if (snapshotHandle != IntPtr.Zero) NativeInterop.PssFreeSnapshot(hProcess, snapshotHandle); }
-                        }
-                        catch (Exception ex) { CrashReporter.LogSync($"[Heartbeat.Dump] Minidump failed: {ex.GetType().Name}: {ex.Message}"); }
-                        finally { dumpCompleted.TrySetResult(true); }
-                    });
-                    else
-                        dumpCompleted.TrySetResult(true); // no dump for real freezes — signal immediately so restart doesn't wait
+                    // using most of the RAM (Phantom Blade Zero, Nov 2026). Signal now so restart doesn't wait.
+                    dumpCompleted.TrySetResult(true);
 
                 } // end once-per-stall diagnostics gate
                 else
