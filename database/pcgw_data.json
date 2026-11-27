@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56167,
-  "generated": "2026-11-27T15:17:45Z",
+  "generated": "2026-11-27T17:17:46Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -902,7 +902,7 @@
     },
     "2XKO": {
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Lion\\Saved\\Config\\",
+      "config_path": "%LOCALAPPDATA%\\Lion\\Saved\\Config",
       "engine": "Unreal Engine 5"
     },
     "2XL Supercross": {
