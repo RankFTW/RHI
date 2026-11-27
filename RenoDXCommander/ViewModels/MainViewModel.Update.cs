@@ -427,6 +427,9 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Custom ReShade hash check failed — {ex.Message}"); }
 
+                // Custom DLLs: newer files from Custom\DLLs\ over RHI's copies (the watcher normally gets there first)
+                RedeployCustomDlls("MainViewModel.Periodic");
+
                 // Silent component auto-update (runs after update check flags pending updates)
                 try { _autoUpdateService.TriggerAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic component auto-update trigger failed — {ex.Message}"); }

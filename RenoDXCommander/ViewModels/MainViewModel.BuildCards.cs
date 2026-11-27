@@ -679,12 +679,14 @@ public partial class MainViewModel
 
             if (rsRec == null)
             {
+                // Custom DLLs the user installed through RHI are never ReShade (a ReShade fork dropped in Custom\DLLs\ would match)
+                var customDllNames = CustomDllService.OwnersInFolder(installPath);
                 // dxgi.dll — only attribute to ReShade if positively identified as ReShade
                 // AND not already claimed by DC
                 var dxgiPath = Path.Combine(installPath, AuxInstallService.RsNormalName);
                 bool dxgiClaimedByDc = dcClaimedFileName != null &&
                     dcClaimedFileName.Equals(AuxInstallService.RsNormalName, StringComparison.OrdinalIgnoreCase);
-                if (!dxgiClaimedByDc && File.Exists(dxgiPath) && AuxInstallService.IsReShadeFile(dxgiPath))
+                if (!dxgiClaimedByDc && !customDllNames.ContainsKey(AuxInstallService.RsNormalName) && File.Exists(dxgiPath) && AuxInstallService.IsReShadeFile(dxgiPath))
                 {
                     rsRec = new AuxInstalledRecord
                     {
@@ -715,6 +717,9 @@ public partial class MainViewModel
                             // Skip filenames claimed by DC via override
                             if (dcClaimedFileName != null &&
                                 proxyName.Equals(dcClaimedFileName, StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            if (customDllNames.ContainsKey(proxyName))
                                 continue;
 
                             var candidatePath = Path.Combine(installPath, proxyName);

@@ -199,6 +199,14 @@ public partial class OptiScalerService
 
             CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: effective DLL name = {effectiveDllName}");
 
+            // A custom DLL the user installed through RHI holds that name: never overwrite it
+            if (CustomDllService.OwnersInFolder(card.InstallPath).TryGetValue(effectiveDllName, out var customOwner))
+            {
+                CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: '{effectiveDllName}' is used by {customOwner} — aborting");
+                progress?.Report(($"{effectiveDllName} is used by {customOwner}. Pick another DLL name for OptiScaler in its settings, or remove the custom DLL first.", 0));
+                return null;
+            }
+
             progress?.Report(("Copying OptiScaler files...", 20));
 
             // ── 4. ReShade coexistence — rename RS DLL to ReShade64.dll BEFORE deploying files ──
@@ -225,7 +233,8 @@ public partial class OptiScalerService
                     foreach (var dllName in DllOverrideConstants.CommonDllNames)
                     {
                         var candidatePath = Path.Combine(card.InstallPath, dllName);
-                        if (File.Exists(candidatePath) && _auxInstaller is IAuxFileService auxFile && auxFile.IsReShadeFile(candidatePath))
+                        if (File.Exists(candidatePath) && !CustomDllService.IsCustomDllFile(card.InstallPath, dllName)
+                            && _auxInstaller is IAuxFileService auxFile && auxFile.IsReShadeFile(candidatePath))
                         {
                             rsFilePath = candidatePath;
                             break;
@@ -380,6 +389,13 @@ public partial class OptiScalerService
                 // Skip OptiScaler.ini here — it's handled separately in step 5 with INI seeding logic
                 if (fileName.Equals(IniFileName, StringComparison.OrdinalIgnoreCase))
                     continue;
+
+                // Never copy over a custom DLL the user installed through RHI
+                if (CustomDllService.IsCustomDllFile(card.InstallPath, Path.GetFileName(destPath)))
+                {
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] Skipped {fileName}: '{Path.GetFileName(destPath)}' is a custom DLL");
+                    continue;
+                }
 
                 // Back up any game-original file at this path before overwriting.
                 // Games like Stalker 2 and The First Berserker ship companion DLLs
@@ -2215,11 +2231,14 @@ public partial class OptiScalerService
         try
         {
             if (!Directory.Exists(installPath)) return null;
+            // Custom DLLs the user installed through RHI are never OptiScaler (even a custom OptiScaler build)
+            var customDlls = CustomDllService.OwnersInFolder(installPath);
 
             // Fast path: only check the known DLL names that OptiScaler can be installed as.
             // This avoids scanning every DLL in large game folders (e.g. Alan Wake 2 has hundreds).
             foreach (var dllName in SupportedDllNames)
             {
+                if (customDlls.ContainsKey(dllName)) continue;
                 var candidatePath = Path.Combine(installPath, dllName);
                 if (File.Exists(candidatePath) && IsOptiScalerFile(candidatePath))
                     return dllName;
@@ -2243,6 +2262,7 @@ public partial class OptiScalerService
                 // DLLs that say they are another mod (ReShade, ASI Loader, RTX Encore, ...)
                 foreach (var dllName in SupportedDllNames)
                 {
+                    if (customDlls.ContainsKey(dllName)) continue;
                     var candidatePath = Path.Combine(installPath, dllName);
                     if (!File.Exists(candidatePath)) continue;
                     var other = OtherProxyProduct(candidatePath);

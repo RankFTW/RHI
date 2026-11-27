@@ -66,6 +66,11 @@ public partial class DetailPanelBuilder
         }
 
         if (!string.IsNullOrEmpty(rsName) && dcName.Equals(rsName, StringComparison.OrdinalIgnoreCase)) return false;
+        if (CustomDllService.IsCustomDllFile(card.InstallPath, dcName))
+        {
+            CrashReporter.Log($"[DetailPanelBuilder] Blocking DC DLL selection '{dcName}' — a custom DLL uses it in '{capturedName}'.");
+            return false;
+        }
 
         // Another program's file with that name: ask first
         if (!await _dllOverrideService.CheckDcForeignDllConflictAsync(card, dcName)) return false;
@@ -134,6 +139,11 @@ public partial class DetailPanelBuilder
          || (!string.IsNullOrEmpty(effectiveDcName) && osName.Equals(effectiveDcName, StringComparison.OrdinalIgnoreCase)))
         {
             CrashReporter.Log($"[DetailPanelBuilder] Blocking OS DLL selection '{osName}' — collides with RS/DC name for '{capturedName}'.");
+            return false;
+        }
+        if (CustomDllService.IsCustomDllFile(card.InstallPath, osName))
+        {
+            CrashReporter.Log($"[DetailPanelBuilder] Blocking OS DLL selection '{osName}' — a custom DLL uses it in '{capturedName}'.");
             return false;
         }
 

@@ -440,7 +440,7 @@ public class UltimateAsiLoaderService
     /// <summary>
     /// DLL names held by RHI components that track the name themselves and can't be chained as
     /// &lt;name&gt;Hooked.dll: ReShade, OptiScaler, Display Commander, RE Framework (dinput8.dll),
-    /// DXVK (its game-root DLLs) and dgVoodoo2 (d3d9.dll, with dgVoodoo.conf beside it).
+    /// DXVK (its game-root DLLs), dgVoodoo2 (d3d9.dll, with dgVoodoo.conf beside it) and custom DLLs.
     /// ASI Loader must never replace or chain these, and a component must not take one of them.
     /// </summary>
     public static Dictionary<string, string> FixedRhiDllOwners(GameCardViewModel card)
@@ -459,6 +459,8 @@ public class UltimateAsiLoaderService
         if (!string.IsNullOrEmpty(card.InstallPath)
             && File.Exists(Path.Combine(card.InstallPath, DgVoodooService.ConfFile)))
             Add(DgVoodooService.D3D9Dll, "dgVoodoo2");
+        // Custom DLLs the user installed through RHI (rhi_install.txt "CustomDll:<source>")
+        foreach (var (name, owner) in CustomDllService.OwnersInFolder(card.InstallPath)) Add(name, owner);
         return owners;
     }
 

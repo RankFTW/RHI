@@ -20,6 +20,7 @@ public partial class DetailPanelBuilder
         public const string UniversalMfg = "UniversalMfg";
         public const string MfgUnlock    = "MfgUnlock";
         public const string Dlssg2030    = "Dlssg2030";
+        public const string CustomDll    = "CustomDll";
     }
 
     /// <summary>

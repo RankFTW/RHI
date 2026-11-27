@@ -448,6 +448,18 @@ public partial class DetailPanelBuilder
         var manifest    = _window.ViewModel.Manifest;
         if (string.IsNullOrEmpty(installPath) || manifest?.DgVoodooVersions == null || manifest.DgVoodooVersions.Count == 0)
             return "No dgVoodoo2 versions are listed in the online data. Try Refresh later.";
+        // A custom DLL the user installed through RHI holds d3d9.dll: never overwrite it
+        if (CustomDllService.OwnersInFolder(installPath).TryGetValue(DgVoodooService.D3D9Dll, out var customOwner))
+        {
+            var why = $"{DgVoodooService.D3D9Dll} is used by {customOwner} in this game. Remove the custom DLL first, then install dgVoodoo2.";
+            CrashReporter.Log($"[BuildDgVoodooRow] '{gameName}': {why}");
+            if (installBtn != null)
+            {
+                installBtn.Content = "d3d9.dll in use";
+                ToolTipService.SetToolTip(installBtn, why);
+            }
+            return why;
+        }
 
         if (installBtn != null)
         {
@@ -478,7 +490,8 @@ public partial class DetailPanelBuilder
                 // as d3d9.dll.original. Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
                 // Do NOT move d3d9.dll (that's now dgVoodoo2).
                 if (card.IsRsInstalled
-                    && card.RsInstalledFile?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true)
+                    && card.RsInstalledFile?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true
+                    && !CustomDllService.IsCustomDllFile(installPath, "dxgi.dll")) // never over a custom DLL
                 {
                     CrashReporter.Log($"[BuildDgVoodooRow] Copying ReShade from D3D9.dll.original → dxgi.dll for dgVoodoo2 coexistence on '{gameName}'");
                     try

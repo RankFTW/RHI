@@ -125,6 +125,7 @@ public partial class App : Application
         services.AddSingleton<DgVoodooService>();
         services.AddSingleton<Renodx5AddonService>();
         services.AddSingleton<CustomReShadeHashService>();
+        services.AddSingleton<ICustomDllService>(_ => new CustomDllService());
         services.AddSingleton<SeenWikiModsService>();
         services.AddSingleton<SeenUltraPlusModsService>();
         services.AddSingleton<SeenLumaModsService>();

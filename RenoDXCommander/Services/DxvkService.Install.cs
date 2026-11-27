@@ -76,6 +76,17 @@ public partial class DxvkService
                 return false;
             }
 
+            // A custom DLL the user installed through RHI holds one of DXVK's names: never overwrite it
+            var customHeld = CustomDllService.OwnersInFolder(card.InstallPath);
+            var heldName = (IsProxyModeApi(card.GraphicsApi) ? dllNames.Append("d3d9.dll") : dllNames).FirstOrDefault(customHeld.ContainsKey);
+            if (heldName != null)
+            {
+                var msg = $"{heldName} is used by {customHeld[heldName]} in this game. Remove the custom DLL first, then install DXVK.";
+                CrashReporter.Log($"[DxvkService.InstallAsync] {card.GameName}: {msg}");
+                progress?.Report((msg, 0));
+                return false;
+            }
+
             // ── 4. Validate DLL architecture matches game bitness ────────
             var sampleDll = Path.Combine(StagingDir, archFolder, dllNames[0]);
             if (!File.Exists(sampleDll))
@@ -931,8 +942,10 @@ public partial class DxvkService
                 candidateDlls = new List<string> { "d3d8.dll", "d3d9.dll", "d3d10core.dll", "d3d11.dll", "dxgi.dll" };
             }
 
+            var customDlls = CustomDllService.OwnersInFolder(installPath); // a custom DLL is never DXVK's
             foreach (var dll in candidateDlls)
             {
+                if (customDlls.ContainsKey(dll)) continue;
                 var dllPath = Path.Combine(installPath, dll);
                 if (File.Exists(dllPath) && IsDxvkFile(dllPath))
                 {

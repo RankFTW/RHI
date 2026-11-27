@@ -2116,10 +2116,11 @@ public partial class MainViewModel
         _gameNameService.RenameGame(oldName, newName, _allCards, _manualGames, _dllOverrideService);
         if (!oldName.Equals(newName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(newName))
         {
-            // DXVK and RE Framework records are looked up by name too: move them, or the game loses them
+            // DXVK, RE Framework and custom DLL records are looked up by name too: move them, or the game loses them
             string? recordPath = otherCopy ? renamed?.InstallPath : null;
             _dxvkService.RenameRecords(oldName, newName, recordPath);
             _refService.RenameRecords(oldName, newName, recordPath);
+            CustomDlls.RenameRecords(oldName, newName, recordPath);
             if (renamed?.DxvkRecord != null) renamed.DxvkRecord.GameName = newName;
             if (renamed?.RefRecord != null) renamed.RefRecord.GameName = newName;
         }

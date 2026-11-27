@@ -521,6 +521,14 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Cost Scaler/RTX40MFG auto-deploy failed — {ex.Message}"); }
 
+                // Custom DLLs: newer files from Custom\DLLs\ over RHI's copies, then watch the folder
+                try
+                {
+                    RedeployCustomDlls("RunBackgroundScanAndMergeAsync");
+                    StartCustomDllWatcher();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Custom DLL redeploy failed — {ex.Message}"); }
+
                 // GITC Uplift: check for a new release and update the games that have it
                 await RefreshUpliftInstallsAsync("RunBackgroundScanAndMergeAsync");
 

@@ -463,6 +463,9 @@ public partial class InstallFolderMigrationService
         "Urti" => "URTI",
         "Crcgi" => "CRCGI",
         "FrameWarp" => "FrameWarp",
+        // Custom DLLs: the user's own DLL (target file + its .original), one component per source file
+        _ when component.StartsWith(CustomDllService.ComponentPrefix, StringComparison.OrdinalIgnoreCase)
+            => CustomDllService.OwnerLabel(component[CustomDllService.ComponentPrefix.Length..]),
         _ => component,
     };
 

@@ -94,6 +94,12 @@ public partial class MainViewModel
             {
                 var oldPath = Path.Combine(card.InstallPath, card.RsRecord.InstalledAs);
                 var newPath = Path.Combine(card.InstallPath, effectiveRs);
+                // Never delete a custom DLL the user installed under that name
+                if (CustomDllService.IsCustomDllFile(card.InstallPath, effectiveRs))
+                {
+                    _crashReporter.Log($"[MainViewModel.ApplyManifestDllRenames] RS {card.GameName}: '{effectiveRs}' is a custom DLL — ReShade not renamed");
+                    continue;
+                }
                 try
                 {
                     if (File.Exists(oldPath))
@@ -155,7 +161,9 @@ public partial class MainViewModel
                 && !GetRsAsiMode(card.GameName, card.Source ?? "") // "Load ReShade as ASI" keeps its .asi name
                 && card.RsRecord != null
                 && !string.IsNullOrEmpty(card.RsRecord.InstalledAs)
-                && !card.RsRecord.InstalledAs.Equals(rsDefaultName, StringComparison.OrdinalIgnoreCase))
+                && !card.RsRecord.InstalledAs.Equals(rsDefaultName, StringComparison.OrdinalIgnoreCase)
+                // A custom DLL holds the default name: ReShade stays under the name it has
+                && !CustomDllService.IsCustomDllFile(card.InstallPath, rsDefaultName))
             {
                 var rsOldPath = Path.Combine(card.InstallPath, card.RsRecord.InstalledAs);
                 var rsDefaultPath = Path.Combine(card.InstallPath, rsDefaultName);

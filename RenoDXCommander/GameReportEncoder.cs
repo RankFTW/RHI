@@ -401,6 +401,9 @@ public static class GameReportEncoder
             ["displayMode"] = vm.DisplayModesOn ? vm.ActiveDisplayModeName(card) : null,
             ["displayModeItems"] = vm.DisplayModesOn ? vm.DisplayModeStore.ItemsFor(ViewModels.MainViewModel.DisplayModeKey(card)).ToList() : null,
             ["tunePreset"] = vm.TunedStateFor(card)?.PresetName,
+            ["customDlls"] = vm.CustomDlls.GetRecords(gameName, card.Source ?? "") is { Count: > 0 } customDlls
+                ? customDlls.Select(r => $"{r.Source} -> {r.InstalledAs}").ToList()
+                : null,
         };
 
         // Addons

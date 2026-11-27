@@ -14,15 +14,17 @@ public partial class InstallFolderMigrationService : IInstallFolderMigrationServ
     private readonly ILumaService _luma;
     private readonly IREFrameworkService _ref;
     private readonly IDxvkService _dxvk;
+    private readonly ICustomDllService? _customDlls;
 
     public InstallFolderMigrationService(IAuxInstallService aux, IModInstallService mods, ILumaService luma,
-        IREFrameworkService refService, IDxvkService dxvk)
+        IREFrameworkService refService, IDxvkService dxvk, ICustomDllService? customDlls = null)
     {
         _aux = aux;
         _mods = mods;
         _luma = luma;
         _ref = refService;
         _dxvk = dxvk;
+        _customDlls = customDlls;
     }
 
     public FolderMovePlan BuildPlan(FolderMigrationRequest request) => BuildPlanCore(request).Plan;
@@ -129,6 +131,7 @@ public partial class InstallFolderMigrationService : IInstallFolderMigrationServ
             Try("Luma record", () => _luma.RepointRecords(req.GameName, path, newDir));
             Try("RE Framework record", () => _ref.RepointRecords(req.GameName, path, newDir));
             Try("DXVK record", () => _dxvk.RepointRecords(req.GameName, path, newDir));
+            if (_customDlls != null) Try("custom DLL records", () => _customDlls.RepointRecords(req.GameName, path, newDir));
         }
 
         Try("addon tracker", () =>

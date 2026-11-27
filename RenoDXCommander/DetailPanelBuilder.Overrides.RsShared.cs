@@ -711,6 +711,11 @@ public partial class DetailPanelBuilder
             CrashReporter.Log($"[DetailPanelBuilder] Blocking RS DLL selection '{rsName}' — collides with OS name for '{capturedName}'.");
             return false;
         }
+        if (CustomDllService.IsCustomDllFile(card.InstallPath, rsName))
+        {
+            CrashReporter.Log($"[DetailPanelBuilder] Blocking RS DLL selection '{rsName}' — a custom DLL uses it in '{capturedName}'.");
+            return false;
+        }
 
         if (_window.ViewModel.HasDllOverride(capturedName))
             _window.ViewModel.UpdateDllOverrideNames(card, rsName, dcName);
