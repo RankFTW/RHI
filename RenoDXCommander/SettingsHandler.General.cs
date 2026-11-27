@@ -11,6 +11,8 @@ public partial class SettingsHandler
 {
     // ── DLDSR Control ─────────────────────────────────────────────────────────
 
+    private bool _dldsrSliderWired;
+
     /// <summary>
     /// Initializes the DLDSR Control card: shows it, populates the saved states combo, and refreshes current state.
     /// </summary>
@@ -20,11 +22,15 @@ public partial class SettingsHandler
         RefreshDldsrStateCombo();
         RefreshDldsrCurrentState();
 
-        // Wire up slider value changed to update the text display
-        _window.DldsrSmoothnessSlider.ValueChanged += (s, e) =>
+        // Wire up slider value changed to update the text display (once: this runs on every Settings open)
+        if (!_dldsrSliderWired)
         {
-            _window.DldsrSmoothnessValueText.Text = $"{(int)e.NewValue}%";
-        };
+            _dldsrSliderWired = true;
+            _window.DldsrSmoothnessSlider.ValueChanged += (s, e) =>
+            {
+                _window.DldsrSmoothnessValueText.Text = $"{(int)e.NewValue}%";
+            };
+        }
     }
 
     /// <summary>

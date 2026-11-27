@@ -41,6 +41,9 @@
 - Fixed a crash or power cut while OptiPatcher, DLSS Enabler or DOF Fix was downloading leaving a cut-off file that later installs copied into games.
 - Fixed an OptiPatcher update never reaching a game that was running at the time, and OptiPatcher updates being copied into hidden games.
 - Fixed a quick double-click on ReLimiter's Install starting two installs.
+- Fixed the selected game's page being built twice at every launch.
+- Fixed a game owned on two stores jumping to the other store's copy when you filtered or searched the game list, and Spotlight keeping the first copy's banner when you switched between the two copies.
+- Fixed every Settings visit adding another copy of the DLDSR smoothness slider's update, which piled up while RHI sat in the tray for days.
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.
@@ -51,6 +54,7 @@
 
 ### Maintenance
 - The installer and app folder are about 370 KB smaller: a duplicate copy of RHI's icon is no longer included.
+- Startup logs are about 40% smaller: the per-game add-on and wiki-match lines are only written with verbose logging on, replaced by one summary line each.
 - Session logs are about 20% smaller: large diagnostic dumps are only written with verbose logging on.
 - Folder paths that come from the online manifest (DLSS and Streamline locations, games split into several entries) are checked to stay inside the game's folder.
 - DLSS detection's saved paths are now safe to use from several scans at once.

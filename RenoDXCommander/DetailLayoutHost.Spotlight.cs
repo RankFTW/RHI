@@ -269,7 +269,8 @@ internal sealed partial class DetailLayoutHost
     {
         if (_heroImage == null) return;
         var card = _window.ViewModel.SelectedGame;
-        var name = card?.GameName;
+        // Store-qualified key: custom art is per "GameName|Store", so two copies of one game differ
+        var name = card == null ? null : MainWindow.ArtKey(card);
         if (string.Equals(name, _heroGame, StringComparison.OrdinalIgnoreCase)) return;
         _heroGame = name;
         _heroImage.Opacity = 0;

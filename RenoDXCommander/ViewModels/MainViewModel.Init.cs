@@ -981,7 +981,8 @@ public partial class MainViewModel
                             return Task.Run(() => _addonPackService.DeployAddonsForGame(
                                 card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
                         });
-                    await Task.WhenAll(addonTasks);
+                    var copiedPerGame = await Task.WhenAll(addonTasks);
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] SyncAddons: {copiedPerGame.Length} games checked, {copiedPerGame.Sum()} file(s) copied");
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] SyncAddons failed — {ex.Message}"); }
 

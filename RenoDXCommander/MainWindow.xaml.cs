@@ -46,6 +46,8 @@ public sealed partial class MainWindow : Window
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
 
     private string? _pendingReselect;
+    // The card itself, so a game on two stores re-selects the same copy (name alone picks the first)
+    private GameCardViewModel? _pendingReselectCard;
     private bool _forceClose;
 
     /// <summary>Set during Settings panel init to suppress SelectionChanged side-effects on tray combos.</summary>
@@ -264,7 +266,10 @@ public sealed partial class MainWindow : Window
         ViewModel.Filter.PreFilterAction = () =>
         {
             if (GameList.SelectedItem is GameCardViewModel selected)
+            {
                 _pendingReselect = selected.GameName;
+                _pendingReselectCard = selected;
+            }
         };
         // Apply initial visibility
         UpdatePageVisibility();

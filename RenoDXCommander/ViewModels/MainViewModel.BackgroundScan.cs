@@ -168,6 +168,7 @@ public partial class MainViewModel
             // EnsureStagingAsync clears HasUpdate, so remember whether an update was staged
             // for the deploy step after the scan (it used to check HasUpdate and never fired).
             bool nrCostScalerUpdated = false;
+            bool nrWasReady = _nrCostScalerService.IsStagingReady;
             var nrCostScalerTask = Task.Run(async () => {
                 try
                 {
@@ -236,7 +237,7 @@ public partial class MainViewModel
             try { await addonPackTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack await failed — {ex.Message}"); }
             try { await nrCostScalerTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] NR Cost Scaler staging await failed — {ex.Message}"); }
             // If Cost Scaler staging just became ready, rebuild the selected card's NR section so the toggle un-greys
-            if (_nrCostScalerService.IsStagingReady)
+            if (!nrWasReady && _nrCostScalerService.IsStagingReady)
             {
                 var sel = SelectedGame;
                 if (sel != null)
@@ -733,7 +734,8 @@ public partial class MainViewModel
                             return Task.Run(() => _addonPackService.DeployAddonsForGame(
                                 card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
                         });
-                    await Task.WhenAll(addonTasks);
+                    var copiedPerGame = await Task.WhenAll(addonTasks);
+                    _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] SyncAddons: {copiedPerGame.Length} games checked, {copiedPerGame.Sum()} file(s) copied");
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] SyncAddons failed — {ex.Message}"); }
 

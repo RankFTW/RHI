@@ -544,7 +544,8 @@ public partial class GameDetectionService : IGameDetectionService
             if (!isSequel) return t.mod;
         }
 
-        CrashReporter.Log($"[GameDetectionService.MatchGame] No match for '{game.Name}' (norm='{name}') against {modList.Count} wiki mods");
+        if (CrashReporter.VerboseLogging)
+            CrashReporter.Log($"[GameDetectionService.MatchGame] No match for '{game.Name}' (norm='{name}') against {modList.Count} wiki mods");
         // Log close matches for diagnostics
         var closeMatches = modList
             .Where(t => t.norm.Contains(name) || name.Contains(t.norm))

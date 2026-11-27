@@ -84,7 +84,7 @@ public partial class MainViewModel
             computedStamps.GetOrAdd(rootKey, _ => EngineFolderStamp.Compute(root));
         bool UnknownStillValid(string rootKey, string root) =>
             _engineFolderStamps.TryGetValue(rootKey, out var saved) && saved == StampFor(rootKey, root);
-        int engineScans = 0, unknownReused = 0, pcgwSkips = 0;
+        int engineScans = 0, unknownReused = 0, pcgwSkips = 0, wikiUnmatched = 0;
 
         // True when PCGW names an engine other than the ones detection looks for. Unreal (any
         // version), Unity and RE Engine — or no PCGW entry — still get the full scan, so a wrong
@@ -215,6 +215,7 @@ public partial class MainViewModel
             newBitnessCache[resolvedKey] = machineType;
 
             var mod      = _gameDetectionService.MatchGame(game, _allMods, _nameMappings);
+            if (mod == null) Interlocked.Increment(ref wikiUnmatched);
             // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
             bool isWikiUnlinked = _manifestWikiUnlinks.Contains(game.Name);
             if (isWikiUnlinked) mod = null;
@@ -260,7 +261,7 @@ public partial class MainViewModel
         _engineFolderStamps = new Dictionary<string, string>(newEngineFolderStamps, StringComparer.OrdinalIgnoreCase);
         _crashReporter.Log($"[BuildCards] Engine detection: {detectTimer.ElapsedMilliseconds} ms for {gameInfos.Count} games — "
             + $"{engineScans} folder scans ({engineScanMs} ms total), {unknownReused} unchanged Unknown reused, "
-            + $"{pcgwSkips} skipped via PCGW engine");
+            + $"{pcgwSkips} skipped via PCGW engine; {wikiUnmatched} games with no wiki match");
         var newAddonFileCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var safeAddonCache = new ConcurrentDictionary<string, bool>(addonCache, StringComparer.OrdinalIgnoreCase);
         var cardBag = new ConcurrentBag<GameCardViewModel>();

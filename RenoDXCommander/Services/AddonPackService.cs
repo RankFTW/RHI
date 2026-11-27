@@ -869,10 +869,12 @@ public class AddonPackService : IAddonPackService
     }
 
     /// <inheritdoc />
-    public void DeployAddonsForGame(string gameName, string installPath, bool is32Bit,
+    public int DeployAddonsForGame(string gameName, string installPath, bool is32Bit,
         bool useGlobalSet, List<string>? perGameSelection)
     {
-        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] gameName={gameName}, installPath={installPath}, is32Bit={is32Bit}, useGlobalSet={useGlobalSet}");
+        if (CrashReporter.VerboseLogging)
+            CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] gameName={gameName}, installPath={installPath}, is32Bit={is32Bit}, useGlobalSet={useGlobalSet}");
+        int copied = 0;
 
         // 1. Determine active addon selection
         var activeSelection = useGlobalSet
@@ -894,7 +896,7 @@ public class AddonPackService : IAddonPackService
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to create deploy directory for '{installPath}' — {ex.Message}");
-            return;
+            return 0;
         }
         bool usesAddonPath = !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(deployDir)),
             Path.TrimEndingDirectorySeparator(Path.GetFullPath(installPath)), StringComparison.OrdinalIgnoreCase);
@@ -1020,6 +1022,7 @@ public class AddonPackService : IAddonPackService
                 {
                     File.Copy(stagingFile, destFile, overwrite: true);
                     deployedFileNames.Add(deployName + ext);
+                    copied++;
                     CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployed '{deployName}{ext}' to '{deployDir}'.");
                 }
             }
@@ -1154,7 +1157,9 @@ public class AddonPackService : IAddonPackService
             }
         }
 
-        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployment complete for '{gameName}'. Deployed {deployedFileNames.Count} addon(s).");
+        if (CrashReporter.VerboseLogging)
+            CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployment complete for '{gameName}'. Deployed {deployedFileNames.Count} addon(s).");
+        return copied;
     }
 
     // ── Custom Addons ───────────────────────────────────────────────────────────

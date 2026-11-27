@@ -42,8 +42,9 @@ public interface IAddonPackService
     /// <summary>
     /// Deploys addons for a specific game based on its selection (global or per-game).
     /// Copies correct bitness variant. Removes stale addon files.
+    /// Returns how many files were copied (0 when everything was already current).
     /// </summary>
-    void DeployAddonsForGame(string gameName, string installPath, bool is32Bit,
+    int DeployAddonsForGame(string gameName, string installPath, bool is32Bit,
         bool useGlobalSet, List<string>? perGameSelection);
 
     /// <summary>

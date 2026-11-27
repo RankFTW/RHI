@@ -197,13 +197,17 @@ public sealed partial class MainWindow
         if (_pendingReselect != null)
         {
             var name = _pendingReselect;
-            var match = ViewModel.DisplayedGames.FirstOrDefault(c =>
-                c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var card = _pendingReselectCard;
+            var match = card != null && ViewModel.DisplayedGames.Contains(card)
+                ? card
+                : ViewModel.DisplayedGames.FirstOrDefault(c =>
+                    c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (match != null)
             {
                 GameList.SelectedItem = match;
                 GameList.ScrollIntoView(match);
                 _pendingReselect = null;
+                _pendingReselectCard = null;
                 return;
             }
         }
@@ -315,6 +319,7 @@ public sealed partial class MainWindow
     internal void RequestReselect(string? name)
     {
         _pendingReselect = name;
+        _pendingReselectCard = null;
         DispatcherQueue.TryEnqueue(TryRestoreSelection);
     }
 
