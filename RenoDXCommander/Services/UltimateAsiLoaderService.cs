@@ -336,7 +336,12 @@ public class UltimateAsiLoaderService
             var ext       = Path.GetExtension(record.InstalledAs);
             var nameNoExt = Path.GetFileNameWithoutExtension(record.InstalledAs);
             var iniPath   = Path.Combine(record.InstallPath, $"{nameNoExt}.ini");
-            if (File.Exists(iniPath))
+            var hookedPath = Path.Combine(record.InstallPath, $"{nameNoExt}Hooked{ext}");
+            // A chained mod (restored below) often keeps its own settings in <name>.ini (Special K as
+            // dxgi.dll → dxgi.ini): keep the ini when there's a Hooked file to put back
+            if (File.Exists(iniPath) && File.Exists(hookedPath))
+                _crashReporter.Log($"[UltimateAsiLoaderService.Uninstall] Kept '{nameNoExt}.ini' — it may belong to the chained '{nameNoExt}Hooked{ext}'");
+            else if (File.Exists(iniPath))
             {
                 try
                 {
@@ -350,7 +355,6 @@ public class UltimateAsiLoaderService
             }
 
             // Restore Hooked backup if it exists
-            var hookedPath = Path.Combine(record.InstallPath, $"{nameNoExt}Hooked{ext}");
             if (File.Exists(hookedPath))
             {
                 File.Move(hookedPath, dllPath, overwrite: true);
