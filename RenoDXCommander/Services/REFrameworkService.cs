@@ -503,6 +503,19 @@ public class REFrameworkService : IREFrameworkService
     }
 
     /// <inheritdoc/>
+    public int RenameRecords(string oldName, string newName, string? installPath = null)
+    {
+        lock (SafeJsonFile.LockFor(DbPath))
+        {
+            var db = LoadRecords();
+            int n = RecordRename.Apply(db, oldName, newName, installPath, r => r.GameName, (r, v) => r.GameName = v, r => r.InstallPath,
+                (a, b) => RecordRename.SamePath(a.InstallPath, b.InstallPath));
+            if (n > 0) { SaveRecords(db); CrashReporter.Log($"[REFrameworkService.RenameRecords] '{oldName}' → '{newName}': {n} record(s)"); }
+            return n;
+        }
+    }
+
+    /// <inheritdoc/>
     public int RepointRecords(string gameName, string oldPath, string newPath)
     {
         lock (SafeJsonFile.LockFor(DbPath))

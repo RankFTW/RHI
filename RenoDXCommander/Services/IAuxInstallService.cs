@@ -45,4 +45,10 @@ public interface IAuxInstallService
     /// wins (the old one is dropped). Returns how many records changed.
     /// </summary>
     int RepointRecords(string gameName, string oldPath, string newPath, Func<AuxInstalledRecord, bool>? include = null);
+
+    /// <summary>
+    /// Game rename: moves every record of <paramref name="oldName"/> (ReShade, OptiScaler, Display Commander,
+    /// ASI Loader...) to <paramref name="newName"/>; with <paramref name="installPath"/> only records at that folder.
+    /// </summary>
+    int RenameRecords(string oldName, string newName, string? installPath = null);
 }

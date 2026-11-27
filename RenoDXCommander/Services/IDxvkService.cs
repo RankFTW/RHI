@@ -119,6 +119,9 @@ public interface IDxvkService
     /// </summary>
     int RepointRecords(string gameName, string oldPath, string newPath);
 
+    /// <summary>Game rename: moves the DXVK records of <paramref name="oldName"/> to <paramref name="newName"/> (only at <paramref name="installPath"/> when given).</summary>
+    int RenameRecords(string oldName, string newName, string? installPath = null);
+
     // ── Variant ────────────────────────────────────────────────────────
 
     /// <summary>

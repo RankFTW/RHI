@@ -31,6 +31,7 @@
 ### Bug Fixes
 - Fixed searching the patch notes in What's New sometimes showing one version's full notes instead of the search results.
 - Fixed removing a Neural Rendering method (DLSS5 Tool, ShortFuse...) while the game was running leaving its DLSS files in the game for good: RHI lost track of them. It now removes them the next time.
+- Fixed renaming a game losing track of its DXVK, RE Framework, OptiScaler, Display Commander and ASI Loader installs, so they could no longer be updated or removed properly.
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.

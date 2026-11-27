@@ -2095,7 +2095,18 @@ public partial class MainViewModel
     /// </summary>
     public void RenameGame(string oldName, string newName)
     {
+        var renamed = _allCards.FirstOrDefault(c => c.GameName.Equals(oldName, StringComparison.OrdinalIgnoreCase));
+        bool otherCopy = renamed != null && _allCards.Count(c => c.GameName.Equals(oldName, StringComparison.OrdinalIgnoreCase)) > 1;
         _gameNameService.RenameGame(oldName, newName, _allCards, _manualGames, _dllOverrideService);
+        if (!oldName.Equals(newName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(newName))
+        {
+            // DXVK and RE Framework records are looked up by name too: move them, or the game loses them
+            string? recordPath = otherCopy ? renamed?.InstallPath : null;
+            _dxvkService.RenameRecords(oldName, newName, recordPath);
+            _refService.RenameRecords(oldName, newName, recordPath);
+            if (renamed?.DxvkRecord != null) renamed.DxvkRecord.GameName = newName;
+            if (renamed?.RefRecord != null) renamed.RefRecord.GameName = newName;
+        }
         SaveNameMappings();
         SaveLibrary();
         var card = _allCards.FirstOrDefault(c =>

@@ -1281,6 +1281,12 @@ public partial class GameNameService : IGameNameService
             _auxInstaller.SaveAuxRecord(card.RsRecord);
         }
 
+        // Every other aux record (OptiScaler, Display Commander, ASI Loader...). Only this copy's folder
+        // when the same game is still listed under the old name from another store.
+        bool otherCopy = allCards.Any(c => !ReferenceEquals(c, card) && c.GameName.Equals(oldName, StringComparison.OrdinalIgnoreCase));
+        string? recordPath = otherCopy ? card?.InstallPath : null;
+        _auxInstaller.RenameRecords(oldName, newName, recordPath);
+
         // Update persisted Luma record
         if (card?.LumaRecord != null)
         {
