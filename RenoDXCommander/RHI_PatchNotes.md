@@ -37,6 +37,7 @@
 - Fixed a new Custom ReShade build never reaching a game that was running when it was copied, and Custom ReShade putting back a ReShade DLL you had deleted from a game.
 - Fixed removing Ultimate ASI Loader deleting the settings file of the mod it was chained to (for example Special K's dxgi.ini).
 - Fixed reinstalling ReLimiter or Display Commander while offline (or with GitHub's hourly limit used up) failing, and every later install failing too: the downloaded copy was deleted before the new download.
+- Fixed a crash or power cut while OptiPatcher, DLSS Enabler or DOF Fix was downloading leaving a cut-off file that later installs copied into games.
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.

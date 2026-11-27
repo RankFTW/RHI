@@ -101,7 +101,7 @@ public class DofFixService : IDofFixService
         {
             var bytes = await _http.GetByteArrayAsync(downloadUrl).ConfigureAwait(false);
             var destPath = Path.Combine(_stagingDir, AddonFileName);
-            await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
+            await FileHelper.WriteBytesAtomicAsync(destPath, bytes).ConfigureAwait(false);
             var previousVersion = StagedVersion;
             File.WriteAllText(_versionFile, version);
             ReleaseNotes = body;

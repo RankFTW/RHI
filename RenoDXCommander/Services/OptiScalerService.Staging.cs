@@ -504,7 +504,7 @@ public partial class OptiScalerService
                 }
 
                 var bytes = await dlResp.Content.ReadAsByteArrayAsync();
-                await File.WriteAllBytesAsync(stagedAsiPath, bytes);
+                await FileHelper.WriteBytesAtomicAsync(stagedAsiPath, bytes); // temp file + move: never a cut-off staged file
                 CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Downloaded {bytes.Length} bytes");
             }
             catch (Exception ex)

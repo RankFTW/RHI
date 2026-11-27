@@ -127,16 +127,15 @@ public class DlssEnablerService
                         File.Delete(tempZip);
                         return;
                     }
-                    using var entryStream = entry.Open();
-                    using var outStream = File.Create(destPath);
-                    await entryStream.CopyToAsync(outStream).ConfigureAwait(false);
+                    // temp file + length check + move: a cut-off write never leaves a partial dxgi.dll in staging
+                    await FileHelper.WriteStreamAtomicAsync(entry.Open, destPath, entry.Length).ConfigureAwait(false);
                 }
                 File.Delete(tempZip);
                 _crashReporter.Log($"[DlssEnablerService.EnsureStagingAsync] Extracted {StagedFileName} from zip ({new FileInfo(destPath).Length} bytes)");
             }
             else
             {
-                await File.WriteAllBytesAsync(destPath, bytes).ConfigureAwait(false);
+                await FileHelper.WriteBytesAtomicAsync(destPath, bytes).ConfigureAwait(false);
             }
 
             var previousVersion = StagedVersion;
