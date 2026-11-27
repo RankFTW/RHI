@@ -2459,36 +2459,6 @@ public partial class OptiScalerService
         }
     }
 
-    /// <inheritdoc />
-    public void ApplyHotkeyToAllGames(string hotkeyValue)
-    {
-        try
-        {
-            var records = LoadAllRecords();
-            int updatedCount = 0;
-            foreach (var record in records)
-            {
-                var gameIniPath = Path.Combine(record.InstallPath, IniFileName);
-                if (!File.Exists(gameIniPath)) continue;
-
-                try
-                {
-                    WriteShortcutKey(gameIniPath, hotkeyValue);
-                    updatedCount++;
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[OptiScalerService.ApplyHotkeyToAllGames] Failed for '{record.GameName}' — {ex.Message}");
-                }
-            }
-            CrashReporter.Log($"[OptiScalerService.ApplyHotkeyToAllGames] Updated {updatedCount} game(s) with ShortcutKey={hotkeyValue}");
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[OptiScalerService.ApplyHotkeyToAllGames] Failed — {ex.Message}");
-        }
-    }
-
     /// <summary>
     /// Reads the INI file at <paramref name="iniPath"/>, finds the <c>ShortcutKey=</c> line
     /// (case-insensitive), replaces it with <c>ShortcutKey=&lt;value&gt;</c>, or appends the line

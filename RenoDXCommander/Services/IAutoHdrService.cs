@@ -22,6 +22,4 @@ public interface IAutoHdrService
     /// <summary>Disables Auto HDR for the exe, preserving unrelated GPU preference flags.</summary>
     bool Disable(string exePath);
 
-    /// <summary>Updates AutoHDRStrength without changing the enable state.</summary>
-    bool SetStrength(string exePath, int strength);
 }

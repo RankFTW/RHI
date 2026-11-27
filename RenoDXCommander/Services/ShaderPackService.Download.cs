@@ -703,24 +703,6 @@ public partial class ShaderPackService
         finally { _settingsLock.Release(); }
     }
 
-    /// <summary>Clears the settings.json registration entries for a pack (version, files, timestamp).
-    /// Used when the staged file is missing to force re-registration on next seed.</summary>
-    public void ClearPackRegistration(string packId)
-    {
-        _settingsLock.Wait();
-        try
-        {
-            SettingsFile.Update(d => {
-            d.Remove($"ShaderPack_{packId}_Files");
-            d.Remove($"ShaderPack_{packId}_Version");
-            d.Remove($"ShaderPack_{packId}_CacheTimestamp");
-            d.Remove(ExcludedFilesKey(packId));
-            }, "ShaderPackService.Settings");
-        }
-        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ClearPackRegistration] Failed for '{packId}' — {ex.Message}"); }
-        finally { _settingsLock.Release(); }
-    }
-
     /// <summary>Clears the settings.json registration entries for a pack (async-safe version).</summary>
     public async Task ClearPackRegistrationAsync(string packId)
     {
@@ -755,28 +737,6 @@ public partial class ShaderPackService
         catch (Exception ex)
         {
             CrashReporter.Log($"[ShaderPackService.SetExcludedFiles] Failed for '{packId}' — {ex.Message}");
-        }
-        finally { _settingsLock.Release(); }
-    }
-
-    /// <summary>Saves the excluded files for a pack (async-safe).</summary>
-    public async Task SetExcludedFilesAsync(string packId, IEnumerable<string> excluded)
-    {
-        await _settingsLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            var list = excluded.ToList();
-            SettingsFile.Update(d => {
-            if (list.Count > 0)
-                d[ExcludedFilesKey(packId)] = JsonSerializer.Serialize(list);
-            else
-                d.Remove(ExcludedFilesKey(packId));
-            }, "ShaderPackService.Settings");
-            CrashReporter.Log($"[ShaderPackService.SetExcludedFilesAsync] Saved {list.Count} exclusion(s) for '{packId}'");
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderPackService.SetExcludedFilesAsync] Failed for '{packId}' — {ex.Message}");
         }
         finally { _settingsLock.Release(); }
     }
@@ -820,42 +780,4 @@ public partial class ShaderPackService
         finally { _settingsLock.Release(); }
     }
 
-    /// <summary>
-    /// Scans the pack's staging subfolder and records all found files in settings.json (async-safe).
-    /// Used after importing shader files from an archive.
-    /// </summary>
-    public async Task RecordExtractedFilesFromDirAsync(string packId)
-    {
-        var packShadersDir = Path.Combine(ShadersDir, packId);
-        var packTexturesDir = Path.Combine(TexturesDir, packId);
-        var files = new List<string>();
-
-        if (Directory.Exists(packShadersDir))
-        {
-            foreach (var file in Directory.EnumerateFiles(packShadersDir, "*", SearchOption.AllDirectories))
-            {
-                var rel = Path.GetRelativePath(packShadersDir, file);
-                files.Add(Path.Combine("Shaders", packId, rel));
-            }
-        }
-        if (Directory.Exists(packTexturesDir))
-        {
-            foreach (var file in Directory.EnumerateFiles(packTexturesDir, "*", SearchOption.AllDirectories))
-            {
-                var rel = Path.GetRelativePath(packTexturesDir, file);
-                files.Add(Path.Combine("Textures", packId, rel));
-            }
-        }
-
-        await _settingsLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            SettingsFile.Update(d => {
-            d[FileListKey(packId)] = JsonSerializer.Serialize(files);
-            // No version token — leave any existing version as-is
-            }, "ShaderPackService.Settings");
-            CrashReporter.Log($"[ShaderPackService.RecordExtractedFilesFromDirAsync] Recorded {files.Count} file(s) for pack '{packId}'");
-        }
-        finally { _settingsLock.Release(); }
-    }
 }

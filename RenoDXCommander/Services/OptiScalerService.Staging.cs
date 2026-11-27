@@ -1690,22 +1690,6 @@ public partial class OptiScalerService
         }
     }
 
-    /// <inheritdoc />
-    public void ClearDlssNrStaging()
-    {
-        RememberClearedVersion("DlssNr", StagedVersionDlssNr);
-        try
-        {
-            if (Directory.Exists(DlssNrStagingDir))
-                Directory.Delete(DlssNrStagingDir, true);
-            CrashReporter.Log("[OptiScalerService.ClearDlssNrStaging] DLSS NR staging folder cleared");
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[OptiScalerService.ClearDlssNrStaging] Failed — {ex.Message}");
-        }
-    }
-
     // ── F5 DLSSNR variant staging ─────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -1893,22 +1877,6 @@ public partial class OptiScalerService
         catch (Exception ex)
         {
             CrashReporter.Log($"[OptiScalerService.CheckForF5UpdateAsync] Failed — {ex.Message}");
-        }
-    }
-
-    /// <inheritdoc />
-    public void ClearF5Staging()
-    {
-        RememberClearedVersion("F5", StagedVersionF5);
-        try
-        {
-            if (Directory.Exists(F5StagingDir))
-                Directory.Delete(F5StagingDir, true);
-            CrashReporter.Log("[OptiScalerService.ClearF5Staging] F5 staging folder cleared");
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[OptiScalerService.ClearF5Staging] Failed — {ex.Message}");
         }
     }
 

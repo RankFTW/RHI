@@ -292,23 +292,4 @@ public class AutoHdrService : IAutoHdrService
         }
     }
 
-    /// <summary>Updates only the strength value without changing the enable state.</summary>
-    public bool SetStrength(string exePath, int strength)
-    {
-        strength = Math.Clamp(strength, 0, 100);
-        try
-        {
-            var raw = ReadGpuPref(exePath) ?? "";
-            var flags = ParseFlags(raw);
-            flags[StrengthKey] = strength.ToString();
-            WriteGpuPref(exePath, SerialiseFlags(flags));
-            CrashReporter.Log($"[AutoHdrService.SetStrength] '{exePath}' strength={strength}");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[AutoHdrService.SetStrength] Failed for '{exePath}': {ex.Message}");
-            return false;
-        }
-    }
 }

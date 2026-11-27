@@ -158,23 +158,6 @@ public class WikiService : IWikiService
     }
 
     /// <summary>
-    /// Fetches Last-Modified header for a snapshot URL without downloading the file.
-    /// Returns null on failure.
-    /// </summary>
-    public async Task<DateTime?> GetSnapshotLastModifiedAsync(string url)
-    {
-        try
-        {
-            var req  = new HttpRequestMessage(HttpMethod.Head, url);
-            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) return null;
-            return resp.Content.Headers.LastModified?.UtcDateTime
-                ?? resp.Headers.Date?.UtcDateTime;
-        }
-        catch (Exception ex) { CrashReporter.Log($"[WikiService.GetSnapshotLastModifiedAsync] Failed to get Last-Modified for '{url}' — {ex.Message}"); return null; }
-    }
-
-    /// <summary>
     /// Parses a mod table with dynamic column detection.
     /// Supports any column count (3+) and finds Name/Maintainer/Links/Status columns
     /// by header text rather than hardcoded positions.
