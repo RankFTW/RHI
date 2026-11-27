@@ -52,6 +52,7 @@ public static class FeatureFlags
     public const string ExperimentalUrti = "urti";
     public const string ExperimentalCrcgi = "crcgi";
     public const string ExperimentalFrameWarp = "framewarp";
+    public const string ExperimentalZeroHook = "zerohook";
 
     /// <summary>
     /// An Experimental item the manifest took out ("experimentalHidden": ["urti"]): not offered for new installs, but

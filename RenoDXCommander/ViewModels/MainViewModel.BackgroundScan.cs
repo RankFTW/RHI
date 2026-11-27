@@ -1,6 +1,7 @@
 // MainViewModel.BackgroundScan.cs -- Background scanning, card merging, and staging migrations.
 
 using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -543,6 +544,8 @@ public partial class MainViewModel
             // CRCGI: same for the global illumination effect + add-on
             await RefreshCrcgiInstallsAsync("RunBackgroundScanAndMergeAsync");
                 await RefreshFrameWarpInstallsAsync("RunBackgroundScanAndMergeAsync");
+                // ZeroHook (system-wide tool): silent in-place update, only when downloaded and not running
+                await App.Services.GetRequiredService<IZeroHookService>().UpdateIfNewerAsync("RunBackgroundScanAndMergeAsync");
 
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();

@@ -2,9 +2,11 @@
 // Shown for every game in all layouts: Classic+ (collapsible, reorderable, before Management by default), Tabs (a tab
 // between Neural Rendering and Management) and Spotlight (a Tune tile in the second row). Rows use the Extras row shape
 // (6 columns), so Tabs / Spotlight arrange them with Extras' list cards (DetailLayoutHost.ArrangeExperimental).
-// Items: URTI (Ray Tracing), CRCGI (Global Illumination), FrameWarp (Reprojection).
+// Items: ZeroHook (Overlays and Hooks; system-wide, the same row for every game), URTI (Ray Tracing),
+// CRCGI (Global Illumination), FrameWarp (Reprojection).
 // The manifest can take an item out ("featureFlags": { "experimentalHidden": ["urti", "framewarp"] }); it stays where installed.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Services;
@@ -101,6 +103,14 @@ public partial class DetailPanelBuilder
 
         // ── Items (hidden by the manifest unless installed here) ──────────────
         int items = 0;
+        // ZeroHook first: a system-wide tool, not per game (shown while downloaded even when pulled, for removal)
+        bool zeroHookDownloaded = App.Services.GetRequiredService<IZeroHookService>().IsDownloaded;
+        if (!FeatureFlags.IsExperimentalHidden(FeatureFlags.ExperimentalZeroHook) || zeroHookDownloaded)
+        {
+            body.Children.Add(MakeExtrasSeparator("Overlays and Hooks", _window.ExperimentalContainer));
+            BuildZeroHookRow(card, body);
+            items++;
+        }
         if (!FeatureFlags.IsExperimentalHidden(FeatureFlags.ExperimentalUrti) || urtiInstalled)
         {
             body.Children.Add(MakeExtrasSeparator("Ray Tracing", _window.ExperimentalContainer));

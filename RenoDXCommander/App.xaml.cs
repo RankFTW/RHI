@@ -142,6 +142,7 @@ public partial class App : Application
         services.AddSingleton<UrtiService>();
         services.AddSingleton<CrcgiService>();
         services.AddSingleton<FrameWarpService>();
+        services.AddSingleton<IZeroHookService>(sp => new ZeroHookService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<GitHubETagCache>()));
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 

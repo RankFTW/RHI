@@ -364,6 +364,7 @@ public partial class MainViewModel
                 await RefreshUrtiInstallsAsync("MainViewModel.Periodic");
                 await RefreshCrcgiInstallsAsync("MainViewModel.Periodic");
                 await RefreshFrameWarpInstallsAsync("MainViewModel.Periodic");
+                await App.Services.GetRequiredService<IZeroHookService>().UpdateIfNewerAsync("MainViewModel.Periodic");
 
                 try
                 {

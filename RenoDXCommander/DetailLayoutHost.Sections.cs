@@ -298,12 +298,12 @@ internal sealed partial class DetailLayoutHost
     }
 
     /// <summary>
-    /// The tooltip's "GPU: …", "Game: …" and "API: …" lines as one block (label in the control
+    /// The tooltip's "GPU: …", "Game: …", "API: …" and "Note: …" lines as one block (label in the control
     /// colour, text muted), or null when the tooltip has none.
     /// </summary>
     private static TextBlock? RequirementLines(string tip)
     {
-        string[] keys = { "GPU", "Game", "API" };
+        string[] keys = { "GPU", "Game", "API", "Note" };
         var lines = tip.Replace("\r", "").Split('\n')
             .Select(l => l.Trim())
             .Select(l => (Line: l, Key: keys.FirstOrDefault(k => l.StartsWith(k + ": ", StringComparison.Ordinal))))

@@ -257,7 +257,11 @@ public partial class SettingsHandler
                 Path.Combine(rhiRoot, "DLSS-D"),
                 Path.Combine(rhiRoot, "DLSS-G"),
                 Path.Combine(rhiRoot, "Streamline"),
-            };
+            }
+            // Never purge %LocalAppData%\RHI\zerohook: ZeroHook's own Auto-Run task (ZeroHook_AutoBlock) starts the exe
+            // straight from that path at every logon, so it must stay where it is. Excluded explicitly in case the list grows.
+            .Where(f => !f.TrimEnd('\\').Equals(ZeroHookService.DefaultFolder.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
             // Downloads subfolders to clean (all except shaders)
             var downloadsRoot = DownloadPaths.Root;
