@@ -118,7 +118,6 @@ eshade.vulkan.ini` and used as the Vulkan reshade.ini template (`AuxInstallServi
 - [x] Manifest `optiScalerDllOverrides` never worked (its loader was never called). Removed from the app and the Manifest Editor, along with the unused per-game Auto HDR launch toggle (the card's HDR button covers it).
 - [x] Skipped: `DlssPresetService._nativeSetSettingLegacy` (set from NVAPI lookup), `UeExtendedWarningDismissed` setting key (no reader now), constructor parameters that no longer feed a field. (`2dd5a7d0`)
 - [x] **WindowsApps ReShade reinstall** (found 25 Nov 2026): `MainViewModel.ReinstallPendingWindowsAppsReShade`, `_pendingRsReinstall`, and the marking in `BuildCards` removed. (`2dd5a7d0`)
-- [ ] **WindowsApps ReShade reinstall** (found 25 Nov 2026): `MainViewModel.ReinstallPendingWindowsAppsReShade` (`MainViewModel.BackgroundScan.cs`, called from both init paths), the `_pendingRsReinstall` set and the marking in `BuildCards` (`MainViewModel.BuildCards.cs` ~line 638: a game whose new folder is inside `\WindowsApps\` and has ReShade at neither path), plus the "keep the record while pending" exception just below it. Effectively dead: Xbox cards now use the real install folder behind the WindowsApps junction, which doesn't move on game updates, so nothing is ever marked (no "Auto-reinstalling ReShade" line in any log, ours or users'). It also goes against the "never write into WindowsApps" rule. Remove it all together; keep the rest of the RS path reconciliation (copy to the new folder), which Steam / GOG / manual games still use.
 - [x] **Duplicates to merge:** Done: `AppPaths` (`ExeDir`, `InExeDir`, `Bundled7Zip`, `Find7Zip`) replaces the three finders and every `AppContext.BaseDirectory` path; `MainViewModel.IsLegacyVersion` delegates to `AuxInstallService`. The "version comparers" are one-line `Version.TryParse` calls, not worth merging. Was: three `Find7Zip` copies + inline `AppContext.BaseDirectory` 7-Zip paths; `IsLegacyVersion` twice; several version comparers. Also `EnsureInisDir` seeds templates from `AppContext.BaseDirectory` (CLAUDE.md says use `Environment.ProcessPath`).
 
 ---
@@ -237,7 +236,7 @@ New homes (2.9.6): game settings ⚙ = Game name, Bitness, Graphics API, Launch 
   - `NvAPIWrapper` is abandoned. Plan to replace it or vendor it.
   - `MarkdownTextBlock` is a preview package. Watch for a stable release.
   - ManifestEditor package versions are out of step with the app. Use `Directory.Packages.props` for central versions.
-- [ ] **`.editorconfig` with a warning ratchet.**
+- [x] **`.editorconfig` with a warning ratchet.** (`9217477b`)
   - Turn on IDE0051/0052/0005 as suggestions.
   - Keep nullable warnings from rising above the current ~190.
 - [ ] **Repo size (196 MB).** Most of it is old ManifestEditor `bin` DLLs and 70 versions of `database/pcgw_data.json` in history. Only rewrite history if size becomes a problem; it would need a force-push.
