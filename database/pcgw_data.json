@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56166,
-  "generated": "2026-11-27T07:17:45Z",
+  "game_count": 56167,
+  "generated": "2026-11-27T15:17:45Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -134256,6 +134256,9 @@
     },
     "Resfort": {
       "steam_appid": 514710
+    },
+    "Reshine": {
+      "steam_appid": 4253570
     },
     "Resident Evil": {
       "steam_appid": 4249100,
