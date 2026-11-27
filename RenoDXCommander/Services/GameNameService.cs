@@ -1058,7 +1058,7 @@ public partial class GameNameService : IGameNameService
                 else s.Remove("RtxEncoreNrDllDeployed");
                 s.Remove("Rtx40MfgInstalled"); // remove legacy key
                 s.Remove("SfAutoConfigDisabled"); // legacy — no longer written
-                s["ViewLayout"]          = ((int)currentViewLayout).ToString();
+                s.Remove("ViewLayout"); // legacy — Compact view was removed, nothing reads it
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
                 }, "GameNameService.SaveNameMappings");

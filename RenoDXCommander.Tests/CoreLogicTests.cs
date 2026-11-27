@@ -69,37 +69,6 @@ public class CoreLogicTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 2. ViewLayout.NextViewLayout — Detail ↔ Compact cycle (no Grid)
-    // ═══════════════════════════════════════════════════════════════════════════════
-
-    [Fact]
-    public void NextViewLayout_Detail_ReturnsCompact()
-    {
-        // ViewLayout cycles Detail → Compact → Detail
-        ViewLayout layout = ViewLayout.Detail;
-        var next = layout switch
-        {
-            ViewLayout.Detail => ViewLayout.Compact,
-            ViewLayout.Compact => ViewLayout.Detail,
-            _ => ViewLayout.Detail,
-        };
-        Assert.Equal(ViewLayout.Compact, next);
-    }
-
-    [Fact]
-    public void NextViewLayout_Compact_ReturnsDetail()
-    {
-        ViewLayout layout = ViewLayout.Compact;
-        var next = layout switch
-        {
-            ViewLayout.Detail => ViewLayout.Compact,
-            ViewLayout.Compact => ViewLayout.Detail,
-            _ => ViewLayout.Detail,
-        };
-        Assert.Equal(ViewLayout.Detail, next);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════════
     // 3. ExtractAppIdFromAcfFilename — parse Steam ACF filenames
     // ═══════════════════════════════════════════════════════════════════════════════
 
