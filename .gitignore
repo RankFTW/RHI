@@ -45,3 +45,6 @@ OptiScaler-DLSSNR-v*/
 __pycache__/
 reports/
 research_notes/
+
+# Visual Studio per-user files
+*.user
