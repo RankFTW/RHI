@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6.3 Beta 1
+## v2.9.6.3 Beta 2
 
 ### New
 - **Back to stable.** A "Back to stable" button appears below the Get beta updates toggle in Settings when beta updates are on and you are on a beta. Clicking it downloads and installs the latest stable release.
