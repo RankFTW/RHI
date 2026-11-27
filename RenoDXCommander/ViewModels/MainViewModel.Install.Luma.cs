@@ -710,9 +710,6 @@ public partial class MainViewModel
         return null;
     }
 
-    public bool IsLumaEnabled(string gameName, string store = "") =>
-        _lumaEnabledGames.Contains(GameKey.From(gameName, store).ToKey());
-
     /// <summary>
     /// Re-evaluates Luma injection for a single card after an API override change.
     /// Updates LumaMod and LumaRenodxCompatible without a full BuildCards run.

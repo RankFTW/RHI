@@ -42,10 +42,4 @@ public static class RtxEncorePresetService
     }
 
     public static string KeyOf(string section, string key) => section + "|" + key;
-
-    public static (string Section, string Key) SplitKey(string presetKey)
-    {
-        int bar = presetKey.LastIndexOf('|');
-        return bar < 0 ? ("", presetKey) : (presetKey[..bar], presetKey[(bar + 1)..]);
-    }
 }

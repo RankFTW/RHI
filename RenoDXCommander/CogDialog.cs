@@ -392,25 +392,6 @@ internal sealed class CogDialog
         return b;
     }
 
-    /// <summary>A grey button that copies a text file (e.g. a log) to the clipboard.</summary>
-    public Button MakeCopyFileButton(string text, string? path)
-    {
-        var b = MakeButton(text, CogButtonKind.Secondary, async () =>
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) { SetError($"{Path.GetFileName(path)} wasn't found."); return; }
-            string content;
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var sr = new StreamReader(fs))
-                content = await sr.ReadToEndAsync();
-            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dp.SetText(content);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
-            SetSuccess($"Copied {Path.GetFileName(path)} to the clipboard.");
-        });
-        b.IsEnabled = !string.IsNullOrEmpty(path) && File.Exists(path);
-        return b;
-    }
-
     /// <summary>A row of buttons, left-aligned, sized to their text. Wraps onto a second line if needed.</summary>
     public WrapPanel AddButtons(params Button[] buttons)
     {

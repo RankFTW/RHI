@@ -539,40 +539,6 @@ public sealed partial class MainWindow
         }
     }
 
-    /// <summary>A row like CogDialog.AddRow, for rows rebuilt inside a panel.</summary>
-    internal static FrameworkElement MakeValueRow(string label, FrameworkElement control, string? note, string? tooltip)
-    {
-        var row = new StackPanel { Spacing = 3 };
-        var grid = new Grid { ColumnSpacing = CogDialog.ColumnGap };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(CogDialog.LabelColumnWidth) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var lbl = new TextBlock
-        {
-            Text = label,
-            FontSize = 12,
-            TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        };
-        if (!string.IsNullOrEmpty(tooltip)) ToolTipService.SetToolTip(lbl, tooltip);
-        control.HorizontalAlignment = HorizontalAlignment.Stretch;
-        control.VerticalAlignment = VerticalAlignment.Center;
-        grid.Children.Add(lbl);
-        Grid.SetColumn(control, 1);
-        grid.Children.Add(control);
-        row.Children.Add(grid);
-        if (!string.IsNullOrWhiteSpace(note))
-            row.Children.Add(new TextBlock
-            {
-                Text = note,
-                FontSize = 11,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(CogDialog.LabelColumnWidth + CogDialog.ColumnGap, 0, 0, 2),
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
-        return row;
-    }
-
     private static TextBlock MutedLine(string text) => new()
     {
         Text = text,

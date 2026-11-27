@@ -9,8 +9,6 @@ public partial class MainViewModel
     // DbgHelp is single-threaded — serialize SymFromAddr calls.
     private static readonly object _nativeStackLock = new();
 
-    internal void CaptureNativeUiThreadStackPublic() => CaptureNativeUiThreadStack();
-
     /// <summary>
     /// Captures a native call stack of the UI thread using StackWalk64.
     /// Safe to call from a background thread. The suspend window is minimal:

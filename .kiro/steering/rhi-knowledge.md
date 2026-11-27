@@ -399,7 +399,7 @@ When adding a new downloadable component variant:
 - Enabling RTX HDR uninstalls any active RenoDX mod (mutual exclusivity)
 - Enabling RTX HDR writes ALL settings with sensible defaults: Allow=1, Enable=1, PeakBrightness=global nits (or 510), Contrast=125 (Gamma 2.2), Saturation=75 (-25, reduces oversaturation), MiddleGrey=ITU-calculated for Gamma 2.2 at the user's peak nits. User can tweak via Configure dialog after.
 - Disabling RTX HDR does NOT reinstall RenoDX
-- Disabling RTX HDR DELETES all 7 settings from the profile via `DeletePresetPublic()` (reverts to global/inherited) — do NOT write 0x00 explicitly
+- Disabling RTX HDR (`MainWindow.Events.Components.Rdx.HdrToggles.cs`) writes Enable=0 plus neutral values (contrast 100, saturation 100, peak 0, middle grey 50) through the raw RTX HDR setters, and deletes `0x00432F84` with `DeleteSettingRaw`. (`DeletePresetPublic` no longer exists.)
 - `InstallActionLabel` returns "Configure RTX HDR" when `IsRtxHdrEnabled` is true
 - `CanInstall` must return true when `IsRtxHdrEnabled` is true (otherwise button is greyed out since no mod exists)
 - `rdxGreyed` in `DetailPanelBuilder.Components.cs` must check `!card.IsRtxHdrEnabled` before applying grey (otherwise row is 35% opacity when RS not installed)

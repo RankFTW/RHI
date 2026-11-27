@@ -207,12 +207,7 @@ public sealed class DisplayModeStore
 
     // ── Items with a mode value ───────────────────────────────────────────────
 
-    /// <summary>Items any mode has a value for (set in Settings). Every game swaps these, ticked or not.</summary>
-    public IReadOnlyList<string> ModeValueItems
-    {
-        get { lock (_lock) return ModeValueItemsLocked(); }
-    }
-
+    /// <summary>Items any mode has a value for (set in Settings). Every game swaps these, ticked or not. Call under the lock.</summary>
     private List<string> ModeValueItemsLocked()
         => _modes.SelectMany(m => m.Values.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -422,14 +417,6 @@ public sealed class DisplayModeStore
     {
         lock (_lock)
             return _games.Where(kv => kv.Value.Mode != null && kv.Value.Mode.Equals(modeId, StringComparison.OrdinalIgnoreCase))
-                .Select(kv => kv.Key).ToList();
-    }
-
-    /// <summary>Keys of every game that's in a mode.</summary>
-    public IReadOnlyList<string> ManagedGames()
-    {
-        lock (_lock)
-            return _games.Where(kv => kv.Value.Mode != null && (Find(kv.Value.Mode) != null || (IsCustom(kv.Value.Mode) && kv.Value.Custom)))
                 .Select(kv => kv.Key).ToList();
     }
 

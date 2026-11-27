@@ -364,18 +364,6 @@ internal static class TabsTheme
         Child = child,
     };
 
-    /// <summary>
-    /// Column count for the mockup's "repeat(auto-fit, minmax(min, 1fr))" grids, and the tile width
-    /// that fills the row.
-    /// </summary>
-    internal static (int Columns, double Width) AutoFit(double available, double minWidth, double gap)
-    {
-        if (available <= 0) available = 750;
-        int n = Math.Max(1, (int)Math.Floor((available + gap) / (minWidth + gap)));
-        double w = Math.Floor((available - (n - 1) * gap) / n) - 1;
-        return (n, w);
-    }
-
     // ── Tiles (Management, mockup A) ──────────────────────────────────────────
 
     /// <summary>A clickable tile: name (14/600) above a short description (12, secondary).</summary>

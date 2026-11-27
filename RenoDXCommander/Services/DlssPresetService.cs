@@ -739,10 +739,6 @@ public partial class DlssPresetService
     public bool DeleteMfgDynamicTargetFps(string gameName, string installPath)
         => DeletePreset(gameName, installPath, MFG_DYNAMIC_TARGET_FPS_ID);
 
-    /// <summary>Public wrapper for DeletePreset — allows callers to delete any setting by ID for global inheritance.</summary>
-    public bool DeletePresetPublic(string gameName, string installPath, uint settingId)
-        => DeletePreset(gameName, installPath, settingId);
-
     /// <summary>Sets the per-game FPS Limiter V3 value. Used to disable the driver cap when a software limiter is installed.</summary>
     public bool SetPerGameFpsLimit(string gameName, string installPath, uint fps)
         => SetPreset(gameName, installPath, FPS_LIMITER_V3_ID, fps);

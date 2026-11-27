@@ -14,10 +14,6 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public sealed class GitHubAuthService
 {
-    private readonly HttpClient _http;
-
-    public GitHubAuthService(HttpClient http) => _http = http;
-
     /// <summary>
     /// Applies the token to the shared HttpClient default headers.
     /// Removes any existing Authorization header first.

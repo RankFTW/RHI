@@ -420,13 +420,6 @@ public partial class MainViewModel
     public void NavigateToFaq() => CurrentPage = AppPage.Faq;
 
     [RelayCommand]
-    public void ToggleShowHidden()
-    {
-        _filterViewModel.ShowHidden = !_filterViewModel.ShowHidden;
-        _filterViewModel.ApplyFilter();
-    }
-
-    [RelayCommand]
     public void ToggleHideGame(GameCardViewModel? card)
     {
         if (card == null) return;

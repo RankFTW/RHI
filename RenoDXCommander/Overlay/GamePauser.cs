@@ -28,8 +28,6 @@ internal static class GamePauser
     private static int _pid;
     private static bool _hooked;
 
-    internal static bool IsPaused { get { lock (Gate) return _handle != IntPtr.Zero; } }
-
     /// <summary>Freezes the process. False when it couldn't (already paused, access denied, …).</summary>
     internal static bool Pause(int pid)
     {

@@ -732,8 +732,6 @@ public partial class MainViewModel
     // Legacy filenames for migration from DC Lite
     private const string LegacyDcFileName64 = "zzz_display_commander_lite.addon64";
     private const string LegacyDcFileName32 = "zzz_display_commander_lite.addon32";
-    private const string DcReleasesUrl =
-        "https://github.com/pmnoxx/display-commander/releases/tag/latest";
     private const string DcReleasesApiUrl =
         "https://api.github.com/repos/pmnoxx/display-commander/releases/tags/latest";
 

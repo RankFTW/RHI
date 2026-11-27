@@ -9,9 +9,6 @@ public readonly record struct GameKey(string Name, string Store)
     /// <summary>Creates a GameKey from a GameCardViewModel or DetectedGame.</summary>
     public static GameKey From(string name, string store) => new(name, store ?? "");
 
-    /// <summary>Creates a GameKey with empty store (for legacy/migration scenarios).</summary>
-    public static GameKey NameOnly(string name) => new(name, "");
-
     /// <summary>Converts to pipe-separated string format for persistence.</summary>
     public string ToKey() => $"{Name}|{Store}";
 

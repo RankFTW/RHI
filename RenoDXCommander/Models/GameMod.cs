@@ -21,7 +21,6 @@ public class GameMod
 
     // A .zip snapshot (addon + helper files) installs the addon inside it: name that, not the zip
     [JsonIgnore] public string? AddonFileName   => NameFor(SnapshotUrl);
-    [JsonIgnore] public string? AddonFileName32  => NameFor(SnapshotUrl32);
     private static string? NameFor(string? url) => url == null ? null
         : RenoDXCommander.Services.RenoDxZipPackage.IsZip(url) ? RenoDXCommander.Services.RenoDxZipPackage.AddonNameFor(Path.GetFileName(url))
         : Path.GetFileName(url);

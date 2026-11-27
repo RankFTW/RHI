@@ -10,15 +10,12 @@ namespace RenoDXCommander;
 
 public sealed partial class MainWindow
 {
-    internal Button HeaderLaunchButton => DetailLaunchBtn;
     internal Button HeaderHdrButton => DetailHdrToggleBtn;
     internal TextBlock HeaderHdrText => DetailHdrToggleText;
     internal Button HeaderResButton => DetailResToggleBtn;
     internal TextBlock HeaderResText => DetailResToggleText;
-    internal Button HeaderFavButton => DetailFavBtn;
     internal Button HeaderHideButton => DetailHideBtn;
     internal TextBlock HeaderHideText => DetailHideIcon;
-    internal Button HeaderFolderButton => DetailFolderBtn;
     internal Button HeaderConfigButton => DetailAppDataBtn;
     internal Button HeaderNexusButton => DetailNexusModsBtn;
     internal Button HeaderPcgwButton => DetailPcgwBtn;
