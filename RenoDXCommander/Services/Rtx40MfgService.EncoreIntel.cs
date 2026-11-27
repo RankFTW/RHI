@@ -295,7 +295,7 @@ public partial class Rtx40MfgService
     private List<string> FindGameIntelFiles(string gameRoot)
     {
         var found = new List<string>();
-        if (gameRoot.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase) || !Directory.Exists(gameRoot)) return found;
+        if (XboxPaths.IsWindowsApps(gameRoot) || !Directory.Exists(gameRoot)) return found;
         var names = EncoreIntelDlls.Select(f => f.File).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var stack = new Stack<(string Dir, int Depth)>();
         stack.Push((gameRoot, 0));

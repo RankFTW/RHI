@@ -301,7 +301,7 @@ public partial class MainViewModel
                                 return !p.StartsWith(winDir, StringComparison.OrdinalIgnoreCase)
                                     && !p.Contains(@"\dotnet\", StringComparison.OrdinalIgnoreCase)
                                     && !p.Contains(@"\Microsoft\", StringComparison.OrdinalIgnoreCase)
-                                    && !p.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase); })
+                                    && !XboxPaths.IsWindowsApps(p); })
                             .Select(m => System.IO.Path.GetFileName(m.FileName ?? "?"))
                             .OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         CrashReporter.LogSync(thirdParty.Count > 0

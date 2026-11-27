@@ -19,8 +19,7 @@ public sealed class DlssSwapException : Exception
     public static DlssSwapException From(string targetPath, Exception inner)
         => new(targetPath, Describe(targetPath, inner), inner);
 
-    internal static bool IsWindowsAppsPath(string path)
-        => path.Replace('/', '\\').Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
+    internal static bool IsWindowsAppsPath(string path) => XboxPaths.IsWindowsApps(path);
 
     internal static string Describe(string targetPath, Exception inner)
     {

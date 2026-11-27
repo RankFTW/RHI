@@ -225,8 +225,7 @@ public partial class DlssStreamlineService
     private static string ResolveSearchRootDefault(string installPath)
     {
         // Check if this is a WindowsApps path — go up to the package root
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        if (XboxPaths.IsWindowsApps(installPath))
         {
             var parts = installPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             for (int i = 0; i < parts.Length - 1; i++)

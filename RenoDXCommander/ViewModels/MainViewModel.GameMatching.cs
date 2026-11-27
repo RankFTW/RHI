@@ -359,8 +359,7 @@ public partial class MainViewModel
         }
 
         // Skip WindowsApps for filesystem scanning — always access-denied
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        if (XboxPaths.IsWindowsApps(installPath))
         {
             // For Unreal Engine games, check if the manifest specifies a UE5+ version.
             // UE5+ defaults to DX12 on Windows — UE4 and unknown versions stay DX11.
@@ -563,8 +562,7 @@ public partial class MainViewModel
         }
 
         // Skip WindowsApps for filesystem scanning — always access-denied
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        if (XboxPaths.IsWindowsApps(installPath))
             return new HashSet<GraphicsApiType>();
 
         var result = new HashSet<GraphicsApiType>();
@@ -646,8 +644,7 @@ public partial class MainViewModel
         try
         {
             // Skip WindowsApps — always access-denied, wastes time on retries
-            if (dirPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-                || dirPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+            if (XboxPaths.IsWindowsApps(dirPath))
                 return;
 
             foreach (var exeFile in Directory.GetFiles(dirPath, "*.exe"))

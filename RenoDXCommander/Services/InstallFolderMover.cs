@@ -440,8 +440,7 @@ public static class InstallFolderMover
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Game Pass / Microsoft Store folder (C:\Program Files\WindowsApps\...): access-denied, never written.</summary>
-    public static bool IsWindowsApps(string path)
-        => (path.Replace('/', '\\') + "\\").Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
+    public static bool IsWindowsApps(string path) => XboxPaths.IsWindowsApps(path);
 
     /// <summary>binkw64.dll → binkw64Hooked.dll in the same folder.</summary>
     public static string HookedPath(string path)

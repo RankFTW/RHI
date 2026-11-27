@@ -701,8 +701,7 @@ public partial class MainViewModel
                     // ReShade can only inject via specific Windows system DLL proxies, so we only
                     // check those names rather than every DLL in the folder.
                     // Skip WindowsApps paths — always access-denied
-                    bool isWinAppsRs = installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-                                    || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase);
+                    bool isWinAppsRs = XboxPaths.IsWindowsApps(installPath);
                     if (!isWinAppsRs)
                     try
                     {
@@ -1280,8 +1279,7 @@ public partial class MainViewModel
                 {
                     // No tracking record — try binary signature detection
                     // Skip WindowsApps paths — always access-denied, wastes time on retries
-                    bool isWindowsApps = installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-                                      || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase);
+                    bool isWindowsApps = XboxPaths.IsWindowsApps(installPath);
                     var detectedDll = isWindowsApps ? null : _optiScalerService.DetectInstallation(installPath);
                     if (detectedDll != null)
                     {
@@ -1398,8 +1396,7 @@ public partial class MainViewModel
                 else
                 {
                     // No tracking record — try binary signature detection
-                    bool isWindowsApps = installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-                                      || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase);
+                    bool isWindowsApps = XboxPaths.IsWindowsApps(installPath);
                     if (!isWindowsApps)
                     {
                         var detectedVersion = _dxvkService.DetectInstallation(installPath, newCard.GraphicsApi);

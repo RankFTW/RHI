@@ -9,6 +9,20 @@ public class XboxPathsTests
     private const string Pkg = @"C:\Program Files\WindowsApps\LyricalGamesLLC.ValorMortis_1.3.5124.0_x64__72fag5ekhk96y";
     private const string Real = @"D:\xbox\Valor Mortis\Content";
 
+    // The one WindowsApps rule every check uses (InstallFolderMover and DlssSwapException forward to it)
+    [Theory]
+    [InlineData(@"C:\Program Files\WindowsApps\Game_1.0_x64__abc\Content", true)]
+    [InlineData(@"C:/Program Files/WindowsApps/Game_1.0_x64__abc/Content", true)]
+    [InlineData(@"C:\Program Files\WindowsApps", true)]
+    [InlineData(@"D:\Games\WindowsAppsBackup\Game", false)]
+    [InlineData(@"C:\XboxGames\Game\Content", false)]
+    public void IsWindowsApps_MatchesOnlyTheWindowsAppsFolder(string path, bool expected)
+    {
+        Assert.Equal(expected, XboxPaths.IsWindowsApps(path));
+        Assert.Equal(expected, InstallFolderMover.IsWindowsApps(path));
+        Assert.Equal(expected, DlssSwapException.IsWindowsAppsPath(path));
+    }
+
     private static string? Resolve(string physical) =>
         string.Equals(physical, Pkg, StringComparison.OrdinalIgnoreCase) ? Real : null;
 

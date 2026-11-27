@@ -103,8 +103,7 @@ public partial class MainViewModel
     {
         if (!Directory.Exists(installPath)) return null;
         // Skip WindowsApps paths — always access-denied for file scanning
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        if (XboxPaths.IsWindowsApps(installPath))
             return null;
         try
         {
@@ -206,8 +205,7 @@ public partial class MainViewModel
     {
         if (!Directory.Exists(installPath)) return null;
         // Skip WindowsApps paths — always access-denied for file scanning
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        if (XboxPaths.IsWindowsApps(installPath))
             return null;
         try
         {
@@ -551,7 +549,7 @@ public partial class MainViewModel
             // For WindowsApps (Xbox/Game Pass) Unreal Engine 5+ games, infer DX12.
             // Overrides both cache misses AND stale DX11 cache entries since WindowsApps
             // paths are access-denied and the DX11 value was a fallback, never scanned.
-            if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
+            if (XboxPaths.IsWindowsApps(installPath)
                 && (graphicsApi == GraphicsApiType.Unknown || graphicsApi == GraphicsApiType.DirectX11))
             {
                 string? hint = null;
