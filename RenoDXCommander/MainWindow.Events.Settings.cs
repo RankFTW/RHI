@@ -1511,7 +1511,7 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(DetailHdrToggleBtn, DetailPanelBuilder.HdrToggleTooltip(hdrActive, isOverride: true));
     }
 
-    // ── Resolution Auto-Toggle handlers (dev-only) ────────────────────────────
+    // ── Resolution Auto-Toggle handlers ───────────────────────────────────────
 
     private void ResAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

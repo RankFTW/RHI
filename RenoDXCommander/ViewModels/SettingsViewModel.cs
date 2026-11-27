@@ -122,7 +122,7 @@ public partial class SettingsViewModel : ObservableObject
     // Show the HDR / Resolution launch buttons on game pages (hidden = still applied at launch)
     [ObservableProperty] private bool _showHdrLaunchButton = true;
     [ObservableProperty] private bool _showResLaunchButton = true;
-    // ── Resolution Auto-Toggle (dev-only) ─────────────────────────────────────
+    // ── Resolution Auto-Toggle ────────────────────────────────────────────────
     [ObservableProperty] private bool _resolutionAutoToggle;
     /// <summary>Target resolution key in "WxH@Hz" format. Empty = no override.</summary>
     [ObservableProperty] private string _resolutionTarget = "";

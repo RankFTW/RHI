@@ -12,17 +12,7 @@ public class GameInitializationService : IGameInitializationService
 {
     private readonly IGameDetectionService _gameDetectionService;
 
-    public GameInitializationService(
-        IGameDetectionService gameDetectionService,
-        IWikiService wikiService,
-        IManifestService manifestService,
-        IModInstallService installer,
-        IAuxInstallService auxInstaller,
-        IGameLibraryService gameLibraryService,
-        IPeHeaderService peHeaderService,
-        ILumaService lumaService,
-        IReShadeUpdateService rsUpdateService,
-        IShaderPackService shaderPackService)
+    public GameInitializationService(IGameDetectionService gameDetectionService)
     {
         _gameDetectionService = gameDetectionService;
     }

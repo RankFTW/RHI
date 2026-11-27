@@ -171,7 +171,7 @@ public partial class MainViewModel
             var nrCostScalerTask = Task.Run(async () => {
                 try
                 {
-                    await _nrCostScalerService.CheckForUpdateAsync(forceRefresh: true);
+                    await _nrCostScalerService.CheckForUpdateAsync();
                     if (!_nrCostScalerService.IsStagingReady || _nrCostScalerService.HasUpdate)
                     {
                         bool hadUpdate = _nrCostScalerService.HasUpdate;
@@ -187,7 +187,7 @@ public partial class MainViewModel
                     // Only kept up to date while a game uses it: installing downloads it.
                     if (ShouldAutoStageRtx40Mfg("RunBackgroundScanAndMergeAsync"))
                     {
-                        await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
+                        await _rtx40MfgService.CheckForUpdateAsync();
                         if ((!_rtx40MfgService.IsStagingReady || _rtx40MfgService.HasUpdate)
                             && !AntivirusGuard.IsBlocked(Rtx40MfgService.AntivirusComponentName, _rtx40MfgService.LatestVersion))
                             await _rtx40MfgService.EnsureStagingAsync();

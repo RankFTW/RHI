@@ -84,7 +84,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         return entries.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly();
     }
 
-    public DlssStreamlineService(HttpClient http, GitHubETagCache etagCache)
+    public DlssStreamlineService(HttpClient http)
     {
         _http = http;
 

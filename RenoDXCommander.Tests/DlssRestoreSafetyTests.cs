@@ -20,7 +20,7 @@ public class DlssRestoreSafetyTests : IDisposable
         catch (IOException) { /* temp folder; ignore */ }
     }
 
-    private static DlssStreamlineService NewService() => new(new HttpClient(), RenoDXCommander.Tests.TestEnvironment.NewETagCache());
+    private static DlssStreamlineService NewService() => new(new HttpClient());
 
     private string Put(string rel, byte[] content)
     {

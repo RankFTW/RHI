@@ -347,7 +347,7 @@ public partial class MainViewModel
                 // Check and re-stage Cost Scaler + RTX40MFG, auto-deploy to installed games
                 try
                 {
-                    await _nrCostScalerService.CheckForUpdateAsync(forceRefresh: true);
+                    await _nrCostScalerService.CheckForUpdateAsync();
                     if (_nrCostScalerService.HasUpdate)
                     {
                         await _nrCostScalerService.EnsureStagingAsync();
@@ -369,7 +369,7 @@ public partial class MainViewModel
                 {
                     if (ShouldAutoStageRtx40Mfg("PeriodicRefresh"))
                     {
-                        await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
+                        await _rtx40MfgService.CheckForUpdateAsync();
                         if (_rtx40MfgService.HasUpdate
                             && !AntivirusGuard.IsBlocked(Rtx40MfgService.AntivirusComponentName, _rtx40MfgService.LatestVersion))
                             await _rtx40MfgService.EnsureStagingAsync();
@@ -392,7 +392,7 @@ public partial class MainViewModel
                 try
                 {
                     var rtxEncoreSvc = App.Services.GetRequiredService<RtxEncoreService>();
-                    await rtxEncoreSvc.CheckForUpdateAsync(forceRefresh: true);
+                    await rtxEncoreSvc.CheckForUpdateAsync();
                     if (rtxEncoreSvc.HasUpdate)
                     {
                         await rtxEncoreSvc.EnsureStagingAsync();

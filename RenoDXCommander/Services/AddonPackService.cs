@@ -477,7 +477,7 @@ public class AddonPackService : IAddonPackService
         CrashReporter.Log($"[AddonPackService.ApplyManifestOverrides] Applied {manifest.AddonPacks.Count} override(s), {_packs.Count} addons active.");
     }
 
-    // ── Stub methods (implemented in subsequent tasks) ────────────────────────────
+    // ── Download, deploy and update ───────────────────────────────────────────────
 
     /// <inheritdoc />
     public async Task DownloadAddonAsync(AddonEntry entry, IProgress<(string msg, double pct)>? progress = null, string? versionOverride = null)

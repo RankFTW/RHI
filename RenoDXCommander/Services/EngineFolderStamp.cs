@@ -6,9 +6,10 @@
 // first two levels plus the exe names at the top two levels. Names change when a game is still
 // downloading, installs further or is restructured by an update.
 //
-// Modified times are deliberately not used: RHI's shader sync rewrites reshade-shaders in every
-// game folder on each launch, and ReShade writes logs next to the exe, so times change constantly.
-// RHI/ReShade-owned folders are excluded for the same reason. Full Refresh clears the stamps.
+// Modified times are deliberately not used: ReShade writes logs next to the exe and RHI updates its
+// own files in game folders (shaders, add-ons) when they change, so times move for reasons that say
+// nothing about the engine. RHI/ReShade-owned folders are excluded for the same reason.
+// Full Refresh clears the stamps.
 
 namespace RenoDXCommander.Services;
 

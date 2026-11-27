@@ -278,9 +278,9 @@ public partial class RtxEncoreService
 
     // ── Staging ───────────────────────────────────────────────────────────────
 
-    public async Task CheckForUpdateAsync(bool forceRefresh = false)
+    public async Task CheckForUpdateAsync()
     {
-        var (version, _) = await FetchLatestReleaseInfoAsync(forceRefresh).ConfigureAwait(false);
+        var (version, _) = await FetchLatestReleaseInfoAsync().ConfigureAwait(false);
         if (string.IsNullOrEmpty(version)) return;
 
         LatestVersion = version;
@@ -539,13 +539,12 @@ public partial class RtxEncoreService
         }
     }
 
-    private async Task<(string? version, string? downloadUrl)> FetchLatestReleaseInfoAsync(
-        bool forceRefresh = false)
+    private async Task<(string? version, string? downloadUrl)> FetchLatestReleaseInfoAsync()
     {
         try
         {
             string? json;
-            // An ETag request always returns current data, so forced checks use the cache too.
+            // An ETag request always returns current data.
             json = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
             if (json == null) return (null, null);
 
