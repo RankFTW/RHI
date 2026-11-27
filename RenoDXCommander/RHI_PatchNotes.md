@@ -34,6 +34,7 @@
 - Fixed renaming a game losing track of its DXVK, RE Framework, OptiScaler, Display Commander and ASI Loader installs, so they could no longer be updated or removed properly.
 - Fixed Write these to all games, Write peak brightness to all games, the ReShade ⚙ hotkey Apply and Display modes also writing into ReShadePreset.ini, which put your screenshot folder (with your Windows user name) into presets you might share.
 - Fixed removing ReShade while the game was running taking out its shaders and add-ons and then failing. RHI now says the game is running and changes nothing.
+- Fixed a new Custom ReShade build never reaching a game that was running when it was copied, and Custom ReShade putting back a ReShade DLL you had deleted from a game.
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.

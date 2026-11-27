@@ -90,6 +90,8 @@ public class CustomReShadeHashService
         _crashReporter.Log($"[CustomReShadeHashService] {changedFiles.Count} custom DLL(s) changed: {string.Join(", ", changedFiles)}");
 
         int redeployCount = 0;
+        // DLLs whose copy failed somewhere (game running): their old hash is kept so the next check retries
+        var failed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // Find all games using Custom channel and determine which custom DLL they use
         var customGames = GetCustomChannelGames(allCards);
@@ -117,6 +119,7 @@ public class CustomReShadeHashService
                 }
                 catch (Exception ex)
                 {
+                    failed.Add(selectedDll);
                     _crashReporter.Log($"[CustomReShadeHashService] Failed to redeploy Vulkan layer — {ex.Message}");
                 }
             }
@@ -128,19 +131,27 @@ public class CustomReShadeHashService
                     var record = card.RsRecord;
                     if (record == null) continue;
 
-                    var destPath = Path.Combine(card.InstallPath, record.InstalledAs);
+                    var destPath = FileHelper.SafeCombine(card.InstallPath, record.InstalledAs);
+                    // Never re-create a ReShade DLL the user removed by hand
+                    if (destPath == null || !File.Exists(destPath)) continue;
                     File.Copy(sourcePath, destPath, overwrite: true);
                     redeployCount++;
                     _crashReporter.Log($"[CustomReShadeHashService] Redeployed '{selectedDll}' to '{card.GameName}'");
                 }
                 catch (Exception ex)
                 {
+                    failed.Add(selectedDll);
                     _crashReporter.Log($"[CustomReShadeHashService] Failed to redeploy to '{card.GameName}' — {ex.Message}");
                 }
             }
         }
 
-        // Save updated hashes (always — even if redeploy partially failed, the DLLs are still the new version)
+        // Save the new hashes, except for DLLs that failed to copy somewhere: those keep their old hash
+        // (or none), so the next check sees them as changed and tries again
+        foreach (var f in failed)
+            if (storedHashes.TryGetValue(f, out var old)) currentHashes[f] = old; else currentHashes.Remove(f);
+        if (failed.Count > 0)
+            _crashReporter.Log($"[CustomReShadeHashService] Will retry next check: {string.Join(", ", failed)}");
         SaveHashes(currentHashes);
         _crashReporter.Log($"[CustomReShadeHashService] Hashes updated. Redeployed to {redeployCount} game(s).");
 
