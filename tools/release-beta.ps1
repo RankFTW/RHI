@@ -58,12 +58,7 @@ if ($LASTEXITCODE -eq 0) { Fail "$BetaRepo already has a release $tag. Bump RhiB
 
 # ── 2. Build ──────────────────────────────────────────────────────────────────
 if (-not $SkipPublish) {
-    if (Get-Process RHI -ErrorAction SilentlyContinue) {
-        Write-Host 'Closing RHI...'
-        New-Item -ItemType File -Force (Join-Path $env:LOCALAPPDATA 'RHI\rhi_shutdown_requested') | Out-Null
-        $i = 0
-        while ((Get-Process RHI -ErrorAction SilentlyContinue) -and $i -lt 30) { Start-Sleep 1; $i++ }
-    }
+    # publish.bat closes RHI itself (shutdown signal file, force-stop after 10 s)
     Write-Host 'Running publish.bat...'
     # publish.bat uses paths relative to the repo, so run it from there
     # Full path: with NoDefaultCurrentDirectoryInExePath set, cmd doesn't look in the current folder

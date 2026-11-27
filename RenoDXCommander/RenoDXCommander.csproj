@@ -131,22 +131,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="OptiScaler.nvidia.ini">
+    <None Include="OptiScaler.nvidia.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </Content>
-    <Content Include="OptiScaler.amd-dlss.ini">
+    </None>
+    <None Include="OptiScaler.amd-dlss.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </Content>
+    </None>
     <None Include="OptiScaler.amd-nodlss.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </None>
-    <Content Include="OptiScaler_nightly.nvidia.ini">
+    <None Include="OptiScaler_nightly.nvidia.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </Content>
+    </None>
     <None Include="OptiScaler_nightly.amd-dlss.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>

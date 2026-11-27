@@ -16,6 +16,7 @@ if errorlevel 1 ( echo Publish failed & exit /b 1 )
 
 :: Build and copy the drop helper (non-elevated overlay for admin mode drag-drop)
 dotnet build RHI.DropHelper\RHI.DropHelper.csproj -c Release -v quiet
+if errorlevel 1 ( echo DropHelper build failed & exit /b 1 )
 copy /y "RHI.DropHelper\bin\x64\Release\net8.0-windows\RHI.DropHelper.exe" "%OUT%\" >nul
 copy /y "RHI.DropHelper\bin\x64\Release\net8.0-windows\RHI.DropHelper.dll" "%OUT%\" >nul 2>nul
 copy /y "RHI.DropHelper\bin\x64\Release\net8.0-windows\RHI.DropHelper.runtimeconfig.json" "%OUT%\" >nul
@@ -50,3 +51,8 @@ copy /y "%SRC%\OptiScaler.amd-nodlss.ini" "%OUT%\" >nul
 
 :: Deploy ClrMD for freeze diagnostics (must be loose alongside EXE, not bundled)
 copy /y "%USERPROFILE%\.nuget\packages\microsoft.diagnostics.runtime\3.1.512801\lib\net6.0\Microsoft.Diagnostics.Runtime.dll" "%OUT%\" >nul
+
+:: Every loose file above must be there: a copy that didn't happen (file renamed / missing) is hidden by >nul
+for %%F in ("RHI.exe" "RHI.DropHelper.exe" "RHI.DropHelper.runtimeconfig.json" "icon.ico" "7z.exe" "7z.dll" "ReShade.ini" "ReShade.Vulkan.ini" "ReShade64.json" "RHI_PatchNotes.md" "relimiter.ini" "reshade.rdr2.ini" "DisplayCommander.ini" "dxvk.conf" "Assets\icons\steam.ico" "Assets\icons\Ultra+.png" "OptiScaler_nightly.nvidia.ini" "OptiScaler_nightly.amd-dlss.ini" "OptiScaler_nightly.amd-nodlss.ini" "OptiScaler_dlssnr.nvidia.ini" "OptiScaler_dlssnr.amd-dlss.ini" "OptiScaler_dlssnr.amd-nodlss.ini" "OptiScaler_f5.nvidia.ini" "OptiScaler_f5.amd-dlss.ini" "OptiScaler_f5.amd-nodlss.ini" "OptiScaler.nvidia.ini" "OptiScaler.amd-dlss.ini" "OptiScaler.amd-nodlss.ini" "Microsoft.Diagnostics.Runtime.dll") do (
+    if not exist "%OUT%\%%~F" ( echo MISSING %%~F & exit /b 1 )
+)
