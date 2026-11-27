@@ -26,7 +26,7 @@ dotnet test  RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64 
 - `"RHI Setup.iss"` is the Inno Setup installer script (run after publish, by the user).
 - **XAML constraint**: don't add new named elements (`x:Name`) or new controls to `MainWindow.xaml` unless unavoidable. The publish pipeline has generated duplicate `MainWindow.g.i.cs` (CS0102). Build new UI in C# (see `SettingsHandler.cs`). Adding `x:Name` to an existing element is safe.
 - The test project's `Microsoft.WindowsAppSDK` version must match the app's (currently 2.5.1), or restore fails with NU1605.
-- The app has ~190 nullable warnings. Don't add new ones.
+- The app has about 40 build warnings (39 nullable, 27 Nov 2026). Don't add new ones.
 
 ## Git, versions, patch notes
 

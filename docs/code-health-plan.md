@@ -238,7 +238,7 @@ New homes (2.9.6): game settings ⚙ = Game name, Bitness, Graphics API, Launch 
   - ManifestEditor package versions are out of step with the app. Use `Directory.Packages.props` for central versions.
 - [x] **`.editorconfig` with a warning ratchet.** (`9217477b`)
   - Turn on IDE0051/0052/0005 as suggestions.
-  - Keep nullable warnings from rising above the current ~190.
+  - Keep nullable warnings from rising above the current 39 (27 Nov 2026; it was ~190).
 - [ ] **Repo size (196 MB).** Most of it is old ManifestEditor `bin` DLLs and 70 versions of `database/pcgw_data.json` in history. Only rewrite history if size becomes a problem; it would need a force-push.
 - [ ] **Remaining error handling:**
   - 19 empty catches remain in the files excluded from the cleanup (CrashReporter, AsyncExtensions, FileHelper, Heartbeat, NativeStack).
