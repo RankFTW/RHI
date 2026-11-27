@@ -27,6 +27,7 @@
 - Update checks are several seconds quicker, both the background ones and Check for updates: checks that don't depend on each other now run at the same time, and each shader pack is checked once per pass rather than once for every game that uses it.
 - Add-on update checks use fewer of GitHub's hourly requests (an unchanged release costs none) and keep working from the last answer while GitHub's limit is used up.
 - Launching RHI no longer rewrites files that haven't changed: OptiScaler's Streamline files in game folders, HSF's list of installed files and RHI's add-on record are only written when something is different.
+- Update checks download less from GitHub and finish about a second sooner: GitHub's answers now come compressed, Luma's release list is fetched for its newest release only (240 KB instead of 1.2 MB), and the DLSS5 add-on version lists are fetched together.
 
 ### Bug Fixes
 - Fixed searching the patch notes in What's New sometimes showing one version's full notes instead of the search results.
