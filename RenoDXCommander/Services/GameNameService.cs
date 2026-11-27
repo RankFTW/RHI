@@ -347,7 +347,6 @@ public partial class GameNameService : IGameNameService
     private volatile bool _settingsLoadFailed;
     private IDllOverrideService? _pendingDllOverride;
     private SettingsViewModel? _pendingSettings;
-    private ViewLayout _pendingViewLayout;
     private string _pendingFilterMode = "";
     private List<CustomFilter> _pendingCustomFilters = new();
 
@@ -372,7 +371,6 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> LoadNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        Action<ViewLayout> setViewLayout,
         Action<string> setFilterMode,
         Action<List<CustomFilter>> setCustomFilters)
     {
@@ -824,9 +822,6 @@ public partial class GameNameService : IGameNameService
         _rtxEncoreNrDllDeployed = new HashSet<string>(
             Load<List<string>>("RtxEncoreNrDllDeployed", new()), StringComparer.OrdinalIgnoreCase);
 
-        // Always force Detail view — Simple view has been removed
-        setViewLayout(ViewLayout.Detail);
-
         if (s.TryGetValue("FilterMode", out var fmVal) && !string.IsNullOrWhiteSpace(fmVal))
             setFilterMode(fmVal);
 
@@ -842,7 +837,6 @@ public partial class GameNameService : IGameNameService
     public void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        ViewLayout currentViewLayout,
         bool isLoadingSettings,
         string filterMode,
         List<CustomFilter> customFilters)
@@ -854,7 +848,6 @@ public partial class GameNameService : IGameNameService
         {
             _pendingDllOverride = dllOverrideService;
             _pendingSettings = settingsViewModel;
-            _pendingViewLayout = currentViewLayout;
             _pendingFilterMode = filterMode;
             _pendingCustomFilters = customFilters.ToList();
 
@@ -893,7 +886,6 @@ public partial class GameNameService : IGameNameService
     {
         IDllOverrideService? dllOverride;
         SettingsViewModel? settings;
-        ViewLayout viewLayout;
         string filterMode;
         List<CustomFilter> customFilters;
 
@@ -901,20 +893,18 @@ public partial class GameNameService : IGameNameService
         {
             dllOverride = _pendingDllOverride;
             settings = _pendingSettings;
-            viewLayout = _pendingViewLayout;
             filterMode = _pendingFilterMode;
             customFilters = _pendingCustomFilters;
         }
 
         if (dllOverride == null || settings == null) return;
 
-        DoSaveNameMappingsInternal(dllOverride, settings, viewLayout, filterMode, customFilters);
+        DoSaveNameMappingsInternal(dllOverride, settings, filterMode, customFilters);
     }
 
     private void DoSaveNameMappingsInternal(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        ViewLayout currentViewLayout,
         string filterMode,
         List<CustomFilter> customFilters)
     {

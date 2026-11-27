@@ -359,9 +359,8 @@
 
                 <!-- ── CONTENT COLUMN (Column 1): Detail Panel / Card Grid ────── -->
                 <Grid Grid.Column="1">
-                    <!-- Detail Panel (existing) — visible in Detail and Compact modes -->
+                    <!-- Detail Panel -->
                     <ScrollViewer x:Name="DetailScrollViewer" x:FieldModifier="internal"
-                                  Visibility="{x:Bind ViewModel.DetailOrCompactVisibility, Mode=OneWay}"
                                   VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                                   SizeChanged="DetailScrollViewer_SizeChanged">
                     <StackPanel x:Name="DetailPanel" x:FieldModifier="internal" Spacing="16" Visibility="Collapsed"

@@ -116,8 +116,7 @@ Set `comboInit = false` right after `Children.Add(combo)` — NOT at end of bloc
 - `PopulateDetailPanel` + `BuildOverridesPanel` are synchronous and heavy
 
 ## Compact View (removed)
-- Compact/Simple view was removed in v2.7.6. `GameNameService` forces `ViewLayout.Detail` on every settings load; there is no Views toggle. `CompactViewBuilder.cs` no longer exists.
-- Leftover `CurrentViewLayout == ViewLayout.Detail` checks are always true; don't build new UI for a compact layout.
+- Compact/Simple view was removed in v2.7.6; there is no Views toggle. The `ViewLayout` enum, `CurrentViewLayout` and `DetailOrCompactVisibility` were removed in 2.9.6.3 (Nov 2026 audit T5), and the old `ViewLayout` settings key is deleted on save. Don't build new UI for a compact layout.
 
 ## Component Cog Buttons (⚙️)
 - Each component row (Components and Extras sections) has ⚙️ → per-component ContentDialog

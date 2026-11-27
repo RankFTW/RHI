@@ -100,7 +100,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private AppPage currentPage = AppPage.GameView;
     [ObservableProperty] private GameCardViewModel? selectedGame;
     [ObservableProperty] private bool hasUpdatesAvailable;
-    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Detail;
 
     /// <summary>List of new wiki mods detected since last dismiss.</summary>
     [ObservableProperty] private List<string> _newWikiMods = new();
@@ -128,16 +127,6 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnNewLumaModsChanged(List<string> value)
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
-
-    public Visibility DetailPanelVisibility => Visibility.Visible;
-
-    public Visibility DetailOrCompactVisibility => Visibility.Visible;
-
-    partial void OnCurrentViewLayoutChanged(ViewLayout value)
-    {
-        OnPropertyChanged(nameof(DetailPanelVisibility));
-        OnPropertyChanged(nameof(DetailOrCompactVisibility));
-    }
 
     /// <summary>
     /// Raised when an install would overwrite a dxgi.dll that RDXC cannot identify
