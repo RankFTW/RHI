@@ -172,12 +172,17 @@ public class InstallEventHandler
         }
     }
 
+    // Games whose ReLimiter Install click is still in its checks: the button only disables once UlIsInstalling
+    // is set, after awaited checks (release lookup, NVAPI read), so a double-click could start two installs
+    private readonly HashSet<GameCardViewModel> _ulClickBusy = new();
+
     public async void InstallUlButton_Click(object sender, RoutedEventArgs e)
     {
+        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
+        if (card == null) return;
+        if (card.UlIsInstalling || !_ulClickBusy.Add(card)) return;
         try
         {
-            var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-            if (card == null) return;
             if (!await EnsureGameFolderAsync(card, sender)) return;
             if (!await ConfirmUlV4WarningsAsync(card, sender)) return;
             if (!card.IsUlInstalled && !await ConfirmLimiterWithFrameWarpAsync(card, sender, "ReLimiter")) return;
@@ -186,6 +191,10 @@ public class InstallEventHandler
         catch (Exception unhandledEx)
         {
             CrashReporter.Log($"[InstallEventHandler.InstallUlButton_Click] Unhandled error — {unhandledEx.Message}\n{unhandledEx.StackTrace}");
+        }
+        finally
+        {
+            _ulClickBusy.Remove(card);
         }
     }
 
