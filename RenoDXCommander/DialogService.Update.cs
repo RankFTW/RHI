@@ -445,9 +445,12 @@ public partial class DialogService
             return result;
         }
 
+        string activeQuery = ""; // the search the right side is showing results for ("" = none)
+
         void ApplySearch(string query)
         {
             query = query.Trim();
+            activeQuery = query;
             if (query.Length == 0)
             {
                 foreach (var n in navItems) { n.Button.Visibility = Visibility.Visible; n.Count.Text = ""; }
@@ -531,6 +534,9 @@ public partial class DialogService
             button.Click += (s, e) => { if (idx != selected) ShowVersion(idx); };
             button.GotFocus += (s, e) =>
             {
+                // While searching, focus moving onto a version (Tab, arrows, or WinUI moving it when the list
+                // narrows) must not swap the results for that version's notes: only a click / A does that
+                if (activeQuery.Length > 0) return;
                 if (button.FocusState == FocusState.Keyboard && idx != selected) ShowVersion(idx);
             };
             navItems.Add((item, label, count, button));
