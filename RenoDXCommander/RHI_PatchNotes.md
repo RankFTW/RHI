@@ -49,6 +49,7 @@
 - Several of RHI's saved files (add-on versions, Nexus update baselines, new-mod markers, chosen artwork, window position and others) could be left cut off by a crash or power cut mid-save. They are now saved in one step.
 
 ### Maintenance
+- The installer and app folder are about 370 KB smaller: a duplicate copy of RHI's icon is no longer included.
 - Session logs are about 20% smaller: large diagnostic dumps are only written with verbose logging on.
 - Folder paths that come from the online manifest (DLSS and Streamline locations, games split into several entries) are checked to stay inside the game's folder.
 - DLSS detection's saved paths are now safe to use from several scans at once.
