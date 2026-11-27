@@ -67,6 +67,14 @@ public sealed partial class MainWindow
         {
             _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
 
+            // One check at a time: a second one would download the same add-ons again alongside it
+            if (ViewModel.IsUpdateCheckRunning)
+            {
+                _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] An update check is already running — not starting another");
+                ShowStatusBarMessage("Already checking for updates. The status bar shows what it's waiting for.", TimeSpan.FromSeconds(6));
+                return;
+            }
+
             // Show progress dialog
             var progressPanel = new StackPanel { Spacing = 8 };
             var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };

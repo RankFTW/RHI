@@ -217,12 +217,27 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>1 while a periodic check runs; a tick that finds the last one still going is skipped.</summary>
+    private int _periodicCheckRunning;
+
     private System.Threading.Timer CreatePeriodicUpdateCheckTimer(TimeSpan firstDelay)
     {
         var interval = PeriodicUpdateCheckInterval;
         return new System.Threading.Timer(async _ =>
         {
             if (_backgroundStopped) return;
+            // The previous run is still going (slow connection): skip this one rather than run two side by side
+            if (Interlocked.Exchange(ref _periodicCheckRunning, 1) == 1)
+            {
+                _crashReporter.Log("[MainViewModel] Periodic update check skipped — the previous one is still running");
+                return;
+            }
+            try { await RunPeriodicCheckAsync(); }
+            finally { Interlocked.Exchange(ref _periodicCheckRunning, 0); }
+        }, null, firstDelay, interval);
+
+        async Task RunPeriodicCheckAsync()
+        {
             // Follow a token added or removed since the timer started (1h with a token, 4h without)
             var current = PeriodicUpdateCheckInterval;
             if (current != interval)
@@ -446,7 +461,7 @@ public partial class MainViewModel
                 CrashReporter.Log("[RefreshTrigger] Periodic timer — PeriodicAppUpdateCheck dispatched to UI thread");
                 PeriodicAppUpdateCheck?.Invoke();
             });
-        }, null, firstDelay, interval);
+        }
     }
 
     /// <summary>Callback set by MainWindow to trigger app update check from the periodic timer.</summary>

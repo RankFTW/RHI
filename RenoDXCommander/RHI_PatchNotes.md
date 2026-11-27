@@ -30,6 +30,8 @@
 - Add-on update checks use fewer of GitHub's hourly requests (an unchanged release costs none) and keep working from the last answer while GitHub's limit is used up.
 - Launching RHI no longer rewrites files that haven't changed: OptiScaler's Streamline files in game folders, HSF's list of installed files and RHI's add-on record are only written when something is different.
 - Update checks download less from GitHub and finish about a second sooner: GitHub's answers now come compressed, Luma's release list is fetched for its newest release only (240 KB instead of 1.2 MB), and the DLSS5 add-on version lists are fetched together.
+- The status bar now says what a slow update check is waiting for, for example "Checking for updates: downloading renodx-ue-extended.addon64 (12 of 65 MB)", instead of showing only "Checking for updates..." for minutes on a slow connection.
+- Only one update check runs at a time. Clicking Check for updates while one is running now says so instead of starting a second check that downloaded the same add-ons again, and the hourly check waits its turn.
 
 ### Bug Fixes
 - Fixed searching the patch notes in What's New sometimes showing one version's full notes instead of the search results.

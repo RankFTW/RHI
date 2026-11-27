@@ -205,6 +205,7 @@ fileMatchPattern: "*Install*,*Update*,*Orchestration*"
 ### Periodic Timer
 - `System.Threading.Timer` after the initial scan completes: every hour with a GitHub token, every 4 hours without (`MainViewModel.PeriodicUpdateCheckInterval`, from `GitHubTokenHandler.HasToken`; a full check uses most of the 60 requests an hour GitHub allows without a token). The launch-check cooldown uses the same interval; the timer re-arms itself if a token is added or removed, and saving / clearing the PAT in Settings restarts the countdown.
 - Re-fetches manifests, forces update check, triggers app version check
+- **One update check at a time** (Nov 2026): `CheckForUpdatesAsync` holds `_updateCheckGate` (a second caller waits, then the cooldown applies); Check for updates refuses with a status-bar message while `IsUpdateCheckRunning`; a periodic tick is skipped while the previous one runs (`_periodicCheckRunning`). On a slow connection the generic add-on downloads took minutes and three checks ran side by side. Their progress shows in the activity text through `ModInstallService.UpdateCheckDownloadProgress` (`ActivityScope.SetText`). No time limit on those downloads (user decision: it would fail checks for people on slow connections).
 
 ## Install Warnings
 - Manifest `installWarnings` field: per-game, per-component messages

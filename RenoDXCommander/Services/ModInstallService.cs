@@ -518,6 +518,12 @@ public class ModInstallService : IModInstallService
     /// when the local file was touched by another process (e.g. game, ReShade) or when
     /// the addon deploy path changed after installation.
     /// </summary>
+    /// <summary>
+    /// Progress of the full downloads the RenoDX update check makes (file name, bytes so far, total or null, finished),
+    /// so the status bar can say what a slow check is waiting for. Raised at most twice a second per file.
+    /// </summary>
+    public static event Action<string, long, long?, bool>? UpdateCheckDownloadProgress;
+
     private async Task<bool> CheckForUpdateByDownloadAsync(
         InstalledModRecord record,
         string url,
@@ -580,13 +586,33 @@ public class ModInstallService : IModInstallService
                 return false;
             }
 
-            using (var net  = await resp.Content.ReadAsStreamAsync())
-            using (var file = File.Create(tempFile))
+            var progressName = Path.GetFileName(localFile);
+            long? total = resp.Content.Headers.ContentLength;
+            long received = 0;
+            try
             {
-                var buf = new byte[1024 * 1024]; // 1 MB
-                int read;
-                while ((read = await net.ReadAsync(buf)) > 0)
-                    await file.WriteAsync(buf.AsMemory(0, read));
+                using (var net  = await resp.Content.ReadAsStreamAsync())
+                using (var file = File.Create(tempFile))
+                {
+                    var buf = new byte[1024 * 1024]; // 1 MB
+                    int read;
+                    long lastReport = 0;
+                    while ((read = await net.ReadAsync(buf)) > 0)
+                    {
+                        await file.WriteAsync(buf.AsMemory(0, read));
+                        received += read;
+                        long now = Environment.TickCount64;
+                        if (now - lastReport >= 500)
+                        {
+                            lastReport = now;
+                            UpdateCheckDownloadProgress?.Invoke(progressName, received, total, false);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                UpdateCheckDownloadProgress?.Invoke(progressName, received, total, true);
             }
 
             var remoteSize = new FileInfo(tempFile).Length;

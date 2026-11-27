@@ -8,7 +8,71 @@ public partial class MainViewModel
 {
     // ── Update checking ───────────────────────────────────────────────────────────
 
+    // One update check at a time: the hourly check, Refresh and Check for updates used to run side by side,
+    // each downloading the same large add-ons (seen on a slow connection, 27 Nov 2026).
+    private readonly SemaphoreSlim _updateCheckGate = new(1, 1);
+    private volatile bool _updateCheckRunning;
+    private ActivityScope? _updateCheckActivity;
+    private readonly object _updateCheckDownloadsLock = new();
+    private readonly Dictionary<string, (long Received, long? Total)> _updateCheckDownloads = new(StringComparer.OrdinalIgnoreCase);
+    private string? _updateCheckLastDownload;
+
+    /// <summary>True while an update check is running (the Check for updates button doesn't start a second one).</summary>
+    public bool IsUpdateCheckRunning => _updateCheckRunning;
+
     private async Task CheckForUpdatesAsync(List<GameCardViewModel> cards, List<InstalledModRecord> records, List<AuxInstalledRecord> auxRecords, bool userInitiated = false)
+    {
+        if (!_updateCheckGate.Wait(0))
+        {
+            _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] Another update check is running — waiting for it to finish");
+            await _updateCheckGate.WaitAsync();
+        }
+        _updateCheckRunning = true;
+        lock (_updateCheckDownloadsLock) { _updateCheckDownloads.Clear(); _updateCheckLastDownload = null; }
+        ModInstallService.UpdateCheckDownloadProgress += OnUpdateCheckDownloadProgress;
+        try
+        {
+            await CheckForUpdatesCoreAsync(cards, records, auxRecords, userInitiated);
+        }
+        finally
+        {
+            ModInstallService.UpdateCheckDownloadProgress -= OnUpdateCheckDownloadProgress;
+            _updateCheckActivity = null;
+            _updateCheckRunning = false;
+            _updateCheckGate.Release();
+        }
+    }
+
+    /// <summary>Shows a running add-on download in the update check's status text, e.g. "downloading x (12 of 65 MB)".</summary>
+    private void OnUpdateCheckDownloadProgress(string file, long received, long? total, bool finished)
+    {
+        var activity = _updateCheckActivity;
+        if (activity == null) return;
+        string text;
+        lock (_updateCheckDownloadsLock)
+        {
+            if (finished) _updateCheckDownloads.Remove(file);
+            else { _updateCheckDownloads[file] = (received, total); _updateCheckLastDownload = file; }
+            if (_updateCheckLastDownload == null || !_updateCheckDownloads.TryGetValue(_updateCheckLastDownload, out var shown))
+            {
+                _updateCheckLastDownload = _updateCheckDownloads.Keys.FirstOrDefault();
+                shown = _updateCheckLastDownload != null ? _updateCheckDownloads[_updateCheckLastDownload] : default;
+            }
+            if (_updateCheckLastDownload == null) text = UpdateCheckIdleText;
+            else
+            {
+                static string Mb(long b) => (b / 1048576.0).ToString(b < 10 * 1048576 ? "0.0" : "0", System.Globalization.CultureInfo.InvariantCulture);
+                var size = shown.Total is long t && t > 0 ? $"{Mb(shown.Received)} of {Mb(t)} MB" : $"{Mb(shown.Received)} MB";
+                int others = _updateCheckDownloads.Count - 1;
+                text = $"Checking for updates: downloading {_updateCheckLastDownload} ({size})" + (others > 0 ? $" and {others} more" : "");
+            }
+        }
+        activity.SetText(text);
+    }
+
+    private const string UpdateCheckIdleText = "Checking for updates...";
+
+    private async Task CheckForUpdatesCoreAsync(List<GameCardViewModel> cards, List<InstalledModRecord> records, List<AuxInstalledRecord> auxRecords, bool userInitiated)
     {
         // ── Cooldown: skip update checks if last check was recent ──────────────
         // Same as the periodic interval: 1h with a GitHub token, 4h without
@@ -41,7 +105,8 @@ public partial class MainViewModel
             return;
         }
 
-        using var activity = BeginActivity("Checking for updates...");
+        using var activity = BeginActivity(UpdateCheckIdleText);
+        _updateCheckActivity = activity;
 
         // If the user changed the channel to Custom after the last install, the record's Channel
         // is stale — patch it here so CheckReShadeUpdateLocal correctly skips custom/legacy channels.
