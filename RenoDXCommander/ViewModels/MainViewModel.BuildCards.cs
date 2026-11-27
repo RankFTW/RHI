@@ -825,6 +825,7 @@ public partial class MainViewModel
                 RsInstalledVersion     = rsRec != null ? AuxInstallService.ReadInstalledVersion(rsRec.InstallPath, rsRec.InstalledAs) : null,
                 IsREEngineGame         = engine == EngineType.REEngine,
             };
+            LogPhase("CardInit"); // audit P9(b): marks inside the old "ReLimiter" span
 
             // ── Emulator detection ─────────────────────────────────────────────────
             if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
@@ -1013,6 +1014,7 @@ public partial class MainViewModel
             // never does filesystem I/O when painting the detail panel (AppData button visibility).
             newCard.GameConfigRootPath = AuxInstallService.ResolveGameConfigRoot(
                 newCard.InstallPath, newCard.EngineIniProjectOverride, newCard.GameName);
+            LogPhase("ApiAndConfigRoot");
 
             // For Vulkan games, RS is installed when reshade.ini exists in the game folder.
             if (newCard.RequiresVulkanInstall)
@@ -1029,6 +1031,7 @@ public partial class MainViewModel
             // Populate cached INI/backup state — must run on background thread (does I/O).
             // Games without DLSS never call ApplyDlssDetection so this is the only guaranteed path.
             newCard.RefreshBackupState();
+            LogPhase("BackupState");
 
             // ── ReLimiter detection ────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))

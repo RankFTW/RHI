@@ -479,6 +479,10 @@ public partial class MainViewModel
         // Check Vulkan layer status once before the loop (avoid registry reads per-card)
         var vulkanLayerInstalled = VulkanLayerService.IsLayerInstalled();
 
+        // Audit P9(a): where the card loop's time goes (measurement only; feeds the D5 decision)
+        long loopStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        long dlssTicks = 0, backupTicks = 0, engineHintTicks = 0;
+
         foreach (var game in allGames)
         {
             var rootKey = game.InstallPath.TrimEnd('\\', '/').ToLowerInvariant();
@@ -600,12 +604,14 @@ public partial class MainViewModel
                     r.AddonType == OptiScalerService.AddonType);
 
             // Build engine hint string
+            long engineHintStart = System.Diagnostics.Stopwatch.GetTimestamp();
             var engineHint = engineOverrideLabel != null
                 ? engineOverrideLabel
                 : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, installPath)
                 : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
                 : engine == EngineType.Unity        ? "Unity"
                 : engine == EngineType.REEngine     ? "RE Engine" : "";
+            engineHintTicks += System.Diagnostics.Stopwatch.GetTimestamp() - engineHintStart;
 
             var is32Bit = ResolveIs32Bit(game.Name, machineType, game.Source ?? "");
 
@@ -667,7 +673,9 @@ public partial class MainViewModel
 
             // Populate cached INI/backup state — must run on background thread (does I/O).
             // Games without DLSS never call ApplyDlssDetection so this is the only guaranteed path.
+            long backupStart = System.Diagnostics.Stopwatch.GetTimestamp();
             newCard.RefreshBackupState();
+            backupTicks += System.Diagnostics.Stopwatch.GetTimestamp() - backupStart;
 
             // ── Emulator detection (cached path) ───────────────────────────────
             if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
@@ -814,7 +822,9 @@ public partial class MainViewModel
                     newCard.RsInstalledVersion = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var vulkanVer) == true
                         ? vulkanVer
                         : AuxInstallService.ReadInstalledVersion(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                    long vkBackupStart = System.Diagnostics.Stopwatch.GetTimestamp();
                     newCard.RefreshBackupState(); // populate VulkanRsIniExists so the panel shows correctly
+                    backupTicks += System.Diagnostics.Stopwatch.GetTimestamp() - vkBackupStart;
                 }
             }
 
@@ -855,6 +865,7 @@ public partial class MainViewModel
             }
 
             // DLSS / Streamline: restore from cached paths (fast — just reads file versions, no directory scan)
+            long dlssStart = System.Diagnostics.Stopwatch.GetTimestamp();
             if (savedLib.DlssPathsCache != null && savedLib.DlssPathsCache.TryGetValue(savedLibKey, out var dlssCache))
             {
                 var detection = new DlssDetectionResult
@@ -890,6 +901,7 @@ public partial class MainViewModel
                 if (detection.HasAny)
                     newCard.ApplyDlssDetection(detection);
             }
+            dlssTicks += System.Diagnostics.Stopwatch.GetTimestamp() - dlssStart;
 
             // DLSS / Streamline detection is NOT done via full recursive scan here (cache path)
             // because it's too slow for the UI thread. The background scan handles fresh detection.
@@ -1139,7 +1151,11 @@ public partial class MainViewModel
 
         _allCards = cards;
         PropagateDispatcherToCards();
-        _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Lightweight card build complete: {_allCards.Count} cards");
+        static long Ms(long ticks) => ticks * 1000 / System.Diagnostics.Stopwatch.Frequency;
+        long loopTicks = System.Diagnostics.Stopwatch.GetTimestamp() - loopStart;
+        _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Lightweight card build complete: {_allCards.Count} cards — "
+            + $"loop {Ms(loopTicks)} ms: DLSS versions {Ms(dlssTicks)} ms, backup state {Ms(backupTicks)} ms, "
+            + $"engine hint {Ms(engineHintTicks)} ms, other {Ms(loopTicks - dlssTicks - backupTicks - engineHintTicks)} ms");
 
         // 10. Apply card overrides and manifest card overrides
         //     (manifest is null during cache phase — ApplyManifestCardOverrides is a no-op with null)
