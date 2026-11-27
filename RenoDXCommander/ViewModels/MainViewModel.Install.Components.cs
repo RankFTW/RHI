@@ -379,12 +379,14 @@ public partial class MainViewModel
             else
             {
                 // Force fresh download on reinstall (but not update — the check already cached the new file)
-                // A v4 test build placed in the cache by hand is kept (it's newer than any release)
+                // A v4 test build placed in the cache by hand is kept (it's newer than any release).
+                // The cached file is replaced only once the new download is complete (never deleted first),
+                // so a reinstall offline or rate-limited still installs from the cache.
+                bool forceDownload = false;
                 if (card.UlStatus == GameStatus.Installed && File.Exists(GetUlCachePath(card.Is32Bit)))
                 {
                     if (string.IsNullOrEmpty(_latestUlVersion)) await FetchLatestUlReleaseInfoAsync(card.Is32Bit);
-                    if (!await Task.Run(() => IsUlCacheNewerThanLatest(card.Is32Bit)))
-                        File.Delete(GetUlCachePath(card.Is32Bit));
+                    forceDownload = !await Task.Run(() => IsUlCacheNewerThanLatest(card.Is32Bit));
                 }
 
                 // Download to cache if not already cached (dev test build: copy that instead)
@@ -395,7 +397,15 @@ public partial class MainViewModel
                 }
                 else
                 {
-                    await EnsureUlCachedAsync(card.Is32Bit, ulProgress);
+                    try
+                    {
+                        await EnsureUlCachedAsync(card.Is32Bit, ulProgress, forceDownload);
+                    }
+                    catch (Exception ex) when (forceDownload && File.Exists(GetUlCachePath(card.Is32Bit))
+                        && ex is HttpRequestException or IOException or InvalidOperationException or TaskCanceledException)
+                    {
+                        CrashReporter.Log($"[MainViewModel.InstallUlAsync] Fresh download failed — installing the cached build — {ex.Message}");
+                    }
                     sourcePath = GetUlCachePath(card.Is32Bit);
                 }
             }
@@ -524,9 +534,10 @@ public partial class MainViewModel
     /// Downloads ReLimiter to the cache directory if not already present.
     /// Fetches the latest release info from GitHub if not already cached from an update check.
     /// </summary>
-    private async Task EnsureUlCachedAsync(bool is32Bit, IProgress<(string msg, double pct)>? progress = null)
+    private async Task EnsureUlCachedAsync(bool is32Bit, IProgress<(string msg, double pct)>? progress = null, bool forceDownload = false)
     {
-        if (File.Exists(GetUlCachePath(is32Bit)))
+        // forceDownload (reinstall): download again; the cached file is only replaced once the download is complete
+        if (!forceDownload && File.Exists(GetUlCachePath(is32Bit)))
         {
             // The cache must hold the latest release when that's known: once v4 is out, games staying on v3
             // no longer trigger the update pre-cache, so an older build could otherwise sit here as "latest"
