@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56167,
-  "generated": "2026-11-27T17:17:46Z",
+  "game_count": 56168,
+  "generated": "2026-11-27T19:17:46Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -45771,7 +45771,9 @@
       "steam_appid": 613270
     },
     "DinoSystem": {
-      "steam_appid": 373750
+      "steam_appid": 373750,
+      "dx11": true,
+      "engine": "Construct 3"
     },
     "Dinotopia": {
       "engine": "SAGA"
@@ -153368,6 +153370,9 @@
       "engine": "Unity"
     },
     "Spirit: Stallion of the Cimarron - Forever Free": {},
+    "Spirited Drive": {
+      "config_path": "%APPDATA%\\Spirited Drive\\"
+    },
     "Spirited Heart Deluxe": {
       "steam_appid": 293920,
       "engine": "Ren'Py"
