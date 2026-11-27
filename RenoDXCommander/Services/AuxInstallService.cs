@@ -552,6 +552,9 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     ///   1. File exists, no .original  → File.Move to .original (real backup of game's file)
     ///   2. File exists, .original exists → no-op (backup already captured; never replace a real .original with a sentinel)
     ///   3. File does NOT exist → write a 0-byte .original sentinel so uninstall knows RHI placed the file from scratch
+    /// Throws <see cref="IOException"/> when the game's own file is still there and couldn't be moved to .original
+    /// (briefly locked, e.g. by antivirus): overwriting it then would lose it for good, so the caller's copy must not run.
+    /// A failed 0-byte sentinel is only logged (nothing of the game's is lost).
     /// </summary>
     public static void SentinelBackup(string destPath)
     {
@@ -582,6 +585,8 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
         catch (Exception ex)
         {
             CrashReporter.Log($"[SentinelBackup] Failed for '{Path.GetFileName(destPath)}' — {ex.Message}");
+            if (File.Exists(destPath) && !File.Exists(backup))
+                throw new IOException($"Couldn't back up the game's {Path.GetFileName(destPath)} before replacing it, so it was left unchanged ({ex.Message})", ex);
         }
     }
 

@@ -664,9 +664,10 @@ public partial class DlssStreamlineService
         //   file exists, no .original  → real backup (File.Move)
         //   file exists, .original exists → no-op (preserve existing backup)
         //   file absent → 0-byte sentinel so Restore knows to clean up entirely
-        AuxInstallService.SentinelBackup(targetPath);
         try
         {
+            // Throws when the game's own file couldn't be moved aside: the copy must not run then
+            AuxInstallService.SentinelBackup(targetPath);
             File.Copy(sourcePath, targetPath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

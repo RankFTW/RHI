@@ -88,4 +88,24 @@ public class SentinelOwnCopyTests : IDisposable
         foreach (var n in Dlssg20_30Service.AutoProxyNames) Put(n, Game);
         Assert.Null(Dlssg20_30Service.PickFreeProxyName(_dir));
     }
+
+    [Fact]
+    public void GameFile_BackupFails_ThrowsAndLeavesFile()
+    {
+        // Audit D3: the game's own DLL is locked (antivirus) so it can't move to .original; overwriting it would lose it
+        var dll = Put("nvngx_dlss.dll", Game);
+        using (new FileStream(dll, FileMode.Open, FileAccess.Read, FileShare.Read))
+            Assert.Throws<IOException>(() => AuxInstallService.SentinelBackup(dll));
+        Assert.Equal(Game, File.ReadAllBytes(dll));
+        Assert.False(File.Exists(dll + ".original"));
+    }
+
+    [Fact]
+    public void AbsentFile_SentinelFails_OnlyLogged()
+    {
+        // Nothing of the game's to lose: a sentinel that can't be written doesn't stop the install
+        var dll = Path.Combine(_dir, "missing-folder", "version.dll");
+        AuxInstallService.SentinelBackup(dll);
+        Assert.False(File.Exists(dll + ".original"));
+    }
 }

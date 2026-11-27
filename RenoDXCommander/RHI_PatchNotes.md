@@ -44,6 +44,7 @@
 - Fixed the selected game's page being built twice at every launch.
 - Fixed a game owned on two stores jumping to the other store's copy when you filtered or searched the game list, and Spotlight keeping the first copy's banner when you switched between the two copies.
 - Fixed every Settings visit adding another copy of the DLDSR smoothness slider's update, which piled up while RHI sat in the tray for days.
+- Fixed a game's own file being lost when RHI couldn't back it up before replacing it (for example while antivirus briefly held it): the install now stops with a message and leaves the game's file alone.
 - Fixed new RE Framework versions not being noticed until RHI was restarted, which mattered when RHI sat in the tray for days.
 - Fixed Luma mods that are only on Luma's releases page (not its wiki) no longer matching their games after the first background update check, until the next Refresh.
 - ReLimiter install now automatically disables NVIDIA Low Latency Mode in the driver profile for the game. Low Latency conflicts with ReLimiter's frame pacing and can cause stutters; RHI was already doing this for the driver FPS limiter.

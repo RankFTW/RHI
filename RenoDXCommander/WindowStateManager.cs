@@ -415,16 +415,6 @@ public class WindowStateManager
                 doc.TryGetProperty("W", out var uw) && doc.TryGetProperty("H", out var uh))
                 _windowBounds = (ux.GetInt32(), uy.GetInt32(), uw.GetInt32(), uh.GetInt32());
 
-            // Legacy migration: old format stored FullX/FullY or CompactX/CompactY — prefer Compact (closest to new layout)
-            if (_windowBounds == null &&
-                doc.TryGetProperty("CompactX", out var cx) && doc.TryGetProperty("CompactY", out var cy) &&
-                doc.TryGetProperty("CompactW", out var cw) && doc.TryGetProperty("CompactH", out var ch))
-                _windowBounds = (cx.GetInt32(), cy.GetInt32(), cw.GetInt32(), ch.GetInt32());
-
-            if (_windowBounds == null &&
-                doc.TryGetProperty("FullX", out var fx) && doc.TryGetProperty("FullY", out var fy) &&
-                doc.TryGetProperty("FullW", out var fw) && doc.TryGetProperty("FullH", out var fh))
-                _windowBounds = (fx.GetInt32(), fy.GetInt32(), fw.GetInt32(), fh.GetInt32());
 
             bool restoreMaximized = !positionOnly
                 && doc.TryGetProperty("Maximized", out var maxProp)

@@ -410,9 +410,6 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database fetch failed — {ex.Message}"); }
             });
 
-            // One-time migration: move nightly DLLs from old shared folder to new nightly folder
-            MigrateNightlyStagingFolder();
-
             // One-time migration: wipe stale DLSS5Feeder shader staging folder.
             // The DLSS5Feeder pack was previously downloaded from the repo zip (which no longer
             // contains DLSS5_Feed.fx). The file is now extracted from the Feeder addon zip.
@@ -524,8 +521,6 @@ public partial class MainViewModel
                         _ => DxvkVariant.Development,
                     };
 
-                    // Migrate legacy shared staging folder to variant-specific folders
-                    MigrateDxvkStagingFolder();
 
                     // Only download the globally selected variant at startup, and only when a
                     // game uses DXVK. Other variants, and first installs, download on demand.

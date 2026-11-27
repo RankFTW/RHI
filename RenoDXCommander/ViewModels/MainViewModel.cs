@@ -61,8 +61,6 @@ public partial class MainViewModel : ObservableObject
     public IAddonPackService AddonPackServiceInstance => _addonPackService;
     public UltimateAsiLoaderService UalServiceInstance => _ualService;
     public SettingsViewModel Settings => _settingsViewModel;
-    /// <summary>True when the user has selected the Nightly ReShade build channel.</summary>
-    public bool IsReShadeNightly => string.Equals(_settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase);
     public FilterViewModel Filter => _filterViewModel;
     public IGameNameService GameNameServiceInstance => _gameNameService;
     public RemoteManifest? Manifest => _manifest;
