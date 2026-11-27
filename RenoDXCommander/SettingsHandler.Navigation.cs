@@ -402,6 +402,7 @@ public partial class SettingsHandler
         EnsureLaunchButtonRows();
         EnsureShaderCompileRow();
         EnsureSteamGridDbCard();
+        EnsureTunePresetsSection();  // before the nav, so it gets a jump button (just before Components)
         EnsureRhiOverlaySection();   // before the nav, so it gets a jump button (just before Tools)
         EnsureAchievementsSection(); // a card in the overlay section, so after it
         EnsureSettingsNavigation();

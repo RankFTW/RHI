@@ -25,11 +25,6 @@ public partial class DetailPanelBuilder
         var store       = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
-        const string DeployFileName  = "renodx-mfgunlock.addon64";
-        var stagedPath  = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "addons", "MFG Ada Unlock.addon64");
-
         // Use cached state from card instead of File.Exists on UI thread
         bool isInstalled   = card.MfgAdaInstalled;
         bool rsInstalled   = card.IsRsInstalled;
@@ -160,56 +155,7 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || card.Is32Bit) return;
-            // Anti-cheat games: warn (Continue / Cancel), don't block
-            if (!await ConfirmAntiCheatAsync(card, "MFG Unlock", AntiCheatNoticeKey.MfgUnlock, installBtn.XamlRoot)) return;
-            installBtn.IsEnabled = false;
-            installBtn.Content   = "Downloading...";
-            try
-            {
-                // Download on demand if not yet staged
-                if (!File.Exists(stagedPath))
-                {
-                    var addonSvc = _window.ViewModel.AddonPackServiceInstance;
-                    var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
-                        p.PackageName.Equals("MFG Ada Unlock", StringComparison.OrdinalIgnoreCase));
-                    if (entry != null)
-                        await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
-                }
-
-                if (!File.Exists(stagedPath))
-                {
-                    CrashReporter.Log("[BuildMfgAdaUnlockRow] Staged file still not found after download attempt");
-                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Download failed");
-                    return;
-                }
-
-                // Follow reshade.ini AddonPath; ReShade ignores addons in the game folder when it is set
-                var deployDir = ModInstallService.GetAddonDeployPath(installPath);
-                var dest = Path.Combine(deployDir, DeployFileName);
-                File.Copy(stagedPath, dest, overwrite: true);
-                // Track it so addon updates are copied here too
-                AddonPackService.TrackAddonDeployment(deployDir, DeployFileName);
-                RemoveMfgAdaRootCopy(installPath, deployDir);
-                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Installed '{DeployFileName}' to '{deployDir}'");
-
-                // Intel's XeSS files for the mod's XeMFG modes, in the game's exe folder.
-                // Not fatal: DLSS-G works without them.
-                _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Installing XeSS files...");
-                var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
-                await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
-                if (!mfgSvc.DeployAdaXessFiles(installPath))
-                    CrashReporter.Log($"[BuildMfgAdaUnlockRow] XeSS files not deployed to '{installPath}' (download failed or folder not writable)");
-                _window.DispatcherQueue?.TryEnqueue(() =>
-                {
-                    card.SetMfgState(mfgAdaInstalled: true, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
-                    RequestExtrasRebuild(card);
-                });
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Install failed — {ex.Message}");
-                _window.DispatcherQueue?.TryEnqueue(() => { installBtn.IsEnabled = true; installBtn.Content = btnLabel; });
-            }
+            await InstallMfgAdaCoreAsync(card, installBtn, btnLabel, installBtn.XamlRoot);
         };
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
@@ -256,65 +202,148 @@ public partial class DetailPanelBuilder
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-            try
-            {
-                // Remove from the AddonPath folder and from the game folder (older installs went there)
-                var deployDir = ModInstallService.GetAddonDeployPath(installPath);
-                foreach (var dir in new[] { deployDir, installPath }.Distinct(StringComparer.OrdinalIgnoreCase))
-                {
-                    var dest = Path.Combine(dir, DeployFileName);
-                    if (File.Exists(dest)) File.Delete(dest);
-                    AddonPackService.UntrackAddonDeployment(dir, DeployFileName);
-                }
-                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{DeployFileName}' from '{deployDir}'");
-
-                // RHI's copies of Intel's XeSS files (hashing runs off the UI thread)
-                var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
-                _ = Task.Run(() =>
-                {
-                    mfgSvc.RemoveAdaXessFiles(installPath);
-                    mfgSvc.RemoveNrDll(installPath, Rtx40MfgService.MfgUnlockNrOwnerName); // DLSS 5's NR DLL, if RHI installed it for the mod
-                });
-
-                // Also remove from addon selections so SyncGameFolder doesn't redeploy it.
-                // MFG Ada Unlock installed via Extras greys out the picker toggle — the user
-                // can't deselect it there, so we must clean up the selection here.
-                const string PackName = "MFG Ada Unlock";
-
-                // Global selection
-                var globalAddons = _window.ViewModel.Settings.EnabledGlobalAddons;
-                if (globalAddons.Remove(PackName))
-                {
-                    _window.ViewModel.SaveSettingsPublic();
-                    CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{PackName}' from global addon selection");
-                }
-
-                // Per-game selection (composite key first, then legacy name-only)
-                var gameNameService = _window.ViewModel.GameNameServiceInstance;
-                var compositeKey = Models.GameKey.FromCard(card.GameName, card.Source).ToKey();
-                bool perGameChanged = false;
-                if (gameNameService.PerGameAddonSelection.TryGetValue(compositeKey, out var perGame))
-                    perGameChanged = perGame.Remove(PackName);
-                if (!perGameChanged && gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var perGameLegacy))
-                    perGameChanged = perGameLegacy.Remove(PackName);
-                if (perGameChanged)
-                {
-                    _window.ViewModel.SaveSettingsPublic();
-                    CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{PackName}' from per-game addon selection for '{card.GameName}'");
-                }
-
-                card.SetMfgState(mfgAdaInstalled: false, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
-                RequestExtrasRebuild(card);
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Remove failed — {ex.Message}");
-            }
+            UninstallMfgAdaCore(card);
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    private const string MfgAdaDeployFileName = "renodx-mfgunlock.addon64";
+
+    private static string MfgAdaStagedPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "addons", "MFG Ada Unlock.addon64");
+
+    /// <summary>
+    /// The MFG Unlock install button's work (shared with Tune presets): anti-cheat confirm, on-demand download,
+    /// copy + track, XeSS files. <paramref name="installBtn"/> is the row's button (null from Tune). Card state is set
+    /// through the dispatcher, as the row always did. Returns null on success, "Cancelled", or an error.
+    /// </summary>
+    private async Task<string?> InstallMfgAdaCoreAsync(GameCardViewModel card, Button? installBtn, string btnLabel, XamlRoot? xamlRoot)
+    {
+        const string DeployFileName = MfgAdaDeployFileName;
+        var stagedPath  = MfgAdaStagedPath;
+        var installPath = card.InstallPath ?? "";
+        // Anti-cheat games: warn (Continue / Cancel), don't block
+        if (!await ConfirmAntiCheatAsync(card, "MFG Unlock", AntiCheatNoticeKey.MfgUnlock, xamlRoot)) return TuneCancelled;
+        if (installBtn != null)
+        {
+            installBtn.IsEnabled = false;
+            installBtn.Content   = "Downloading...";
+        }
+        try
+        {
+            // Download on demand if not yet staged
+            if (!File.Exists(stagedPath))
+            {
+                var addonSvc = _window.ViewModel.AddonPackServiceInstance;
+                var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
+                    p.PackageName.Equals("MFG Ada Unlock", StringComparison.OrdinalIgnoreCase));
+                if (entry != null)
+                    await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+            }
+
+            if (!File.Exists(stagedPath))
+            {
+                CrashReporter.Log("[BuildMfgAdaUnlockRow] Staged file still not found after download attempt");
+                if (installBtn != null) _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Download failed");
+                return "MFG Unlock couldn't be downloaded. Try again.";
+            }
+
+            // Follow reshade.ini AddonPath; ReShade ignores addons in the game folder when it is set
+            var deployDir = ModInstallService.GetAddonDeployPath(installPath);
+            var dest = Path.Combine(deployDir, DeployFileName);
+            File.Copy(stagedPath, dest, overwrite: true);
+            // Track it so addon updates are copied here too
+            AddonPackService.TrackAddonDeployment(deployDir, DeployFileName);
+            RemoveMfgAdaRootCopy(installPath, deployDir);
+            CrashReporter.Log($"[BuildMfgAdaUnlockRow] Installed '{DeployFileName}' to '{deployDir}'");
+
+            // Intel's XeSS files for the mod's XeMFG modes, in the game's exe folder.
+            // Not fatal: DLSS-G works without them.
+            if (installBtn != null) _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Installing XeSS files...");
+            var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
+            await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
+            if (!mfgSvc.DeployAdaXessFiles(installPath))
+                CrashReporter.Log($"[BuildMfgAdaUnlockRow] XeSS files not deployed to '{installPath}' (download failed or folder not writable)");
+            _window.DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.SetMfgState(mfgAdaInstalled: true, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
+                RequestExtrasRebuild(card);
+            });
+            return null;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildMfgAdaUnlockRow] Install failed — {ex.Message}");
+            if (installBtn != null) _window.DispatcherQueue?.TryEnqueue(() => { installBtn.IsEnabled = true; installBtn.Content = btnLabel; });
+            return $"MFG Unlock couldn't be installed: {ex.Message}";
+        }
+    }
+
+    /// <summary>The MFG Unlock remove button's work (shared with Tune presets). Returns null, or the error.</summary>
+    private string? UninstallMfgAdaCore(GameCardViewModel card)
+    {
+        const string DeployFileName = MfgAdaDeployFileName;
+        var installPath = card.InstallPath ?? "";
+        try
+        {
+            // Remove from the AddonPath folder and from the game folder (older installs went there)
+            var deployDir = ModInstallService.GetAddonDeployPath(installPath);
+            foreach (var dir in new[] { deployDir, installPath }.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var dest = Path.Combine(dir, DeployFileName);
+                if (File.Exists(dest)) File.Delete(dest);
+                AddonPackService.UntrackAddonDeployment(dir, DeployFileName);
+            }
+            CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{DeployFileName}' from '{deployDir}'");
+
+            // RHI's copies of Intel's XeSS files (hashing runs off the UI thread)
+            var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
+            _ = Task.Run(() =>
+            {
+                mfgSvc.RemoveAdaXessFiles(installPath);
+                mfgSvc.RemoveNrDll(installPath, Rtx40MfgService.MfgUnlockNrOwnerName); // DLSS 5's NR DLL, if RHI installed it for the mod
+            });
+
+            // Also remove from addon selections so SyncGameFolder doesn't redeploy it.
+            // MFG Ada Unlock installed via Extras greys out the picker toggle — the user
+            // can't deselect it there, so we must clean up the selection here.
+            const string PackName = "MFG Ada Unlock";
+
+            // Global selection
+            var globalAddons = _window.ViewModel.Settings.EnabledGlobalAddons;
+            if (globalAddons.Remove(PackName))
+            {
+                _window.ViewModel.SaveSettingsPublic();
+                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{PackName}' from global addon selection");
+            }
+
+            // Per-game selection (composite key first, then legacy name-only)
+            var gameNameService = _window.ViewModel.GameNameServiceInstance;
+            var compositeKey = Models.GameKey.FromCard(card.GameName, card.Source).ToKey();
+            bool perGameChanged = false;
+            if (gameNameService.PerGameAddonSelection.TryGetValue(compositeKey, out var perGame))
+                perGameChanged = perGame.Remove(PackName);
+            if (!perGameChanged && gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var perGameLegacy))
+                perGameChanged = perGameLegacy.Remove(PackName);
+            if (perGameChanged)
+            {
+                _window.ViewModel.SaveSettingsPublic();
+                CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{PackName}' from per-game addon selection for '{card.GameName}'");
+            }
+
+            card.SetMfgState(mfgAdaInstalled: false, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
+            RequestExtrasRebuild(card);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildMfgAdaUnlockRow] Remove failed — {ex.Message}");
+            return $"MFG Unlock couldn't be removed: {ex.Message}";
+        }
     }
 
     private static readonly string[] DeDllNames =
@@ -635,29 +664,7 @@ public partial class DetailPanelBuilder
                 if (string.IsNullOrEmpty(installPath)) return;
                 var chosen = await ShowDeDllPickerAsync(card, currentDllName);
                 if (chosen == null) return;
-
-                installBtn.IsEnabled = false;
-                installBtn.Content   = "Installing...";
-                try
-                {
-                    bool ok = await deSvc.InstallStandaloneAsync(gameName, installPath, store, chosen, currentDllName);
-                    if (ok)
-                    {
-                        _window.ViewModel.SetDeInstalledAs(gameName, chosen, store);
-                        RequestExtrasRebuild(card);
-                    }
-                    else
-                    {
-                        installBtn.Content   = "Install failed";
-                        installBtn.IsEnabled = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[BuildDlssEnablerRow] Install failed — {ex.Message}");
-                    installBtn.Content   = "Install failed";
-                    installBtn.IsEnabled = true;
-                }
+                await InstallDeCoreAsync(card, chosen, currentDllName, installBtn);
             };
         }
         Grid.SetColumn(installBtn, 3);
@@ -701,20 +708,71 @@ public partial class DetailPanelBuilder
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
-            if (!deSvc.UninstallStandalone(installPath, currentDllName))
-            {
-                // Kept: the file there isn't DLSS Enabler any more, or it's in use. The record stays.
-                _window.ShowStatusBarMessage($"Couldn't remove DLSS Enabler: {currentDllName} isn't DLSS Enabler or is in use (close the game and try again)", TimeSpan.FromSeconds(8));
-                return;
-            }
-            _window.ViewModel.SetDeInstalledAs(gameName, null, store);
-            RequestExtrasRebuild(card);
+            if (UninstallDeCore(card, currentDllName) is { } error)
+                _window.ShowStatusBarMessage(error, TimeSpan.FromSeconds(8));
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:Done({card.GameName})");
+    }
+
+    /// <summary>
+    /// The DLSS Enabler install button's work after the name pick (shared with Tune presets).
+    /// <paramref name="installBtn"/> is the row's button (null from Tune). Returns null on success, else an error.
+    /// </summary>
+    private async Task<string?> InstallDeCoreAsync(GameCardViewModel card, string chosen, string? currentDllName, Button? installBtn)
+    {
+        var deSvc       = App.Services.GetRequiredService<DlssEnablerService>();
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        if (installBtn != null)
+        {
+            installBtn.IsEnabled = false;
+            installBtn.Content   = "Installing...";
+        }
+        try
+        {
+            bool ok = await deSvc.InstallStandaloneAsync(gameName, installPath, store, chosen, currentDllName);
+            if (ok)
+            {
+                _window.ViewModel.SetDeInstalledAs(gameName, chosen, store);
+                RequestExtrasRebuild(card);
+                return null;
+            }
+            if (installBtn != null)
+            {
+                installBtn.Content   = "Install failed";
+                installBtn.IsEnabled = true;
+            }
+            return "DLSS Enabler couldn't be installed. See the log for details.";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildDlssEnablerRow] Install failed — {ex.Message}");
+            if (installBtn != null)
+            {
+                installBtn.Content   = "Install failed";
+                installBtn.IsEnabled = true;
+            }
+            return $"DLSS Enabler couldn't be installed: {ex.Message}";
+        }
+    }
+
+    /// <summary>The DLSS Enabler remove button's work (shared with Tune presets). Returns null, or why it was kept.</summary>
+    private string? UninstallDeCore(GameCardViewModel card, string currentDllName)
+    {
+        var deSvc = App.Services.GetRequiredService<DlssEnablerService>();
+        if (!deSvc.UninstallStandalone(card.InstallPath ?? "", currentDllName))
+        {
+            // Kept: the file there isn't DLSS Enabler any more, or it's in use. The record stays.
+            return $"Couldn't remove DLSS Enabler: {currentDllName} isn't DLSS Enabler or is in use (close the game and try again)";
+        }
+        _window.ViewModel.SetDeInstalledAs(card.GameName, null, card.Source ?? "");
+        RequestExtrasRebuild(card);
+        return null;
     }
 
     private async Task<string?> ShowDeDllPickerAsync(GameCardViewModel card, string? currentDllName)

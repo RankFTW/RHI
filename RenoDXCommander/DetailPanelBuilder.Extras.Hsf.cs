@@ -142,9 +142,7 @@ public partial class DetailPanelBuilder
 
                 installBtn.IsEnabled = false;
                 installBtn.Content   = "Installing...";
-                // Reinstall keeps the game's LaunchPad choice; a new install starts with it on
-                bool launchpad = !HsfService.IsRhiInstalled(installPath) || HsfService.ReadMarker(installPath).LaunchpadOn;
-                var error = await _window.ViewModel.InstallHsfAsync(card, launchpad);
+                var error = await InstallHsfCoreAsync(card);
                 if (error == null)
                 {
                     if (mfg.Install)
@@ -203,9 +201,7 @@ public partial class DetailPanelBuilder
             try
             {
                 removeBtn.IsEnabled = false;
-                await _window.ViewModel.UninstallHsfAsync(card);
-                RequestExtrasRebuild(card);
-                RequestExperimentalRebuild(card); // URTI's HSF warning
+                await UninstallHsfCoreAsync(card);
             }
             catch (Exception ex)
             {
@@ -217,6 +213,25 @@ public partial class DetailPanelBuilder
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    /// <summary>
+    /// The HSF install itself, after the notice (shared with Tune presets). Reinstall keeps the game's LaunchPad
+    /// choice; a new install starts with it on. Returns null on success, else HSF's error.
+    /// </summary>
+    private Task<string?> InstallHsfCoreAsync(GameCardViewModel card)
+    {
+        var installPath = card.InstallPath ?? "";
+        bool launchpad = !HsfService.IsRhiInstalled(installPath) || HsfService.ReadMarker(installPath).LaunchpadOn;
+        return _window.ViewModel.InstallHsfAsync(card, launchpad);
+    }
+
+    /// <summary>The HSF remove button's work (shared with Tune presets).</summary>
+    private async Task UninstallHsfCoreAsync(GameCardViewModel card)
+    {
+        await _window.ViewModel.UninstallHsfAsync(card);
+        RequestExtrasRebuild(card);
+        RequestExperimentalRebuild(card); // URTI's HSF warning
     }
 
     /// <summary>

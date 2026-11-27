@@ -400,6 +400,7 @@ public static class GameReportEncoder
             ["rhiOverlayOff"] = vm.IsOverlayDisabled(gameName, card.Source ?? ""),
             ["displayMode"] = vm.DisplayModesOn ? vm.ActiveDisplayModeName(card) : null,
             ["displayModeItems"] = vm.DisplayModesOn ? vm.DisplayModeStore.ItemsFor(ViewModels.MainViewModel.DisplayModeKey(card)).ToList() : null,
+            ["tunePreset"] = vm.TunedStateFor(card)?.PresetName,
         };
 
         // Addons

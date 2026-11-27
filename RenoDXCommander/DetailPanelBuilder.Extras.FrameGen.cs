@@ -184,60 +184,8 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-            try
-            {
-                // Fresh installs only: anti-cheat warning, closed-source notice, OptiScaler warning
-                var xamlRoot = installBtn.XamlRoot ?? _window.Content.XamlRoot;
-                var st = _window.ViewModel.Settings;
-                if (!isInstalled)
-                {
-                    if (!await ConfirmAntiCheatAsync(card, "20/30 FG Unlock", AntiCheatNoticeKey.Dlssg2030, xamlRoot)) return;
-                    if (!await ShowClosedSourceNoticeAsync("20/30 FG Unlock", "sdli1995",
-                            () => st.Dlssg2030ClosedSourceDismissed, () => st.Dlssg2030ClosedSourceDismissed = true, xamlRoot))
-                        return;
-                    if (card.IsOsInstalled && !await ConfirmDlssg2030WithOptiScalerAsync(xamlRoot)) return;
-                }
-
-                var chosen = await ShowDlssg2030DllPickerAsync(card, currentDllName);
-                if (chosen == null) return;
-
-                installBtn.IsEnabled = false;
-                installBtn.Content   = "Installing...";
-
-                // Only one proxy may be in the folder: if reinstalling under a different name,
-                // put the old slot back first (the ini and dlssg_sm86\ folder are reused)
-                if (isInstalled && !string.IsNullOrEmpty(currentDllName)
-                    && !currentDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
-                    AuxInstallService.SentinelRestore(Path.Combine(installPath, currentDllName));
-
-                var (staged, ok) = await Task.Run(async () =>
-                {
-                    if (!svc.IsStagingReady || svc.HasUpdate)
-                        await svc.EnsureStagingAsync().ConfigureAwait(false);
-                    if (!svc.IsStagingReady) return (false, false);
-                    // Same name as the current install: the file there is RHI's own proxy
-                    return (true, svc.Install(installPath, chosen,
-                        replacesOwnCopy: isInstalled && string.Equals(currentDllName, chosen, StringComparison.OrdinalIgnoreCase)));
-                });
-
-                if (ok)
-                {
-                    _window.ViewModel.SetDlssg2030InstalledAs(gameName, chosen, store);
-                    RequestExtrasRebuild(card);
-                }
-                else
-                {
-                    CrashReporter.Log($"[BuildDlssg2030Row] '{gameName}': {(staged ? "install" : "download")} failed");
-                    installBtn.Content   = staged ? "Install failed — see the log" : "Download failed — try again";
-                    installBtn.IsEnabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildDlssg2030Row] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed — see the log";
-                installBtn.IsEnabled = true;
-            }
+            await InstallDlssg2030CoreAsync(card, isInstalled, currentDllName, null, installBtn,
+                installBtn.XamlRoot ?? _window.Content.XamlRoot);
         };
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
@@ -269,14 +217,98 @@ public partial class DetailPanelBuilder
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-            svc.Uninstall(installPath, currentDllName);
-            _window.ViewModel.SetDlssg2030InstalledAs(gameName, null, store);
-            RequestExtrasRebuild(card);
+            UninstallDlssg2030Core(card, currentDllName);
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    /// <summary>
+    /// The 20/30 FG Unlock install button's work (shared with Tune presets): fresh installs get the anti-cheat,
+    /// closed-source and OptiScaler prompts, then the name picker unless <paramref name="fixedName"/> is given.
+    /// <paramref name="installBtn"/> is the row's button (null from Tune). Returns null on success, "Cancelled", or an error.
+    /// </summary>
+    private async Task<string?> InstallDlssg2030CoreAsync(GameCardViewModel card, bool isInstalled, string? currentDllName,
+        string? fixedName, Button? installBtn, XamlRoot? xamlRoot)
+    {
+        var svc         = App.Services.GetRequiredService<Dlssg20_30Service>();
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        try
+        {
+            // Fresh installs only: anti-cheat warning, closed-source notice, OptiScaler warning
+            var st = _window.ViewModel.Settings;
+            if (!isInstalled)
+            {
+                if (!await ConfirmAntiCheatAsync(card, "20/30 FG Unlock", AntiCheatNoticeKey.Dlssg2030, xamlRoot)) return TuneCancelled;
+                if (!await ShowClosedSourceNoticeAsync("20/30 FG Unlock", "sdli1995",
+                        () => st.Dlssg2030ClosedSourceDismissed, () => st.Dlssg2030ClosedSourceDismissed = true, xamlRoot))
+                    return TuneCancelled;
+                if (card.IsOsInstalled && !await ConfirmDlssg2030WithOptiScalerAsync(xamlRoot)) return TuneCancelled;
+            }
+
+            var chosen = fixedName ?? await ShowDlssg2030DllPickerAsync(card, currentDllName);
+            if (chosen == null) return TuneCancelled;
+
+            if (installBtn != null)
+            {
+                installBtn.IsEnabled = false;
+                installBtn.Content   = "Installing...";
+            }
+
+            // Only one proxy may be in the folder: if reinstalling under a different name,
+            // put the old slot back first (the ini and dlssg_sm86\ folder are reused)
+            if (isInstalled && !string.IsNullOrEmpty(currentDllName)
+                && !currentDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
+                AuxInstallService.SentinelRestore(Path.Combine(installPath, currentDllName));
+
+            var (staged, ok) = await Task.Run(async () =>
+            {
+                if (!svc.IsStagingReady || svc.HasUpdate)
+                    await svc.EnsureStagingAsync().ConfigureAwait(false);
+                if (!svc.IsStagingReady) return (false, false);
+                // Same name as the current install: the file there is RHI's own proxy
+                return (true, svc.Install(installPath, chosen,
+                    replacesOwnCopy: isInstalled && string.Equals(currentDllName, chosen, StringComparison.OrdinalIgnoreCase)));
+            });
+
+            if (ok)
+            {
+                _window.ViewModel.SetDlssg2030InstalledAs(gameName, chosen, store);
+                RequestExtrasRebuild(card);
+                return null;
+            }
+            CrashReporter.Log($"[BuildDlssg2030Row] '{gameName}': {(staged ? "install" : "download")} failed");
+            if (installBtn != null)
+            {
+                installBtn.Content   = staged ? "Install failed — see the log" : "Download failed — try again";
+                installBtn.IsEnabled = true;
+            }
+            return staged ? "20/30 FG Unlock couldn't be installed. See the log for details."
+                          : "20/30 FG Unlock couldn't be downloaded. Try again.";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildDlssg2030Row] Install failed — {ex.Message}");
+            if (installBtn != null)
+            {
+                installBtn.Content   = "Install failed — see the log";
+                installBtn.IsEnabled = true;
+            }
+            return $"20/30 FG Unlock couldn't be installed: {ex.Message}";
+        }
+    }
+
+    /// <summary>The 20/30 FG Unlock remove button's work (shared with Tune presets).</summary>
+    private void UninstallDlssg2030Core(GameCardViewModel card, string? currentDllName)
+    {
+        var svc = App.Services.GetRequiredService<Dlssg20_30Service>();
+        svc.Uninstall(card.InstallPath ?? "", currentDllName);
+        _window.ViewModel.SetDlssg2030InstalledAs(card.GameName, null, card.Source ?? "");
+        RequestExtrasRebuild(card);
     }
 
     private async Task<string?> ShowDlssg2030DllPickerAsync(GameCardViewModel card, string? currentDllName)
@@ -499,96 +531,7 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
-            var vm = _window.ViewModel;
-
-            // With an OptiScaler 10 build installed by RHI the mod goes in OptiScaler\plugins (no name to pick).
-            // Read the live location too: it can have moved since this panel was built.
-            bool asPlugin    = await Task.Run(() => vm.IsOptiScalerPluginHost(card));
-            var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
-            bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
-
-            // Games on RHI's anti-cheat list: warn before a new install (not on reinstall / update)
-            if (!liveInstalled && !await ConfirmAntiCheatAsync(card, "Universal MFG Unlocker",
-                    AntiCheatNoticeKey.UniversalMfg, installBtn.XamlRoot))
-                return;
-
-            // Installed for HSF's helper (HSF_streamline\mods), or a 32-bit game with HSF (HSF's guide: never next to
-            // a 32-bit exe): into HSF_streamline\mods, no name to pick
-            if ((liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName)) || (hasHsf && card.Is32Bit))
-            {
-                installBtn.IsEnabled = false;
-                installBtn.Content   = "Installing...";
-                var hsfError = await vm.InstallMfgForHsfAsync(card, null);
-                if (hsfError != null) CrashReporter.Log($"[BuildRtx40MfgRow] HSF mods reinstall failed — {hsfError}");
-                RequestExtrasRebuild(card);
-                return;
-            }
-
-            // XeMFG standalone can't start while ReShade hooks DXGI (the mod reports menu_factory_not_dxgi).
-            // Through OptiScaler it works, so no warning there.
-            if (!asPlugin && card.IsRsInstalled && !card.RequiresVulkanInstall
-                && !vm.Settings.UmfgReShadeWarningDismissed
-                && !await ShowUmfgReShadeWarningAsync(installBtn.XamlRoot))
-                return;
-
-            string? chosen;
-            if (asPlugin)
-                chosen = Rtx40MfgService.PluginRelPath;
-            else
-            {
-                chosen = await ShowMfgDllPickerAsync(card, Rtx40MfgService.IsPluginInstall(liveDllName) ? null : liveDllName);
-                if (chosen == null) return;
-            }
-
-            installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
-            try
-            {
-                // Proxy → plugin: move it so the old proxy name is remembered for when OptiScaler is removed
-                if (asPlugin && liveInstalled && !Rtx40MfgService.IsPluginInstall(liveDllName))
-                {
-                    var from  = liveDllName!;
-                    var moved = await Task.Run(() => mfgSvc.MoveToOptiScalerPlugin(installPath, from));
-                    if (moved != null) liveDllName = moved;
-                }
-
-                // If reinstalling under a different name, remove the old one first
-                if (liveInstalled && !string.IsNullOrEmpty(liveDllName)
-                    && !liveDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
-                {
-                    var oldName = liveDllName;
-                    await Task.Run(() => mfgSvc.Uninstall(installPath, oldName)); // hashes RHI's RTX Hair files
-                }
-
-                bool ok = await Task.Run(async () =>
-                {
-                    if (!mfgSvc.IsStagingReady || mfgSvc.HasUpdate)
-                        await mfgSvc.EnsureStagingAsync().ConfigureAwait(false);
-                    if (!asPlugin) // standalone XeMFG; through OptiScaler it uses OptiScaler's XeSS files
-                        await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
-                    // dxcompiler.dll / dxil.dll for RTX Hair (DirectX 12 games on RTX 30 / 40)
-                    await mfgSvc.PrepareRtxHairStagingAsync(installPath, chosen).ConfigureAwait(false);
-                    return mfgSvc.Install(installPath, chosen);
-                });
-
-                if (ok)
-                {
-                    _window.ViewModel.SetRtx40MfgInstalledAs(gameName, chosen, store);
-                    card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: card.MfgAdaInstalled, rtx40MfgInstalled: true);
-                    RequestExtrasRebuild(card);
-                }
-                else
-                {
-                    installBtn.Content   = "Download failed — try again";
-                    installBtn.IsEnabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildRtx40MfgRow] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
-                installBtn.IsEnabled = true;
-            }
+            await InstallUmfgCoreAsync(card, hasHsf, null, installBtn, installBtn.XamlRoot);
         };
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
@@ -702,31 +645,153 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(removeBtn, "Remove Universal MFG Unlocker from this game");
         removeBtn.Click += async (s, e) =>
         {
-            try
-            {
-                if (string.IsNullOrEmpty(installPath)) return;
-                removeBtn.IsEnabled = false;
-                // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
-                var liveName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? currentDllName;
-                await Task.Run(() =>
-                {
-                    mfgSvc.Uninstall(installPath, liveName); // hashes RHI's RTX Hair files
-                    mfgSvc.RemoveNrDll(installPath);          // the DLSS 5 NR DLL, if the mod installed it
-                });
-                _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
-                card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
-                RequestExtrasRebuild(card);
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildRtx40MfgRow] Remove failed — {ex.Message}");
-                removeBtn.IsEnabled = true;
-            }
+            if (string.IsNullOrEmpty(installPath)) return;
+            await UninstallUmfgCoreAsync(card, currentDllName, removeBtn);
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    /// <summary>
+    /// The Universal MFG Unlocker install button's work (shared with Tune presets): anti-cheat confirm, the HSF mods
+    /// case, the ReShade warning, then OptiScaler plugin placement or the name picker (skipped when
+    /// <paramref name="fixedName"/> is given). <paramref name="installBtn"/> is the row's button (null from Tune).
+    /// Returns null on success, "Cancelled", or an error.
+    /// </summary>
+    private async Task<string?> InstallUmfgCoreAsync(GameCardViewModel card, bool hasHsf, string? fixedName,
+        Button? installBtn, XamlRoot? xamlRoot)
+    {
+        var mfgSvc      = App.Services.GetRequiredService<Rtx40MfgService>();
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        var vm          = _window.ViewModel;
+        void Busy() { if (installBtn != null) { installBtn.IsEnabled = false; installBtn.Content = "Installing..."; } }
+
+        // With an OptiScaler 10 build installed by RHI the mod goes in OptiScaler\plugins (no name to pick).
+        // Read the live location too: it can have moved since this panel was built.
+        bool asPlugin    = await Task.Run(() => vm.IsOptiScalerPluginHost(card));
+        var liveDllName  = vm.GetRtx40MfgInstalledAs(gameName, store);
+        bool liveInstalled = !string.IsNullOrEmpty(liveDllName) && mfgSvc.IsInstalledIn(installPath, liveDllName);
+
+        // Games on RHI's anti-cheat list: warn before a new install (not on reinstall / update)
+        if (!liveInstalled && !await ConfirmAntiCheatAsync(card, "Universal MFG Unlocker",
+                AntiCheatNoticeKey.UniversalMfg, xamlRoot))
+            return TuneCancelled;
+
+        // Installed for HSF's helper (HSF_streamline\mods), or a 32-bit game with HSF (HSF's guide: never next to
+        // a 32-bit exe): into HSF_streamline\mods, no name to pick
+        if ((liveInstalled && Rtx40MfgService.IsHsfModsInstall(liveDllName)) || (hasHsf && card.Is32Bit))
+        {
+            Busy();
+            var hsfError = await vm.InstallMfgForHsfAsync(card, null);
+            if (hsfError != null) CrashReporter.Log($"[BuildRtx40MfgRow] HSF mods reinstall failed — {hsfError}");
+            RequestExtrasRebuild(card);
+            return hsfError;
+        }
+
+        // XeMFG standalone can't start while ReShade hooks DXGI (the mod reports menu_factory_not_dxgi).
+        // Through OptiScaler it works, so no warning there.
+        if (!asPlugin && card.IsRsInstalled && !card.RequiresVulkanInstall
+            && !vm.Settings.UmfgReShadeWarningDismissed
+            && !await ShowUmfgReShadeWarningAsync(xamlRoot))
+            return TuneCancelled;
+
+        string? chosen;
+        if (asPlugin)
+            chosen = Rtx40MfgService.PluginRelPath;
+        else
+        {
+            chosen = fixedName ?? await ShowMfgDllPickerAsync(card, Rtx40MfgService.IsPluginInstall(liveDllName) ? null : liveDllName);
+            if (chosen == null) return TuneCancelled;
+        }
+
+        Busy();
+        try
+        {
+            // Proxy → plugin: move it so the old proxy name is remembered for when OptiScaler is removed
+            if (asPlugin && liveInstalled && !Rtx40MfgService.IsPluginInstall(liveDllName))
+            {
+                var from  = liveDllName!;
+                var moved = await Task.Run(() => mfgSvc.MoveToOptiScalerPlugin(installPath, from));
+                if (moved != null) liveDllName = moved;
+            }
+
+            // If reinstalling under a different name, remove the old one first
+            if (liveInstalled && !string.IsNullOrEmpty(liveDllName)
+                && !liveDllName.Equals(chosen, StringComparison.OrdinalIgnoreCase))
+            {
+                var oldName = liveDllName;
+                await Task.Run(() => mfgSvc.Uninstall(installPath, oldName)); // hashes RHI's RTX Hair files
+            }
+
+            bool ok = await Task.Run(async () =>
+            {
+                if (!mfgSvc.IsStagingReady || mfgSvc.HasUpdate)
+                    await mfgSvc.EnsureStagingAsync().ConfigureAwait(false);
+                if (!asPlugin) // standalone XeMFG; through OptiScaler it uses OptiScaler's XeSS files
+                    await mfgSvc.EnsureXessStagingAsync().ConfigureAwait(false);
+                // dxcompiler.dll / dxil.dll for RTX Hair (DirectX 12 games on RTX 30 / 40)
+                await mfgSvc.PrepareRtxHairStagingAsync(installPath, chosen).ConfigureAwait(false);
+                return mfgSvc.Install(installPath, chosen);
+            });
+
+            if (ok)
+            {
+                _window.ViewModel.SetRtx40MfgInstalledAs(gameName, chosen, store);
+                card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: card.MfgAdaInstalled, rtx40MfgInstalled: true);
+                RequestExtrasRebuild(card);
+                return null;
+            }
+            if (installBtn != null)
+            {
+                installBtn.Content   = "Download failed — try again";
+                installBtn.IsEnabled = true;
+            }
+            return "Universal MFG Unlocker couldn't be downloaded. Try again.";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildRtx40MfgRow] Install failed — {ex.Message}");
+            if (installBtn != null)
+            {
+                installBtn.Content   = "Install failed";
+                installBtn.IsEnabled = true;
+            }
+            return $"Universal MFG Unlocker couldn't be installed: {ex.Message}";
+        }
+    }
+
+    /// <summary>The Universal MFG Unlocker remove button's work (shared with Tune presets). Returns null, or the error.</summary>
+    private async Task<string?> UninstallUmfgCoreAsync(GameCardViewModel card, string? fallbackDllName, Button? removeBtn)
+    {
+        var mfgSvc      = App.Services.GetRequiredService<Rtx40MfgService>();
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        try
+        {
+            if (removeBtn != null) removeBtn.IsEnabled = false;
+            // Live location: it may have moved in or out of OptiScaler\plugins since the panel was built
+            var liveName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store) ?? fallbackDllName;
+            await Task.Run(() =>
+            {
+                mfgSvc.Uninstall(installPath, liveName); // hashes RHI's RTX Hair files
+                mfgSvc.RemoveNrDll(installPath);          // the DLSS 5 NR DLL, if the mod installed it
+            });
+            _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
+            card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
+            RequestExtrasRebuild(card);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildRtx40MfgRow] Remove failed — {ex.Message}");
+            if (removeBtn != null) removeBtn.IsEnabled = true;
+            return $"Universal MFG Unlocker couldn't be removed: {ex.Message}";
+        }
     }
 
     private async Task<string?> ShowMfgDllPickerAsync(GameCardViewModel card, string? currentDllName)

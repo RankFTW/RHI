@@ -93,10 +93,14 @@ public partial class DetailPanelBuilder
         return null;
     }
 
+    /// <summary>Why <paramref name="self"/> can't be installed while <paramref name="blocker"/> is (row tooltip and Tune).</summary>
+    internal static string ExtraBlockReason(ExtraKind self, ExtraKind blocker) =>
+        $"{ExtraDisplayName(blocker)} is installed in this game and can't be used together with {ExtraDisplayName(self)}. Remove {ExtraDisplayName(blocker)} first.";
+
     /// <summary>Disables an Extras install button because <paramref name="blocker"/> is installed.</summary>
     private static void ApplyExtraBlock(Button installBtn, TextBlock? label, ExtraKind self, ExtraKind blocker, string? reason = null)
     {
-        reason ??= $"{ExtraDisplayName(blocker)} is installed in this game and can't be used together with {ExtraDisplayName(self)}. Remove {ExtraDisplayName(blocker)} first.";
+        reason ??= ExtraBlockReason(self, blocker);
         installBtn.IsEnabled        = false;
         installBtn.IsHitTestVisible = false;
         installBtn.Opacity          = 0.35;

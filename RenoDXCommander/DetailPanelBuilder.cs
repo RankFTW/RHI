@@ -326,6 +326,7 @@ public partial class DetailPanelBuilder
         _window.DetailAppDataBtn.Tag = card;
         _window.DetailAppDataBtn.Visibility = card.GameConfigRootPath != null ? Visibility.Visible : Visibility.Collapsed;
         _window.EnsureClassicGameSettingsButton(); // Classic+ Game settings (Tabs / Spotlight have the header cog)
+        _window.RefreshClassicTuneButton(card);    // Tune / Tuned after it
 
         // PCGW link button
         _window.DetailPcgwBtn.Tag = card;

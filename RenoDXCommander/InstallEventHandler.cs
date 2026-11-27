@@ -194,7 +194,7 @@ public class InstallEventHandler
     /// any Extras MFG mod installed (Universal MFG Unlocker, MFG Ada Unlock, 20/30 FG Unlock, DLSS Enabler) = one shared
     /// notice (Continue / Cancel / Don't show this again). True = go ahead.
     /// </summary>
-    private async Task<bool> ConfirmUlV4WarningsAsync(GameCardViewModel card, object sender)
+    internal async Task<bool> ConfirmUlV4WarningsAsync(GameCardViewModel card, object sender)
     {
         if (!await ViewModel.UlInstallWillBeV4Async(card)) return true;
         bool noticeDismissed = ViewModel.Settings.UlMfgModsNoticeDismissed;
@@ -254,7 +254,7 @@ public class InstallEventHandler
     /// FrameWarp (Experimental) paces the game itself and asks for frame rate limiters to be off. A fresh ReLimiter /
     /// Display Commander install in a game that has it asks first (Install anyway / Cancel). True = go ahead.
     /// </summary>
-    private async Task<bool> ConfirmLimiterWithFrameWarpAsync(GameCardViewModel card, object sender, string limiter)
+    internal async Task<bool> ConfirmLimiterWithFrameWarpAsync(GameCardViewModel card, object sender, string limiter)
     {
         if (string.IsNullOrEmpty(card.InstallPath) || !FrameWarpService.IsInstalledIn(card.InstallPath)) return true;
         var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content?.XamlRoot;

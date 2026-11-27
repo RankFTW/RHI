@@ -266,80 +266,7 @@ public partial class DetailPanelBuilder
         installBtn.Click += async (s, ev) =>
         {
             if (string.IsNullOrEmpty(installPath) || manifest?.DgVoodooVersions == null) return;
-            installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
-            try
-            {
-                // Pick version: prefer stored per-game override, then latest from manifest
-                KeyValuePair<string, string> versionEntry;
-                var storedVersion = _window.ViewModel.GetDgVoodooVersion(gameName, store);
-                if (!string.IsNullOrEmpty(storedVersion)
-                    && manifest.DgVoodooVersions.TryGetValue(storedVersion, out var storedUrl))
-                    versionEntry = new KeyValuePair<string, string>(storedVersion, storedUrl);
-                else
-                    versionEntry = manifest.DgVoodooVersions.First();
-
-                await dgSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
-                var deployed = await Task.Run(() =>
-                    dgSvc.DeployToGame(installPath, versionEntry.Key, is64Bit: !card.Is32Bit));
-
-                if (deployed.Count > 0)
-                {
-                    _window.ViewModel.SetDgVoodooStandalone(gameName, true, store);
-                    CrashReporter.Log($"[BuildDgVoodooRow] dgVoodoo2 v{versionEntry.Key} deployed standalone for '{gameName}'");
-
-                    // If ReShade was at d3d9.dll, dgVoodoo2's SentinelBackup has already saved it
-                    // as d3d9.dll.original. Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
-                    // Do NOT move d3d9.dll (that's now dgVoodoo2).
-                    if (card.IsRsInstalled
-                        && card.RsInstalledFile?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        CrashReporter.Log($"[BuildDgVoodooRow] Copying ReShade from D3D9.dll.original → dxgi.dll for dgVoodoo2 coexistence on '{gameName}'");
-                        try
-                        {
-                            // D3D9.dll.original is the ReShade DLL backed up by SentinelBackup during deploy.
-                            // Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
-                            // No sentinel needed on dxgi.dll — this is our file, not a foreign DLL.
-                            var sentinelPath = Path.Combine(installPath, "d3d9.dll.original");
-                            var dxgiPath     = Path.Combine(installPath, "dxgi.dll");
-                            if (File.Exists(sentinelPath) && new FileInfo(sentinelPath).Length > 0)
-                            {
-                                File.Copy(sentinelPath, dxgiPath, overwrite: true);
-                                // Update ReShade tracking record
-                                if (card.RsRecord != null)
-                                {
-                                    card.RsRecord.InstalledAs = "dxgi.dll";
-                                    _auxInstallService.SaveAuxRecord(card.RsRecord);
-                                }
-                                card.RsInstalledFile = "dxgi.dll";
-                                CrashReporter.Log($"[BuildDgVoodooRow] ReShade copied to dxgi.dll for '{gameName}'");
-                            }
-                            else
-                            {
-                                CrashReporter.Log($"[BuildDgVoodooRow] D3D9.dll.original not found or is empty sentinel — skipping coexistence copy for '{gameName}'");
-                            }
-                        }
-                        catch (Exception rsEx)
-                        {
-                            CrashReporter.Log($"[BuildDgVoodooRow] Failed to copy ReShade to dxgi.dll for '{gameName}' — {rsEx.Message}");
-                        }
-                    }
-
-                    // Rebuild after everything (including ReShade reinstall) is complete
-                    RequestExtrasRebuild(card);
-                }
-                else
-                {
-                    installBtn.Content = "❌ Deploy failed";
-                    installBtn.IsEnabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[BuildDgVoodooRow] Install failed for '{gameName}' — {ex.Message}");
-                installBtn.Content   = "❌ Failed";
-                installBtn.IsEnabled = true;
-            }
+            await InstallDgVoodooCoreAsync(card, installBtn);
         };
         Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
@@ -442,9 +369,25 @@ public partial class DetailPanelBuilder
             IsHitTestVisible = isInstalled,
         };
         ToolTipService.SetToolTip(removeBtn, "Remove dgVoodoo2 from this game");
-        removeBtn.Click += async (s, ev) =>
+        removeBtn.Click += (s, ev) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
+            UninstallDgVoodooCore(card);
+        };
+        Grid.SetColumn(removeBtn, 5);
+        row.Children.Add(removeBtn);
+
+        body.Children.Add(row);
+    }
+
+    /// <summary>The dgVoodoo2 remove button's work (shared with Tune presets).</summary>
+    private void UninstallDgVoodooCore(GameCardViewModel card)
+    {
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        var dgSvc       = App.Services.GetRequiredService<DgVoodooService>();
+        {
             // Coexistence guard: don't remove if Luma or Feeder also needs dgVoodoo2
             bool lumaNeeds    = card.LumaStatus == GameStatus.Installed;
             bool feederNeeds  = File.Exists(Path.Combine(installPath, "dlss5-feed.addon32"))
@@ -488,10 +431,106 @@ public partial class DetailPanelBuilder
             }
 
             RequestExtrasRebuild(card);
-        };
-        Grid.SetColumn(removeBtn, 5);
-        row.Children.Add(removeBtn);
+        }
+    }
 
-        body.Children.Add(row);
+    /// <summary>
+    /// The dgVoodoo2 install button's work (shared with Tune presets): the per-game version (else the newest),
+    /// staging, deploy, and the ReShade d3d9.dll → dxgi.dll copy. <paramref name="installBtn"/> is the row's button
+    /// (null from Tune). Returns null on success, else an error.
+    /// </summary>
+    private async Task<string?> InstallDgVoodooCoreAsync(GameCardViewModel card, Button? installBtn)
+    {
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        var dgSvc       = App.Services.GetRequiredService<DgVoodooService>();
+        var manifest    = _window.ViewModel.Manifest;
+        if (string.IsNullOrEmpty(installPath) || manifest?.DgVoodooVersions == null || manifest.DgVoodooVersions.Count == 0)
+            return "No dgVoodoo2 versions are listed in the online data. Try Refresh later.";
+
+        if (installBtn != null)
+        {
+            installBtn.IsEnabled = false;
+            installBtn.Content   = "Installing...";
+        }
+        try
+        {
+            // Pick version: prefer stored per-game override, then latest from manifest
+            KeyValuePair<string, string> versionEntry;
+            var storedVersion = _window.ViewModel.GetDgVoodooVersion(gameName, store);
+            if (!string.IsNullOrEmpty(storedVersion)
+                && manifest.DgVoodooVersions.TryGetValue(storedVersion, out var storedUrl))
+                versionEntry = new KeyValuePair<string, string>(storedVersion, storedUrl);
+            else
+                versionEntry = manifest.DgVoodooVersions.First();
+
+            await dgSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value); // stay on the UI thread: card and button updates follow
+            var deployed = await Task.Run(() =>
+                dgSvc.DeployToGame(installPath, versionEntry.Key, is64Bit: !card.Is32Bit));
+
+            if (deployed.Count > 0)
+            {
+                _window.ViewModel.SetDgVoodooStandalone(gameName, true, store);
+                CrashReporter.Log($"[BuildDgVoodooRow] dgVoodoo2 v{versionEntry.Key} deployed standalone for '{gameName}'");
+
+                // If ReShade was at d3d9.dll, dgVoodoo2's SentinelBackup has already saved it
+                // as d3d9.dll.original. Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
+                // Do NOT move d3d9.dll (that's now dgVoodoo2).
+                if (card.IsRsInstalled
+                    && card.RsInstalledFile?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    CrashReporter.Log($"[BuildDgVoodooRow] Copying ReShade from D3D9.dll.original → dxgi.dll for dgVoodoo2 coexistence on '{gameName}'");
+                    try
+                    {
+                        // D3D9.dll.original is the ReShade DLL backed up by SentinelBackup during deploy.
+                        // Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
+                        // No sentinel needed on dxgi.dll — this is our file, not a foreign DLL.
+                        var sentinelPath = Path.Combine(installPath, "d3d9.dll.original");
+                        var dxgiPath     = Path.Combine(installPath, "dxgi.dll");
+                        if (File.Exists(sentinelPath) && new FileInfo(sentinelPath).Length > 0)
+                        {
+                            File.Copy(sentinelPath, dxgiPath, overwrite: true);
+                            // Update ReShade tracking record
+                            if (card.RsRecord != null)
+                            {
+                                card.RsRecord.InstalledAs = "dxgi.dll";
+                                _auxInstallService.SaveAuxRecord(card.RsRecord);
+                            }
+                            card.RsInstalledFile = "dxgi.dll";
+                            CrashReporter.Log($"[BuildDgVoodooRow] ReShade copied to dxgi.dll for '{gameName}'");
+                        }
+                        else
+                        {
+                            CrashReporter.Log($"[BuildDgVoodooRow] D3D9.dll.original not found or is empty sentinel — skipping coexistence copy for '{gameName}'");
+                        }
+                    }
+                    catch (Exception rsEx)
+                    {
+                        CrashReporter.Log($"[BuildDgVoodooRow] Failed to copy ReShade to dxgi.dll for '{gameName}' — {rsEx.Message}");
+                    }
+                }
+
+                // Rebuild after everything (including ReShade reinstall) is complete
+                RequestExtrasRebuild(card);
+                return null;
+            }
+            if (installBtn != null)
+            {
+                installBtn.Content = "❌ Deploy failed";
+                installBtn.IsEnabled = true;
+            }
+            return $"dgVoodoo2 v{versionEntry.Key} couldn't be deployed. See the log for details.";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[BuildDgVoodooRow] Install failed for '{gameName}' — {ex.Message}");
+            if (installBtn != null)
+            {
+                installBtn.Content   = "❌ Failed";
+                installBtn.IsEnabled = true;
+            }
+            return $"dgVoodoo2 couldn't be installed: {ex.Message}";
+        }
     }
 }

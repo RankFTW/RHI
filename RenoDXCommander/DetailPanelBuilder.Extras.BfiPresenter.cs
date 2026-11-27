@@ -213,21 +213,27 @@ public partial class DetailPanelBuilder
         removeBtn.Click += (_, _) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(installedAs)) return;
-            if (card.IsRunning)
-            {
-                ToolTipService.SetToolTip(removeBtn, "Close the game first: its files are in use.");
-                return;
-            }
-            if (svc.Uninstall(installPath, installedAs))
-            {
-                vm.SetBfiPresenterInstalledAs(gameName, null, store);
-                RequestExtrasRebuild(card);
-            }
+            if (UninstallBfiCore(card, installedAs) == BfiGameRunningText)
+                ToolTipService.SetToolTip(removeBtn, BfiGameRunningText);
         };
         Grid.SetColumn(removeBtn, 5);
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    private const string BfiGameRunningText = "Close the game first: its files are in use.";
+
+    /// <summary>The BFI Presenter remove button's work (shared with Tune presets). Returns null, or why it wasn't removed.</summary>
+    private string? UninstallBfiCore(GameCardViewModel card, string installedAs)
+    {
+        if (card.IsRunning) return BfiGameRunningText;
+        var svc = App.Services.GetRequiredService<BfiPresenterService>();
+        if (!svc.Uninstall(card.InstallPath ?? "", installedAs))
+            return "BFI Presenter couldn't be removed. Close the game and try again.";
+        _window.ViewModel.SetBfiPresenterInstalledAs(card.GameName, null, card.Source ?? "");
+        RequestExtrasRebuild(card);
+        return null;
     }
 
     /// <summary>What the install dialog asked for.</summary>
