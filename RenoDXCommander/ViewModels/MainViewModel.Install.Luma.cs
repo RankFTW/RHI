@@ -431,6 +431,25 @@ public partial class MainViewModel
             return;
         }
 
+        // A running game holds the ReShade DLL: stop before shaders and add-ons are removed, or the game
+        // keeps ReShade without its shaders (and the delete below throws).
+        if (!isGacGame && card.RsRecord != null && !string.IsNullOrEmpty(card.RsRecord.InstallPath)
+            && FileHelper.SafeCombine(card.RsRecord.InstallPath, card.RsRecord.InstalledAs) is { } rsDll)
+        {
+            try
+            {
+                if (File.Exists(rsDll))
+                    using (new FileStream(rsDll, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _crashReporter.Log($"[UninstallReShade] '{card.GameName}': '{rsDll}' is in use — {ex.Message}");
+                card.RsActionMessage = "ReShade is in use (is the game running?). Close the game and try again.";
+                card.NotifyAll();
+                return;
+            }
+        }
+
         try
         {
             // Remove the RDXC-managed reshade-shaders folder BEFORE calling Uninstall.
