@@ -46,8 +46,6 @@
 - Fixed RHI sometimes losing track of an add-on it put in a game when several games changed in the same pass, which could leave an old add-on file behind in that game.
 - Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
 - Fixed session logs missing their first lines when RHI was started with Admin Mode on.
-- Fixed a RenoDX install record staying behind when the game's name or folder differed from the record only in upper and lower case.
-- Fixed session logs missing their first lines when RHI was started with Admin Mode on.
 - Several of RHI's saved files (add-on versions, Nexus update baselines, new-mod markers, chosen artwork, window position and others) could be left cut off by a crash or power cut mid-save. They are now saved in one step.
 
 ### Maintenance
