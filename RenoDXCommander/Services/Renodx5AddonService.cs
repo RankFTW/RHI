@@ -191,7 +191,9 @@ public class Renodx5AddonService
             if (info.Length == 0)
             {
                 TryDelete(nrDllPath, "Renodx5AddonService.Uninstall (sentinel cleanup)");
-                TryDelete(sentinel,  "Renodx5AddonService.Uninstall (sentinel delete)");
+                // Keep the marker while the DLL is still there (locked by a running game), or RHI loses track of it
+                if (!File.Exists(nrDllPath)) TryDelete(sentinel, "Renodx5AddonService.Uninstall (sentinel delete)");
+                else _crashReporter.Log($"[Renodx5AddonService.Uninstall] '{nrDllPath}' couldn't be deleted (is the game running?) — sentinel kept");
             }
             else
             {
@@ -240,7 +242,8 @@ public class Renodx5AddonService
         if (info.Length == 0)
         {
             TryDelete(nrDllPath, "Renodx5AddonService.RemoveNrDll (sentinel cleanup)");
-            TryDelete(sentinel,  "Renodx5AddonService.RemoveNrDll (sentinel delete)");
+            if (!File.Exists(nrDllPath)) TryDelete(sentinel, "Renodx5AddonService.RemoveNrDll (sentinel delete)");
+            else _crashReporter.Log($"[Renodx5AddonService.RemoveNrDll] '{nrDllPath}' couldn't be deleted (is the game running?) — sentinel kept");
         }
         else
         {
@@ -474,7 +477,8 @@ public class Renodx5AddonService
             {
                 // Sentinel — RHI placed this file, game had nothing
                 TryDelete(dest, logPrefix + " (sentinel cleanup)");
-                TryDelete(backup, logPrefix + " (sentinel delete)");
+                if (!File.Exists(dest)) TryDelete(backup, logPrefix + " (sentinel delete)");
+                else _crashReporter.Log($"{logPrefix} '{dest}' couldn't be deleted (is the game running?) — sentinel kept");
             }
             else
             {
