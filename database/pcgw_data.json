@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56168,
-  "generated": "2026-11-27T19:17:46Z",
+  "game_count": 56169,
+  "generated": "2026-11-27T21:17:47Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -4873,7 +4873,7 @@
     "After Us": {
       "steam_appid": 1406810,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\AfterUs\\Saved\\Config\\",
+      "config_path": "%LOCALAPPDATA%\\AfterUs\\Saved\\Config",
       "engine": "Unreal Engine 4"
     },
     "AFTER-H": {
@@ -60529,7 +60529,7 @@
       "steam_appid": 538920
     },
     "Fiesta Online": {
-      "steam_appid": 280620
+      "steam_appid": 300970
     },
     "FIFA 06": {},
     "FIFA 07": {
@@ -142462,6 +142462,9 @@
     "Search & Rescue: Vietnam Med Evac": {
       "config_path": "<path-to-game>\\Config.dat",
       "engine": "RenderWare"
+    },
+    "Search and Rescue 3": {
+      "config_path": "<path-to-game>\\dat"
     },
     "Search and Rescue: Coastal Heroes": {
       "config_path": "<path-to-game>\\Config.dat",
