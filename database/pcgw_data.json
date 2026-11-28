@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 56172,
-  "generated": "2026-11-28T13:18:50Z",
+  "game_count": 56173,
+  "generated": "2026-11-28T15:18:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -146505,7 +146505,9 @@
       "dx12": true,
       "engine": "Unreal Engine 5"
     },
-    "Silkolene Honda Motocross GP": {},
+    "Silkolene Honda Motocross GP": {
+      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\The Dawn Interactive\\Sikolene Honda Motocross GP\\1.00"
+    },
     "Silkroad Online": {},
     "Silly Polly Beast": {
       "steam_appid": 1598780,
@@ -160215,6 +160217,9 @@
     "SuperChix 76": {},
     "SuperCluster: Void": {
       "steam_appid": 610740
+    },
+    "Supercross Kings": {
+      "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\The Dawn Interactive\\Supercross Kings\\1.00"
     },
     "Superdimension Neptune VS Sega Hard Girls": {
       "steam_appid": 571530,
@@ -192371,7 +192376,7 @@
     },
     "Wigmund. The Return of the Hidden Knights": {
       "steam_appid": 1164690,
-      "config_path": "%LOCALAPPDATA%\\RPG\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%\\RPG\\Saved\\SaveGames",
       "engine": "Unreal Engine 4"
     },
     "Wik and the Fable of Souls": {
