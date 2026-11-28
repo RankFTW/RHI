@@ -242,7 +242,7 @@ public sealed partial class MainWindow
                 foreach (var step in plan.Running.Where(s => s.Kind == TuneStepKind.Dll))
                 {
                     if (IsShuttingDown) return;
-                    ShowStatusBarMessage($"Tuning {card.GameName}: {step.Label} {step.Target}...", TimeSpan.FromMinutes(5));
+                    ShowStatusBarMessage($"Tuning {card.GameName}: {step.Label} {TuneDll.Label(step.Target)}...", TimeSpan.FromMinutes(5));
                     var (rec, err) = await ViewModel.ApplyTuneDllAsync(card, step.Id, step.Target);
                     if (rec == null && err == null) continue; // an earlier step (Neural Rendering) already put that version in
                     if (rec != null)

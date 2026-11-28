@@ -48,7 +48,8 @@ public static class TuneComponentIds
 }
 
 /// <summary>One DLSS / Streamline file as the game has it now.</summary>
-public sealed record TuneDllFacts(bool Present, string? Version, bool DriverOverride, IReadOnlyList<string> Versions);
+public sealed record TuneDllFacts(bool Present, string? Version, bool DriverOverride, IReadOnlyList<string> Versions,
+    bool CustomAvailable = false);
 
 /// <summary>Everything the planner needs to know about a game.</summary>
 public sealed class TuneGameFacts
@@ -239,7 +240,7 @@ public static class TunePlanner
                 _ => preset.Streamline,
             };
             if (string.IsNullOrEmpty(want)) continue;
-            plan.Steps.Add(DllStep(slot, want, g.Dlls.TryGetValue(slot, out var f) ? f : null));
+            plan.Steps.Add(DllStep(slot, want, g.Dlls.TryGetValue(slot, out var f) ? f : null, g.NvidiaReady));
         }
 
         // ── NVIDIA settings ──
@@ -285,14 +286,28 @@ public static class TunePlanner
 
     private static bool IsV1(string? version) => version?.StartsWith("1.", StringComparison.Ordinal) == true;
 
-    private static TuneStep DllStep(string slot, string want, TuneDllFacts? f)
+    private static TuneStep DllStep(string slot, string want, TuneDllFacts? f, bool nvidiaReady)
     {
         string label = TuneDllSlots.Label(slot);
         string? target = null;
         string? skip = null;
+        string? detail = null;
         if (f == null || !f.Present) skip = $"The game has no {label} file";
         else if (slot != TuneDllSlots.Fg && IsV1(f.Version)) skip = "Version 1 can't be updated";
+        else if (want.Equals(TuneDll.DriverOverride, StringComparison.OrdinalIgnoreCase))
+        {
+            if (slot == TuneDllSlots.Sl) skip = "Streamline has no NVIDIA Override";
+            else if (!nvidiaReady) skip = "No NVIDIA graphics card / driver found";
+            else if (f.DriverOverride) skip = "NVIDIA Override is already on";
+            else { target = TuneDll.DriverOverride; detail = $"{f.Version ?? "?"} → NVIDIA Override"; }
+        }
         else if (f.DriverOverride) skip = "NVIDIA Override is on for it";
+        else if (want.Equals(TuneDll.Custom, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!f.CustomAvailable) skip = "No custom file in RHI's Custom folder";
+            else if (string.Equals(f.Version, TuneDll.Custom, StringComparison.OrdinalIgnoreCase)) skip = "Already Custom";
+            else target = TuneDll.Custom;
+        }
         else
         {
             target = want.Equals(TuneDll.Newest, StringComparison.OrdinalIgnoreCase) ? f.Versions.FirstOrDefault() : want;
@@ -304,7 +319,7 @@ public static class TunePlanner
         return new TuneStep
         {
             Kind = TuneStepKind.Dll, Id = slot, Label = label, Target = target ?? "", Skip = skip,
-            Detail = skip == null ? $"{f?.Version ?? "?"} → {target}" : "",
+            Detail = skip == null ? detail ?? $"{f?.Version ?? "?"} → {target}" : "",
         };
     }
 
@@ -345,7 +360,8 @@ public static class TunePlanner
                 ? $"Remove Neural Rendering ({DetailPanelBuilder.NrMethodLabel(st.NrMethodInstalled)})"
                 : $"Remove {TuneComponentIds.Label(c)}");
         foreach (var (slot, d) in st.Dlls)
-            lines.Add(d.HadBackup
+            lines.Add(d.DriverOverride ? $"NVIDIA Override off for {TuneDllSlots.Label(slot)}"
+                : d.HadBackup
                 ? $"{TuneDllSlots.Label(slot)} back to {d.PreviousVersion ?? "the version before"}"
                 : $"{TuneDllSlots.Label(slot)} back to the game's own file");
         foreach (var (key, before) in st.NvidiaBefore)

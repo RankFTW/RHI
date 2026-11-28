@@ -85,6 +85,12 @@ public interface IDlssStreamlineService
     /// </summary>
     Task SwapStreamlineCustomAsync(string gameFolder);
 
+    /// <summary>True when the custom folder has a file named like <paramref name="dllFileName"/> (nvngx_dlss.dll etc.).</summary>
+    bool HasCustomDll(string dllFileName);
+
+    /// <summary>True when the custom Streamline folder has at least one sl.*.dll.</summary>
+    bool HasCustomStreamline();
+
     // ── Restore ───────────────────────────────────────────────────────────────
 
     /// <summary>

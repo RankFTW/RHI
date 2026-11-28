@@ -121,6 +121,24 @@ public partial class MainViewModel
             [TuneDllSlots.Fg] = (card.HasDlssg, card.DlssgInstalledVersion, _dlssStreamlineService.DlssgVersions),
             [TuneDllSlots.Sl] = (card.HasStreamline && det?.StreamlineFolder != null, card.StreamlineInstalledVersion, _dlssStreamlineService.StreamlineVersions),
         };
+        // Custom files (RHI's Custom folder): only checked for the slots the preset wants Custom for
+        var custom = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        foreach (var slot in TuneDllSlots.All)
+        {
+            var want = slot switch
+            {
+                TuneDllSlots.Sr => preset.DlssSr,
+                TuneDllSlots.Rr => preset.DlssRr,
+                TuneDllSlots.Fg => preset.DlssFg,
+                _ => preset.Streamline,
+            };
+            if (!string.Equals(want, TuneDll.Custom, StringComparison.OrdinalIgnoreCase)) continue;
+            var (target, _) = TuneDllTarget(card, slot);
+            if (string.IsNullOrEmpty(target)) continue;
+            custom[slot] = await Task.Run(() => slot == TuneDllSlots.Sl
+                ? _dlssStreamlineService.HasCustomStreamline()
+                : _dlssStreamlineService.HasCustomDll(target));
+        }
 
         bool nvidiaReady = _dlssPresetService.IsSupported;
         var now = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -195,7 +213,8 @@ public partial class MainViewModel
             NrBlocked = nrBlocked,
             Dlls = dlls.ToDictionary(kv => kv.Key,
                 kv => new TuneDllFacts(kv.Value.Present, kv.Value.Version,
-                    overrides.TryGetValue(kv.Key, out var o) && o, kv.Value.Versions),
+                    overrides.TryGetValue(kv.Key, out var o) && o, kv.Value.Versions,
+                    custom.TryGetValue(kv.Key, out var c) && c),
                 StringComparer.OrdinalIgnoreCase),
             NvidiaReady = nvidiaReady,
             IsAdmin = VulkanLayerService.IsRunningAsAdmin(),
@@ -227,6 +246,25 @@ public partial class MainViewModel
     {
         var (target, current) = TuneDllTarget(card, slot);
         if (string.IsNullOrEmpty(target)) return (null, "File not found");
+        if (version == TuneDll.DriverOverride)
+        {
+            // No file changes: the driver loads its own latest DLL for the game
+            string game = card.GameName, path = card.InstallPath ?? "";
+            bool ok = await Task.Run(() => slot switch
+            {
+                TuneDllSlots.Sr => _dlssPresetService.SetSrDriverOverride(game, path, true),
+                TuneDllSlots.Rr => _dlssPresetService.SetRrDriverOverride(game, path, true),
+                TuneDllSlots.Fg => _dlssPresetService.SetFgDriverOverride(game, path, true),
+                _ => false,
+            });
+            if (!ok)
+            {
+                CrashReporter.Log($"[MainViewModel.ApplyTuneDllAsync] '{game}' {slot} NVIDIA Override failed");
+                return (null, "Couldn't turn on the NVIDIA Override");
+            }
+            CrashReporter.Log($"[MainViewModel.ApplyTuneDllAsync] '{game}' {slot}: NVIDIA Override on");
+            return (new TunedDll { Path = target, DriverOverride = true, PreviousVersion = current, NewVersion = current }, null);
+        }
         if (TunePlanner.SameVersion(current, version))
         {
             CrashReporter.Log($"[MainViewModel.ApplyTuneDllAsync] '{card.GameName}' {slot} already {version} — skipped");
@@ -240,9 +278,15 @@ public partial class MainViewModel
             PreviousVersion = current,
             NewVersion = version,
         };
+        bool isCustom = version == TuneDll.Custom;
         try
         {
-            switch (slot)
+            if (isCustom)
+            {
+                if (slot == TuneDllSlots.Sl) await _dlssStreamlineService.SwapStreamlineCustomAsync(target);
+                else await _dlssStreamlineService.SwapDlssCustomAsync(target);
+            }
+            else switch (slot)
             {
                 case TuneDllSlots.Sr: await _dlssStreamlineService.SwapDlssAsync(target, version); break;
                 case TuneDllSlots.Rr: await _dlssStreamlineService.SwapDlssdAsync(target, version); break;
@@ -257,6 +301,8 @@ public partial class MainViewModel
         }
         _dlssStreamlineService.RecordDlssFound(card.GameName);
         card.RefreshDlssVersions(_dlssStreamlineService);
+        // A custom file shows as its own version: record that, so untune can tell it wasn't changed since
+        if (isCustom) record.NewVersion = TuneDllTarget(card, slot).Version ?? TuneDll.Custom;
         CrashReporter.Log($"[MainViewModel.ApplyTuneDllAsync] '{card.GameName}' {slot}: {current} → {version} (backup before: {record.HadBackup})");
         return (record, null);
     }
@@ -265,6 +311,21 @@ public partial class MainViewModel
     public async Task<string?> RevertTuneDllAsync(GameCardViewModel card, string slot, TunedDll d)
     {
         string label = TuneDllSlots.Label(slot);
+        if (d.DriverOverride)
+        {
+            string game = card.GameName, path = card.InstallPath ?? "";
+            if (!_dlssPresetService.IsSupported) return $"{label}: NVIDIA Override left on (no NVIDIA driver found)";
+            bool ok = await Task.Run(() => slot switch
+            {
+                TuneDllSlots.Sr => _dlssPresetService.SetSrDriverOverride(game, path, false),
+                TuneDllSlots.Rr => _dlssPresetService.SetRrDriverOverride(game, path, false),
+                TuneDllSlots.Fg => _dlssPresetService.SetFgDriverOverride(game, path, false),
+                _ => true,
+            });
+            if (!ok) return $"{label}: couldn't turn the NVIDIA Override off";
+            CrashReporter.Log($"[MainViewModel.RevertTuneDllAsync] '{game}' {slot}: NVIDIA Override off");
+            return null;
+        }
         var (_, current) = TuneDllTarget(card, slot);
         // Changed since tuning (by hand, Update All, a game update): the game keeps what it has now
         if (d.NewVersion != null && current != null && !TunePlanner.SameVersion(current, d.NewVersion))

@@ -255,6 +255,13 @@ public partial class DlssStreamlineService
         CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Swapped '{dllPath}' with custom DLL");
     }
 
+    public bool HasCustomDll(string dllFileName)
+        => !string.IsNullOrEmpty(dllFileName) && File.Exists(Path.Combine(DlssCustomDir, Path.GetFileName(dllFileName)));
+
+    public bool HasCustomStreamline()
+        => Directory.Exists(StreamlineCustomDir)
+           && KnownStreamlineDlls.Any(f => File.Exists(Path.Combine(StreamlineCustomDir, f)));
+
     public async Task SwapStreamlineCustomAsync(string gameFolder)
     {
         if (!Directory.Exists(StreamlineCustomDir))

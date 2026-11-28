@@ -30,11 +30,25 @@ public static class TuneNr
     public const string Auto = "Auto";
 }
 
-/// <summary>Values of the DLL fields of <see cref="TunePreset"/>: "" = leave, "Newest", or a version from the list.</summary>
+/// <summary>
+/// Values of the DLL fields of <see cref="TunePreset"/>: "" = leave, "Newest", "Custom" (the user's own file from
+/// RHI's Custom folder), "NvidiaOverride" (the driver's Latest DLL override; not Streamline), or a version from the list.
+/// Never rename: stored in settings.json.
+/// </summary>
 public static class TuneDll
 {
     public const string Leave = "";
     public const string Newest = "Newest";
+    public const string Custom = "Custom";
+    public const string DriverOverride = "NvidiaOverride";
+
+    public static string Label(string? value) => value switch
+    {
+        null or "" => "Leave",
+        Newest => "Newest",
+        DriverOverride => "NVIDIA Override",
+        _ => value,
+    };
 }
 
 /// <summary>One preset. Empty / missing values mean "leave the game as it is".</summary>
@@ -120,6 +134,8 @@ public sealed class TunedDll
     public string? PreviousVersion { get; set; }
     /// <summary>Version Tune put in.</summary>
     public string? NewVersion { get; set; }
+    /// <summary>Tune turned the NVIDIA Override on for this DLL (no file was changed); undo turns it off.</summary>
+    public bool DriverOverride { get; set; }
 }
 
 /// <summary>What Tune did to one game, so a second click can undo exactly that.</summary>

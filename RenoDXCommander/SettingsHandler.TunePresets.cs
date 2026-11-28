@@ -223,7 +223,7 @@ public partial class SettingsHandler
             lines.Add("Neural Rendering: " + (p.NrMethod == TuneNr.Auto ? "Auto" : DetailPanelBuilder.NrMethodLabel(p.NrMethod))
                 + (string.IsNullOrEmpty(p.NrAddonVersion) ? "" : $" {p.NrAddonVersion}")
                 + $", NR DLL {(string.IsNullOrEmpty(p.NrDllVersion) ? "latest" : p.NrDllVersion)}");
-        void Dll(string label, string v) { if (!string.IsNullOrEmpty(v)) lines.Add($"{label}: {(v == TuneDll.Newest ? "newest" : v)}"); }
+        void Dll(string label, string v) { if (!string.IsNullOrEmpty(v)) lines.Add($"{label}: {(v == TuneDll.Newest ? "newest" : TuneDll.Label(v))}"); }
         Dll("DLSS Super Resolution", p.DlssSr);
         Dll("DLSS Ray Reconstruction", p.DlssRr);
         Dll("DLSS Frame Generation", p.DlssFg);
@@ -437,22 +437,27 @@ public partial class SettingsHandler
 
         // ── DLSS / Streamline files ──
         cog.AddSection("DLSS and Streamline files");
-        CogDialog.CompactCell DllCombo(string label, string help, IReadOnlyList<string> versions, Func<string> get, Action<string> set)
+        CogDialog.CompactCell DllCombo(string label, string help, IReadOnlyList<string> versions, bool driverOverride, Func<string> get, Action<string> set)
         {
             var values = new List<string> { TuneDll.Leave, TuneDll.Newest };
+            if (driverOverride) values.Add(TuneDll.DriverOverride);
+            values.Add(TuneDll.Custom);
             values.AddRange(versions);
             var cur = get() ?? "";
             if (cur.Length > 0 && !values.Contains(cur, StringComparer.OrdinalIgnoreCase)) values.Add(cur); // a version no longer listed
-            var labels = values.Select(v => v == TuneDll.Leave ? "Leave" : v == TuneDll.Newest ? "Newest" : v).ToList();
+            var labels = values.Select(TuneDll.Label).ToList();
             int idx = Math.Max(0, values.FindIndex(v => v.Equals(cur, StringComparison.OrdinalIgnoreCase)));
             return cog.CompactCombo(label, help, labels, idx, i => { set(values[i]); Save(); return true; });
         }
+        const string dllHelp = " Newest = the newest version RHI offers when you tune. Custom = your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\.";
+        const string overrideHelp = " NVIDIA Override = the driver loads its own latest version (no file is changed), like the game page's NVIDIA Override.";
         cog.AddCompactGrid(
-            DllCombo("Super Resolution", "nvngx_dlss.dll. Newest = the newest version RHI offers when you tune.", dlss.DlssVersions, () => preset.DlssSr, v => preset.DlssSr = v),
-            DllCombo("Ray Reconstruction", "nvngx_dlssd.dll, in games with ray reconstruction.", dlss.DlssdVersions, () => preset.DlssRr, v => preset.DlssRr = v),
-            DllCombo("Frame Generation", "nvngx_dlssg.dll, in games with DLSS frame generation.", dlss.DlssgVersions, () => preset.DlssFg, v => preset.DlssFg = v),
-            DllCombo("Streamline", "The game's sl.*.dll files (only those it already has).", dlss.StreamlineVersions, () => preset.Streamline, v => preset.Streamline = v));
-        cog.AddNote("Files are skipped in games where the NVIDIA Override is on for them, and DLSS 1 games.");
+            DllCombo("Super Resolution", "nvngx_dlss.dll." + dllHelp + overrideHelp, dlss.DlssVersions, true, () => preset.DlssSr, v => preset.DlssSr = v),
+            DllCombo("Ray Reconstruction", "nvngx_dlssd.dll, in games with ray reconstruction." + dllHelp + overrideHelp, dlss.DlssdVersions, true, () => preset.DlssRr, v => preset.DlssRr = v),
+            DllCombo("Frame Generation", "nvngx_dlssg.dll, in games with DLSS frame generation." + dllHelp + overrideHelp, dlss.DlssgVersions, true, () => preset.DlssFg, v => preset.DlssFg = v),
+            DllCombo("Streamline", "The game's sl.*.dll files (only those it already has). Newest = the newest version RHI offers when you tune. "
+                + "Custom = your own files from %LocalAppData%\\RHI\\Custom\\Streamline\\.", dlss.StreamlineVersions, false, () => preset.Streamline, v => preset.Streamline = v));
+        cog.AddNote("Files are skipped in games where the NVIDIA Override is on for them, and DLSS 1 games. Custom is skipped when RHI's Custom folder has no file for it.");
 
         // ── NVIDIA settings ──
         foreach (var group in new[] { TuneItems.GroupDlssPresets, TuneItems.GroupDlssScale, TuneItems.GroupDriver })

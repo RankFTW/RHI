@@ -137,7 +137,7 @@ public class TunePresetTests
         bool rs = false, bool rdxMod = true, bool rdx = false, bool lumaMod = false, bool luma = false,
         bool ul = false, bool dc = false, bool noAddons = false, string? blocker = null, string? rsBlocked = null,
         string? sr = "310.1.0", bool srOverride = false, string? sl = "2.8.0", bool nvidia = true,
-        Dictionary<string, string>? now = null) => new()
+        Dictionary<string, string>? now = null, bool custom = false) => new()
     {
         GameName = "Game",
         Blocker = blocker,
@@ -152,10 +152,10 @@ public class TunePresetTests
         DcInstalled = dc,
         Dlls = new(StringComparer.OrdinalIgnoreCase)
         {
-            [TuneDllSlots.Sr] = new TuneDllFacts(sr != null, sr, srOverride, SrList),
+            [TuneDllSlots.Sr] = new TuneDllFacts(sr != null, sr, srOverride, SrList, custom),
             [TuneDllSlots.Rr] = new TuneDllFacts(false, null, false, SrList),
             [TuneDllSlots.Fg] = new TuneDllFacts(false, null, false, SrList),
-            [TuneDllSlots.Sl] = new TuneDllFacts(sl != null, sl, false, SlList),
+            [TuneDllSlots.Sl] = new TuneDllFacts(sl != null, sl, false, SlList, custom),
         },
         NvidiaReady = nvidia,
         IsAdmin = false,
@@ -267,6 +267,41 @@ public class TunePresetTests
         Assert.Equal("Version 999.0.0 isn't available", Step(TunePlanner.Build(p, Facts()), TuneDllSlots.Sr).Skip);
         p.DlssSr = TuneDll.Leave;
         Assert.DoesNotContain(TunePlanner.Build(p, Facts()).Steps, s => s.Id == TuneDllSlots.Sr);
+    }
+
+    [Fact]
+    public void Dlls_NvidiaOverrideChoice()
+    {
+        var p = new TunePreset { Id = "x", Name = "X", DlssSr = TuneDll.DriverOverride, Streamline = TuneDll.DriverOverride };
+        var step = Step(TunePlanner.Build(p, Facts()), TuneDllSlots.Sr);
+        Assert.Null(step.Skip);
+        Assert.Equal(TuneDll.DriverOverride, step.Target);
+        Assert.Equal("310.1.0 → NVIDIA Override", step.Detail);
+        Assert.Equal("NVIDIA Override is already on", Step(TunePlanner.Build(p, Facts(srOverride: true)), TuneDllSlots.Sr).Skip);
+        Assert.Equal("No NVIDIA graphics card / driver found", Step(TunePlanner.Build(p, Facts(nvidia: false)), TuneDllSlots.Sr).Skip);
+        Assert.Equal("The game has no DLSS Super Resolution file", Step(TunePlanner.Build(p, Facts(sr: null)), TuneDllSlots.Sr).Skip);
+        Assert.Equal("Streamline has no NVIDIA Override", Step(TunePlanner.Build(p, Facts()), TuneDllSlots.Sl).Skip);
+    }
+
+    [Fact]
+    public void Dlls_CustomChoice()
+    {
+        var p = new TunePreset { Id = "x", Name = "X", DlssSr = TuneDll.Custom, Streamline = TuneDll.Custom };
+        Assert.Equal("No custom file in RHI's Custom folder", Step(TunePlanner.Build(p, Facts()), TuneDllSlots.Sr).Skip);
+        var plan = TunePlanner.Build(p, Facts(custom: true));
+        Assert.Null(Step(plan, TuneDllSlots.Sr).Skip);
+        Assert.Equal(TuneDll.Custom, Step(plan, TuneDllSlots.Sr).Target);
+        Assert.Null(Step(plan, TuneDllSlots.Sl).Skip);
+        Assert.Equal("Already Custom", Step(TunePlanner.Build(p, Facts(sl: "Custom", custom: true)), TuneDllSlots.Sl).Skip);
+        Assert.Equal("NVIDIA Override is on for it", Step(TunePlanner.Build(p, Facts(srOverride: true, custom: true)), TuneDllSlots.Sr).Skip);
+    }
+
+    [Fact]
+    public void DescribeUndo_NvidiaOverride()
+    {
+        var st = new TunedGameState();
+        st.Dlls[TuneDllSlots.Sr] = new TunedDll { Path = "x", DriverOverride = true };
+        Assert.Equal("NVIDIA Override off for DLSS Super Resolution", TunePlanner.DescribeUndo(st)[0]);
     }
 
     [Fact]
