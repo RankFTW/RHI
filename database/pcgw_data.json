@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 56169,
-  "generated": "2026-11-27T23:17:47Z",
+  "generated": "2026-11-28T01:17:50Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -14921,7 +14921,6 @@
     "Bad Mojo": {},
     "Bad Mojo Redux": {
       "steam_appid": 255960,
-      "dx9": true,
       "config_path": "<path-to-game>\\SAVE\\badmojo.ini"
     },
     "Bad Mojos": {
@@ -136840,7 +136839,7 @@
       "vulkan": true,
       "opengl": true,
       "config_path": "%LOCALAPPDATA%\\Roblox\\GlobalBasicSettings_13.xml",
-      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\ROBLOXCORPORATION.ROBLOX_55nm5eh3cm0pr\\LocalState\\GlobalBasicSettings_13.xml",
+      "config_path_xbox": "%LOCALAPPDATA%\\RobloxPCGDK\\GlobalBasicSettings_13.xml",
       "engine": "G3D Innovation Engine"
     },
     "Robo Army": {},
@@ -137208,7 +137207,7 @@
     "Rock of Ages 3: Make & Break": {
       "steam_appid": 1101360,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\ROA3\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\ROA3\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Rock of Ages II: Bigger & Boulder": {
