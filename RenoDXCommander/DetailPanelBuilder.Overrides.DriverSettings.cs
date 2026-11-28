@@ -343,13 +343,14 @@ public partial class DetailPanelBuilder
             var nvidiaGrid = new Grid { ColumnSpacing = 12, Opacity = isAdmin ? 1.0 : 0.4, IsHitTestVisible = isAdmin };
             // Use fixed-pixel column widths to avoid the WinUI infinite layout loop.
             // Star columns inside a StackPanel inside ScrollViewer cause an infinite measurement cycle.
-            // We compute equal column widths from the container width: 4 columns + 3 x 1px dividers.
+            // We compute equal column widths from the container width: 5 columns + 4 x 1px dividers
+            // (five across, like DLSS / Streamline).
             // Fall back to 200px per column if container width isn't available yet.
             const double DividerWidth = 1.0;
-            const int DividerCount   = 3;
-            const int ColCount       = 4;
+            const int DividerCount   = 4;
+            const int ColCount       = 5;
             const double ColSpacing  = 12.0; // nvidiaGrid.ColumnSpacing
-            // Total width consumed: ColumnSpacing between all 7 columns (6 gaps) + 3 divider columns
+            // Total width consumed: ColumnSpacing between all 9 columns (8 gaps) + 4 divider columns
             double overhead = (ColCount + DividerCount - 1) * ColSpacing + DividerCount * DividerWidth;
             double colW = containerWidth > overhead
                 ? (containerWidth - overhead) / ColCount
@@ -362,12 +363,14 @@ public partial class DetailPanelBuilder
             nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
             nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DividerWidth) });
             nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DividerWidth) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(colW) });
 
             var installPathSafe = card.InstallPath ?? "";
 
             // ── Column 0: VSync ──
             var vsyncCol = new StackPanel { Spacing = 4 };
-            var vsyncLabel = new TextBlock { Text = "VSync", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            var vsyncLabel = new TextBlock { Text = "VSync and latency", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
             ToolTipService.SetToolTip(vsyncLabel, "Vertical Sync settings — controls how the driver synchronizes frame rendering with your display's refresh rate.");
             vsyncCol.Children.Add(vsyncLabel);
 
@@ -676,7 +679,7 @@ public partial class DetailPanelBuilder
 
             // ── Column 6: Other (Power, G-Sync, FPS Limit) ──
             var powerCol = new StackPanel { Spacing = 4 };
-            var powerLabel = new TextBlock { Text = "Other", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            var powerLabel = new TextBlock { Text = "Power, G-Sync and FPS", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
             ToolTipService.SetToolTip(powerLabel, "Power management, G-Sync control and the driver frame rate limit for this game.");
             powerCol.Children.Add(powerLabel);
 
@@ -905,7 +908,7 @@ public partial class DetailPanelBuilder
                 }
             };
 
-            Grid.SetColumn(powerCol, 6);
+            Grid.SetColumn(powerCol, 8); // last, after Texture Filtering
             nvidiaGrid.Children.Add(powerCol);
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Power done({capturedName})");
 
@@ -1043,13 +1046,10 @@ public partial class DetailPanelBuilder
             nvidiaGrid.Children.Add(rebarCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(3));
 
-            // ── Row 2: Texture Filtering (LOD bias, anisotropic filtering, quality) ──
-            nvidiaGrid.RowSpacing = 12;
-            nvidiaGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            nvidiaGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            // ── Column 6: Texture Filtering (LOD bias, anisotropic filtering, quality) ──
+            nvidiaGrid.Children.Add(MakeDlssDivider(7));
             var textureCol = BuildTextureFilteringColumn(d, nvidiaPresetService, capturedName, installPathSafe);
-            Grid.SetRow(textureCol, 1);
-            Grid.SetColumn(textureCol, 0);
+            Grid.SetColumn(textureCol, 6);
             nvidiaGrid.Children.Add(textureCol);
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:ReBAR done({capturedName})");
 

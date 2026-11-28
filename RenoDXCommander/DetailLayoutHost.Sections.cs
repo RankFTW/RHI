@@ -505,11 +505,13 @@ internal sealed partial class DetailLayoutHost
     /// </summary>
     internal UIElement ArrangeDriver(Grid columns, Grid footer, string? driverVersion)
     {
-        // Grouped like Classic's columns (VSync, Smooth Motion, Other, ReBAR): one column per
+        // Grouped like Classic's columns (VSync, ReBAR, Smooth Motion, Texture Filtering, Other): one column per
         // group with a small heading, its fields stacked underneath
-        var read = ReadColumns(columns);
+        // Classic titles its columns "VSync and latency" and "Power, G-Sync and FPS"; the short group
+        // names keep field labels short ("VSync", not "VSync and latency" for the Mode dropdown)
+        var read = ReadColumns(columns).Select(f => f with { Group = DriverGroupKey(f.Group) }).ToList();
         var fields = NameFields(read, g => g);
-        var grid = new AutoFitGrid { MinColumnWidth = 200, MaxColumns = 4, ColumnSpacing = 24, RowSpacing = 20 };
+        var grid = new AutoFitGrid { MinColumnWidth = 160, MaxColumns = 5, ColumnSpacing = 24, RowSpacing = 20 };
         foreach (var group in fields.GroupBy(x => x.Field.Group))
         {
             var col = new StackPanel { Spacing = 10 };
@@ -560,7 +562,15 @@ internal sealed partial class DetailLayoutHost
         return TabsTheme.TitledCard("Driver Settings", content, version);
     }
 
-    /// <summary>Classic's column titles, with "Other" named after what it holds.</summary>
+    /// <summary>Classic's column title to the short group name used for field labels.</summary>
+    private static string DriverGroupKey(string title) => title switch
+    {
+        _ when title.Equals("VSync and latency", StringComparison.OrdinalIgnoreCase) => "VSync",
+        _ when title.Equals("Power, G-Sync and FPS", StringComparison.OrdinalIgnoreCase) => "Other",
+        _ => title,
+    };
+
+    /// <summary>Section headings for the driver groups (the same titles Classic uses).</summary>
     private static string DriverGroupTitle(string group) => group switch
     {
         _ when group.Equals("VSync", StringComparison.OrdinalIgnoreCase) => "VSync and latency",
