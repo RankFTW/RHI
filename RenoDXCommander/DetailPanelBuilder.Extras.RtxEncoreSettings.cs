@@ -371,10 +371,15 @@ public partial class DetailPanelBuilder
                 "nativeMenuFeatures", "hairEnabled", RtxOffOn, RtxOffOnValues, "true"));
 
         // ── Intel XeSS files ────────────────────────────────────────────────────
+        cog.AddSection("Intel XeSS files");
+        AddRtxEncoreKeepGameIntelSetting(cog, card, isInstalled);
         if (modDir != null)
         {
-            var (intelComplete, inGameFolders) = Rtx40MfgService.GetEncoreIntelState(modDir);
-            if (intelComplete)
+            var (intelComplete, inGameFolders, keptNames) = Rtx40MfgService.GetEncoreIntelState(modDir);
+            if (keptNames.Count > 0)
+                cog.AddWarning($"The game's own {string.Join(", ", keptNames)} {(keptNames.Count == 1 ? "is" : "are")} kept as {(keptNames.Count == 1 ? "it is" : "they are")}. " +
+                    "RTX Encore's XeSS upscaler and XeFG engine need Intel's XeSS SDK 3.0.2 versions, so they may not work in this game.");
+            else if (intelComplete)
                 cog.AddNote("Intel XeSS SDK files for the XeSS upscaler and XeFG engine are installed" +
                     (inGameFolders > 0 ? $" ({inGameFolders} of them replace the game's own copies, which are restored when you remove RTX Encore)." : "."));
             else
@@ -524,6 +529,67 @@ public partial class DetailPanelBuilder
             {
                 CrashReporter.Log($"[RtxEncoreCog] NR DLL change failed — {ex.Message}");
                 cog.SetError($"Couldn't change the NR DLL: {ex.Message}");
+            }
+        }
+    }
+    /// <summary>
+    /// "Game's Intel files": replace the game's own XeSS / XeLL DLLs with XeSS SDK 3.0.2 (what RTX Encore's XeSS
+    /// and XeFG need) or keep them, for games whose launcher checks file hashes and asks for a repair.
+    /// Applied at once when RTX Encore is installed; the startup check follows the same choice.
+    /// </summary>
+    private void AddRtxEncoreKeepGameIntelSetting(CogDialog cog, GameCardViewModel card, bool isInstalled)
+    {
+        var vm = _window.ViewModel;
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
+        bool keep = vm.GetRtxEncoreKeepGameIntel(gameName, store);
+        ComboBox? combo = null;
+
+        var help = "Replace puts Intel's XeSS SDK 3.0.2 versions of libxess.dll, libxess_fg.dll and libxell.dll over the copies the game ships " +
+                   "(the game's files are kept as .encore-original and put back when you remove RTX Encore). RTX Encore's XeSS upscaler and XeFG engine need them. " +
+                   "Keep leaves the game's own files alone, for games whose launcher checks its files and asks for a repair; XeSS and XeFG may not work then.";
+        if (vm.IsRtxEncoreKeepGameIntelDefault(gameName))
+            help += " This game's launcher is known to check its files, so Keep is the default here.";
+
+        combo = cog.AddCombo("Game's Intel files", help, new[] { "Replace", "Keep" }, keep ? 1 : 0, i =>
+        {
+            bool want = i == 1;
+            if (want == keep) return true;
+            if (card.IsRunning)
+            {
+                cog.SetError("Close the game first: its files are in use.");
+                return false; // AddCombo puts the previous pick back
+            }
+            vm.SetRtxEncoreKeepGameIntel(gameName, want, store);
+            keep = want;
+            _ = ApplyAsync(want);
+            return true;
+        });
+
+        async Task ApplyAsync(bool want)
+        {
+            if (!isInstalled)
+            {
+                cog.SetSuccess("Saved. Applied when RTX Encore is installed.");
+                return;
+            }
+            combo!.IsEnabled = false;
+            cog.SetStatus(want ? "Putting the game's own Intel files back..." : "Installing XeSS SDK files...");
+            try
+            {
+                bool ok = await vm.ApplyRtxEncoreIntelFilesAsync(card);
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    combo.IsEnabled = true;
+                    if (ok) cog.SetSuccess(want ? "The game's own Intel files are in place. RTX Encore's XeSS and XeFG may not work in this game."
+                                                : "Intel's XeSS SDK 3.0.2 files are installed.");
+                    else cog.SetError("Couldn't change every Intel file. See the log for details.");
+                });
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[RtxEncoreCog] '{gameName}': Intel files change failed — {ex.Message}");
+                _window.DispatcherQueue?.TryEnqueue(() => { combo.IsEnabled = true; cog.SetError($"Couldn't change the Intel files: {ex.Message}"); });
             }
         }
     }

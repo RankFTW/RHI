@@ -392,6 +392,7 @@ public static class GameReportEncoder
             ["ulPinnedVersion"] = vm.GetUlPinnedVersion(gameName, card.Source ?? ""),
             ["customScreenshotFolder"] = vm.GetScreenshotFolder(gameName, card.Source ?? "") != null,
             ["ulMajorChoice"] = vm.GetUlMajorChoice(gameName, card.Source ?? "") ?? "auto",
+            ["encoreKeepGameIntel"] = vm.GetRtxEncoreKeepGameIntel(gameName, card.Source ?? ""),
             ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName, card.Source ?? ""),
             ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName, card.Source ?? ""),
             ["launchExe"] = gns.LaunchExeOverrides.TryGetValue(gameName, out var launchOv) ? launchOv : "",

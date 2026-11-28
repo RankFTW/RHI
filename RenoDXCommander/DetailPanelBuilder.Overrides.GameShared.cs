@@ -181,6 +181,20 @@ public partial class DetailPanelBuilder
         if (vm.IsUpdateAllExcludedOs(name, store)) vm.ToggleUpdateAllExclusionOs(name, store);
         if (vm.IsUpdateAllExcludedDxvk(name, store)) vm.ToggleUpdateAllExclusionDxvk(name, store);
 
+        // RTX Encore's Intel files back to the default (replace, or keep for games in the manifest list)
+        if (vm.GetRtxEncoreKeepGameIntelChoice(name, store) is bool keptChoice)
+        {
+            vm.SetRtxEncoreKeepGameIntel(name, null, store);
+            if (keptChoice != vm.GetRtxEncoreKeepGameIntel(name, store) && !card.IsRunning)
+                _ = ApplyEncoreIntelResetAsync();
+            async Task ApplyEncoreIntelResetAsync()
+            {
+                try { await vm.ApplyRtxEncoreIntelFilesAsync(card); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HttpRequestException or TaskCanceledException)
+                { CrashReporter.Log($"[DetailPanelBuilder.ResetGameSettings] '{name}': RTX Encore Intel files not changed — {ex.Message}"); }
+            }
+        }
+
         // ReShade without add-ons → with add-ons
         if (card.UseNormalReShade) vm.SetUseNormalReShade(card, false);
 

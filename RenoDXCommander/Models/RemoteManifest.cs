@@ -116,6 +116,13 @@ public class RemoteManifest
     public List<string>? WikiUnlinks { get; set; }
 
     /// <summary>
+    /// Games whose launcher checks file hashes (Wuthering Waves): RTX Encore installs keep the game's own
+    /// Intel XeSS / XeLL DLLs instead of replacing them with XeSS SDK 3.0.2. The user's ⚙ choice wins.
+    /// </summary>
+    [JsonPropertyName("encoreKeepGameIntelFiles")]
+    public List<string>? EncoreKeepGameIntelFiles { get; set; }
+
+    /// <summary>
     /// Per-game engine overrides. Allows the manifest to force a specific engine label
     /// for a game, overriding auto-detection.
     /// 

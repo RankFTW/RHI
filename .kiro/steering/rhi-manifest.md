@@ -108,6 +108,9 @@ All resolved via `AddonInfoResolver.cs` — routes by `AddonType` enum to the co
 - Blocks BOTH specific wiki match AND generic fallback (code sets `fallback = null`)
 - For deprecated mods: combine `wikiUnlinks` + `snapshotOverrides` (point to generic URL)
 
+## encoreKeepGameIntelFiles
+- List of game names whose launcher checks file hashes: RTX Encore keeps the game's own Intel XeSS / XeLL DLLs there (default of the ⚙'s "Game's Intel files"; the user's choice wins). Add a game when users report its launcher asking for a repair after RTX Encore.
+
 ## emulatorGames
 - Structure: `{ "Ryubing": { "addons": ["wiki game name 1", ...] } }`
 - Addon names are wiki game names, URLs resolved from scraped wiki data at runtime.

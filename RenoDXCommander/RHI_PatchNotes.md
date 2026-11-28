@@ -3,7 +3,7 @@
 1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) and choose **Generate new token (classic)**. Any name and expiry will do; leave every box unticked.
 2. In RHI open **Settings → Accounts & Data → GitHub token**, paste it and click **Save**.
 
-## v2.9.6.3 Beta 4
+## v2.9.6.3 Beta 5
 
 ### New
 - **Tune presets.** A Tune button next to the game's name (in every layout) sets a game up in one click: it installs and applies everything in a preset, and clicking the game's Tuned button later removes it again. RHI comes with one preset, RHI Tuned: ReShade, RenoDX, ReLimiter, the newest DLSS (Super Resolution, Ray Reconstruction, Frame Generation) and Streamline files, and DLSS presets M (Super Resolution), F (Ray Reconstruction) and B (Frame Generation). Before anything changes you see what Tune will do in that game and what it skips and why (no RenoDX mod for the game, no DLSS file, already installed...). Removing tuning only takes out what Tune added and puts back the DLSS files and NVIDIA settings it changed; anything you installed yourself stays. Make your own presets in Settings › Tune presets: ReShade, an HDR mod (RenoDX, Luma, or RenoDX with Luma for games without a RenoDX mod), a frame limiter (ReLimiter or Display Commander), the Extras (OptiScaler, Ultimate ASI Loader, HSF, RTX Encore, DLSS Enabler, Universal MFG Unlocker, MFG Unlock, 20/30 FG Unlock, BFI Presenter, DXVK and dgVoodoo2) with the DLL name, DXVK variant or dgVoodoo2 version to use, a Neural Rendering method (or Auto, the method RHI picks for the game) with its add-on and NR DLL versions, DLSS and Streamline versions (or your own files from RHI's Custom folder, or the NVIDIA Override for DLSS), DLSS presets and render scale, and every driver setting from a game's Driver Settings section. Presets can be edited, renamed, reordered, hidden and deleted (RHI Tuned can be reset instead), and the Tune button can be turned off there. With several presets shown, the Tune button opens a menu to pick one.
@@ -22,6 +22,7 @@
   - Update inclusion: the Update All row in each component's ⚙.
 - Spotlight: Tune this game now has six tiles, three per row: Extras, DLSS / Streamline and Driver Settings, then Neural Rendering, Experimental and Management.
 - The Launch button's menu (Executable, Launch arguments) now opens the game's settings, where those two are set.
+- Driver Settings now shows its five groups side by side (VSync and latency, ReBAR, Smooth Motion, Texture Filtering, and Power, G-Sync and FPS), like DLSS / Streamline, instead of putting Texture Filtering on a second row. Classic+ uses the same group names as Tabs and Spotlight.
 - **Smaller download.** RHI is about a quarter smaller (128 MB instead of 175 MB), so the installer and every update download faster. Windows machine-learning files that RHI never used are no longer included.
 - **Faster start.** RHI's game list is up to date about two seconds sooner after launch: add-on update checks now run together and alongside the game scan instead of holding it up, the ReShade and Luma pages are each downloaded once instead of twice, and install records are read once instead of once per game.
 - RHI no longer hitches for about half a second when the scan at launch finishes: DLSS files are now read in the background instead of while the window is being updated.
@@ -34,6 +35,7 @@
 - Only one update check runs at a time. Clicking Check for updates while one is running now says so instead of starting a second check that downloaded the same add-ons again, and the hourly check waits its turn.
 
 ### Bug Fixes
+- Fixed RTX Encore replacing the game's own Intel XeSS files (libxess.dll, libxess_fg.dll, libxell.dll) every time RHI started, even after you put the originals back. In games whose launcher checks its files, such as Wuthering Waves, that made the launcher ask for a repair. The RTX Encore ⚙ has a new Game's Intel files setting: Replace (as before; RTX Encore's XeSS upscaler and XeFG need Intel's newer files) or Keep, which puts the game's own files back and leaves them alone. Wuthering Waves uses Keep by default.
 - Fixed RHI taking about two minutes to finish checking for games and mods at every launch when a game used OptiScaler DLSS NR: since DLSS NR v0.10.0 it downloaded the wrong 1 GB file from the release (a display filter preview, not OptiScaler), found no OptiScaler in it and tried again next time. It now picks the OptiScaler build, and the game list no longer waits for a DLSS NR or F5 DLSSNR download at launch.
 - Fixed installing or updating OptiScaler DLSS NR or F5 DLSSNR (or pressing Refresh) while RHI was already downloading it failing with "file in use": it now waits for that download and uses it.
 - Fixed searching the patch notes in What's New sometimes showing one version's full notes instead of the search results.

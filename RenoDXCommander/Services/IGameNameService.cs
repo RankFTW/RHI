@@ -147,6 +147,7 @@ public interface IGameNameService
 
     /// <summary>Per-game GITC Uplift iMMERSE Launchpad choice. Key = "GameName|Store". Absent = default (on in games without DLSS).</summary>
     Dictionary<string, bool> UpliftLaunchpad { get; }
+    Dictionary<string, bool> RtxEncoreKeepGameIntel { get; }
 
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     Dictionary<string, string> NrAddonVersion { get; }

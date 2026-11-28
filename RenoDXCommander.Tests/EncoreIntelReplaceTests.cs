@@ -109,4 +109,73 @@ public class EncoreIntelReplaceTests : IDisposable
         Assert.Equal(new byte[] { 4, 4 }, File.ReadAllBytes(dll));
         Assert.False(File.Exists(dll + ".original"));
     }
+    // ── Keeping the game's own Intel files (issue #184: launchers that check file hashes) ──
+
+    [Fact]
+    public void Restore_PutsGameFileBack()
+    {
+        var p = Path.Combine(_game, "libxell.dll");
+        var staged = Path.Combine(_root, "staged.dll");
+        File.WriteAllBytes(staged, NewXess);
+        File.WriteAllBytes(p, NewXess);                       // RHI's replacement
+        File.WriteAllBytes(p + ".encore-original", GameXess); // the game's file
+
+        Assert.True(_svc.RestoreGameIntelFile(p, staged));
+        Assert.Equal(GameXess, File.ReadAllBytes(p));
+        Assert.False(File.Exists(p + ".encore-original"));
+    }
+
+    [Fact]
+    public void Restore_GameUpdatedFile_KeptAndBackupDropped()
+    {
+        var p = Path.Combine(_game, "libxell.dll");
+        var staged = Path.Combine(_root, "staged.dll");
+        File.WriteAllBytes(staged, NewXess);
+        File.WriteAllBytes(p, new byte[] { 9, 9 });           // a game update put its new file there
+        File.WriteAllBytes(p + ".encore-original", GameXess);
+
+        Assert.True(_svc.RestoreGameIntelFile(p, staged));
+        Assert.Equal(new byte[] { 9, 9 }, File.ReadAllBytes(p));
+        Assert.False(File.Exists(p + ".encore-original"));
+    }
+
+    private string WriteMarker(params string[] lines)
+    {
+        var dir = Path.Combine(_game, Rtx40MfgService.EncoreRuntimeRelDir);
+        Directory.CreateDirectory(dir);
+        File.WriteAllLines(Path.Combine(dir, "rhi_installed.txt"), lines.Prepend("license.txt"));
+        return _game;
+    }
+
+    [Fact]
+    public void Needs_Keep_OnlyWhenAReplacedFileStillHasItsBackup()
+    {
+        var p = Path.Combine(_game, "libxell.dll");
+        File.WriteAllBytes(p, GameXess);
+        WriteMarker("native:libxell.dll");
+        Assert.False(Rtx40MfgService.NeedsEncoreIntelFiles(_game, _game, keepGameFiles: true));
+
+        File.WriteAllBytes(p + ".encore-original", OldBackup);
+        Assert.True(Rtx40MfgService.NeedsEncoreIntelFiles(_game, _game, keepGameFiles: true));
+    }
+
+    [Fact]
+    public void Needs_KeptFiles_ReplacedOnlyWhenTheChoiceIsReplace()
+    {
+        File.WriteAllBytes(Path.Combine(_game, "libxell.dll"), GameXess); // the game's older copy, wrong size for 3.0.2
+        WriteMarker("kept:libxell.dll");
+        Assert.False(Rtx40MfgService.NeedsEncoreIntelFiles(_game, _game, keepGameFiles: true));
+        Assert.True(Rtx40MfgService.NeedsEncoreIntelFiles(_game, _game, keepGameFiles: false));
+    }
+
+    [Fact]
+    public void State_KeptFilesCountAsSetUp()
+    {
+        WriteMarker(@"kept:Engine\libxell.dll", "native:libxess.dll", "libxess_fg.dll");
+        File.WriteAllBytes(Path.Combine(_game, Rtx40MfgService.EncoreRuntimeRelDir, "libxess_fg.dll"), NewXess);
+        var (complete, inGame, kept) = Rtx40MfgService.GetEncoreIntelState(_game);
+        Assert.True(complete);
+        Assert.Equal(1, inGame);
+        Assert.Equal(new[] { "libxell.dll" }, kept);
+    }
 }

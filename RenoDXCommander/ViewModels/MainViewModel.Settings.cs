@@ -1046,24 +1046,25 @@ public partial class MainViewModel
     private void ReconcileRtxEncoreFiles()
     {
         var svc = App.Services.GetRequiredService<RtxEncoreService>();
-        var games = new List<(string InstallPath, string InstalledAs, string ModDir, bool NrDeployed, bool Is32Bit, bool OsInstalled)>();
+        var games = new List<(string InstallPath, string InstalledAs, string ModDir, bool NrDeployed, bool Is32Bit, bool OsInstalled, bool KeepGameIntel)>();
         foreach (var c in _allCards.ToList())
         {
             if (c.IsHidden || string.IsNullOrEmpty(c.InstallPath)) continue;
             var installedAs = GetRtxEncoreInstalledAs(c.GameName, c.Source ?? "");
             if (string.IsNullOrEmpty(installedAs) || !svc.IsInstalledIn(c.InstallPath, installedAs)) continue;
-            games.Add((c.InstallPath, installedAs, svc.ModDir(c.InstallPath, installedAs), GetRtxEncoreNrDllDeployed(c.GameName, c.Source ?? ""), c.Is32Bit, c.IsOsInstalled));
+            games.Add((c.InstallPath, installedAs, svc.ModDir(c.InstallPath, installedAs), GetRtxEncoreNrDllDeployed(c.GameName, c.Source ?? ""), c.Is32Bit, c.IsOsInstalled,
+                GetRtxEncoreKeepGameIntel(c.GameName, c.Source ?? "")));
         }
         if (games.Count == 0) return;
         _ = Task.Run(async () =>
         {
             try
             {
-                var needXess = games.Where(g => Rtx40MfgService.NeedsEncoreIntelFiles(g.InstallPath, g.ModDir)).ToList();
+                var needXess = games.Where(g => Rtx40MfgService.NeedsEncoreIntelFiles(g.InstallPath, g.ModDir, g.KeepGameIntel)).ToList();
                 if (needXess.Count > 0 && await _rtx40MfgService.EnsureEncoreIntelStagingAsync().ConfigureAwait(false))
                 {
                     foreach (var g in needXess)
-                        if (_rtx40MfgService.DeployEncoreIntelFiles(g.InstallPath, g.ModDir))
+                        if (_rtx40MfgService.DeployEncoreIntelFiles(g.InstallPath, g.ModDir, g.KeepGameIntel))
                             _crashReporter.Log($"[MainViewModel.ReconcileRtxEncoreFiles] Set up Intel XeSS files for RTX Encore in '{g.InstallPath}'");
                 }
 

@@ -11,7 +11,9 @@ namespace RenoDXCommander.Services;
 //   - a file the game doesn't have goes in the private rtx-encore-runtimes\intel folder beside the mod,
 //     with Intel's licence as license.txt.
 // rhi_installed.txt in that folder lists what RHI did: plain names are files in the private folder,
-// "native:<path relative to the game root>" lines are the game's own copies RHI found and checked.
+// "native:<path relative to the game root>" lines are the game's own copies RHI found and checked,
+// "kept:<path>" lines the game's own (older) copies left alone because the game's setting says so
+// (launchers that check file hashes, e.g. Wuthering Waves; manifest encoreKeepGameIntelFiles).
 
 public partial class Rtx40MfgService
 {
@@ -21,6 +23,7 @@ public partial class Rtx40MfgService
     private const string EncoreLicenseName   = "license.txt";
     private const string EncoreBackupSuffix  = ".encore-original";
     private const string EncoreNativePrefix  = "native:";
+    private const string EncoreKeptPrefix    = "kept:";     // game copies left as they are (per-game setting)
     private const int    EncoreScanMaxDirs   = 20000;
     private const int    EncoreScanMaxDepth  = 16;
 
@@ -89,8 +92,11 @@ public partial class Rtx40MfgService
     /// and copies the rest, plus Intel's licence, into rtx-encore-runtimes\intel beside the mod.
     /// RHI copies in the private folder that the game now also ships are removed (the game's copy is used).
     /// Call <see cref="EnsureEncoreIntelStagingAsync"/> first. Runs a folder scan: call off the UI thread.
+    /// With <paramref name="keepGameFiles"/> the game's own copies are left alone (some launchers check their
+    /// hashes): copies RHI replaced earlier are put back, and they're listed as kept:&lt;path&gt;. No private
+    /// copy is made of a file the game ships, so RTX Encore's XeSS / XeFG may not work with the game's versions.
     /// </summary>
-    public bool DeployEncoreIntelFiles(string installPath, string modDir)
+    public bool DeployEncoreIntelFiles(string installPath, string modDir, bool keepGameFiles = false)
     {
         if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(modDir) || !IsEncoreIntelStagingReady) return false;
         var gameRoot = DlssStreamlineService.ResolveSearchRoot(installPath);
@@ -99,7 +105,8 @@ public partial class Rtx40MfgService
         try
         {
             Directory.CreateDirectory(dir);
-            var (privateFiles, nativeFiles) = ReadEncoreMarker(marker);
+            var (privateFiles, nativeFiles, keptFiles) = ReadEncoreMarker(marker);
+            keptFiles.Clear(); // rebuilt from the scan
             var natives = FindGameIntelFiles(gameRoot);
             bool allOk = true;
 
@@ -109,7 +116,23 @@ public partial class Rtx40MfgService
                 var privatePath = Path.Combine(dir, f.File);
                 var gameCopies = natives.Where(p => Path.GetFileName(p).Equals(f.File, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                if (gameCopies.Count > 0)
+                if (gameCopies.Count > 0 && keepGameFiles)
+                {
+                    foreach (var p in gameCopies)
+                    {
+                        var rel = Path.GetRelativePath(gameRoot, p);
+                        if (File.Exists(p + EncoreBackupSuffix) && !RestoreGameIntelFile(p, staged)) { allOk = false; continue; }
+                        nativeFiles.Remove(rel);
+                        if (SameContent(p, staged)) nativeFiles.Add(rel); // the game ships 3.0.2 itself
+                        else keptFiles.Add(rel);
+                    }
+                    if (privateFiles.Remove(f.File) && File.Exists(privatePath))
+                    {
+                        File.Delete(privatePath);
+                        _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Removed RHI's duplicate '{privatePath}'");
+                    }
+                }
+                else if (gameCopies.Count > 0)
                 {
                     bool replacedAll = true;
                     foreach (var p in gameCopies)
@@ -140,8 +163,8 @@ public partial class Rtx40MfgService
 
             File.Copy(Path.Combine(XessStagingDir, EncoreIntelLicense.File), Path.Combine(dir, EncoreLicenseName), overwrite: true);
             privateFiles.Add(EncoreLicenseName);
-            WriteEncoreMarker(marker, privateFiles, nativeFiles);
-            _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Intel runtimes for RTX Encore: {privateFiles.Count - 1} in '{dir}', {nativeFiles.Count} in the game's own folders{(allOk ? "" : " (some game files couldn't be replaced)")}");
+            WriteEncoreMarker(marker, privateFiles, nativeFiles, keptFiles);
+            _crashReporter.Log($"[Rtx40MfgService.DeployEncoreIntelFiles] Intel runtimes for RTX Encore: {privateFiles.Count - 1} in '{dir}', {nativeFiles.Count} in the game's own folders, {keptFiles.Count} game files kept as they are{(allOk ? "" : keepGameFiles ? " (some game files couldn't be restored)" : " (some game files couldn't be replaced)")}");
             return allOk;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -191,6 +214,34 @@ public partial class Rtx40MfgService
         return true;
     }
 
+    /// <summary>
+    /// Puts the game's own copy (<c>.encore-original</c>) back over RHI's replacement at <paramref name="path"/>.
+    /// A file that no longer matches <paramref name="staged"/> was changed by the game after RHI (an update):
+    /// it's kept and the old backup dropped. Returns false on failure (logged); the file is never left missing.
+    /// </summary>
+    internal bool RestoreGameIntelFile(string path, string staged)
+    {
+        var backup = path + EncoreBackupSuffix;
+        try
+        {
+            if (!File.Exists(backup)) return true;
+            if (File.Exists(path) && File.Exists(staged) && !SameContent(path, staged))
+            {
+                File.Delete(backup);
+                _crashReporter.Log($"[Rtx40MfgService.RestoreGameIntelFile] Keeping '{path}': the game replaced it after RHI did");
+                return true;
+            }
+            File.Move(backup, path, overwrite: true);
+            _crashReporter.Log($"[Rtx40MfgService.RestoreGameIntelFile] Restored the game's own '{path}'");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _crashReporter.Log($"[Rtx40MfgService.RestoreGameIntelFile] Couldn't restore '{path}' — {ex.Message}");
+            return false;
+        }
+    }
+
     private void DeleteQuietly(string path)
     {
         try { if (File.Exists(path)) File.Delete(path); }
@@ -212,23 +263,13 @@ public partial class Rtx40MfgService
         if (!File.Exists(marker)) return; // RHI didn't set it up — leave the user's files alone
         try
         {
-            var (privateFiles, nativeFiles) = ReadEncoreMarker(marker);
+            var (privateFiles, nativeFiles, _) = ReadEncoreMarker(marker);
             foreach (var rel in nativeFiles)
             {
                 var p = FileHelper.SafeCombine(gameRoot, rel);
                 if (p == null) continue;
-                var backup = p + EncoreBackupSuffix;
-                if (!File.Exists(backup)) continue; // the game's copy was already 3.0.2: RHI didn't change it
-                var staged = Path.Combine(XessStagingDir, Path.GetFileName(p));
-                if (File.Exists(p) && File.Exists(staged) && !SameContent(p, staged))
-                {
-                    File.Delete(backup);
-                    _crashReporter.Log($"[Rtx40MfgService.RemoveEncoreIntelFiles] Keeping '{p}': the game replaced it after RHI did");
-                    continue;
-                }
-                if (File.Exists(p)) File.Delete(p);
-                File.Move(backup, p);
-                _crashReporter.Log($"[Rtx40MfgService.RemoveEncoreIntelFiles] Restored the game's own '{p}'");
+                if (!File.Exists(p + EncoreBackupSuffix)) continue; // the game's copy was already 3.0.2: RHI didn't change it
+                RestoreGameIntelFile(p, Path.Combine(XessStagingDir, Path.GetFileName(p)));
             }
             foreach (var name in privateFiles)
             {
@@ -252,19 +293,27 @@ public partial class Rtx40MfgService
     /// True when the Intel files need setting up: never done, done by an older RHI (no licence, no libxess.dll,
     /// game copies not checked), or a game copy RHI replaced no longer matches (a game update put the old one back).
     /// Files the user deleted from the private folder aren't re-created. Off the UI thread (touches the disk).
+    /// With <paramref name="keepGameFiles"/>: true only when a game copy RHI replaced still has its backup
+    /// (it's put back). Without it: also true when game copies were kept earlier (they're replaced now).
     /// </summary>
-    public static bool NeedsEncoreIntelFiles(string installPath, string modDir)
+    public static bool NeedsEncoreIntelFiles(string installPath, string modDir, bool keepGameFiles = false)
     {
         if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(modDir)) return false;
         var marker = Path.Combine(modDir, EncoreRuntimeRelDir, XessMarkerFile);
         if (!File.Exists(marker)) return true;
-        var (privateFiles, nativeFiles) = ReadEncoreMarker(marker);
+        var (privateFiles, nativeFiles, keptFiles) = ReadEncoreMarker(marker);
         if (!privateFiles.Contains(EncoreLicenseName)) return true;
+        if (!keepGameFiles && keptFiles.Count > 0) return true;
         var gameRoot = DlssStreamlineService.ResolveSearchRoot(installPath);
         foreach (var rel in nativeFiles)
         {
             var p = FileHelper.SafeCombine(gameRoot, rel);
             if (p == null || !File.Exists(p)) continue;
+            if (keepGameFiles)
+            {
+                if (File.Exists(p + EncoreBackupSuffix)) return true;
+                continue;
+            }
             var expected = EncoreIntelDlls.FirstOrDefault(f => f.File.Equals(Path.GetFileName(p), StringComparison.OrdinalIgnoreCase));
             if (expected.File != null && !SizeIs(p, expected.Size)) return true;
         }
@@ -273,18 +322,20 @@ public partial class Rtx40MfgService
 
     /// <summary>
     /// For the ⚙, from RHI's record only (no scan): whether every Intel DLL RTX Encore uses is set up,
-    /// and how many of them are the game's own copies.
+    /// how many of them are the game's own copies, and which of the game's own (older) copies were kept as they are.
     /// </summary>
-    public static (bool Complete, int InGameFolders) GetEncoreIntelState(string modDir)
+    public static (bool Complete, int InGameFolders, IReadOnlyList<string> KeptNames) GetEncoreIntelState(string modDir)
     {
-        if (string.IsNullOrEmpty(modDir)) return (false, 0);
+        if (string.IsNullOrEmpty(modDir)) return (false, 0, Array.Empty<string>());
         var marker = Path.Combine(modDir, EncoreRuntimeRelDir, XessMarkerFile);
-        if (!File.Exists(marker)) return (false, 0);
-        var (privateFiles, nativeFiles) = ReadEncoreMarker(marker);
+        if (!File.Exists(marker)) return (false, 0, Array.Empty<string>());
+        var (privateFiles, nativeFiles, keptFiles) = ReadEncoreMarker(marker);
         var nativeNames = nativeFiles.Select(Path.GetFileName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var keptNames = keptFiles.Select(Path.GetFileName).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         bool complete = privateFiles.Contains(EncoreLicenseName) && EncoreIntelDlls.All(f =>
-            nativeNames.Contains(f.File) || (privateFiles.Contains(f.File) && File.Exists(Path.Combine(modDir, EncoreRuntimeRelDir, f.File))));
-        return (complete, EncoreIntelDlls.Count(f => nativeNames.Contains(f.File)));
+            nativeNames.Contains(f.File) || keptNames.Contains(f.File, StringComparer.OrdinalIgnoreCase)
+            || (privateFiles.Contains(f.File) && File.Exists(Path.Combine(modDir, EncoreRuntimeRelDir, f.File))));
+        return (complete, EncoreIntelDlls.Count(f => nativeNames.Contains(f.File)), keptNames);
     }
 
     /// <summary>
@@ -340,11 +391,12 @@ public partial class Rtx40MfgService
         }).ToList();
     }
 
-    private static (HashSet<string> Private, HashSet<string> Native) ReadEncoreMarker(string marker)
+    private static (HashSet<string> Private, HashSet<string> Native, HashSet<string> Kept) ReadEncoreMarker(string marker)
     {
         var privateFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var nativeFiles  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!File.Exists(marker)) return (privateFiles, nativeFiles);
+        var keptFiles    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(marker)) return (privateFiles, nativeFiles, keptFiles);
         var known = EncoreIntelDlls.Select(f => f.File).Append(EncoreLicenseName).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var raw in File.ReadAllLines(marker))
         {
@@ -354,13 +406,20 @@ public partial class Rtx40MfgService
                 var rel = line[EncoreNativePrefix.Length..];
                 if (known.Contains(Path.GetFileName(rel))) nativeFiles.Add(rel);
             }
+            else if (line.StartsWith(EncoreKeptPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var rel = line[EncoreKeptPrefix.Length..];
+                if (known.Contains(Path.GetFileName(rel))) keptFiles.Add(rel);
+            }
             else if (known.Contains(line)) privateFiles.Add(line);
         }
-        return (privateFiles, nativeFiles);
+        return (privateFiles, nativeFiles, keptFiles);
     }
 
-    private static void WriteEncoreMarker(string marker, HashSet<string> privateFiles, HashSet<string> nativeFiles)
-        => File.WriteAllLines(marker, privateFiles.Concat(nativeFiles.Select(n => EncoreNativePrefix + n)));
+    private static void WriteEncoreMarker(string marker, HashSet<string> privateFiles, HashSet<string> nativeFiles, HashSet<string> keptFiles)
+        => File.WriteAllLines(marker, privateFiles
+            .Concat(nativeFiles.Select(n => EncoreNativePrefix + n))
+            .Concat(keptFiles.Select(n => EncoreKeptPrefix + n)));
 
     private static bool SizeIs(string path, long size)
         => File.Exists(path) && new FileInfo(path).Length == size;

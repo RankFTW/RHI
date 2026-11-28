@@ -242,6 +242,10 @@ Unlike `blacklist`, the card still appears — it just has no mod options.
 - `GameInitializationService.ApplyManifest()` → populates `_manifestWikiUnlinks`
 - `BuildCards`, `InstallModAsync`, `AddManualGame` → if `_manifestWikiUnlinks.Contains(game.Name)` → `mod = null`, `fallback = null`
 
+### `encoreKeepGameIntelFiles` — `List<string>`
+Games whose launcher checks its files' hashes (Wuthering Waves, issue #184). RTX Encore installs there keep the game's own Intel `libxess.dll` / `libxess_fg.dll` / `libxell.dll` instead of replacing them with XeSS SDK 3.0.2. Only the default: the RTX Encore ⚙'s "Game's Intel files" choice (`RtxEncoreKeepGameIntel`) wins. Exact detected name, ignoring case.
+- `MainViewModel.IsRtxEncoreKeepGameIntelDefault` → `GetRtxEncoreKeepGameIntel` → `Rtx40MfgService.DeployEncoreIntelFiles(keepGameFiles:)` (install, ⚙, `ReconcileRtxEncoreFiles`)
+
 ### `donationUrls` — `Dict<string,string>`
 Donation page URLs keyed by author display name. Merged into the hardcoded dictionary; manifest entries take priority.
 - `MainViewModel.Init`, `BackgroundScan` → `GameCardViewModel.MergeManifestAuthorData(DonationUrls, AuthorDisplayNames)`

@@ -79,6 +79,8 @@ public partial class GameNameService : IGameNameService
 
     /// <summary>Per-game GITC Uplift iMMERSE Launchpad choice. Key = "GameName|Store". Absent = default (on in games without DLSS).</summary>
     private Dictionary<string, bool> _upliftLaunchpad = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>RTX Encore: keep the game's own Intel XeSS files (true) or replace them (false). Absent = manifest default.</summary>
+    private Dictionary<string, bool> _rtxEncoreKeepGameIntel = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1" / "0.55". Absent = use latest.</summary>
     private Dictionary<string, string> _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
@@ -250,6 +252,7 @@ public partial class GameNameService : IGameNameService
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
     /// <summary>Per-game GITC Uplift iMMERSE Launchpad choice. Key = "GameName|Store". Absent = default (on in games without DLSS).</summary>
     public Dictionary<string, bool> UpliftLaunchpad => _upliftLaunchpad;
+    public Dictionary<string, bool> RtxEncoreKeepGameIntel => _rtxEncoreKeepGameIntel;
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     public Dictionary<string, string> NrAddonVersion => _nrAddonVersion;
     /// <summary>Per-game NR DLL version override.</summary>
@@ -652,6 +655,11 @@ public partial class GameNameService : IGameNameService
         _upliftLaunchpad = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in upliftLaunchpadDict) _upliftLaunchpad[kv.Key] = kv.Value;
 
+        var encoreKeepIntelDict = Load<Dictionary<string, bool>>("RtxEncoreKeepGameIntel",
+            new(StringComparer.OrdinalIgnoreCase));
+        _rtxEncoreKeepGameIntel = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in encoreKeepIntelDict) _rtxEncoreKeepGameIntel[kv.Key] = kv.Value;
+
         var nrAddonVersionDict = Load<Dictionary<string, string>>("NrAddonVersion",
             new(StringComparer.OrdinalIgnoreCase));
         _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
@@ -975,6 +983,8 @@ public partial class GameNameService : IGameNameService
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_upliftLaunchpad.Count > 0) s["UpliftLaunchpad"] = JsonSerializer.Serialize(_upliftLaunchpad);
                 else s.Remove("UpliftLaunchpad");
+                if (_rtxEncoreKeepGameIntel.Count > 0) s["RtxEncoreKeepGameIntel"] = JsonSerializer.Serialize(_rtxEncoreKeepGameIntel);
+                else s.Remove("RtxEncoreKeepGameIntel");
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
                 if (_nrDllVersion.Count > 0) s["NrDllVersion"] = JsonSerializer.Serialize(_nrDllVersion);
@@ -1231,6 +1241,7 @@ public partial class GameNameService : IGameNameService
         MigrateCompositeDict(_ulPinnedVersion, oldName, newName);
         MigrateCompositeDict(_screenshotFolderOverrides, oldName, newName);
         MigrateCompositeDict(_ulMajorChoice, oldName, newName);
+        MigrateCompositeDict(_rtxEncoreKeepGameIntel, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_upliftLaunchpad, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);

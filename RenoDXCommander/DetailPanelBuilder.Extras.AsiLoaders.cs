@@ -514,9 +514,11 @@ public partial class DetailPanelBuilder
             }
 
             // Intel XeSS SDK files for the XeSS upscaler and XeFG engine: the game's own copies are
-            // replaced in place, the rest go in RTX Encore's runtime folder. Not fatal: everything else works without them.
+            // replaced in place (or kept, per the game's ⚙ choice), the rest go in RTX Encore's runtime folder.
+            // Not fatal: everything else works without them.
             var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
             var newModDir = svc.ModDir(installPath, chosen);
+            bool keepGameIntel = _window.ViewModel.GetRtxEncoreKeepGameIntel(gameName, store);
             Show(mfgSvc.IsEncoreIntelStagingReady ? "Installing XeSS files..." : "Downloading XeSS files...");
             bool staged = await mfgSvc.EnsureEncoreIntelStagingAsync();
             Show("Installing XeSS files...");
@@ -524,7 +526,7 @@ public partial class DetailPanelBuilder
             {
                 if (oldModDir != null && !string.Equals(oldModDir, newModDir, StringComparison.OrdinalIgnoreCase))
                     mfgSvc.RemoveEncoreIntelFiles(installPath, oldModDir); // moved between the game folder and plugins\
-                return mfgSvc.DeployEncoreIntelFiles(installPath, newModDir);
+                return mfgSvc.DeployEncoreIntelFiles(installPath, newModDir, keepGameIntel);
             });
             if (!xessOk)
                 CrashReporter.Log($"[RtxEncoreInstall] XeSS files not deployed for '{installPath}' (download failed or folder not writable)");
