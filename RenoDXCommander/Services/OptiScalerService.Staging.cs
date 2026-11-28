@@ -1473,8 +1473,24 @@ public partial class OptiScalerService
 
     // ── DLSS NR variant staging ───────────────────────────────────────────────
 
+    // One download at a time: the startup staging task, Refresh, Update All and an install can all call this.
+    // A second caller waits, then finds the build already staged and returns.
+    private readonly SemaphoreSlim _dlssNrStagingLock = new(1, 1);
+
     /// <inheritdoc />
     public async Task EnsureDlssNrStagingAsync(IProgress<(string message, double percent)>? progress = null)
+    {
+        if (!_dlssNrStagingLock.Wait(0))
+        {
+            CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] Another download is running — waiting for it");
+            progress?.Report(("Waiting for the OptiScaler DLSS NR download already running...", 5));
+            await _dlssNrStagingLock.WaitAsync().ConfigureAwait(false);
+        }
+        try { await EnsureDlssNrStagingAsyncCoreAsync(progress).ConfigureAwait(false); }
+        finally { _dlssNrStagingLock.Release(); }
+    }
+
+    private async Task EnsureDlssNrStagingAsyncCoreAsync(IProgress<(string message, double percent)>? progress)
     {
         var previousStagedVersion = StagedVersionDlssNr; // for Update History
         try
@@ -1525,17 +1541,23 @@ public partial class OptiScalerService
                     tagName = raw.TrimStart('v');
                 }
 
+                // Pick the OptiScaler build: prefer the "-rtx40-mfg" zip (the pinned-release path does too),
+                // else any zip with "OptiScaler" in the name. Upstream also ships unrelated zips in the same
+                // release (e.g. "display-filter-v0.9.0-preview.zip", listed first since v0.10.0), so never
+                // fall back to an arbitrary zip: it would be downloaded (~1 GB) and rejected on every launch.
                 if (firstRelease.TryGetProperty("assets", out var assets))
+                {
+                    int bestScore = 0;
                     foreach (var asset in assets.EnumerateArray())
                     {
-                        var name = asset.GetProperty("name").GetString() ?? "";
-                        if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                        {
-                            assetName = name;
-                            downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                            break;
-                        }
+                        var name = asset.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                        var url  = asset.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
+                        if (url == null || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                        int score = name.EndsWith("-rtx40-mfg.zip", StringComparison.OrdinalIgnoreCase) ? 2
+                                  : name.Contains("OptiScaler", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+                        if (score > bestScore) { bestScore = score; assetName = name; downloadUrl = url; }
                     }
+                }
             }
             catch (Exception ex)
             {
@@ -1692,8 +1714,24 @@ public partial class OptiScalerService
 
     // ── F5 DLSSNR variant staging ─────────────────────────────────────────────
 
+    // One download at a time: the startup staging task, Refresh, Update All and an install can all call this.
+    // A second caller waits, then finds the build already staged and returns.
+    private readonly SemaphoreSlim _f5StagingLock = new(1, 1);
+
     /// <inheritdoc />
     public async Task EnsureF5StagingAsync(IProgress<(string message, double percent)>? progress = null)
+    {
+        if (!_f5StagingLock.Wait(0))
+        {
+            CrashReporter.Log("[OptiScalerService.EnsureF5StagingAsync] Another download is running — waiting for it");
+            progress?.Report(("Waiting for the OptiScaler F5 DLSSNR download already running...", 5));
+            await _f5StagingLock.WaitAsync().ConfigureAwait(false);
+        }
+        try { await EnsureF5StagingAsyncCoreAsync(progress).ConfigureAwait(false); }
+        finally { _f5StagingLock.Release(); }
+    }
+
+    private async Task EnsureF5StagingAsyncCoreAsync(IProgress<(string message, double percent)>? progress)
     {
         var previousStagedVersion = StagedVersionF5; // for Update History
         try

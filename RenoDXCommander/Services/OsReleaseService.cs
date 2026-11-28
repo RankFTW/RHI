@@ -32,7 +32,7 @@ internal static class OsReleaseService
     internal static OsReleaseSource? SourceFor(string? variant) => variant switch
     {
         OsVariants.Stable => new("optiscaler/OptiScaler", null, false),
-        // The built-in DLSS NR download takes the first zip, which is the -rtx40-mfg build
+        // Same build the built-in DLSS NR download prefers (EnsureDlssNrStagingAsync)
         OsVariants.DlssNr => new("wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass", @"-rtx40-mfg\.zip$", true),
         OsVariants.F5 => new("janblade/OptiScaler-F5-DLSSNR-Multipass", null, true),
         _ when OsForkService.Get(variant) is { } f => new(f.Definition.Repo!, f.Definition.AssetPattern, f.Definition.IncludePrereleases ?? true),

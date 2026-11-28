@@ -34,6 +34,8 @@
 - Only one update check runs at a time. Clicking Check for updates while one is running now says so instead of starting a second check that downloaded the same add-ons again, and the hourly check waits its turn.
 
 ### Bug Fixes
+- Fixed RHI taking about two minutes to finish checking for games and mods at every launch when a game used OptiScaler DLSS NR: since DLSS NR v0.10.0 it downloaded the wrong 1 GB file from the release (a display filter preview, not OptiScaler), found no OptiScaler in it and tried again next time. It now picks the OptiScaler build, and the game list no longer waits for a DLSS NR or F5 DLSSNR download at launch.
+- Fixed installing or updating OptiScaler DLSS NR or F5 DLSSNR (or pressing Refresh) while RHI was already downloading it failing with "file in use": it now waits for that download and uses it.
 - Fixed searching the patch notes in What's New sometimes showing one version's full notes instead of the search results.
 - Fixed removing a Neural Rendering method (DLSS5 Tool, ShortFuse...) while the game was running leaving its DLSS files in the game for good: RHI lost track of them. It now removes them the next time.
 - Fixed renaming a game losing track of its DXVK, RE Framework, OptiScaler, Display Commander and ASI Loader installs, so they could no longer be updated or removed properly.
