@@ -66,6 +66,9 @@
 - The installer no longer picks up leftover .old, .tmp or .bak files.
 - RHI's saved GitHub answers (several MB) are loaded in the background at launch and only saved again when something changed.
 
+### Manifest Updates
+- CRCGI is no longer offered in Experimental for now. Games that already have it keep it and can still remove it.
+
 ## v2.9.6.2
 
 ### New

@@ -6,7 +6,8 @@
     "nexusMods": false,
     "resolutionControl": false,
     "hsf": true,
-    "anrFg": true
+    "anrFg": true,
+    "experimentalHidden": ["crcgi"]
   },
   "blacklistPrefixes": [
     "Battle.net."
